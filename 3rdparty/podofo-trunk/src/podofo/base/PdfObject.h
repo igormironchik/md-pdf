@@ -48,6 +48,9 @@ class PdfObject;
 class PdfOutputDevice;
 class PdfStream;
 class PdfVecObjects;
+class PdfDictionary;
+class PdfArray;
+class PdfDocument;
 
 /**
  * This class represents a PDF indirect Object in memory
@@ -63,6 +66,9 @@ class PdfVecObjects;
  */
 class PODOFO_API PdfObject : public PdfVariant {
     friend class PdfVecObjects;
+    friend class PdfArray;
+    friend class PdfDictionary;
+    friend class PdfDocument;
 
  public:
 
@@ -177,6 +183,14 @@ class PODOFO_API PdfObject : public PdfVariant {
      */
     inline PdfObject* MustGetIndirectKey( const PdfName & key ) const;
 
+    pdf_int64 GetIndirectKeyAsLong( const PdfName & key, pdf_int64 lDefault = 0 ) const;
+
+    double GetIndirectKeyAsReal( const PdfName & key, double dDefault = 0.0 ) const;
+
+    bool GetIndirectKeyAsBool( const PdfName & key, bool bDefault = false ) const;
+
+    PdfName GetIndirectKeyAsName( const PdfName & key ) const;
+
     /** Write the complete object to a file.
      *  \param pDevice write the object to this device
      *  \param pEncrypt an encryption object which is used to encrypt this object
@@ -233,13 +247,6 @@ class PODOFO_API PdfObject : public PdfVariant {
      *  Compares two PDF object instances only based on their object and generation number.
      */
     PODOFO_NOTHROW inline bool operator==( const PdfObject & rhs ) const;
-
-    /** Set the owner of this object, i.e. the PdfVecObjects instance to which
-     *  this object belongs.
-     *
-     *  \param pVecObjects a vector of PDF objects
-     */
-    inline void SetOwner( PdfVecObjects* pVecObjects );
 
     /** Get the owner of this object.
      *  \return the owner (if it wasn't changed anywhere, creator) of this object
@@ -318,6 +325,20 @@ class PODOFO_API PdfObject : public PdfVariant {
      */
     PdfStream* GetStream_NoDL();
 
+    virtual void AfterDelayedLoad( EPdfDataType eDataType );
+
+    /** Set the owner of this object variant
+     */
+    void SetVariantOwner( EPdfDataType eDataType );
+
+ private:
+     /** Set the owner of this object, i.e. the PdfVecObjects to which
+      *  this object belongs.
+      *
+      *  \param pVecObjects a vector of pdf objects
+      */
+     void SetOwner(PdfVecObjects* pVecObjects);
+
  private:
     /* See PdfVariant.h for a detailed explanation of this member, which is
      * here to prevent accidental construction of a PdfObject of integer type
@@ -376,14 +397,6 @@ void PdfObject::EnableDelayedStreamLoading()
 const PdfReference & PdfObject::Reference() const
 {
     return m_reference;
-}
-
-// -----------------------------------------------------
-// 
-// -----------------------------------------------------
-inline void PdfObject::SetOwner( PdfVecObjects* pVecObjects )
-{
-    m_pOwner = pVecObjects;
 }
 
 // -----------------------------------------------------

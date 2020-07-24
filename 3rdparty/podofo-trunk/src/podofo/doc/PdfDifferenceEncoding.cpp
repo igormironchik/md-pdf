@@ -2388,7 +2388,7 @@ PdfDifferenceEncoding::PdfDifferenceEncoding( PdfObject* pObject, bool bAutoDele
 
     if( this->GetObject()->GetDictionary().HasKey( PdfName("BaseEncoding") ) )
     {
-        const PdfName & rBase = this->GetObject()->GetDictionary().GetKey( PdfName("BaseEncoding") )->GetName();
+        const PdfName & rBase = this->GetObject()->MustGetIndirectKey( PdfName("BaseEncoding") )->GetName();
         
         if( rBase == PdfName("WinAnsiEncoding") )
             m_baseEncoding = eBaseEncoding_WinAnsi;
@@ -2401,7 +2401,7 @@ PdfDifferenceEncoding::PdfDifferenceEncoding( PdfObject* pObject, bool bAutoDele
     // Read the differences key
     if( this->GetObject()->GetDictionary().HasKey( PdfName("Differences") ) )
     {
-        const PdfArray & rDifferences = this->GetObject()->GetIndirectKey( PdfName("Differences") )->GetArray();
+        const PdfArray & rDifferences = this->GetObject()->MustGetIndirectKey( PdfName("Differences") )->GetArray();
         PdfArray::const_iterator it = rDifferences.begin();
 
         pdf_int64 curCode = -1;

@@ -331,7 +331,7 @@ const PdfDocument & PdfDocument::Append( const PdfMemDocument & rDoc, bool bAppe
                 oss << "No page " << i << " (the first is 0) found.";
                 PODOFO_RAISE_ERROR_INFO( ePdfError_PageNotFound, oss.str() );
             }
-            PdfObject*    pObj  = m_vecObjects.GetObject( PdfReference( pPage->GetObject()->Reference().ObjectNumber() + difference, pPage->GetObject()->Reference().GenerationNumber() ) );
+            PdfObject*    pObj  = m_vecObjects.MustGetObject( PdfReference( pPage->GetObject()->Reference().ObjectNumber() + difference, pPage->GetObject()->Reference().GenerationNumber() ) );
             if( pObj->IsDictionary() && pObj->GetDictionary().HasKey( "Parent" ) )
                 pObj->GetDictionary().RemoveKey( "Parent" );
 
@@ -363,7 +363,7 @@ const PdfDocument & PdfDocument::Append( const PdfMemDocument & rDoc, bool bAppe
                 pRoot = pRoot->Next();
             
             PdfReference ref( pAppendRoot->First()->GetObject()->Reference().ObjectNumber() + difference, pAppendRoot->First()->GetObject()->Reference().GenerationNumber() );
-            pRoot->InsertChild( new PdfOutlines( m_vecObjects.GetObject( ref ) ) );
+            pRoot->InsertChild( new PdfOutlines( m_vecObjects.MustGetObject( ref ) ) );
         }
     }
     
@@ -426,7 +426,7 @@ const PdfDocument &PdfDocument::InsertExistingPageAt( const PdfMemDocument & rDo
         }
 
         PdfPage*      pPage = rDoc.GetPage( i );
-        PdfObject*    pObj  = m_vecObjects.GetObject( PdfReference( pPage->GetObject()->Reference().ObjectNumber() + difference, pPage->GetObject()->Reference().GenerationNumber() ) );
+        PdfObject*    pObj  = m_vecObjects.MustGetObject( PdfReference( pPage->GetObject()->Reference().ObjectNumber() + difference, pPage->GetObject()->Reference().GenerationNumber() ) );
         if( pObj->IsDictionary() && pObj->GetDictionary().HasKey( "Parent" ) )
             pObj->GetDictionary().RemoveKey( "Parent" );
 
@@ -458,7 +458,7 @@ const PdfDocument &PdfDocument::InsertExistingPageAt( const PdfMemDocument & rDo
 	    pRoot = pRoot->Next();
     
         PdfReference ref( pAppendRoot->First()->GetObject()->Reference().ObjectNumber() + difference, pAppendRoot->First()->GetObject()->Reference().GenerationNumber() );
-        pRoot->InsertChild( new PdfOutlines( m_vecObjects.GetObject( ref ) ) );
+        pRoot->InsertChild( new PdfOutlines( m_vecObjects.MustGetObject( ref ) ) );
     }
     
     // TODO: merge name trees
@@ -486,7 +486,7 @@ PdfRect PdfDocument::FillXObjectFromPage( PdfXObject * pXObj, const PdfPage * pP
 {
     // TODO: remove unused objects: page, ...
 
-    PdfObject*    pObj  = m_vecObjects.GetObject( PdfReference( pPage->GetObject()->Reference().ObjectNumber() + difference, pPage->GetObject()->Reference().GenerationNumber() ) );
+    PdfObject*    pObj  = m_vecObjects.MustGetObject( PdfReference( pPage->GetObject()->Reference().ObjectNumber() + difference, pPage->GetObject()->Reference().GenerationNumber() ) );
     PdfRect       box  = pPage->GetMediaBox();
 
     // intersect with crop-box
@@ -504,11 +504,7 @@ PdfRect PdfDocument::FillXObjectFromPage( PdfXObject * pXObj, const PdfPage * pP
     if( pObj->IsDictionary() && pObj->GetDictionary().HasKey( "Contents" ) )
     {
         // get direct pointer to contents
-        PdfObject* pContents;
-        if( pObj->GetDictionary().GetKey( "Contents" )->IsReference() )
-            pContents = m_vecObjects.GetObject( pObj->GetDictionary().GetKey( "Contents" )->GetReference() );
-        else
-            pContents = pObj->GetDictionary().GetKey( "Contents" );
+        PdfObject* pContents = pObj->MustGetIndirectKey( "Contents" );
 
         if( pContents->IsArray() )
         {
@@ -714,7 +710,7 @@ void PdfDocument::SetUseFullScreen( void )
     
     // if current mode is anything but "don't care", we need to move that to non-full-screen
     if ( curMode != ePdfPageModeDontCare )
-        SetViewerPreference( PdfName( "NonFullScreenPageMode" ), PdfObject( *(GetCatalog()->GetIndirectKey( PdfName( "PageMode" ) )) ) );
+        SetViewerPreference( PdfName( "NonFullScreenPageMode" ), PdfObject( *(GetCatalog()->MustGetIndirectKey( PdfName( "PageMode" ) )) ) );
     
     SetPageMode( ePdfPageModeFullScreen );
 }

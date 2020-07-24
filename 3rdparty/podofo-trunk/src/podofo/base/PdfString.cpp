@@ -133,7 +133,8 @@ void PdfString::setFromWchar_t(const wchar_t* pszString, pdf_long lLen )
         {
             lLen = wcslen( pszString );
         }
-        if( sizeof(wchar_t) == 2 ) 
+        const bool wchar_t_is_two_bytes = sizeof(wchar_t) == 2;
+        if( wchar_t_is_two_bytes ) 
         {
             // We have UTF16
             lLen *= sizeof(wchar_t);
@@ -153,10 +154,10 @@ void PdfString::setFromWchar_t(const wchar_t* pszString, pdf_long lLen )
             // Try to convert to UTF8
             pdf_long   lDest = 5 * lLen; // At max 5 bytes per UTF8 char
             char*  pDest = static_cast<char*>(podofo_malloc( lDest ));
-			if (!pDest)
-			{
-				PODOFO_RAISE_ERROR(ePdfError_OutOfMemory);
-			}
+            if (!pDest)
+            {
+                PODOFO_RAISE_ERROR(ePdfError_OutOfMemory);
+            }
 
             size_t cnt   = wcstombs(pDest, pszString, lDest);
             if( cnt != static_cast<size_t>(-1) )
@@ -164,7 +165,7 @@ void PdfString::setFromWchar_t(const wchar_t* pszString, pdf_long lLen )
                 // No error
                 InitFromUtf8( reinterpret_cast<pdf_utf8*>(pDest), cnt );
                 podofo_free( pDest );
-	    }
+            }
             else
             {
                 podofo_free( pDest );
@@ -684,14 +685,12 @@ PdfString PdfString::HexEncode() const
         return *this;
     else
     {
-        std::auto_ptr<PdfFilter> pFilter;
-
         pdf_long                  lLen  = (m_buffer.GetSize() - 1) << 1;
         PdfString             str;
         PdfRefCountedBuffer   buffer( lLen + 1 );
         PdfMemoryOutputStream stream( buffer.GetBuffer(), lLen );
 
-        pFilter = PdfFilterFactory::Create( ePdfFilter_ASCIIHexDecode );
+        PODOFO_UNIQUEU_PTR<PdfFilter> pFilter( PdfFilterFactory::Create( ePdfFilter_ASCIIHexDecode ) );
         pFilter->BeginEncode( &stream );
         pFilter->EncodeBlock( m_buffer.GetBuffer(), (m_buffer.GetSize() - 1) );
         pFilter->EndEncode();
@@ -713,14 +712,12 @@ PdfString PdfString::HexDecode() const
         return *this;
     else
     {
-        std::auto_ptr<PdfFilter> pFilter;
-
         pdf_long                  lLen = m_buffer.GetSize() >> 1;
         PdfString             str;
         PdfRefCountedBuffer   buffer( lLen );
         PdfMemoryOutputStream stream( buffer.GetBuffer(), lLen );
 
-        pFilter = PdfFilterFactory::Create( ePdfFilter_ASCIIHexDecode );
+        PODOFO_UNIQUEU_PTR<PdfFilter> pFilter( PdfFilterFactory::Create( ePdfFilter_ASCIIHexDecode ) );
         pFilter->BeginDecode( &stream );
         pFilter->DecodeBlock( m_buffer.GetBuffer(), m_buffer.GetSize() );
         pFilter->EndDecode();

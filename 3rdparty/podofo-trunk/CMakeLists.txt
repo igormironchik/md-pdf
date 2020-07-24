@@ -20,6 +20,7 @@ SET(PODOFO_LIBVERSION "${PODOFO_SOVERSION}")
 #
 # Main includes
 #
+INCLUDE(CheckCXXSourceCompiles)
 INCLUDE(CheckIncludeFile)
 INCLUDE(CheckLibraryExists)
 INCLUDE(TestBigEndian)
@@ -92,21 +93,29 @@ ENDIF(WANT_LIB64)
 ENDIF(DEFINED LIB_SUFFIX)
 MESSAGE("Will install libraries to ${CMAKE_INSTALL_PREFIX}/${LIBDIRNAME}")
 
+CHECK_CXX_SOURCE_COMPILES("#include <memory>
+			class Cls {
+			public:
+			Cls() {}
+			~Cls() {}
+			};
+			int main(void) { std::unique_ptr<Cls> cls; return 0; }" PODOFO_HAVE_UNIQUE_PTR)
+
 # Some headers that tend to vary a bit
-CHECK_INCLUDE_FILE("strings.h" PODOFO_HAVE_STRINGS_H)
-CHECK_INCLUDE_FILE("arpa/inet.h" PODOFO_HAVE_ARPA_INET_H)
-CHECK_INCLUDE_FILE("winsock2.h" PODOFO_HAVE_WINSOCK2_H)
-CHECK_INCLUDE_FILE("mem.h" PODOFO_HAVE_MEM_H)
-CHECK_INCLUDE_FILE("ctype.h" PODOFO_HAVE_CTYPE_H)
+CHECK_INCLUDE_FILE("strings.h" PODOFO_HAVE_STRINGS_H) 
+CHECK_INCLUDE_FILE("arpa/inet.h" PODOFO_HAVE_ARPA_INET_H) 
+CHECK_INCLUDE_FILE("winsock2.h" PODOFO_HAVE_WINSOCK2_H) 
+CHECK_INCLUDE_FILE("mem.h" PODOFO_HAVE_MEM_H) 
+CHECK_INCLUDE_FILE("ctype.h" PODOFO_HAVE_CTYPE_H) 
 
 # Do some type size detection and provide yet another set of typedefs for fixed
 # font sizes. We can't use the c99 / c++0x uint32_t etc, because people use
 # ancient compilers that don't and will never support the standard.
 
-CHECK_INCLUDE_FILE("sys/types.h" PODOFO_HAVE_SYS_TYPES_H)
-CHECK_INCLUDE_FILE("stdint.h" PODOFO_HAVE_STDINT_H)
+CHECK_INCLUDE_FILE("sys/types.h" PODOFO_HAVE_SYS_TYPES_H) 
+CHECK_INCLUDE_FILE("stdint.h" PODOFO_HAVE_STDINT_H) 
 # See: http://msdn.microsoft.com/en-us/library/aa384264(VS.85).aspx
-CHECK_INCLUDE_FILE("BaseTsd.h" PODOFO_HAVE_BASETSD_H)
+CHECK_INCLUDE_FILE("BaseTsd.h" PODOFO_HAVE_BASETSD_H) 
 
 CHECK_TYPE_SIZE("long int" SZ_LONG)
 
@@ -290,7 +299,7 @@ IF(CMAKE_COMPILER_IS_GNUCXX)
 
     SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS}")
 
-    SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -Woverloaded-virtual -Wswitch-enum -Wcast-qual -Wwrite-strings -Wredundant-decls -Wreorder -Wno-deprecated-declarations")
+    SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -Woverloaded-virtual -Wswitch -Wcast-qual -Wwrite-strings -Wredundant-decls -Wreorder -Wno-deprecated-declarations")
 
     #
     # Note that we do not need debug definitions here. Set
@@ -539,7 +548,7 @@ FILE(WRITE
      "${PoDoFo_BINARY_DIR}/PoDoFoConfig.cmake"
      "# CMake module for PoDoFo\n"
      )
-FILE(APPEND
+FILE(APPEND 
      "${PoDoFo_BINARY_DIR}/PoDoFoConfig.cmake"
      "SET(PODOFO_INCLUDES ${PoDoFo_SOURCE_DIR}/src)\n"
      )

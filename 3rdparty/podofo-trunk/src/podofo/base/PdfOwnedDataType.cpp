@@ -1,5 +1,5 @@
 /***************************************************************************
- *   Copyright (C) 2010 by Dominik Seichter                                *
+ *   Copyright (C) 2006 by Dominik Seichter                                *
  *   domseichter@web.de                                                    *
  *                                                                         *
  *   This program is free software; you can redistribute it and/or modify  *
@@ -31,51 +31,48 @@
  *   files in the program, then also delete it here.                       *
  ***************************************************************************/
 
-#ifndef _PDF_OBJECT_STREAM_PARSER_OBJECT_H_
-#define _PDF_OBJECT_STREAM_PARSER_OBJECT_H_
-
-#include "PdfDefines.h"
-
-#include "PdfRefCountedBuffer.h"
+#include "PdfOwnedDataType.h"
+#include "PdfObject.h"
+#include "PdfVecObjects.h"
 
 namespace PoDoFo {
 
-class PdfParserObject;
-class PdfVecObjects;
+PdfOwnedDataType::PdfOwnedDataType()
+    : m_pOwner( NULL )
+{
+}
 
-/**
- * A utility class for PdfParser that can parse
- * an object stream object.
- *
- * It is mainly here to make PdfParser more modular.
- */
-class PdfObjectStreamParserObject {
-public:
-	typedef std::vector<pdf_int64> ObjectIdList;
-    /**
-     * Create a new PdfObjectStreamParserObject from an existing
-     * PdfParserObject. The PdfParserObject will be removed and deleted.
-     * All objects from the object stream will be read into memory.
-     *
-     * \param pParser PdfParserObject for an object stream
-     * \param pVecObjects add loaded objecs to this vector of objects
-     * \param rBuffer use this allocated buffer for caching
-     */
-    PdfObjectStreamParserObject(PdfParserObject* pParser, PdfVecObjects* pVecObjects, const PdfRefCountedBuffer & rBuffer);
+// NOTE: Don't copy owner. Copied objects must be always detached.
+// Ownership will be set automatically elsewhere
+PdfOwnedDataType::PdfOwnedDataType( const PdfOwnedDataType &rhs )
+    : PdfDataType( rhs ), m_pOwner( NULL )
+{
+}
 
-    ~PdfObjectStreamParserObject();
+PdfObject * PdfOwnedDataType::GetIndirectObject( const PdfReference &rReference ) const
+{
+    if ( m_pOwner == NULL )
+        PODOFO_RAISE_ERROR_INFO( ePdfError_InvalidHandle, "Object is a reference but does not have an owner!" );
 
-    void Parse(ObjectIdList const &);
+    return m_pOwner->GetOwner()->GetObject( rReference );
+}
 
-private:
-    void ReadObjectsFromStream( char* pBuffer, pdf_long lBufferLen, pdf_int64 lNum, pdf_int64 lFirst, ObjectIdList const &);
+void PdfOwnedDataType::SetOwner( PdfObject* pOwner )
+{
+    PODOFO_ASSERT( pOwner != NULL );
+    m_pOwner = pOwner;
+}
 
-private:
-    PdfParserObject* m_pParser;
-    PdfVecObjects* m_vecObjects;
-    PdfRefCountedBuffer m_buffer;
+PdfOwnedDataType & PdfOwnedDataType::operator=( const PdfOwnedDataType & rhs )
+{
+    // NOTE: Don't copy owner. Objects being assigned will keep current ownership
+    PdfDataType::operator=( rhs );
+    return *this;
+}
+
+PdfVecObjects * PdfOwnedDataType::GetObjectOwner()
+{
+    return m_pOwner == NULL ? NULL : m_pOwner->GetOwner();
+}
+
 };
-
-};
-
-#endif // _PDF_OBJECT_STREAM_PARSER_OBJECT_H_

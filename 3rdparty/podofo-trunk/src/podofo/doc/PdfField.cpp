@@ -82,16 +82,10 @@ PdfField::PdfField( EPdfField eField, PdfPage* pPage, const PdfRect & rRect, Pdf
     Init( pDoc->GetAcroForm() );
 }
 
-PdfField::PdfField( EPdfField eField, PdfAnnotation* pWidget, PdfAcroForm* pParent, PdfDocument* pDoc)
+PdfField::PdfField( EPdfField eField, PdfAnnotation* pWidget, PdfAcroForm* pParent, PdfDocument*)
     : m_pObject( pWidget->GetObject() ), m_pWidget( pWidget ), m_eField( eField )
 {
     Init( pParent );
-    PdfObject* pFields = pParent->GetObject()->GetDictionary().GetKey( PdfName("Fields") );
-    if( pFields && pFields->IsReference())  {
-       PdfObject *pRefFld = pDoc->GetObjects()->GetObject(pFields->GetReference());
-       if(pRefFld)
-         pRefFld->GetArray().push_back( m_pObject->Reference() );
-    }
 }
 
 PdfField::PdfField( EPdfField eField, PdfPage* pPage, const PdfRect & rRect, PdfDocument* pDoc, bool bAppearanceNone)
@@ -116,18 +110,9 @@ PdfField::PdfField( const PdfField & rhs )
 void PdfField::Init( PdfAcroForm* pParent )
 {
     // Insert into the parents kids array
-    PdfObject* pFields = pParent->GetObject()->GetDictionary().GetKey( PdfName("Fields") );
-    if( pFields ) 
-    {
-        if(!pFields->IsReference() ) 
-	{
-            pFields->GetArray().push_back( m_pObject->Reference() );
-	}
-    }
-    else
-    {
-        PODOFO_RAISE_ERROR( ePdfError_NoObject );
-    }
+    if( !pParent->GetObject()->GetDictionary().HasKey( "Fields" ) )
+        pParent->GetObject()->GetDictionary().AddKey( "Fields", PdfArray() );
+    pParent->GetObject()->MustGetIndirectKey( "Fields" )->GetArray().push_back( m_pObject->Reference() );
 
     switch( m_eField ) 
     {
@@ -166,7 +151,7 @@ PdfField::PdfField( PdfObject* pObject, PdfAnnotation* pWidget )
     : m_pObject( pObject ), m_pWidget( pWidget ), m_eField( ePdfField_Unknown )
 {
     // ISO 32000:2008, Section 12.7.3.1, Table 220, Page #432.
-    const PdfObject *pFT = m_pObject->GetDictionary().GetKey(PdfName("FT") );
+    const PdfObject *pFT = m_pObject->GetIndirectKey(PdfName("FT") );
 
     if (!pFT && m_pObject->GetDictionary().HasKey( PdfName ("Parent") ) )
     {
@@ -176,7 +161,7 @@ PdfField::PdfField( PdfObject* pObject, PdfAnnotation* pWidget )
             PODOFO_RAISE_ERROR (ePdfError_InvalidDataType);
         }
 
-        pFT = pTemp->GetDictionary().GetKey( PdfName ("FT") );
+        pFT = pTemp->GetIndirectKey( PdfName ("FT") );
     }
 
     if (!pFT)
@@ -218,7 +203,7 @@ PdfObject* PdfField::GetAppearanceCharacteristics( bool bCreate ) const
         const_cast<PdfField*>(this)->m_pObject->GetDictionary().AddKey( PdfName("MK"), dictionary );
     }
 
-    pMK = m_pObject->GetDictionary().GetKey( PdfName("MK") );
+    pMK = m_pObject->GetIndirectKey( PdfName("MK") );
 
     return pMK;
 }
@@ -228,7 +213,7 @@ void PdfField::SetFieldFlag( long lValue, bool bSet )
     pdf_int64 lCur = 0;
 
     if( m_pObject->GetDictionary().HasKey( PdfName("Ff") ) )
-        lCur = m_pObject->GetDictionary().GetKey( PdfName("Ff") )->GetNumber();
+        lCur = m_pObject->MustGetIndirectKey( PdfName("Ff") )->GetNumber();
     
     if( bSet )
         lCur |= lValue;
@@ -247,7 +232,7 @@ bool PdfField::GetFieldFlag( long lValue, bool bDefault ) const
 
     if( m_pObject->GetDictionary().HasKey( PdfName("Ff") ) )
     {
-        lCur = m_pObject->GetDictionary().GetKey( PdfName("Ff") )->GetNumber();
+        lCur = m_pObject->MustGetIndirectKey( PdfName("Ff") )->GetNumber();
 
         return (lCur & lValue) == lValue; 
     }
@@ -288,7 +273,7 @@ EPdfHighlightingMode PdfField::GetHighlightingMode() const
 
     if( m_pObject->GetDictionary().HasKey( PdfName("H") ) )
     {
-        PdfName value = m_pObject->GetDictionary().GetKey( PdfName("H") )->GetName();
+        PdfName value = m_pObject->MustGetIndirectKey( PdfName("H") )->GetName();
         if( value == PdfName("N") )
             return ePdfHighlightingMode_None;
         else if( value == PdfName("I") )
@@ -390,7 +375,7 @@ void PdfField::SetFieldName( const PdfString & rsName )
 PdfString PdfField::GetFieldName() const
 {
     if( m_pObject->GetDictionary().HasKey( PdfName("T" ) ) )
-        return m_pObject->GetDictionary().GetKey( PdfName("T" ) )->GetString();
+        return m_pObject->MustGetIndirectKey( PdfName("T" ) )->GetString();
 
     return PdfString::StringNull;
 }
@@ -403,7 +388,7 @@ void PdfField::SetAlternateName( const PdfString & rsName )
 PdfString PdfField::GetAlternateName() const
 {
     if( m_pObject->GetDictionary().HasKey( PdfName("TU" ) ) )
-        return m_pObject->GetDictionary().GetKey( PdfName("TU" ) )->GetString();
+        return m_pObject->MustGetIndirectKey( PdfName("TU" ) )->GetString();
 
     return PdfString::StringNull;
 }
@@ -416,7 +401,7 @@ void PdfField::SetMappingName( const PdfString & rsName )
 PdfString PdfField::GetMappingName() const
 {
     if( m_pObject->GetDictionary().HasKey( PdfName("TM" ) ) )
-        return m_pObject->GetDictionary().GetKey( PdfName("TM" ) )->GetString();
+        return m_pObject->MustGetIndirectKey( PdfName("TM" ) )->GetString();
 
     return PdfString::StringNull;
 }
@@ -426,7 +411,7 @@ void PdfField::AddAlternativeAction( const PdfName & rsName, const PdfAction & r
     if( !m_pObject->GetDictionary().HasKey( PdfName("AA") ) ) 
         m_pObject->GetDictionary().AddKey( PdfName("AA"), PdfDictionary() );
 
-    PdfObject* pAA = m_pObject->GetDictionary().GetKey( PdfName("AA") );
+    PdfObject* pAA = m_pObject->MustGetIndirectKey( PdfName("AA") );
     pAA->GetDictionary().AddKey( rsName, rAction.GetObject()->Reference() );
 }
 
@@ -468,7 +453,7 @@ const PdfString PdfButton::GetCaption() const
     PdfObject* pMK = this->GetAppearanceCharacteristics( false );
     
     if( pMK && pMK->GetDictionary().HasKey( PdfName("CA") ) )
-        return pMK->GetDictionary().GetKey( PdfName("CA") )->GetString();
+        return pMK->MustGetIndirectKey( PdfName("CA") )->GetString();
 
     return PdfString::StringNull;
 }
@@ -562,7 +547,7 @@ const PdfString PdfPushButton::GetRolloverCaption() const
     PdfObject* pMK = this->GetAppearanceCharacteristics( false );
     
     if( pMK && pMK->GetDictionary().HasKey( PdfName("RC") ) )
-        return pMK->GetDictionary().GetKey( PdfName("RC") )->GetString();
+        return pMK->MustGetIndirectKey( PdfName("RC") )->GetString();
 
     return PdfString::StringNull;
 }
@@ -579,7 +564,7 @@ const PdfString PdfPushButton::GetAlternateCaption() const
     PdfObject* pMK = this->GetAppearanceCharacteristics( false );
     
     if( pMK && pMK->GetDictionary().HasKey( PdfName("AC") ) )
-        return pMK->GetDictionary().GetKey( PdfName("AC") )->GetString();
+        return pMK->MustGetIndirectKey( PdfName("AC") )->GetString();
 
     return PdfString::StringNull;
 }
@@ -666,11 +651,11 @@ void PdfCheckBox::AddAppearanceStream( const PdfName & rName, const PdfReference
     if( !m_pObject->GetDictionary().HasKey( PdfName("AP") ) )
         m_pObject->GetDictionary().AddKey( PdfName("AP"), PdfDictionary() );
 
-    if( !m_pObject->GetDictionary().GetKey( PdfName("AP") )->GetDictionary().HasKey( PdfName("N") ) )
-        m_pObject->GetDictionary().GetKey( PdfName("AP") )->GetDictionary().AddKey( PdfName("N"), PdfDictionary() );
+    if( !m_pObject->MustGetIndirectKey( PdfName("AP") )->GetDictionary().HasKey( PdfName("N") ) )
+        m_pObject->MustGetIndirectKey( PdfName("AP") )->GetDictionary().AddKey( PdfName("N"), PdfDictionary() );
 
-    m_pObject->GetDictionary().GetKey( PdfName("AP") )->
-        GetDictionary().GetKey( PdfName("N") )->GetDictionary().AddKey( rName, rReference );
+    m_pObject->MustGetIndirectKey( PdfName("AP") )->
+        MustGetIndirectKey( PdfName("N") )->GetDictionary().AddKey( rName, rReference );
 }
 
 void PdfCheckBox::SetAppearanceChecked( const PdfXObject & rXObject )
@@ -691,13 +676,11 @@ void PdfCheckBox::SetChecked( bool bChecked )
 
 bool PdfCheckBox::IsChecked() const
 {
-    PdfDictionary dic = m_pObject->GetDictionary();
-
-    if (dic.HasKey(PdfName("V"))) {
-        PdfName name = dic.GetKey( PdfName("V") )->GetName();
+    if (m_pObject->GetDictionary().HasKey(PdfName("V"))) {
+        PdfName name = m_pObject->MustGetIndirectKey( PdfName("V") )->GetName();
         return (name == PdfName("Yes") || name == PdfName("On"));
-     } else if (dic.HasKey(PdfName("AS"))) {
-        PdfName name = dic.GetKey( PdfName("AS") )->GetName();
+     } else if (m_pObject->GetDictionary().HasKey(PdfName("AS"))) {
+        PdfName name = m_pObject->MustGetIndirectKey( PdfName("AS") )->GetName();
         return (name == PdfName("Yes") || name == PdfName("On"));
      }
 
@@ -763,7 +746,7 @@ PdfString PdfTextField::GetText() const
     PdfString str;
 
     if( m_pObject->GetDictionary().HasKey( key ) )
-        str = m_pObject->GetDictionary().GetKey( key )->GetString();
+        str = m_pObject->MustGetIndirectKey( key )->GetString();
 
     return str;
 }
@@ -776,7 +759,7 @@ void PdfTextField::SetMaxLen( pdf_long nMaxLen )
 pdf_long  PdfTextField::GetMaxLen() const
 {
     return static_cast<pdf_long>(m_pObject->GetDictionary().HasKey( PdfName("MaxLen") ) ? 
-                                 m_pObject->GetDictionary().GetKey( PdfName("MaxLen") )->GetNumber() : -1);
+                                 m_pObject->MustGetIndirectKey( PdfName("MaxLen") )->GetNumber() : -1);
 }
 
 /////////////////////////////////////////////////////////////////////////////
@@ -813,7 +796,6 @@ PdfListField::PdfListField( const PdfField & rhs )
 void PdfListField::InsertItem( const PdfString & rsValue, const PdfString & rsDisplayName )
 {
     PdfVariant var;
-    PdfArray   opt;
 
     if( rsDisplayName == PdfString::StringNull ) 
         var = rsValue;
@@ -826,12 +808,13 @@ void PdfListField::InsertItem( const PdfString & rsValue, const PdfString & rsDi
         var = array;
     }
 
-    if( m_pObject->GetDictionary().HasKey( PdfName("Opt") ) )
-        opt = m_pObject->GetDictionary().GetKey( PdfName("Opt") )->GetArray();
+    if( !m_pObject->GetDictionary().HasKey( PdfName("Opt") ) )
+        m_pObject->GetDictionary().AddKey( PdfName("Opt"), PdfArray() );
+
+    PdfArray &opt = m_pObject->MustGetIndirectKey( PdfName("Opt") )->GetArray();
 
     // TODO: Sorting
     opt.push_back( var );
-    m_pObject->GetDictionary().AddKey( PdfName("Opt"), opt );
 
     /*
     m_pObject->GetDictionary().AddKey( PdfName("V"), rsValue );
@@ -844,10 +827,10 @@ void PdfListField::InsertItem( const PdfString & rsValue, const PdfString & rsDi
 
 void PdfListField::RemoveItem( int nIndex )
 {
-    PdfArray   opt;
+    if( !m_pObject->GetDictionary().HasKey( PdfName("Opt") ) )
+        m_pObject->GetDictionary().AddKey( PdfName("Opt"), PdfArray() );
 
-    if( m_pObject->GetDictionary().HasKey( PdfName("Opt") ) )
-        opt = m_pObject->GetDictionary().GetKey( PdfName("Opt") )->GetArray();
+    PdfArray &opt = m_pObject->MustGetIndirectKey( PdfName("Opt") )->GetArray();
     
     if( nIndex < 0 || nIndex > static_cast<int>(opt.size()) )
     {
@@ -855,7 +838,6 @@ void PdfListField::RemoveItem( int nIndex )
     }
 
     opt.erase( opt.begin() + nIndex );
-    m_pObject->GetDictionary().AddKey( PdfName("Opt"), opt );
 }
 
 const PdfString PdfListField::GetItem( int nIndex ) const
@@ -863,7 +845,7 @@ const PdfString PdfListField::GetItem( int nIndex ) const
     PdfArray   opt;
     
     if( m_pObject->GetDictionary().HasKey( PdfName("Opt") ) )
-        opt = m_pObject->GetDictionary().GetKey( PdfName("Opt") )->GetArray();
+        opt = m_pObject->MustGetIndirectKey( PdfName("Opt") )->GetArray();
     
     if( nIndex < 0 || nIndex > static_cast<int>(opt.size()) )
     {
@@ -889,7 +871,7 @@ const PdfString PdfListField::GetItemDisplayText( int nIndex ) const
     PdfArray   opt;
     
     if( m_pObject->GetDictionary().HasKey( PdfName("Opt") ) )
-        opt = m_pObject->GetDictionary().GetKey( PdfName("Opt") )->GetArray();
+        opt = m_pObject->MustGetIndirectKey( PdfName("Opt") )->GetArray();
     
     if( nIndex < 0 || nIndex >= static_cast<int>(opt.size()) )
     {
@@ -915,7 +897,7 @@ size_t PdfListField::GetItemCount() const
     PdfArray   opt;
     
     if( m_pObject->GetDictionary().HasKey( PdfName("Opt") ) )
-        opt = m_pObject->GetDictionary().GetKey( PdfName("Opt") )->GetArray();
+        opt = m_pObject->MustGetIndirectKey( PdfName("Opt") )->GetArray();
     
     return opt.size();
 }
@@ -931,7 +913,7 @@ int PdfListField::GetSelectedItem() const
 {
     if( m_pObject->GetDictionary().HasKey( PdfName("V") ) )
     {
-        PdfObject* pValue = m_pObject->GetDictionary().GetKey( PdfName("V") );
+        PdfObject* pValue = m_pObject->MustGetIndirectKey( PdfName("V") );
         if( pValue->IsString() || pValue->IsHexString() )
         {
             PdfString value = pValue->GetString();

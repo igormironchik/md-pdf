@@ -192,7 +192,7 @@ PdfFont* PdfFontFactory::CreateFont( FT_Library*, PdfObject* pObject )
     PdfObject*      pDescriptor = NULL;
     PdfObject*      pEncoding   = NULL;
 
-    PdfVariant* pTypeKey = pObject->GetDictionary().GetKey( PdfName::KeyType );
+    PdfVariant* pTypeKey = pObject->GetIndirectKey( PdfName::KeyType );
     if ( NULL == pTypeKey )
     {
         PODOFO_RAISE_ERROR_INFO( ePdfError_InvalidDataType, "Font: No Type" );
@@ -203,8 +203,7 @@ PdfFont* PdfFontFactory::CreateFont( FT_Library*, PdfObject* pObject )
         PODOFO_RAISE_ERROR( ePdfError_InvalidDataType );
     }
 
-    PdfVariant* pSubTypeKey = pObject->GetDictionary()
-                            .GetKey( PdfName::KeySubtype );
+    PdfVariant* pSubTypeKey = pObject->GetIndirectKey( PdfName::KeySubtype );
     if ( NULL == pSubTypeKey )
     {
         PODOFO_RAISE_ERROR_INFO( ePdfError_InvalidDataType, "Font: No SubType" );
@@ -212,21 +211,33 @@ PdfFont* PdfFontFactory::CreateFont( FT_Library*, PdfObject* pObject )
     const PdfName & rSubType = pSubTypeKey->GetName();
     if( rSubType == PdfName("Type0") ) 
     {
+        // TABLE 5.18 Entries in a Type 0 font dictionary
+
         // The PDF reference states that DescendantFonts must be an array,
         // some applications (e.g. MS Word) put the array into an indirect object though.
-        const PdfObject* const pDescendantObj = pObject->GetIndirectKey( "DescendantFonts" );
+        PdfObject* const pDescendantObj = pObject->GetIndirectKey( "DescendantFonts" );
 
         if ( NULL == pDescendantObj )
             PODOFO_RAISE_ERROR_INFO( ePdfError_InvalidDataType, "Type0 Font: No DescendantFonts" );
         
-        const PdfArray & descendant = pDescendantObj->GetArray();
+        PdfArray & descendants = pDescendantObj->GetArray();
         PdfObject* pFontObject = NULL;
         
-        if (descendant.size() && descendant[0].IsReference())
+        if( descendants.size() )
         {
-            pFontObject = pObject->GetOwner()->GetObject( descendant[0].GetReference() );
+            // DescendantFonts is a one-element array
+            PdfObject &descendant = descendants[0];
 
-            pDescriptor = pFontObject->GetIndirectKey( "FontDescriptor" );
+            if( descendant.IsReference() )
+            {
+                pFontObject = pObject->GetOwner()->GetObject( descendant.GetReference() );
+                pDescriptor = pFontObject->GetIndirectKey( "FontDescriptor" );
+            }
+            else
+            {
+                pFontObject = &descendant;
+                pDescriptor = pFontObject->GetIndirectKey( "FontDescriptor" );
+            }
         }
         pEncoding   = pObject->GetIndirectKey( "Encoding" );
 
@@ -295,7 +306,7 @@ PdfFont* PdfFontFactory::CreateFont( FT_Library*, PdfObject* pObject )
            // Its extremely complicated to interpret the type1 font programs
            // so i try to determine if its a symbolic font by reading the FontDescriptor Flags
            // Flags & 4 --> Symbolic, Flags & 32 --> Nonsymbolic
-            pdf_int32 lFlags = static_cast<pdf_int32>(pDescriptor->GetDictionary().GetKeyAsLong( "Flags", 0L ));
+            pdf_int32 lFlags = static_cast<pdf_int32>(pDescriptor->GetIndirectKeyAsLong( "Flags", 0L ));
             if ( lFlags & 32 ) // Nonsymbolic, otherwise pEncoding remains NULL
                 pPdfEncoding = PdfEncodingFactory::GlobalStandardEncodingInstance();
         }

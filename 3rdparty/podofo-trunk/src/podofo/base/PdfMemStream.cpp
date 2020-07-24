@@ -153,7 +153,7 @@ void PdfMemStream::FlateCompress()
     // TODO: Handle DecodeParms
     if( m_pParent->GetDictionary().HasKey( "Filter" ) )
     {
-        pObj = m_pParent->GetIndirectKey( "Filter" );
+        pObj = m_pParent->MustGetIndirectKey( "Filter" );
 
         if( pObj->IsName() )
         {
@@ -245,7 +245,7 @@ void PdfMemStream::FlateCompressStreamData()
     if( !m_lLength )
         return;
 
-    std::auto_ptr<PdfFilter> pFilter = PdfFilterFactory::Create( ePdfFilter_FlateDecode );
+    PODOFO_UNIQUEU_PTR<PdfFilter> pFilter( PdfFilterFactory::Create( ePdfFilter_FlateDecode ) );
     if( pFilter.get() )
     {
         pFilter->Encode( m_buffer.GetBuffer(), m_buffer.GetSize(), &pBuffer, &lLen );
