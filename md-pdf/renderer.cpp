@@ -586,7 +586,7 @@ PdfRenderer::drawString( PdfAuxData & pdfData, const RenderOpts & renderOpts,
 
 	static const QString charsWithoutSpaceBefore = QLatin1String( ".,;" );
 
-	const auto words = str.split( QLatin1Char( ' ' ), QString::SkipEmptyParts );
+	const auto words = str.split( QLatin1Char( ' ' ), Qt::SkipEmptyParts );
 
 	const auto wv = pdfData.coords.pageWidth - pdfData.coords.margins.right;
 
@@ -1091,7 +1091,8 @@ LoadImageFromNetwork::loadImpl()
 
 	connect( m_reply, &QNetworkReply::finished, this, &LoadImageFromNetwork::loadFinished );
 	connect( m_reply,
-		static_cast< void(QNetworkReply::*)(QNetworkReply::NetworkError) >( &QNetworkReply::error ),
+		static_cast< void(QNetworkReply::*)(QNetworkReply::NetworkError) >(
+			&QNetworkReply::errorOccurred ),
 		this, &LoadImageFromNetwork::loadError );
 }
 
@@ -1153,7 +1154,7 @@ PdfRenderer::drawCode( PdfAuxData & pdfData, const RenderOpts & renderOpts,
 
 	pdfData.coords.x = pdfData.coords.margins.left + offset;
 
-	const auto lines = item->text().split( QLatin1Char( '\n' ), QString::KeepEmptyParts );
+	const auto lines = item->text().split( QLatin1Char( '\n' ), Qt::KeepEmptyParts );
 
 	auto * font = createFont( renderOpts.m_codeFont, false, false, renderOpts.m_codeFontSize,
 		pdfData.doc );
@@ -1543,7 +1544,7 @@ PdfRenderer::createAuxTable( PdfAuxData & pdfData, const RenderOpts & renderOpts
 							font->SetStrikeOut( true );
 
 						const auto words = t->text().split( QLatin1Char( ' ' ),
-							QString::SkipEmptyParts );
+							Qt::SkipEmptyParts );
 
 						for( const auto & w : words )
 						{
@@ -1564,7 +1565,7 @@ PdfRenderer::createAuxTable( PdfAuxData & pdfData, const RenderOpts & renderOpts
 							renderOpts.m_codeFontSize, pdfData.doc );
 
 						const auto words = c->text().split( QLatin1Char( ' ' ),
-							QString::SkipEmptyParts );
+							Qt::SkipEmptyParts );
 
 						for( const auto & w : words )
 						{
@@ -1606,7 +1607,7 @@ PdfRenderer::createAuxTable( PdfAuxData & pdfData, const RenderOpts & renderOpts
 						else if( !l->text().isEmpty() )
 						{
 							const auto words = l->text().split( QLatin1Char( ' ' ),
-								QString::SkipEmptyParts );
+								Qt::SkipEmptyParts );
 
 							for( const auto & w : words )
 							{

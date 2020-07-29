@@ -470,7 +470,7 @@ Parser::parseTable( QStringList & fr, QSharedPointer< Block > parent,
 		{
 			auto fmt = fr.at( 1 );
 
-			auto columns = fmt.split( sep, QString::SkipEmptyParts );
+			auto columns = fmt.split( sep, Qt::SkipEmptyParts );
 
 			for( auto it = columns.begin(), last = columns.end(); it != last; ++it )
 			{
