@@ -11,9 +11,9 @@ set( CMAKE_AUTOMOC ON )
 set( CMAKE_AUTORCC ON )
 set( CMAKE_AUTOUIC ON )
 
-find_package(Qt5 COMPONENTS Core REQUIRED)
-find_package(Qt5 COMPONENTS Widgets REQUIRED)
-find_package(Qt5 COMPONENTS Network REQUIRED)
+find_package(Qt5Core 5.15 REQUIRED)
+find_package(Qt5Widgets 5.15 REQUIRED)
+find_package(Qt5Network 5.15 REQUIRED)
 
 set( LIB_SRC md_doc.hpp
     md_doc.cpp

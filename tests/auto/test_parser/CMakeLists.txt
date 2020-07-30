@@ -1,7 +1,7 @@
 
 project( test.md_parser )
 
-find_package( Qt5 COMPONENTS Core REQUIRED )
+find_package( Qt5Core 5.15 REQUIRED )
 
 if( ENABLE_COVERAGE )
 	set( CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} ${CMAKE_CURRENT_SOURCE_DIR}/../../../cmake )
