@@ -96,6 +96,8 @@ Parser::parseFile( const QString & fileName, bool recursive, QSharedPointer< Doc
 
 			if( recursive && !linksToParse.isEmpty() )
 			{
+				const auto tmpLinks = linksToParse;
+
 				while( !linksToParse.isEmpty() )
 				{
 					auto nextFileName = linksToParse.first();
@@ -120,7 +122,7 @@ Parser::parseFile( const QString & fileName, bool recursive, QSharedPointer< Doc
 				}
 
 				if( parentLinks )
-					parentLinks->append( linksToParse );
+					parentLinks->append( tmpLinks );
 			}
 		}
 	}
