@@ -50,7 +50,7 @@ Parser::parse( const QString & fileName, bool recursive, QTextCodec * codec )
 
 void
 Parser::parseFile( const QString & fileName, bool recursive, QSharedPointer< Document > doc,
-	QTextCodec * codec )
+	QTextCodec * codec, QStringList * parentLinks )
 {
 	QFileInfo fi( fileName );
 
@@ -77,6 +77,23 @@ Parser::parseFile( const QString & fileName, bool recursive, QSharedPointer< Doc
 
 			m_parsedFiles.append( fi.absoluteFilePath() );
 
+			for( auto it = linksToParse.begin(), last = linksToParse.end(); it != last; ++it )
+			{
+				auto nextFileName = *it;
+
+				if( nextFileName.startsWith( QLatin1Char( '#' ) ) )
+				{
+					if( doc->labeledLinks().contains( nextFileName ) )
+						nextFileName = doc->labeledLinks()[ nextFileName ]->url();
+					else
+						continue;
+				}
+
+				QFileInfo nextFile( nextFileName );
+
+				*it = nextFile.absoluteFilePath();
+			}
+
 			if( recursive && !linksToParse.isEmpty() )
 			{
 				while( !linksToParse.isEmpty() )
@@ -84,24 +101,26 @@ Parser::parseFile( const QString & fileName, bool recursive, QSharedPointer< Doc
 					auto nextFileName = linksToParse.first();
 					linksToParse.removeFirst();
 
-					if( nextFileName.startsWith( QLatin1Char( '#' ) ) )
+					if( parentLinks )
 					{
-						if( doc->labeledLinks().contains( nextFileName ) )
-							nextFileName = doc->labeledLinks()[ nextFileName ]->url();
-						else
+						if( parentLinks->contains( nextFileName ) )
 							continue;
 					}
 
-					QFileInfo nextFile( nextFileName );
+					if( nextFileName.startsWith( QLatin1Char( '#' ) ) )
+						continue;
 
-					if( !m_parsedFiles.contains( nextFile.absoluteFilePath() ) )
+					if( !m_parsedFiles.contains( nextFileName ) )
 					{
 						if( !doc->isEmpty() && doc->items().last()->type() != ItemType::PageBreak )
 							doc->appendItem( QSharedPointer< PageBreak > ( new PageBreak() ) );
 
-						parseFile( nextFile.absoluteFilePath(), recursive, doc, codec );
+						parseFile( nextFileName, recursive, doc, codec, &linksToParse );
 					}
 				}
+
+				if( parentLinks )
+					parentLinks->append( linksToParse );
 			}
 		}
 	}

@@ -49,7 +49,7 @@ public:
 
 private:
 	void parseFile( const QString & fileName, bool recursive, QSharedPointer< Document > doc,
-		QTextCodec * codec );
+		QTextCodec * codec, QStringList * parentLinks = nullptr );
 	void clearCache();
 
 	enum class BlockType {
