@@ -2593,3 +2593,31 @@ TEST_CASE( "comments" )
 	auto * t = static_cast< MD::Text* > ( p->items().at( 0 ).data() );
 	REQUIRE( t->text() == QLatin1String( "--> # Heading 1" ) );
 }
+#include <QDebug>
+TEST_CASE( "links with slashes" )
+{
+	MD::Parser parser;
+	auto doc = parser.parse( QStringLiteral( "./test50.md" ) );
+	REQUIRE( doc->isEmpty() == false );
+	REQUIRE( doc->items().size() == 2 );
+	REQUIRE( doc->items().at( 1 )->type() == MD::ItemType::Paragraph );
+
+	auto * p = static_cast< MD::Paragraph* > ( doc->items().at( 1 ).data() );
+	REQUIRE( p->items().size() == 4 );
+
+	REQUIRE( p->items().at( 0 )->type() == MD::ItemType::Link );
+	auto l0 = static_cast< MD::Link* > ( p->items().at( 0 ).data() );
+	REQUIRE( l0->text() == QStringLiteral( "a]" ) );
+
+	REQUIRE( p->items().at( 1 )->type() == MD::ItemType::Link );
+	auto l1 = static_cast< MD::Link* > ( p->items().at( 1 ).data() );
+	REQUIRE( l1->text() == QStringLiteral( "b\\" ) );
+
+	REQUIRE( p->items().at( 2 )->type() == MD::ItemType::Link );
+	auto l2 = static_cast< MD::Link* > ( p->items().at( 2 ).data() );
+	REQUIRE( l2->text() == QStringLiteral( "c-d" ) );
+
+	REQUIRE( p->items().at( 3 )->type() == MD::ItemType::Link );
+	auto l3 = static_cast< MD::Link* > ( p->items().at( 3 ).data() );
+	REQUIRE( l3->text() == QStringLiteral( "\\" ) );
+}

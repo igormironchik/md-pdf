@@ -284,14 +284,28 @@ QString readLinkText( int & i, const QString & line )
 {
 	const int length = line.length();
 	QString t;
+	bool first = true;
+	bool skipped = false;
 
 	while( i < length )
 	{
-		if( line[ i ] != QLatin1Char( ']' ) && line[ i - 1 ] != QLatin1Char( '\\' ) )
+		if( !first && !skipped && line[ i - 1 ] == QLatin1Char( '\\' ) )
+		{
 			t.append( line[ i ] );
-		else
+
+			skipped = true;
+			first = false;
+			++i;
+
+			continue;
+		}
+		else if( line[ i ] != QLatin1Char( ']' ) && line[ i ] != QLatin1Char( '\\' ) )
+			t.append( line[ i ] );
+		else if( line[ i ] == QLatin1Char( ']' ) )
 			break;
 
+		first = false;
+		skipped = false;
 		++i;
 	}
 
