@@ -251,7 +251,6 @@ PdfRenderer::resolveLinks( PdfAuxData & pdfData )
 					PdfRect( r.first.x(), r.first.y(), r.first.width(), r.first.height() ) );
 				annot->SetBorderStyle( 0.0, 0.0, 0.0 );
 				annot->SetDestination( m_dests.value( it.key(), PdfDestination( pdfData.page ) ) );
-				annot->SetFlags( ePdfAnnotationFlags_NoZoom );
 			}
 		}
 	}
@@ -533,7 +532,6 @@ PdfRenderer::drawLink( PdfAuxData & pdfData, const RenderOpts & renderOpts,
 				action.SetURI( PdfString( url.toLatin1().data() ) );
 
 				annot->SetAction( action );
-				annot->SetFlags( ePdfAnnotationFlags_NoZoom );
 			}
 		}
 		else
@@ -2202,7 +2200,6 @@ PdfRenderer::processLinksInTable( PdfAuxData & pdfData,
 					action.SetURI( PdfString( url.toLatin1().data() ) );
 
 					annot->SetAction( action );
-					annot->SetFlags( ePdfAnnotationFlags_NoZoom );
 				}
 			}
 			else
