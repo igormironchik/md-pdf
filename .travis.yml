@@ -1,12 +1,18 @@
 
 sudo: required
-dist: bionic
+dist: xenial
 
 language:
   - cpp
 
 compiler:
   - gcc
+  
+before_install:
+  - sudo apt-add-repository -y ppa:beineri/opt-qt-5.12.1-xenial &&
+  - travis_wait 30 sudo apt-get -qq update &&
+  - sudo apt-get -qq install qt515base &&
+  - source /opt/qt515/bin/qt515-env.sh
 
 addons:
   apt:
@@ -14,7 +20,6 @@ addons:
       - ubuntu-toolchain-r-test
     packages:
       - cmake
-      - qtbase5-dev
 
 script:
   - |
