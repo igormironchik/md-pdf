@@ -9,9 +9,9 @@ compiler:
   - gcc
   
 before_install:
-  - sudo apt-add-repository -y ppa:beineri/opt-qt-5.15.0-xenial &&
-  - travis_wait 30 sudo apt-get -qq update &&
-  - sudo apt-get -qq install qt515base &&
+  - sudo apt-add-repository -y ppa:beineri/opt-qt-5.15.0-xenial
+  - travis_wait 30 sudo apt-get -qq update
+  - sudo apt-get -qq install qt515base
   - source /opt/qt515/bin/qt515-env.sh
 
 addons:
