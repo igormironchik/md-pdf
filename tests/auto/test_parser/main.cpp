@@ -2593,7 +2593,7 @@ TEST_CASE( "comments" )
 	auto * t = static_cast< MD::Text* > ( p->items().at( 0 ).data() );
 	REQUIRE( t->text() == QLatin1String( "--> # Heading 1" ) );
 }
-#include <QDebug>
+
 TEST_CASE( "links with slashes" )
 {
 	MD::Parser parser;
@@ -2620,4 +2620,31 @@ TEST_CASE( "links with slashes" )
 	REQUIRE( p->items().at( 3 )->type() == MD::ItemType::Link );
 	auto l3 = static_cast< MD::Link* > ( p->items().at( 3 ).data() );
 	REQUIRE( l3->text() == QStringLiteral( "\\" ) );
+}
+
+TEST_CASE( "links in parent scope" )
+{
+	MD::Parser parser;
+	auto doc = parser.parse( QStringLiteral( "./test51.md" ) );
+
+	const QString wd = QDir().absolutePath() + QDir::separator();
+
+	REQUIRE( doc->items().size() == 8 );
+
+	REQUIRE( static_cast< MD::Anchor* > ( doc->items().at( 0 ).data() )->label() ==
+		wd + QLatin1String( "test51.md" ) );
+
+	REQUIRE( doc->items().at( 1 )->type() == MD::ItemType::Paragraph );
+	REQUIRE( doc->items().at( 2 )->type() == MD::ItemType::PageBreak );
+
+	REQUIRE( static_cast< MD::Anchor* > ( doc->items().at( 3 ).data() )->label() ==
+		wd + QLatin1String( "test51-1.md" ) );
+
+	REQUIRE( doc->items().at( 4 )->type() == MD::ItemType::Paragraph );
+	REQUIRE( doc->items().at( 5 )->type() == MD::ItemType::PageBreak );
+
+	REQUIRE( static_cast< MD::Anchor* > ( doc->items().at( 6 ).data() )->label() ==
+		wd + QLatin1String( "test51-2.md" ) );
+
+	REQUIRE( doc->items().at( 7 )->type() == MD::ItemType::Paragraph );
 }
