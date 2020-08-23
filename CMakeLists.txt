@@ -26,17 +26,3 @@ add_subdirectory( md-pdf )
 enable_testing()
 
 add_subdirectory( tests )
-
-if( ENABLE_COVERAGE )
-	set( CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} ${CMAKE_CURRENT_SOURCE_DIR}/cmake )
-    include( Coveralls )
-
-	set( COVERAGE_SRCS md-pdf/md_doc.hpp
-		md-pdf/md_doc.cpp
-		md-pdf/md_parser.hpp
-		md-pdf/md_parser.cpp )
-
-    coveralls_setup(
-        "${COVERAGE_SRCS}"
-        ON )
-endif()

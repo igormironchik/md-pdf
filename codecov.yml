@@ -1,0 +1,13 @@
+codecov:
+  require_ci_to_pass: yes
+  
+ignore:
+  - "tests/**/*"
+  - "lib/**/*"
+  - "example/**/*"
+  - "3rdparty/**/*"
+  - "md-pdf/color_widget.*"
+  - "md-pdf/main_window.*"
+  - "md-pdf/main.*"
+  - "md-pdf/progress.*"
+  - "md-pdf/renderer.*"
