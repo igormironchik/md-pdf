@@ -33,6 +33,23 @@
 namespace MD {
 
 //
+// ParserException
+//
+
+ParserException::ParserException( const QString & reason )
+	:	std::logic_error( "" )
+	,	m_what( reason )
+{
+}
+
+const QString &
+ParserException::reason() const noexcept
+{
+	return m_what;
+}
+
+
+//
 // Parser
 //
 
@@ -132,7 +149,8 @@ Parser::BlockType
 Parser::whatIsTheLine( const QString & str, bool inList ) const
 {
 	const auto s = str.simplified();
-	static const QRegExp olr( QLatin1String( "^\\d+\\.\\s+.*" ) );
+	static const QRegExp olr( QStringLiteral( "^\\d+\\.\\s+.*" ) );
+	static const QRegExp startOfCode( QStringLiteral( "^[```|~~~]\\S*$" ) );
 
 	if( inList )
 	{
@@ -156,7 +174,10 @@ Parser::whatIsTheLine( const QString & str, bool inList ) const
 			else if( s.startsWith( QLatin1String( "```" ) ) ||
 				s.startsWith( QLatin1String( "~~~" ) ) )
 			{
-				return BlockType::Code;
+				if( startOfCode.exactMatch( s ) )
+					return BlockType::Code;
+				else
+					return BlockType::Text;
 			}
 			else if( s.isEmpty() )
 				return BlockType::Unknown;
@@ -187,7 +208,10 @@ Parser::whatIsTheLine( const QString & str, bool inList ) const
 		else if( s.startsWith( QLatin1String( "```" ) ) ||
 			s.startsWith( QLatin1String( "~~~" ) ) )
 		{
-			return BlockType::Code;
+			if( startOfCode.exactMatch( s ) )
+				return BlockType::Code;
+			else
+				return BlockType::Text;
 		}
 		else if( s.isEmpty() )
 			return BlockType::Unknown;
@@ -1037,11 +1061,22 @@ Parser::parseFormattedTextLinksImages( QStringList & fr, QSharedPointer< Block >
 				}
 				else if( i + 1 < length && line[ i + 1 ] == QLatin1Char( '`' ) )
 				{
-					finished = true;
+					if( i + 2 < length && line[ i + 2 ] == QLatin1Char( '`' ) )
+					{
+						code.append( line[ i ] );
 
-					i += 2;
+						++i;
 
-					break;
+						continue;
+					}
+					else
+					{
+						finished = true;
+
+						i += 2;
+
+						break;
+					}
 				}
 			}
 
@@ -1549,6 +1584,10 @@ Parser::parseCode( QStringList & fr, QSharedPointer< Block > parent, int indent 
 
 	if( i > -1 )
 		indent += i;
+
+	if( fr.size() < 3 )
+		throw ParserException( QString(
+			"We found code block started with \"%1\" that doesn't finished." ).arg( fr.first() ) );
 
 	fr.removeFirst();
 	fr.removeLast();

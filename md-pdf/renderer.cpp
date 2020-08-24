@@ -29,8 +29,6 @@
 #include <QThread>
 #include <QBuffer>
 
-#include <QDebug>
-
 
 class PdfRendererError {
 public:
@@ -1121,7 +1119,7 @@ PdfRenderer::loadImage( MD::Image * item )
 
 		load.moveToThread( &thread );
 		thread.start();
-		load.start();
+		load.load();
 		thread.wait();
 
 		return load.image();

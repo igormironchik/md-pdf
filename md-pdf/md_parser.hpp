@@ -30,8 +30,27 @@
 #include <QTextStream>
 #include <QTextCodec>
 
+// C++ include.
+#include <stdexcept>
+
 
 namespace MD {
+
+//
+// ParserException
+//
+
+class ParserException final
+	:	public std::logic_error
+{
+public:
+	explicit ParserException( const QString & reason );
+
+	const QString & reason() const noexcept;
+
+private:
+	QString m_what;
+}; // class ParserException
 
 //
 // Parser
