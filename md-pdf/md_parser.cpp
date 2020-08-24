@@ -1088,7 +1088,10 @@ Parser::parseFormattedTextLinksImages( QStringList & fr, QSharedPointer< Block >
 		createTextObj( code );
 
 		if( finished )
+		{
 			data.lexems.append( quoted ? Lex::StartOfQuotedCode : Lex::StartOfCode );
+			prevAndNext = LineParsingState::Finished;
+		}
 		else
 			prevAndNext = ( quoted ? LineParsingState::UnfinishedQuotedCode :
 				LineParsingState::UnfinishedCode );
