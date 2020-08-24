@@ -1083,7 +1083,9 @@ void
 LoadImageFromNetwork::loadImpl()
 {
 	QNetworkAccessManager * m = new QNetworkAccessManager( this );
-	m_reply = m->get( QNetworkRequest( m_url ) );
+	QNetworkRequest r( m_url );
+	r.setAttribute( QNetworkRequest::RedirectPolicyAttribute, QNetworkRequest::NoLessSafeRedirectPolicy );
+	m_reply = m->get( r );
 
 	connect( m_reply, &QNetworkReply::finished, this, &LoadImageFromNetwork::loadFinished );
 	connect( m_reply,
@@ -1097,12 +1099,15 @@ LoadImageFromNetwork::loadFinished()
 {
 	m_img.loadFromData( m_reply->readAll() );
 
+	m_reply->deleteLater();
+
 	m_thread->quit();
 }
 
 void
 LoadImageFromNetwork::loadError( QNetworkReply::NetworkError )
 {
+	m_reply->deleteLater();
 	m_thread->quit();
 }
 
