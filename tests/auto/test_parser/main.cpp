@@ -2709,3 +2709,54 @@ TEST_CASE( "not finished code" )
 
 	REQUIRE( false );
 }
+
+TEST_CASE( "footnote and paragraph" )
+{
+	MD::Parser parser;
+
+	auto doc = parser.parse( QLatin1String( "./test55.md" ), false );
+
+	REQUIRE( !doc->isEmpty() );
+	REQUIRE( doc->items().size() == 2 );
+	REQUIRE( doc->items().at( 0 )->type() == MD::ItemType::Anchor );
+
+	REQUIRE( doc->footnotesMap().size() == 1 );
+
+	const QString wd = QDir().absolutePath() + QDir::separator();
+
+	const QString label = QString::fromLatin1( "#footnote" ) + QDir::separator() + wd +
+		QLatin1String( "test55.md" );
+
+	REQUIRE( doc->footnotesMap().contains( label ) );
+
+	auto f = doc->footnotesMap()[ label ];
+
+	REQUIRE( f->items().size() == 3 );
+
+	for( int i = 0; i < 3; ++i )
+	{
+		REQUIRE( f->items().at( i )->type() == MD::ItemType::Paragraph );
+
+		auto p = static_cast< MD::Paragraph* > ( f->items().at( i ).data() );
+
+		REQUIRE( p->items().size() == 1 );
+
+		REQUIRE( p->items().at( 0 )->type() == MD::ItemType::Text );
+
+		auto t = static_cast< MD::Text* > ( p->items().at( 0 ).data() );
+
+		REQUIRE( t->text() == QLatin1String( "Paragraph in footnote" ) );
+	}
+
+	REQUIRE( doc->items().at( 1 )->type() == MD::ItemType::Paragraph );
+
+	auto p = static_cast< MD::Paragraph* > ( doc->items().at( 1 ).data() );
+
+	REQUIRE( p->items().size() == 1 );
+
+	REQUIRE( p->items().at( 0 )->type() == MD::ItemType::Text );
+
+	auto t = static_cast< MD::Text* > ( p->items().at( 0 ).data() );
+
+	REQUIRE( t->text() == QLatin1String( "Text" ) );
+}
