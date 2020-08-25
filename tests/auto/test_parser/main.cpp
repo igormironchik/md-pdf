@@ -2760,3 +2760,38 @@ TEST_CASE( "footnote and paragraph" )
 
 	REQUIRE( t->text() == QLatin1String( "Text" ) );
 }
+
+TEST_CASE( "indented code" )
+{
+	MD::Parser parser;
+
+	auto doc = parser.parse( QLatin1String( "./test56.md" ) );
+
+	REQUIRE( doc->isEmpty() == false );
+	REQUIRE( doc->items().size() == 2 );
+
+	REQUIRE( doc->items().at( 1 )->type() == MD::ItemType::Code );
+
+	auto c = static_cast< MD::Code* > ( doc->items().at( 1 ).data() );
+
+	REQUIRE( c->inlined() == false );
+	REQUIRE( c->text() ==
+		QLatin1String( "if( a > b )\n\n  do_something();\n\nelse\n\n  dont_do_anything();" ) );
+}
+
+TEST_CASE( "code with empty lines" )
+{
+	MD::Parser parser;
+
+	auto doc = parser.parse( QLatin1String( "./test57.md" ) );
+
+	REQUIRE( doc->isEmpty() == false );
+	REQUIRE( doc->items().size() == 2 );
+
+	REQUIRE( doc->items().at( 1 )->type() == MD::ItemType::Code );
+
+	auto c = static_cast< MD::Code* > ( doc->items().at( 1 ).data() );
+
+	REQUIRE( c->inlined() == false );
+	REQUIRE( c->text() == QLatin1String( "code\n\ncode" ) );
+}
