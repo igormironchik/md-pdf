@@ -1588,7 +1588,7 @@ Parser::parseCode( QStringList & fr, QSharedPointer< Block > parent, int indent 
 	if( i > -1 )
 		indent += i;
 
-	if( fr.size() < 3 )
+	if( fr.size() < 2 )
 		throw ParserException( QString(
 			"We found code block started with \"%1\" that doesn't finished." ).arg( fr.first() ) );
 

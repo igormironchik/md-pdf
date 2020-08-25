@@ -2681,3 +2681,31 @@ TEST_CASE( "wrong formatting" )
 		REQUIRE( t2->text() == QLatin1String( "italic" ) );
 	}
 }
+
+TEST_CASE( "empty code" )
+{
+	MD::Parser parser;
+
+	auto doc = parser.parse( QLatin1String( "./test53.md" ) );
+
+	REQUIRE( doc->isEmpty() == false );
+	REQUIRE( doc->items().size() == 1 );
+}
+
+TEST_CASE( "not finished code" )
+{
+	MD::Parser parser;
+
+	try {
+		parser.parse( QLatin1String( "./test54.md" ) );
+	}
+	catch ( const MD::ParserException & x )
+	{
+		REQUIRE( x.reason() == QLatin1String(
+			"We found code block started with \"```java\" that doesn't finished." ) );
+
+		return;
+	}
+
+	REQUIRE( false );
+}
