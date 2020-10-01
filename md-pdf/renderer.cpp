@@ -1008,8 +1008,6 @@ PdfRenderer::drawImage( PdfAuxData & pdfData, const RenderOpts & renderOpts,
 
 				createPage( pdfData );
 
-				availableHeight = pdfData.coords.y - pdfData.coords.margins.bottom;
-
 				pdfData.coords.x += offset;
 			}
 			else if( pdfImg.GetHeight() * scale > availableHeight )
@@ -1017,8 +1015,6 @@ PdfRenderer::drawImage( PdfAuxData & pdfData, const RenderOpts & renderOpts,
 				pdfData.painter->FinishPage();
 
 				createPage( pdfData );
-
-				availableHeight = pdfData.coords.y - pdfData.coords.margins.bottom;
 
 				pdfData.coords.x += offset;
 			}

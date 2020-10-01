@@ -798,13 +798,11 @@ Parser::parseFormattedTextLinksImages( QStringList & fr, QSharedPointer< Block >
 			{
 				bool ok = false;
 
-				QString tmp;
-
 				i = parseImg( i, line, &ok, false ) + 1;
 
 				if( !ok )
 				{
-					text.append( line.mid( startPos, i - startPos ) );
+					text.append( line.midRef( startPos, i - startPos ) );
 
 					return i;
 				}
@@ -818,7 +816,7 @@ Parser::parseFormattedTextLinksImages( QStringList & fr, QSharedPointer< Block >
 						++i;
 					else
 					{
-						text.append( line.mid( startPos, i - startPos ) );
+						text.append( line.midRef( startPos, i - startPos ) );
 
 						return i;
 					}
@@ -842,7 +840,7 @@ Parser::parseFormattedTextLinksImages( QStringList & fr, QSharedPointer< Block >
 						}
 						else
 						{
-							text.append( line.mid( startPos, i - startPos + 2 ) );
+							text.append( line.midRef( startPos, i - startPos + 2 ) );
 
 							return i + 2;
 						}
@@ -856,7 +854,7 @@ Parser::parseFormattedTextLinksImages( QStringList & fr, QSharedPointer< Block >
 				}
 				else
 				{
-					text.append( line.mid( startPos, i - startPos ) );
+					text.append( line.midRef( startPos, i - startPos ) );
 
 					return i;
 				}
@@ -896,7 +894,7 @@ Parser::parseFormattedTextLinksImages( QStringList & fr, QSharedPointer< Block >
 				}
 				else
 				{
-					text.append( line.mid( startPos, i - startPos ) );
+					text.append( line.midRef( startPos, i - startPos ) );
 
 					return i;
 				}
@@ -927,7 +925,7 @@ Parser::parseFormattedTextLinksImages( QStringList & fr, QSharedPointer< Block >
 							}
 							else
 							{
-								text.append( line.mid( startPos, i - startPos ) );
+								text.append( line.midRef( startPos, i - startPos ) );
 
 								return i;
 							}
@@ -938,7 +936,7 @@ Parser::parseFormattedTextLinksImages( QStringList & fr, QSharedPointer< Block >
 				}
 				else
 				{
-					text.append( line.mid( startPos, i - startPos ) );
+					text.append( line.midRef( startPos, i - startPos ) );
 
 					return i;
 				}
@@ -962,7 +960,7 @@ Parser::parseFormattedTextLinksImages( QStringList & fr, QSharedPointer< Block >
 					}
 					else
 					{
-						text.append( line.mid( startPos, i - startPos ) );
+						text.append( line.midRef( startPos, i - startPos ) );
 
 						return i;
 					}
@@ -970,14 +968,14 @@ Parser::parseFormattedTextLinksImages( QStringList & fr, QSharedPointer< Block >
 			}
 			else
 			{
-				text.append( line.mid( startPos, i - startPos + 1 ) );
+				text.append( line.midRef( startPos, i - startPos + 1 ) );
 
 				return i + 1;
 			}
 		}
 		else
 		{
-			text.append( line.mid( startPos, i - startPos ) );
+			text.append( line.midRef( startPos, i - startPos ) );
 
 			if( withImage )
 				data.img.removeLast();
@@ -1133,7 +1131,7 @@ Parser::parseFormattedTextLinksImages( QStringList & fr, QSharedPointer< Block >
 			data.lexems.append( Lex::Link );
 		}
 		else
-			text.append( line.mid( start, i - start ) );
+			text.append( line.midRef( start, i - start ) );
 
 		return i;
 	}; // parseUrl
@@ -1189,7 +1187,7 @@ Parser::parseFormattedTextLinksImages( QStringList & fr, QSharedPointer< Block >
 					i = parseImg( i, line, &ok );
 
 					if( !ok )
-						text.append( line.mid( startPos, i - startPos ) );
+						text.append( line.midRef( startPos, i - startPos ) );
 				}
 				else if( line[ i ] == QLatin1Char( '[' ) )
 				{
