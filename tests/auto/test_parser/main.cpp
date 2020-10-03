@@ -2428,7 +2428,6 @@ TEST_CASE( "headings" )
 
 			REQUIRE( h->level() == j );
 			REQUIRE( h->text() == QString::fromLatin1( "Heading " ) + QString::number( j ) );
-			REQUIRE( !h->isLabeled() );
 
 			++idx;
 
@@ -2459,7 +2458,7 @@ TEST_CASE( "headings" )
 
 	REQUIRE( h->label() == label );
 
-	REQUIRE( doc->labeledHeadings().size() == 1 );
+	REQUIRE( doc->labeledHeadings().size() == 3 );
 	REQUIRE( doc->labeledHeadings().contains( label ) );
 	REQUIRE( doc->labeledHeadings()[ label ].data() == h );
 }
