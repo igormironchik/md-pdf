@@ -421,6 +421,24 @@ Parser::parseHeading( QStringList & fr, QSharedPointer< Block > parent,
 
 				if( h->isLabeled() )
 					doc->insertLabeledHeading( h->label(), h );
+				else
+				{
+					QString label = QStringLiteral( "#" );
+
+					for( const auto & c : qAsConst( text ) )
+					{
+						if( c.isLetter() || c.isDigit() )
+							label.append( c.toLower() );
+						else if( c.isSpace() )
+							label.append( QStringLiteral( "-" ) );
+					}
+
+					label += QDir::separator() + workingPath + fileName;
+
+					h->setLabel( label );
+
+					doc->insertLabeledHeading( label, h );
+				}
 
 				parent->appendItem( h );
 			}
