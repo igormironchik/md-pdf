@@ -54,7 +54,7 @@ jobs:
     - name: Install Qt
       uses: jurplel/install-qt-action@v2
       with:
-        version: '5.15.1'
+        version: '5.15.0'
         
     - run: sudo apt install cmake libfreetype6-dev libjpeg-dev zlibc zlib1g-dev libfontconfig1-dev fontconfig
 
