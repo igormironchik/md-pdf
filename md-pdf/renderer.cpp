@@ -984,7 +984,7 @@ PdfRenderer::drawImage( PdfAuxData & pdfData, const RenderOpts & renderOpts,
 			QByteArray data;
 			QBuffer buf( &data );
 
-			img.save( &buf, "jpg" );
+			img.save( &buf, "png" );
 
 			PdfImage pdfImg( pdfData.doc );
 			pdfImg.LoadFromData( reinterpret_cast< unsigned char * >( data.data() ), data.size() );

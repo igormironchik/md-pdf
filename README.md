@@ -33,6 +33,7 @@ To build this application first of all install dependencies of PoDoFo
 
 * freetype
 * libjpeg
+* libpng
 * zlib
 
 On UNIX you also need
