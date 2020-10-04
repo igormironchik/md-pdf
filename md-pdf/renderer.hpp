@@ -417,6 +417,7 @@ private:
 	bool m_terminate;
 	QMap< QString, PdfDestination > m_dests;
 	QMultiMap< QString, QVector< QPair< QRectF, int > > > m_unresolvedLinks;
+	QMap< QString, QImage > m_imageCache;
 }; // class Renderer
 
 

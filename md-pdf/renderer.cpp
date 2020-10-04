@@ -838,11 +838,7 @@ PdfRenderer::drawParagraph( PdfAuxData & pdfData, const RenderOpts & renderOpts,
 	const auto lineHeight = font->GetFontMetrics()->GetLineSpacing();
 
 	if( withNewLine && !justCalcHeight )
-	{
 		moveToNewLine( pdfData, 0.0, lineHeight, 1.0 );
-
-		pdfData.coords.y -= lineHeight;
-	}
 
 	if( !justCalcHeight )
 	{
@@ -1083,8 +1079,7 @@ PdfRenderer::drawImage( PdfAuxData & pdfData, const RenderOpts & renderOpts,
 
 			const auto lineHeight = font->GetFontMetrics()->GetLineSpacing();
 
-			if( !firstInParagraph )
-				height += lineHeight;
+			height += lineHeight;
 
 			double scale = 1.0;
 			const double availableWidth = pdfData.coords.pageWidth - pdfData.coords.margins.left -
@@ -1169,8 +1164,13 @@ LoadImageFromNetwork::loadError( QNetworkReply::NetworkError )
 QImage
 PdfRenderer::loadImage( MD::Image * item )
 {
+	if( m_imageCache.contains( item->url() ) )
+		return m_imageCache[ item->url() ];
+
+	QImage img;
+
 	if( QFileInfo::exists( item->url() ) )
-		return QImage( item->url() );
+		img = QImage( item->url() );
 	else if( !QUrl( item->url() ).isRelative() )
 	{
 		QThread thread;
@@ -1182,13 +1182,17 @@ PdfRenderer::loadImage( MD::Image * item )
 		load.load();
 		thread.wait();
 
-		return load.image();
+		img = load.image();
 	}
 	else
 		throw PdfRendererError(
 			tr( "Hmm, I don't know how to load this image: %1.\n\n"
 				"This image is not a local existing file, and not in the Web. Check your Markdown." )
 					.arg( item->url() ) );
+
+	m_imageCache.insert( item->url(), img );
+
+	return img;
 }
 
 QVector< WhereDrawn >
