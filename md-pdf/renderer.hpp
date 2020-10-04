@@ -165,19 +165,28 @@ private:
 	int maxListNumberWidth( MD::List * list ) const;
 
 	QVector< WhereDrawn > drawHeading( PdfAuxData & pdfData, const RenderOpts & renderOpts,
-		MD::Heading * item, QSharedPointer< MD::Document > doc, double offset = 0.0 );
+		MD::Heading * item, QSharedPointer< MD::Document > doc, double offset = 0.0,
+		double nextItemMinHeight = 0.0 );
 	QVector< WhereDrawn > drawParagraph( PdfAuxData & pdfData, const RenderOpts & renderOpts,
 		MD::Paragraph * item, QSharedPointer< MD::Document > doc, double offset = 0.0,
-		bool withNewLine = true );
+		bool withNewLine = true, bool justCalcHeight = false );
 	QVector< WhereDrawn > drawCode( PdfAuxData & pdfData, const RenderOpts & renderOpts,
-		MD::Code * item, QSharedPointer< MD::Document > doc, double offset = 0.0 );
+		MD::Code * item, QSharedPointer< MD::Document > doc, double offset = 0.0,
+		bool justCalcHeight = false );
 	QVector< WhereDrawn > drawBlockquote( PdfAuxData & pdfData, const RenderOpts & renderOpts,
-		MD::Blockquote * item, QSharedPointer< MD::Document > doc, double offset = 0.0 );
+		MD::Blockquote * item, QSharedPointer< MD::Document > doc, double offset = 0.0,
+		bool justCalcHeight = false );
 	QVector< WhereDrawn > drawList( PdfAuxData & pdfData, const RenderOpts & renderOpts,
 		MD::List * item, QSharedPointer< MD::Document > doc, int bulletWidth,
-		double offset = 0.0 );
+		double offset = 0.0, bool justCalcHeight = false );
 	QVector< WhereDrawn > drawTable( PdfAuxData & pdfData, const RenderOpts & renderOpts,
-		MD::Table * item, QSharedPointer< MD::Document > doc, double offset = 0.0 );
+		MD::Table * item, QSharedPointer< MD::Document > doc, double offset = 0.0,
+		bool justCalcHeight = false );
+
+	//! \return Minimum necessary height to draw item, meant at least one line.
+	double minNecessaryHeight( PdfAuxData & pdfData, const RenderOpts & renderOpts,
+		QSharedPointer< MD::Item > item, QSharedPointer< MD::Document > doc,
+		double offset );
 
 	enum class ListItemType
 	{
@@ -188,11 +197,13 @@ private:
 
 	QVector< WhereDrawn > drawListItem( PdfAuxData & pdfData, const RenderOpts & renderOpts,
 		MD::ListItem * item, QSharedPointer< MD::Document > doc, int & idx,
-		ListItemType & prevListItemType, int bulletWidth, double offset = 0.0 );
+		ListItemType & prevListItemType, int bulletWidth, double offset = 0.0,
+		bool justCalcHeight = false );
 
 	struct CustomWidth {
 		struct Width {
 			double width = 0.0;
+			double height = 0.0;
 			bool isSpace = false;
 			bool isNewLine = false;
 			bool shrink = true;
@@ -204,6 +215,13 @@ private:
 		void moveToNextLine() { ++m_pos; }
 		bool isDrawing() const { return m_drawing; }
 		void setDrawing( bool on = true ) { m_drawing = on; }
+		double firstItemHeight() const
+		{
+			if( !m_width.isEmpty() )
+				return m_width.constFirst().height;
+			else
+				return 0.0;
+		}
 
 		void calcScale( double lineWidth )
 		{
