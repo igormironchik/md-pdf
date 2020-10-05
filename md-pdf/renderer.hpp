@@ -46,16 +46,27 @@ using namespace PoDoFo;
 //! Options for rendering.
 struct RenderOpts
 {
+	//! Text font.
 	QString m_textFont;
+	//! Text font size.
 	int m_textFontSize;
+	//! Code font.
 	QString m_codeFont;
+	//! Code font size.
 	int m_codeFontSize;
+	//! Links color.
 	QColor m_linkColor;
+	//! Borders color.
 	QColor m_borderColor;
+	//! Code background.
 	QColor m_codeBackground;
+	//! Left margin.
 	double m_left;
+	//! Right margin.
 	double m_right;
+	//! Top margin.
 	double m_top;
+	//! Bottom margin.
 	double m_bottom;
 }; // struct RenderOpts
 
@@ -71,9 +82,13 @@ class Renderer
 	Q_OBJECT
 
 signals:
+	//! Progress of rendering.
 	void progress( int percent );
+	//! Error.
 	void error( const QString & msg );
+	//! Rendering is done.
 	void done( bool terminated );
+	//! Status message.
 	void status( const QString & msg );
 
 public:
@@ -92,6 +107,7 @@ static const double c_blockquoteBaseOffset = 10.0;
 static const double c_blockquoteMarkWidth = 3.0;
 static const double c_tableMargin = 2.0;
 
+//! Mrgins.
 struct PageMargins {
 	double left = c_margin;
 	double right = c_margin;
@@ -99,6 +115,7 @@ struct PageMargins {
 	double bottom = c_margin;
 }; // struct PageMargins
 
+//! Page current coordinates and etc...
 struct CoordsPageAttribs {
 	PageMargins margins;
 	double pageWidth = 0.0;
@@ -107,6 +124,7 @@ struct CoordsPageAttribs {
 	double y = 0.0;
 }; // struct CoordsPageAttribs
 
+//! Auxiliary struct for rendering.
 struct PdfAuxData {
 	PdfMemDocument * doc = nullptr;
 	PdfPainter * painter = nullptr;
@@ -115,6 +133,7 @@ struct PdfAuxData {
 	CoordsPageAttribs coords;
 }; // struct PdfAuxData;
 
+//! Where was the item drawn?
 struct WhereDrawn {
 	int pageIdx = 0;
 	double y = 0.0;
@@ -133,6 +152,7 @@ class PdfRenderer
 	Q_OBJECT
 
 signals:
+	//! Internal signal for start rendering.
 	void start();
 
 public:
@@ -142,43 +162,60 @@ public:
 public slots:
 	//! Render document. \note Document can be changed during rendering.
 	//! Don't reuse the same document twice.
+	//! Renderer will delete himself on job finish.
 	void render( const QString & fileName, QSharedPointer< MD::Document > doc,
 		const RenderOpts & opts ) override;
 	//! Terminate rendering.
 	void terminate();
 
 private slots:
+	//! Real rendering.
 	void renderImpl();
+	//! Clean render.
 	void clean() override;
 
 private:
+	//! Create font.
 	PdfFont * createFont( const QString & name, bool bold, bool italic, float size,
 		PdfMemDocument * doc );
+	//! Create new page.
 	void createPage( PdfAuxData & pdfData );
+	//! Convert QString to PdfString.
 	static PdfString createPdfString( const QString & text );
+	//! Convert PdfString to QString.
 	static QString createQString( const PdfString & str );
 
+	//! Draw empty line.
 	void moveToNewLine( PdfAuxData & pdfData, double xOffset, double yOffset,
 		double yOffsetMultiplier = 1.0 );
+	//! Load image.
 	QImage loadImage( MD::Image * item );
+	//! Make all links clickable.
 	void resolveLinks( PdfAuxData & pdfData );
+	//! Max width of numbered list bullet.
 	int maxListNumberWidth( MD::List * list ) const;
 
+	//! Draw heading.
 	QVector< WhereDrawn > drawHeading( PdfAuxData & pdfData, const RenderOpts & renderOpts,
 		MD::Heading * item, QSharedPointer< MD::Document > doc, double offset = 0.0,
 		double nextItemMinHeight = 0.0 );
+	//! Draw paragraph.
 	QVector< WhereDrawn > drawParagraph( PdfAuxData & pdfData, const RenderOpts & renderOpts,
 		MD::Paragraph * item, QSharedPointer< MD::Document > doc, double offset = 0.0,
 		bool withNewLine = true, bool justCalcHeight = false );
+	//! Draw block of code.
 	QVector< WhereDrawn > drawCode( PdfAuxData & pdfData, const RenderOpts & renderOpts,
 		MD::Code * item, QSharedPointer< MD::Document > doc, double offset = 0.0,
 		bool justCalcHeight = false );
+	//! Draw blockquote.
 	QVector< WhereDrawn > drawBlockquote( PdfAuxData & pdfData, const RenderOpts & renderOpts,
 		MD::Blockquote * item, QSharedPointer< MD::Document > doc, double offset = 0.0,
 		bool justCalcHeight = false );
+	//! Draw list.
 	QVector< WhereDrawn > drawList( PdfAuxData & pdfData, const RenderOpts & renderOpts,
 		MD::List * item, QSharedPointer< MD::Document > doc, int bulletWidth,
 		double offset = 0.0, bool justCalcHeight = false );
+	//! Draw table.
 	QVector< WhereDrawn > drawTable( PdfAuxData & pdfData, const RenderOpts & renderOpts,
 		MD::Table * item, QSharedPointer< MD::Document > doc, double offset = 0.0,
 		bool justCalcHeight = false );
@@ -188,19 +225,25 @@ private:
 		QSharedPointer< MD::Item > item, QSharedPointer< MD::Document > doc,
 		double offset );
 
+	//! List item type.
 	enum class ListItemType
 	{
 		Unknown,
+		//! Ordered.
 		Ordered,
+		//! Unordered.
 		Unordered
 	}; // enum class ListItemType
 
+	//! Draw list item.
 	QVector< WhereDrawn > drawListItem( PdfAuxData & pdfData, const RenderOpts & renderOpts,
 		MD::ListItem * item, QSharedPointer< MD::Document > doc, int & idx,
 		ListItemType & prevListItemType, int bulletWidth, double offset = 0.0,
 		bool justCalcHeight = false );
 
+	//! Auxiliary struct for calculation of spaces scales to shrink text to width.
 	struct CustomWidth {
+		//! Item on line.
 		struct Width {
 			double width = 0.0;
 			double height = 0.0;
@@ -210,11 +253,17 @@ private:
 			QString word;
 		}; // struct Width
 
+		//! Append new item.
 		void append( const Width & w ) { m_width.append( w ); }
+		//! \return scale of space at line.
 		double scale() { return m_scale.at( m_pos ); }
+		//! Move to next line.
 		void moveToNextLine() { ++m_pos; }
+		//! Is drawing? This struct can be used to precalculate widthes and for actual drawing.
 		bool isDrawing() const { return m_drawing; }
+		//! Set drawing.
 		void setDrawing( bool on = true ) { m_drawing = on; }
+		//! \return Height of first item.
 		double firstItemHeight() const
 		{
 			if( !m_width.isEmpty() )
@@ -223,6 +272,7 @@ private:
 				return 0.0;
 		}
 
+		//! Calculate scales.
 		void calcScale( double lineWidth )
 		{
 			double w = 0.0;
@@ -260,29 +310,39 @@ private:
 		}
 
 	private:
+		//! Is drawing?
 		bool m_drawing = false;
+		//! Sizes of items.
 		QVector< Width > m_width;
+		//! Scales on lines.
 		QVector< double > m_scale;
+		//! Position of current line.
 		int m_pos = 0;
 	}; // struct CustomWidth
 
+	//! Draw text.
 	QVector< QPair< QRectF, int > > drawText( PdfAuxData & pdfData, const RenderOpts & renderOpts,
 		MD::Text * item, QSharedPointer< MD::Document > doc, bool & newLine, double offset = 0.0,
 		bool firstInParagraph = false, CustomWidth * cw = nullptr );
+	//! Draw inlined code.
 	QVector< QPair< QRectF, int > > drawInlinedCode( PdfAuxData & pdfData, const RenderOpts & renderOpts,
 		MD::Code * item, QSharedPointer< MD::Document > doc, bool & newLine, double offset,
 		bool firstInParagraph, CustomWidth * cw = nullptr );
+	//! Draw string.
 	QVector< QPair< QRectF, int > > drawString( PdfAuxData & pdfData, const RenderOpts & renderOpts,
 		const QString & str, PdfFont * spaceFont, PdfFont * font, double lineHeight,
 		QSharedPointer< MD::Document > doc, bool & newLine, double offset,
 		bool firstInParagraph, CustomWidth * cw = nullptr, const QColor & background = QColor() );
+	//! Draw link.
 	QVector< QPair< QRectF, int > > drawLink( PdfAuxData & pdfData, const RenderOpts & renderOpts,
 		MD::Link * item, QSharedPointer< MD::Document > doc, bool & newLine, double offset = 0.0,
 		bool firstInParagraph = false, CustomWidth * cw = nullptr );
+	//! Draw image.
 	QPair< QRectF, int > drawImage( PdfAuxData & pdfData, const RenderOpts & renderOpts,
 		MD::Image * item, QSharedPointer< MD::Document > doc, bool & newLine, double offset = 0.0,
 		bool firstInParagraph = false, CustomWidth * cw = nullptr );
 
+	//! Item in the table's cell.
 	struct CellItem {
 		QString word;
 		QImage image;
@@ -304,6 +364,7 @@ private:
 		}
 	}; // struct CellItem
 
+	//! Cell in the table.
 	struct CellData {
 		double width = 0.0;
 		double height = 0.0;
@@ -360,6 +421,7 @@ private:
 		}
 	}; //  struct CellData
 
+	//! \return Height of the row.
 	double rowHeight( const QVector< QVector< CellData > > & table, int row )
 	{
 		double h = 0.0;
@@ -373,14 +435,18 @@ private:
 		return  h;
 	}
 
+	//! Create auxiliary table for drawing.
 	QVector< QVector< CellData > >
 	createAuxTable( PdfAuxData & pdfData, const RenderOpts & renderOpts,
 		MD::Table * item, QSharedPointer< MD::Document > doc );
+	//! Calculate size of the cells in the table.
 	void calculateCellsSize( PdfAuxData & pdfData, QVector< QVector< CellData > > & auxTable,
 		double spaceWidth, double offset, double lineHeight );
+	//! Draw table's row.
 	QVector< WhereDrawn > drawTableRow( QVector< QVector< CellData > > & table, int row,
 		PdfAuxData & pdfData, double offset, double lineHeight,
 		const RenderOpts & renderOpts, QSharedPointer< MD::Document > doc );
+	//! Draw table border.
 	void drawTableBorder( PdfAuxData & pdfData, int startPage, QVector< WhereDrawn > & ret,
 		const RenderOpts & renderOpts, double offset, const QVector< QVector< CellData > > & table,
 		double startY, double endY );
@@ -400,23 +466,34 @@ private:
 		}
 	}; // struct TextToDraw
 
+	//! Draw text line in the cell.
 	void drawTextLineInTable( double x, double & y, TextToDraw & text, double lineHeight,
 		PdfAuxData & pdfData, QMap< QString, QVector< QPair< QRectF, int > > > & links,
 		PdfFont * font, int & currentPage, int & endPage, double & endY );
+	//! Create new page in table.
 	void newPageInTable( PdfAuxData & pdfData, int & currentPage, int & endPage,
 		double & endY );
+	//! Make links in table clickable.
 	void processLinksInTable( PdfAuxData & pdfData,
 		const QMap< QString, QVector< QPair< QRectF, int > > > & links,
 		QSharedPointer< MD::Document > doc );
 
 private:
+	//! Name of the output file.
 	QString m_fileName;
+	//! Markdown document.
 	QSharedPointer< MD::Document > m_doc;
+	//! Render options.
 	RenderOpts m_opts;
+	//! Mutex.
 	QMutex m_mutex;
+	//! Termination flag.
 	bool m_terminate;
+	//! All destinations in the document.
 	QMap< QString, PdfDestination > m_dests;
+	//! Links that not yet clickable.
 	QMultiMap< QString, QVector< QPair< QRectF, int > > > m_unresolvedLinks;
+	//! Cache of images.
 	QMap< QString, QImage > m_imageCache;
 }; // class Renderer
 

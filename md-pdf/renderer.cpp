@@ -30,6 +30,7 @@
 #include <QBuffer>
 
 
+//! Internal exception.
 class PdfRendererError {
 public:
 	explicit PdfRendererError( const QString & reason )
@@ -119,6 +120,8 @@ PdfRenderer::renderImpl()
 					case MD::ItemType::Heading :
 						drawHeading( pdfData, m_opts, static_cast< MD::Heading* > ( it->data() ),
 							m_doc, 0.0,
+							// If there is another item after heading we need to know its min
+							// height to glue heading with it.
 							( it + 1 != last ?
 								minNecessaryHeight( pdfData, m_opts, *( it + 1 ), m_doc, 0.0 ) :
 								0.0 ) );
@@ -347,6 +350,7 @@ PdfRenderer::drawHeading( PdfAuxData & pdfData, const RenderOpts & renderOpts,
 
 	pdfData.coords.y -= c_beforeHeading;
 
+	// If heading can be placed with next item on current page.
 	if( pdfData.coords.y - height - nextItemMinHeight > pdfData.coords.margins.bottom )
 	{
 		pdfData.painter->DrawMultiLineText( pdfData.coords.margins.left + offset,
@@ -365,12 +369,14 @@ PdfRenderer::drawHeading( PdfAuxData & pdfData, const RenderOpts & renderOpts,
 
 		return ret;
 	}
+	// If heading can be placed with next item on empty page.
 	else if( height + nextItemMinHeight <= availableHeight )
 	{
 		pdfData.painter->FinishPage();
 		createPage( pdfData );
 		return drawHeading( pdfData, renderOpts, item, doc, offset, nextItemMinHeight );
 	}
+	// Otherwise we need to split heading to place it on different pages.
 	else
 	{
 		std::vector< PdfString > tmp;
@@ -444,6 +450,7 @@ PdfRenderer::drawText( PdfAuxData & pdfData, const RenderOpts & renderOpts,
 
 namespace /* anonymous */ {
 
+//! Combine smaller rectangles standing next each other to bigger one.
 QVector< QPair< QRectF, int > >
 normalizeRects( const QVector< QPair< QRectF, int > > & rects )
 {
@@ -493,6 +500,7 @@ PdfRenderer::drawLink( PdfAuxData & pdfData, const RenderOpts & renderOpts,
 	if( cw && !cw->isDrawing() )
 		draw = false;
 
+	// If text link.
 	if( item->img()->isEmpty() )
 	{
 		pdfData.painter->Save();
@@ -516,12 +524,14 @@ PdfRenderer::drawLink( PdfAuxData & pdfData, const RenderOpts & renderOpts,
 
 		pdfData.painter->Restore();
 	}
+	// Otherwise image link.
 	else
 		rects.append( drawImage( pdfData, renderOpts, item->img().data(), doc, newLine, offset,
 			firstInParagraph, cw ) );
 
 	if( draw )
 	{
+		// If Web URL.
 		if( !QUrl( url ).isRelative() )
 		{
 			for( const auto & r : qAsConst( rects ) )
@@ -536,6 +546,7 @@ PdfRenderer::drawLink( PdfAuxData & pdfData, const RenderOpts & renderOpts,
 				annot->SetAction( action );
 			}
 		}
+		// Otherwise internal link.
 		else
 			m_unresolvedLinks.insert( url, rects );
 	}
@@ -590,6 +601,7 @@ PdfRenderer::drawString( PdfAuxData & pdfData, const RenderOpts & renderOpts,
 
 	const auto wv = pdfData.coords.pageWidth - pdfData.coords.margins.right;
 
+	// We need to draw space char if previous word with comma.
 	if( !firstInParagraph && !newLine && !words.isEmpty() &&
 		!charsWithoutSpaceBefore.contains( words.first() ) )
 	{
@@ -629,6 +641,7 @@ PdfRenderer::drawString( PdfAuxData & pdfData, const RenderOpts & renderOpts,
 
 	pdfData.painter->SetFont( font );
 
+	// Draw words.
 	for( auto it = words.begin(), last = words.end(); it != last; ++it )
 	{
 		{
@@ -671,6 +684,7 @@ PdfRenderer::drawString( PdfAuxData & pdfData, const RenderOpts & renderOpts,
 
 			pdfData.coords.x += length;
 
+			// Draw space if needed.
 			if( it + 1 != last )
 			{
 				const auto spaceWidth = font->GetFontMetrics()->StringWidth( " " );
@@ -718,6 +732,7 @@ PdfRenderer::drawString( PdfAuxData & pdfData, const RenderOpts & renderOpts,
 					newLineFn();
 			}
 		}
+		// Need to move to new line.
 		else
 		{
 			const auto xv = pdfData.coords.margins.left + offset + length;
@@ -856,6 +871,7 @@ PdfRenderer::drawParagraph( PdfAuxData & pdfData, const RenderOpts & renderOpts,
 	CustomWidth cw;
 	auto y = pdfData.coords.y;
 
+	// Calculate words/lines/spaces widthes.
 	for( auto it = item->items().begin(), last = item->items().end(); it != last; ++it )
 	{
 		{
@@ -918,6 +934,7 @@ PdfRenderer::drawParagraph( PdfAuxData & pdfData, const RenderOpts & renderOpts,
 	pdfData.coords.y = y;
 	pdfData.coords.x = pdfData.coords.margins.left + offset;
 
+	// Actual drawing.
 	for( auto it = item->items().begin(), last = item->items().end(); it != last; ++it )
 	{
 		{
@@ -1306,6 +1323,7 @@ PdfRenderer::drawBlockquote( PdfAuxData & pdfData, const RenderOpts & renderOpts
 	if( !justCalcHeight )
 		emit status( tr( "Drawing blockquote." ) );
 
+	// Draw items.
 	for( auto it = item->items().cbegin(), last = item->items().cend(); it != last; ++it )
 	{
 		{
@@ -1404,6 +1422,7 @@ PdfRenderer::drawBlockquote( PdfAuxData & pdfData, const RenderOpts & renderOpts
 
 	pdfData.painter->FinishPage();
 
+	// Draw blockquote left vertival bar.
 	for( auto it = map.cbegin(), last = map.cend(); it != last; ++it )
 	{
 		pdfData.painter->SetPage( pdfData.doc->GetPage( it.key() ) );
