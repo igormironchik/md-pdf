@@ -279,6 +279,18 @@ PdfRenderer::createFont( const QString & name, bool bold, bool italic, float siz
 	return font;
 }
 
+bool
+PdfRenderer::isFontCreatable( const QString & name )
+{
+	PdfMemDocument doc;
+
+	auto * font = doc.CreateFont( name.toLocal8Bit().data(), false, false , false,
+		PdfEncodingFactory::GlobalIdentityEncodingInstance(),
+		PdfFontCache::eFontCreationFlags_None );
+
+	return ( font != nullptr );
+}
+
 void
 PdfRenderer::createPage( PdfAuxData & pdfData )
 {

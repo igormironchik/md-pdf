@@ -75,6 +75,10 @@ MainWindow::MainWindow()
 		this, &MainWindow::selectMarkdown );
 	connect( m_ui->m_startBtn, &QPushButton::clicked,
 		this, &MainWindow::process );
+	connect( m_ui->m_textFont, &QFontComboBox::currentFontChanged,
+		this, &MainWindow::textFontChanged );
+	connect( m_ui->m_codeFont, &QFontComboBox::currentFontChanged,
+		this, &MainWindow::codeFontChanged );
 
 	void (QSpinBox::*signal) ( int ) = &QSpinBox::valueChanged;
 
@@ -91,6 +95,9 @@ MainWindow::MainWindow()
 	adjustSize();
 
 	m_thread->start();
+
+	textFontChanged( m_ui->m_textFont->currentFont() );
+	codeFontChanged( m_ui->m_codeFont->currentFont() );
 }
 
 MainWindow::~MainWindow()
@@ -253,4 +260,28 @@ MainWindow::mmButtonToggled( bool on )
 		m_ui->m_top->setValue( qRound( m_ui->m_top->value() / c_mmInPt ) );
 		m_ui->m_bottom->setValue( qRound( m_ui->m_bottom->value() / c_mmInPt ) );
 	}
+}
+
+void
+MainWindow::textFontChanged( const QFont & f )
+{
+	static const QString defaultColor = m_ui->m_textFont->palette().color( QPalette::Text ).name();
+
+	if( !PdfRenderer::isFontCreatable( f.family() ) )
+		m_ui->m_textFont->setStyleSheet( QStringLiteral( "QFontComboBox { color: red }" ) );
+	else
+		m_ui->m_textFont->setStyleSheet( QStringLiteral( "QFontComboBox { color: %1 }" )
+			.arg( defaultColor ) );
+}
+
+void
+MainWindow::codeFontChanged( const QFont & f )
+{
+	static const QString defaultColor = m_ui->m_codeFont->palette().color( QPalette::Text ).name();
+
+	if( !PdfRenderer::isFontCreatable( f.family() ) )
+		m_ui->m_codeFont->setStyleSheet( QStringLiteral( "QFontComboBox { color: red }" ) );
+	else
+		m_ui->m_codeFont->setStyleSheet( QStringLiteral( "QFontComboBox { color: %1 }" )
+			.arg( defaultColor ) );
 }

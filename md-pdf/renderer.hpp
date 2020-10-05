@@ -159,6 +159,9 @@ public:
 	PdfRenderer();
 	~PdfRenderer() override = default;
 
+	//! \return Is font can be created?
+	static bool isFontCreatable( const QString & font );
+
 public slots:
 	//! Render document. \note Document can be changed during rendering.
 	//! Don't reuse the same document twice.
