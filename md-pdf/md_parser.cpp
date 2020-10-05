@@ -94,6 +94,7 @@ Parser::parseFile( const QString & fileName, bool recursive, QSharedPointer< Doc
 
 			m_parsedFiles.append( fi.absoluteFilePath() );
 
+			// Resolve links.
 			for( auto it = linksToParse.begin(), last = linksToParse.end(); it != last; ++it )
 			{
 				auto nextFileName = *it;
@@ -111,6 +112,7 @@ Parser::parseFile( const QString & fileName, bool recursive, QSharedPointer< Doc
 				*it = nextFile.absoluteFilePath();
 			}
 
+			// Parse all links if parsing is recursive.
 			if( recursive && !linksToParse.isEmpty() )
 			{
 				const auto tmpLinks = linksToParse;
@@ -1289,6 +1291,7 @@ Parser::parseFormattedTextLinksImages( QStringList & fr, QSharedPointer< Block >
 
 	LineParsingState state = LineParsingState::Finished;
 
+	// Real parsing.
 	for( auto it = fr.begin(), last = fr.end(); it != last; ++it )
 		state = parseLine( *it, state );
 
