@@ -865,10 +865,7 @@ PdfRenderer::drawParagraph( PdfAuxData & pdfData, const RenderOpts & renderOpts,
 	const auto lineHeight = font->GetFontMetrics()->GetLineSpacing();
 
 	if( withNewLine && !justCalcHeight )
-	{
-		moveToNewLine( pdfData, 0.0, lineHeight, 1.0 );
-		moveToNewLine( pdfData, 0.0, lineHeight, 1.0 );
-	}
+		moveToNewLine( pdfData, 0.0, lineHeight, 2.0 );
 
 	if( !justCalcHeight )
 	{
@@ -1029,7 +1026,7 @@ PdfRenderer::drawImage( PdfAuxData & pdfData, const RenderOpts & renderOpts,
 			const auto lineHeight = font->GetFontMetrics()->GetLineSpacing();
 
 			if( !firstInParagraph )
-				moveToNewLine( pdfData, offset, lineHeight, 1.0 );
+				moveToNewLine( pdfData, offset, lineHeight, 2.0 );
 			else
 				pdfData.coords.x += offset;
 
