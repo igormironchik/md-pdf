@@ -23,6 +23,9 @@
 // md-pdf include.
 #include "syntax.hpp"
 
+// Qt include.
+#include <QPair>
+
 
 //
 // Syntax
@@ -66,18 +69,19 @@ struct Word {
 }; // struct Word
 
 //! Find next word in the string.
-Word nextWord( const QString & line, int startPos )
+Word
+nextWord( const QString & line, int startPos, int stopPos )
 {
-	static const QString special = QStringLiteral( ":,.-/*-+=<>!&()~%^|?[]" );
+	static const QString special = QStringLiteral( ":,.-/*-+=<>!&()~%^|?[]{}" );
 	Word w;
 
-	while( startPos < line.length() && ( line[ startPos ].isSpace() ||
+	while( startPos < stopPos && ( line[ startPos ].isSpace() ||
 		special.contains( line[ startPos ] ) ) )
 			++startPos;
 
 	int i = startPos;
 
-	for( ; i < line.length(); ++i )
+	for( ; i < stopPos; ++i )
 	{
 		if( line[ i ].isSpace() || special.contains( line[ i ] ) )
 			break;
@@ -88,6 +92,46 @@ Word nextWord( const QString & line, int startPos )
 	w.word = line.mid( startPos, i - startPos );
 
 	return w;
+}
+
+//! Comment type.
+enum class CommentType {
+	NoComment,
+	Single,
+	Multi
+}; // enum class CommentType
+
+//! Find comment position.
+QPair< int, CommentType >
+commentPos( const QString & line, int startPos )
+{
+	for( int i = startPos; i < line.length(); ++i )
+	{
+		if( line[ i ] == QLatin1Char( '/' ) && i + 1 < line.length() )
+		{
+			if( line[ i + 1 ] == QLatin1Char( '/' ) )
+				return qMakePair( i, CommentType::Single );
+
+			if( line[ i + 1 ] == QLatin1Char( '*' ) )
+				return qMakePair( i, CommentType::Multi );
+		}
+	}
+
+	return qMakePair( line.length(), CommentType::NoComment );
+}
+
+//! Find multiline comment end.
+QPair< int, bool >
+multilineCommentEnd( const QString & line, int startPos )
+{
+	for( int i = startPos; i < line.length(); ++i )
+	{
+		if( line[ i ] == QLatin1Char( '*' ) && i + 1 < line.length() &&
+			line[ i + 1 ] == QLatin1Char( '/' ) )
+				return qMakePair( i + 2, true );
+	}
+
+	return qMakePair( line.length(), false );
 }
 
 //! C++ keywords.
@@ -167,32 +211,134 @@ CppSyntax::prepare( const QStringList & lines ) const
 
 	int lineIdx = 0;
 
+	bool commentClosed = true;
+
 	for( const auto & l : qAsConst( lines ) )
 	{
 		int pos = 0;
 		int end = 0;
 
-		while( pos < l.length() )
+		if( !commentClosed )
 		{
-			const auto w = nextWord( l, pos );
+			const auto cEnd = multilineCommentEnd( l, 0 );
 
-			if( c_cppKeyWords.contains( w.word ) )
+			if( cEnd.second )
 			{
-				pos = w.startPos;
+				pos = cEnd.first;
+				end = pos;
 
-				if( pos != end )
-					ret.append( { lineIdx, end, pos - 1, ColorRole::Regular } );
+				ret.append( { lineIdx, 0, cEnd.first - 1, ColorRole::Comment } );
 
-				end = w.endPos + 1;
-
-				ret.append( { lineIdx, w.startPos, w.endPos, ColorRole::Keyword } );
+				commentClosed = true;
 			}
+			else
+			{
+				ret.append( { lineIdx, 0, l.length() - 1, ColorRole::Comment } );
 
-			pos = w.endPos + 1;
+				++lineIdx;
+
+				continue;
+			}
 		}
 
-		if( pos != end )
-			ret.append( { lineIdx, end, l.length() - 1, ColorRole::Regular } );
+		auto c = commentPos( l, pos );
+
+		while( c.first <= l.length() )
+		{
+			while( pos < ( c.second != CommentType::NoComment ? c.first : l.length() ) )
+			{
+				const auto w = nextWord( l, pos, c.first );
+
+				if( c_cppKeyWords.contains( w.word ) )
+				{
+					pos = w.startPos;
+
+					if( pos != end )
+						ret.append( { lineIdx, end, pos - 1, ColorRole::Regular } );
+
+					end = w.endPos + 1;
+
+					ret.append( { lineIdx, w.startPos, w.endPos, ColorRole::Keyword } );
+				}
+
+				pos = w.endPos + 1;
+			}
+
+			if( pos != end )
+				ret.append( { lineIdx, end,
+					( c.second != CommentType::NoComment ? c.first - 1 : l.length() - 1 ),
+					ColorRole::Regular } );
+
+			if( c.second == CommentType::NoComment )
+				break;
+
+			if( c.second == CommentType::Single )
+			{
+				ret.append( { lineIdx, c.first, l.length() - 1, ColorRole::Comment } );
+
+				break;
+			}
+
+			if( c.second == CommentType::Multi )
+			{
+				bool doBreak = false;
+
+				while( true )
+				{
+					auto cEnd = multilineCommentEnd( l, c.first + 2 );
+
+					pos = cEnd.first;
+					end = pos;
+
+					if( cEnd.second )
+					{
+						commentClosed = true;
+
+						if( cEnd.first == l.length() )
+						{
+							ret.append( { lineIdx, c.first, cEnd.first - 1, ColorRole::Comment } );
+
+							doBreak = true;
+
+							break;
+						}
+						else
+						{
+							ret.append( { lineIdx, c.first, cEnd.first - 1, ColorRole::Comment } );
+
+							c = commentPos( l, cEnd.first );
+
+							if( c.first == cEnd.first )
+							{
+								if( c.second == CommentType::Single )
+								{
+									ret.append( { lineIdx, c.first, l.length() - 1, ColorRole::Comment } );
+
+									doBreak = true;
+
+									break;
+								}
+							}
+							else
+								break;
+						}
+					}
+					else
+					{
+						commentClosed = false;
+
+						ret.append( { lineIdx, c.first, l.length() - 1, ColorRole::Comment } );
+
+						doBreak = true;
+
+						break;
+					}
+				}
+
+				if( doBreak )
+					break;
+			}
+		}
 
 		++lineIdx;
 	}
