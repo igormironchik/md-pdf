@@ -31,6 +31,9 @@ set( GUI_SRC main.cpp
 	progress.cpp
 	progress.ui )
 
+set( LIB_SYNTAX_SRC syntax.cpp
+	syntax.hpp )
+
 include_directories( ${CMAKE_CURRENT_SOURCE_DIR}
 	${CMAKE_CURRENT_SOURCE_DIR}/../3rdparty/podofo-trunk/src
 	${CMAKE_CURRENT_BINARY_DIR}/../3rdparty/podofo-trunk )
@@ -43,10 +46,14 @@ set( CMAKE_ARCHIVE_OUTPUT_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/../lib )
 
 add_library( md-parser STATIC ${LIB_SRC} )
 
+add_library( syntax STATIC ${LIB_SYNTAX_SRC} )
+
 target_link_libraries( md-parser Qt5::Core )
+
+target_link_libraries( syntax Qt5::Core )
 
 link_directories( ${CMAKE_CURRENT_BINARY_DIR}/../3rdparty/podofo-trunk/src )
 
 add_executable( md-pdf-gui ${GUI_SRC} )
 
-target_link_libraries( md-pdf-gui md-parser ${PODOFO_LIB} Qt5::Widgets Qt5::Network )
+target_link_libraries( md-pdf-gui md-parser syntax ${PODOFO_LIB} Qt5::Widgets Qt5::Network )
