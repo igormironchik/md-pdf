@@ -412,6 +412,18 @@ Code::setInlined( bool on )
 	m_inlined = on;
 }
 
+const QString &
+Code::syntax() const
+{
+	return m_syntax;
+}
+
+void
+Code::setSyntax( const QString & s )
+{
+	m_syntax = s;
+}
+
 
 //
 // TableCell

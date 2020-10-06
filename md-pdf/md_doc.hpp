@@ -451,9 +451,13 @@ public:
 	bool inlined() const;
 	void setInlined( bool on = true );
 
+	const QString & syntax() const;
+	void setSyntax( const QString & s );
+
 private:
 	QString m_text;
 	bool m_inlined;
+	QString m_syntax;
 
 	Q_DISABLE_COPY( Code )
 }; // class Code

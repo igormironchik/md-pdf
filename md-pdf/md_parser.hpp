@@ -100,7 +100,7 @@ private:
 		const QString & fileName );
 	void parseCode( QStringList & fr, QSharedPointer< Block > parent, int indent = 0 );
 	void parseCodeIndentedBySpaces( QStringList & fr, QSharedPointer< Block > parent,
-		int indent = 4 );
+		int indent = 4, const QString & syntax = QString() );
 	void parseListItem( QStringList & fr, QSharedPointer< Block > parent,
 		QSharedPointer< Document > doc,
 		QStringList & linksToParse, const QString & workingPath,

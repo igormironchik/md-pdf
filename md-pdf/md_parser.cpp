@@ -152,7 +152,7 @@ Parser::whatIsTheLine( const QString & str, bool inList ) const
 {
 	const auto s = str.simplified();
 	static const QRegExp olr( QStringLiteral( "^\\d+\\.\\s+.*" ) );
-	static const QRegExp startOfCode( QStringLiteral( "^[```|~~~]\\S*$" ) );
+	static const QRegExp startOfCode( QStringLiteral( "^(```|~~~)\\S*$" ) );
 
 	if( inList )
 	{
@@ -1611,15 +1611,22 @@ Parser::parseCode( QStringList & fr, QSharedPointer< Block > parent, int indent 
 		throw ParserException( QString(
 			"We found code block started with \"%1\" that doesn't finished." ).arg( fr.first() ) );
 
+	static const QRegExp startOfCode( QStringLiteral( "^(```|~~~)(.+)$" ) );
+
+	QString syntax;
+
+	if( startOfCode.indexIn( fr.constFirst(), i ) != -1 )
+		syntax = startOfCode.cap( 2 );
+
 	fr.removeFirst();
 	fr.removeLast();
 
-	parseCodeIndentedBySpaces( fr, parent, indent );
+	parseCodeIndentedBySpaces( fr, parent, indent, syntax );
 }
 
 void
 Parser::parseCodeIndentedBySpaces( QStringList & fr, QSharedPointer< Block > parent,
-	int indent )
+	int indent, const QString & syntax )
 {
 	QString code;
 
@@ -1630,8 +1637,9 @@ Parser::parseCodeIndentedBySpaces( QStringList & fr, QSharedPointer< Block > par
 	if( !code.isEmpty() )
 	{
 		code = code.left( code.length() - 1 );
-
-		parent->appendItem( QSharedPointer< Item > ( new Code( code ) ) );
+		QSharedPointer< Code > codeItem( new Code( code ) );
+		codeItem->setSyntax( syntax );
+		parent->appendItem( codeItem );
 	}
 }
 
