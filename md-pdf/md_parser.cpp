@@ -1611,11 +1611,11 @@ Parser::parseCode( QStringList & fr, QSharedPointer< Block > parent, int indent 
 		throw ParserException( QString(
 			"We found code block started with \"%1\" that doesn't finished." ).arg( fr.first() ) );
 
-	static const QRegExp startOfCode( QStringLiteral( "^(```|~~~)(.+)$" ) );
+	static const QRegExp startOfCode( QStringLiteral( "^\\s*(```|~~~)(.+)$" ) );
 
 	QString syntax;
 
-	if( startOfCode.indexIn( fr.constFirst(), i ) != -1 )
+	if( startOfCode.exactMatch( fr.constFirst() ) )
 		syntax = startOfCode.cap( 2 );
 
 	fr.removeFirst();
