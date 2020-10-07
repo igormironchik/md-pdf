@@ -7,7 +7,7 @@
     <x>0</x>
     <y>0</y>
     <width>597</width>
-    <height>637</height>
+    <height>704</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -211,6 +211,78 @@
         </item>
         <item row="6" column="2">
          <widget class="QToolButton" name="m_codeBackgroundBtn">
+          <property name="text">
+           <string>...</string>
+          </property>
+         </widget>
+        </item>
+        <item row="7" column="0">
+         <widget class="QLabel" name="label_9">
+          <property name="text">
+           <string>Code keyword color</string>
+          </property>
+         </widget>
+        </item>
+        <item row="7" column="1">
+         <widget class="ColorWidget" name="m_keywordColor">
+          <property name="frameShape">
+           <enum>QFrame::Panel</enum>
+          </property>
+          <property name="frameShadow">
+           <enum>QFrame::Sunken</enum>
+          </property>
+         </widget>
+        </item>
+        <item row="7" column="2">
+         <widget class="QToolButton" name="m_keywordColorBtn">
+          <property name="text">
+           <string>...</string>
+          </property>
+         </widget>
+        </item>
+        <item row="8" column="0">
+         <widget class="QLabel" name="label_10">
+          <property name="text">
+           <string>Comment color</string>
+          </property>
+         </widget>
+        </item>
+        <item row="8" column="1">
+         <widget class="ColorWidget" name="m_commentColor">
+          <property name="frameShape">
+           <enum>QFrame::Panel</enum>
+          </property>
+          <property name="frameShadow">
+           <enum>QFrame::Sunken</enum>
+          </property>
+         </widget>
+        </item>
+        <item row="8" column="2">
+         <widget class="QToolButton" name="m_commentColorBtn">
+          <property name="text">
+           <string>...</string>
+          </property>
+         </widget>
+        </item>
+        <item row="9" column="0">
+         <widget class="QLabel" name="label_11">
+          <property name="text">
+           <string>Code color</string>
+          </property>
+         </widget>
+        </item>
+        <item row="9" column="1">
+         <widget class="ColorWidget" name="m_codeColor">
+          <property name="frameShape">
+           <enum>QFrame::Panel</enum>
+          </property>
+          <property name="frameShadow">
+           <enum>QFrame::Sunken</enum>
+          </property>
+         </widget>
+        </item>
+        <item row="9" column="2">
+         <widget class="QToolButton" name="m_codeColorBtn">
           <property name="text">
            <string>...</string>
           </property>

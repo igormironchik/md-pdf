@@ -51,6 +51,9 @@ private slots:
 	void changeLinkColor();
 	void changeBorderColor();
 	void changeCodeBackground();
+	void changeKeywordColor();
+	void changeCommentColor();
+	void changeCodeColor();
 	void selectMarkdown();
 	void process();
 	void codeFontSizeChanged( int i );

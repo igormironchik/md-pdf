@@ -22,6 +22,7 @@
 
 // md-pdf include.
 #include "renderer.hpp"
+#include "syntax.hpp"
 
 // Qt include.
 #include <QFileInfo>
@@ -1249,6 +1250,9 @@ PdfRenderer::drawCode( PdfAuxData & pdfData, const RenderOpts & renderOpts,
 		pdfData.coords.x = pdfData.coords.margins.left + offset;
 
 		lines = item->text().split( QLatin1Char( '\n' ), Qt::KeepEmptyParts );
+
+		for( auto it = lines.begin(), last = lines.end(); it != last; ++it )
+			it->replace( QStringLiteral( "\t" ), QStringLiteral( "    " ) );
 	}
 
 	auto * font = createFont( renderOpts.m_codeFont, false, false, renderOpts.m_codeFontSize,
@@ -1275,6 +1279,10 @@ PdfRenderer::drawCode( PdfAuxData & pdfData, const RenderOpts & renderOpts,
 		if( m_terminate )
 			return ret;
 	}
+
+	const auto colored = Syntax::createSyntaxHighlighter( item->syntax() )->prepare( lines );
+	int currentWord = 0;
+	const auto spaceWidth = font->GetFontMetrics()->StringWidth( PdfString( " " ) );
 
 	while( i < lines.size() )
 	{
@@ -1306,8 +1314,54 @@ PdfRenderer::drawCode( PdfAuxData & pdfData, const RenderOpts & renderOpts,
 
 		for( ; i < j; ++i )
 		{
-			pdfData.painter->DrawText( pdfData.coords.x, pdfData.coords.y,
-				createPdfString( lines.at( i ) ) );
+			pdfData.coords.x = pdfData.coords.margins.left + offset;
+
+			while( true )
+			{
+				if( currentWord == colored.size() || colored[ currentWord ].line != i )
+					break;
+
+				pdfData.painter->Save();
+
+				switch( colored[ currentWord ].color )
+				{
+					case Syntax::ColorRole::Keyword :
+					{
+						pdfData.painter->SetColor( renderOpts.m_keywordColor.redF(),
+							renderOpts.m_keywordColor.greenF(),
+							renderOpts.m_keywordColor.blueF() );
+					}
+						break;
+
+					case Syntax::ColorRole::Regular :
+					{
+						pdfData.painter->SetColor( renderOpts.m_codeColor.redF(),
+							renderOpts.m_codeColor.greenF(),
+							renderOpts.m_codeColor.blueF() );
+					}
+						break;
+
+					case Syntax::ColorRole::Comment :
+					{
+						pdfData.painter->SetColor( renderOpts.m_commentColor.redF(),
+							renderOpts.m_commentColor.greenF(),
+							renderOpts.m_commentColor.blueF() );
+					}
+						break;
+				}
+
+				const auto length = colored[ currentWord ].endPos -
+					colored[ currentWord ].startPos + 1;
+
+				pdfData.painter->DrawText( pdfData.coords.x, pdfData.coords.y,
+					createPdfString( lines.at( i ).mid( colored[ currentWord ].startPos, length ) ) );
+
+				pdfData.coords.x += spaceWidth * length;
+
+				pdfData.painter->Restore();
+
+				++currentWord;
+			}
 
 			pdfData.coords.y -= lineHeight;
 		}

@@ -54,6 +54,9 @@ MainWindow::MainWindow()
 	m_ui->m_linkColor->setColor( QColor( 33, 122, 255 ) );
 	m_ui->m_borderColor->setColor( QColor( 81, 81, 81 ) );
 	m_ui->m_codeBackground->setColor( QColor( 222, 222, 222 ) );
+	m_ui->m_codeColor->setColor( QColor( 0, 0, 0 ) );
+	m_ui->m_keywordColor->setColor( QColor( 128, 128, 0 ) );
+	m_ui->m_commentColor->setColor( QColor( 0, 128, 0 ) );
 
 	const auto codecs = QTextCodec::availableCodecs();
 	QStringList codecsNames;
@@ -71,6 +74,9 @@ MainWindow::MainWindow()
 	connect( m_ui->m_borderColorBtn, &QToolButton::clicked, this, &MainWindow::changeBorderColor );
 	connect( m_ui->m_codeBackgroundBtn, &QToolButton::clicked,
 		this, &MainWindow::changeCodeBackground );
+	connect( m_ui->m_keywordColorBtn, &QToolButton::clicked, this, &MainWindow::changeKeywordColor );
+	connect( m_ui->m_commentColorBtn, &QToolButton::clicked, this, &MainWindow::changeCommentColor );
+	connect( m_ui->m_codeColorBtn, &QToolButton::clicked, this, &MainWindow::changeCodeColor );
 	connect( m_ui->m_fileNameBtn, &QToolButton::clicked,
 		this, &MainWindow::selectMarkdown );
 	connect( m_ui->m_startBtn, &QPushButton::clicked,
@@ -134,6 +140,33 @@ MainWindow::changeCodeBackground()
 }
 
 void
+MainWindow::changeKeywordColor()
+{
+	QColorDialog dlg( m_ui->m_keywordColor->color(), this );
+
+	if( QDialog::Accepted == dlg.exec() )
+		m_ui->m_keywordColor->setColor( dlg.currentColor() );
+}
+
+void
+MainWindow::changeCommentColor()
+{
+	QColorDialog dlg( m_ui->m_commentColor->color(), this );
+
+	if( QDialog::Accepted == dlg.exec() )
+		m_ui->m_commentColor->setColor( dlg.currentColor() );
+}
+
+void
+MainWindow::changeCodeColor()
+{
+	QColorDialog dlg( m_ui->m_codeColor->color(), this );
+
+	if( QDialog::Accepted == dlg.exec() )
+		m_ui->m_codeColor->setColor( dlg.currentColor() );
+}
+
+void
 MainWindow::selectMarkdown()
 {
 	const auto fileName = QFileDialog::getOpenFileName( this, tr( "Select Markdown" ),
@@ -179,6 +212,9 @@ MainWindow::process()
 				opts.m_linkColor = m_ui->m_linkColor->color();
 				opts.m_borderColor = m_ui->m_borderColor->color();
 				opts.m_codeBackground = m_ui->m_codeBackground->color();
+				opts.m_keywordColor = m_ui->m_keywordColor->color();
+				opts.m_commentColor = m_ui->m_commentColor->color();
+				opts.m_codeColor = m_ui->m_codeColor->color();
 				opts.m_left = ( m_ui->m_pt->isChecked() ? m_ui->m_left->value() :
 					m_ui->m_left->value() / c_mmInPt );
 				opts.m_right = ( m_ui->m_pt->isChecked() ? m_ui->m_right->value() :

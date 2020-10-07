@@ -60,6 +60,12 @@ struct RenderOpts
 	QColor m_borderColor;
 	//! Code background.
 	QColor m_codeBackground;
+	//! Keyword color.
+	QColor m_keywordColor;
+	//! Comment color.
+	QColor m_commentColor;
+	//! Regular code color.
+	QColor m_codeColor;
 	//! Left margin.
 	double m_left;
 	//! Right margin.
