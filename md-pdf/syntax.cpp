@@ -177,6 +177,7 @@ static const QStringList c_cppKeyWords = {
 	QStringLiteral( "mutable" ),
 	QStringLiteral( "namespace" ),
 	QStringLiteral( "new" ),
+	QStringLiteral( "nullptr" ),
 	QStringLiteral( "operator" ),
 	QStringLiteral( "private" ),
 	QStringLiteral( "protected" ),
@@ -204,6 +205,59 @@ static const QStringList c_cppKeyWords = {
 	QStringLiteral( "void" ),
 	QStringLiteral( "volatile" ),
 	QStringLiteral( "wchar_t" ),
+	QStringLiteral( "while" )
+};
+
+//! Java keywords.
+static const QStringList c_javaKeyWords = {
+	QStringLiteral( "abstract" ),
+	QStringLiteral( "boolean" ),
+	QStringLiteral( "break" ),
+	QStringLiteral( "byte" ),
+	QStringLiteral( "case" ),
+	QStringLiteral( "catch" ),
+	QStringLiteral( "char" ),
+	QStringLiteral( "class" ),
+	QStringLiteral( "continue" ),
+	QStringLiteral( "default" ),
+	QStringLiteral( "do" ),
+	QStringLiteral( "double" ),
+	QStringLiteral( "else" ),
+	QStringLiteral( "enum" ),
+	QStringLiteral( "extends" ),
+	QStringLiteral( "final" ),
+	QStringLiteral( "finally" ),
+	QStringLiteral( "float" ),
+	QStringLiteral( "for" ),
+	QStringLiteral( "if" ),
+	QStringLiteral( "goto" ),
+	QStringLiteral( "implements" ),
+	QStringLiteral( "import" ),
+	QStringLiteral( "instanceof" ),
+	QStringLiteral( "int" ),
+	QStringLiteral( "interface" ),
+	QStringLiteral( "long" ),
+	QStringLiteral( "native" ),
+	QStringLiteral( "new" ),
+	QStringLiteral( "null" ),
+	QStringLiteral( "package" ),
+	QStringLiteral( "private" ),
+	QStringLiteral( "protected" ),
+	QStringLiteral( "public" ),
+	QStringLiteral( "return" ),
+	QStringLiteral( "short" ),
+	QStringLiteral( "static" ),
+	QStringLiteral( "strictfp" ),
+	QStringLiteral( "super" ),
+	QStringLiteral( "switch" ),
+	QStringLiteral( "synchronized" ),
+	QStringLiteral( "this" ),
+	QStringLiteral( "throw" ),
+	QStringLiteral( "throws" ),
+	QStringLiteral( "transient" ),
+	QStringLiteral( "try" ),
+	QStringLiteral( "void" ),
+	QStringLiteral( "volatile" ),
 	QStringLiteral( "while" )
 };
 
@@ -368,7 +422,7 @@ Syntax::Colors
 CppSyntax::prepare( const QStringList & lines ) const
 {
 	return prepareColors( lines, QStringLiteral( "/*" ), QStringLiteral( "*/" ),
-		QStringLiteral( "//" ), QStringLiteral( ":,.-/*-+=<>!&()~%^|?[]{}" ),
+		QStringLiteral( "//" ), QStringLiteral( ":,.-/*-+=<>!&()~%^|?[]{};" ),
 		c_cppKeyWords );
 }
 
@@ -380,7 +434,7 @@ CppSyntax::prepare( const QStringList & lines ) const
 Syntax::Colors
 JavaSyntax::prepare( const QStringList & lines ) const
 {
-	Colors ret;
-
-	return ret;
+	return prepareColors( lines, QStringLiteral( "/*" ), QStringLiteral( "*/" ),
+		QStringLiteral( "//" ), QStringLiteral( ":,.-/*-+=<>!&()~%^|?[]{};" ),
+		c_javaKeyWords );
 }
