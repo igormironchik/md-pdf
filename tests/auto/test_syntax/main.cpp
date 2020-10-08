@@ -71,13 +71,14 @@ TEST_CASE( "comments" )
 		QStringLiteral( "for/*comment*//*comment*/( int i = 0; i < 10; ++i )//comment*/" ),
 		QStringLiteral( "/*comment*/ /*comment*/\tdoSomething();/*comment" ),
 		QStringLiteral( "comment" ),
-		QStringLiteral( "comment*/do{};" ) };
+		QStringLiteral( "comment*/do{};/*comment*/" ),
+		QStringLiteral( "/*comment*///comment" ) };
 
 	auto s = Syntax::createSyntaxHighlighter( QStringLiteral( "cpp" ) );
 
 	const auto w = s->prepare( code );
 
-	REQUIRE( w.size() == 17 );
+	REQUIRE( w.size() == 20 );
 
 	REQUIRE( w.at( 0 ).startPos == 0 );
 	REQUIRE( w.at( 0 ).endPos == 8 );
@@ -163,5 +164,20 @@ TEST_CASE( "comments" )
 	REQUIRE( w.at( 16 ).endPos == 13 );
 	REQUIRE( w.at( 16 ).line == 4 );
 	REQUIRE( w.at( 16 ).color == Syntax::ColorRole::Regular );
+
+	REQUIRE( w.at( 17 ).startPos == 14 );
+	REQUIRE( w.at( 17 ).endPos == 24 );
+	REQUIRE( w.at( 17 ).line == 4 );
+	REQUIRE( w.at( 17 ).color == Syntax::ColorRole::Comment );
+
+	REQUIRE( w.at( 18 ).startPos == 0 );
+	REQUIRE( w.at( 18 ).endPos == 10 );
+	REQUIRE( w.at( 18 ).line == 5 );
+	REQUIRE( w.at( 18 ).color == Syntax::ColorRole::Comment );
+
+	REQUIRE( w.at( 19 ).startPos == 11 );
+	REQUIRE( w.at( 19 ).endPos == 19 );
+	REQUIRE( w.at( 19 ).line == 5 );
+	REQUIRE( w.at( 19 ).color == Syntax::ColorRole::Comment );
 }
 
