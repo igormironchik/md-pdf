@@ -1461,7 +1461,7 @@ Parser::parseBlockquote( QStringList & fr, QSharedPointer< Block > parent,
 	if( indent > -1 )
 	{
 		for( auto it = fr.begin(), last = fr.end(); it != last; ++it )
-			*it = it->mid( indent + 1 );
+			*it = it->mid( it->indexOf( QLatin1Char( '>' ) ) + 1 );
 
 		parse( stream, bq, doc, linksToParse, workingPath, fileName );
 	}

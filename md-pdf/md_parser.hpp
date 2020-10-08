@@ -368,7 +368,8 @@ private:
 			}
 
 			// Something new and this is not a code block or a list.
-			if( type != lineType && type != BlockType::Code && type != BlockType::List )
+			if( type != lineType && type != BlockType::Code && type != BlockType::List &&
+				type != BlockType::Blockquote )
 			{
 				pf();
 
