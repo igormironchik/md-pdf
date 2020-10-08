@@ -51,9 +51,9 @@ Syntax::prepare( const QStringList & lines ) const
 QSharedPointer< Syntax >
 Syntax::createSyntaxHighlighter( const QString & language )
 {
-	if( language.toLower() == QStringLiteral( "cpp" ) )
+	if( language.toLower().simplified() == QStringLiteral( "cpp" ) )
 		return QSharedPointer< Syntax > ( new CppSyntax );
-	else if( language.toLower() == QStringLiteral( "java" ) )
+	else if( language.toLower().simplified() == QStringLiteral( "java" ) )
 		return QSharedPointer< Syntax > ( new JavaSyntax );
 	else
 		return QSharedPointer< Syntax > ( new Syntax );
