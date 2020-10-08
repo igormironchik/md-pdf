@@ -1635,9 +1635,13 @@ PdfRenderer::drawListItem( PdfAuxData & pdfData, const RenderOpts & renderOpts,
 				break;
 
 			case MD::ItemType::Code :
+			{
 				ret.append( drawCode( pdfData, renderOpts,
 					static_cast< MD::Code* > ( it->data() ),
 					doc, offset, justCalcHeight ) );
+
+				addExtraSpace = false;
+			}
 				break;
 
 			case MD::ItemType::Blockquote :
