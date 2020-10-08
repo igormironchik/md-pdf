@@ -1597,6 +1597,8 @@ PdfRenderer::drawListItem( PdfAuxData & pdfData, const RenderOpts & renderOpts,
 
 	QVector< WhereDrawn > ret;
 
+	bool addExtraSpace = false;
+
 	for( auto it = item->items().cbegin(), last = item->items().cend(); it != last; ++it )
 	{
 		{
@@ -1623,9 +1625,13 @@ PdfRenderer::drawListItem( PdfAuxData & pdfData, const RenderOpts & renderOpts,
 				break;
 
 			case MD::ItemType::Paragraph :
+			{
 				ret.append( drawParagraph( pdfData, renderOpts,
 					static_cast< MD::Paragraph* > ( it->data() ),
-					doc, offset, false, justCalcHeight ) );
+					doc, offset, ( it != item->items().cbegin() ), justCalcHeight ) );
+
+				addExtraSpace = ( it != item->items().cbegin() );
+			}
 				break;
 
 			case MD::ItemType::Code :
@@ -1635,9 +1641,13 @@ PdfRenderer::drawListItem( PdfAuxData & pdfData, const RenderOpts & renderOpts,
 				break;
 
 			case MD::ItemType::Blockquote :
+			{
 				ret.append( drawBlockquote( pdfData, renderOpts,
 					static_cast< MD::Blockquote* > ( it->data() ),
 					doc, offset, justCalcHeight ) );
+
+				addExtraSpace = ( it != item->items().cbegin() );
+			}
 				break;
 
 			case MD::ItemType::List :
@@ -1658,6 +1668,12 @@ PdfRenderer::drawListItem( PdfAuxData & pdfData, const RenderOpts & renderOpts,
 
 		if( justCalcHeight )
 			break;
+	}
+
+	if( addExtraSpace )
+	{
+		ret.append( { pdfData.currentPageIdx, pdfData.coords.y, lineHeight } );
+		moveToNewLine( pdfData, offset, lineHeight, 1.0 );
 	}
 
 	return ret;
