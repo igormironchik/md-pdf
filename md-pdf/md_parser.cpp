@@ -152,7 +152,7 @@ Parser::whatIsTheLine( const QString & str, bool inList ) const
 {
 	const auto s = str.simplified();
 	static const QRegExp olr( QStringLiteral( "^\\d+\\.\\s+.*" ) );
-	static const QRegExp startOfCode( QStringLiteral( "^(```|~~~)\\S*$" ) );
+	static const QRegExp startOfCode( QStringLiteral( "^(```|~~~)\\s*\\S*$" ) );
 
 	if( inList )
 	{
@@ -1611,7 +1611,7 @@ Parser::parseCode( QStringList & fr, QSharedPointer< Block > parent, int indent 
 		throw ParserException( QString(
 			"We found code block started with \"%1\" that doesn't finished." ).arg( fr.first() ) );
 
-	static const QRegExp startOfCode( QStringLiteral( "^\\s*(```|~~~)(.+)$" ) );
+	static const QRegExp startOfCode( QStringLiteral( "^\\s*(```|~~~)\\s*(.+)$" ) );
 
 	QString syntax;
 

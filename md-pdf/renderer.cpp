@@ -455,6 +455,8 @@ PdfRenderer::drawText( PdfAuxData & pdfData, const RenderOpts & renderOpts,
 
 	if( item->opts() & MD::TextOption::StrikethroughText )
 		font->SetStrikeOut( true );
+	else
+		font->SetStrikeOut( false );
 
 	return drawString( pdfData, renderOpts, item->text(),
 		spaceFont, font, font->GetFontMetrics()->GetLineSpacing(),
@@ -527,6 +529,8 @@ PdfRenderer::drawLink( PdfAuxData & pdfData, const RenderOpts & renderOpts,
 
 		if( item->textOptions() & MD::TextOption::StrikethroughText )
 			font->SetStrikeOut( true );
+		else
+			font->SetStrikeOut( false );
 
 		rects = normalizeRects( drawString( pdfData, renderOpts,
 			( !item->text().isEmpty() ? item->text() : url ),
@@ -1757,6 +1761,8 @@ PdfRenderer::createAuxTable( PdfAuxData & pdfData, const RenderOpts & renderOpts
 
 						if( t->opts() & MD::TextOption::StrikethroughText )
 							font->SetStrikeOut( true );
+						else
+							font->SetStrikeOut( false );
 
 						const auto words = t->text().split( QLatin1Char( ' ' ),
 							Qt::SkipEmptyParts );
@@ -1805,6 +1811,8 @@ PdfRenderer::createAuxTable( PdfAuxData & pdfData, const RenderOpts & renderOpts
 
 						if( l->textOptions() & MD::TextOption::StrikethroughText )
 							font->SetStrikeOut( true );
+						else
+							font->SetStrikeOut( false );
 
 						QString url = l->url();
 
