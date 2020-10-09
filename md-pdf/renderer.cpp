@@ -1524,6 +1524,9 @@ PdfRenderer::drawBlockquote( PdfAuxData & pdfData, const RenderOpts & renderOpts
 			return ret;
 	}
 
+	if( heightCalcOpt == CalcHeightOpt::Full )
+		return ret;
+
 	struct AuxData {
 		double y = 0.0;
 		double height = 0.0;
@@ -1740,7 +1743,9 @@ PdfRenderer::drawListItem( PdfAuxData & pdfData, const RenderOpts & renderOpts,
 	if( addExtraSpace )
 	{
 		ret.append( { pdfData.currentPageIdx, pdfData.coords.y, lineHeight } );
-		moveToNewLine( pdfData, offset, lineHeight, 1.0 );
+
+		if( heightCalcOpt != CalcHeightOpt::Full )
+			moveToNewLine( pdfData, offset, lineHeight, 1.0 );
 	}
 
 	return ret;
@@ -1999,11 +2004,27 @@ PdfRenderer::drawTable( PdfAuxData & pdfData, const RenderOpts & renderOpts,
 	const bool justHeader = auxTable.at( 0 ).size() == 1;
 	const auto r1h = ( !justHeader ? rowHeight( auxTable, 1 ) : 0 );
 
-	if( heightCalcOpt == CalcHeightOpt::Minimum )
+	switch( heightCalcOpt )
 	{
-		ret.append( { 0, 0.0, r0h + r1h + c_tableMargin * ( justHeader ? 2.0 : 4.0 ) } );
+		case CalcHeightOpt::Minimum :
+		{
+			ret.append( { 0, 0.0, r0h + r1h + c_tableMargin * ( justHeader ? 2.0 : 4.0 ) } );
 
-		return ret;
+			return ret;
+		}
+
+		case CalcHeightOpt::Full :
+		{
+			ret.append( { 0, 0.0, r0h + r1h + c_tableMargin * ( justHeader ? 2.0 : 4.0 ) } );
+
+			for( int i = 2; i < auxTable.size(); ++i )
+				ret.append( { 0, 0.0, rowHeight( auxTable, i ) + c_tableMargin * 2.0 } );
+
+			return ret;
+		}
+
+		default :
+			break;
 	}
 
 	if( pdfData.coords.y - ( r0h + r1h + c_tableMargin * ( justHeader ? 2.0 : 4.0 ) ) <
