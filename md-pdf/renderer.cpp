@@ -560,7 +560,7 @@ PdfRenderer::drawLink( PdfAuxData & pdfData, const RenderOpts & renderOpts,
 	// Otherwise image link.
 	else
 		rects.append( drawImage( pdfData, renderOpts, item->img().data(), doc, newLine, offset,
-			firstInParagraph, cw ) );
+			firstInParagraph, cw, scale ) );
 
 	if( draw )
 	{
@@ -948,15 +948,31 @@ PdfRenderer::drawParagraph( PdfAuxData & pdfData, const RenderOpts & renderOpts,
 		}
 	}
 
-	if( heightCalcOpt == CalcHeightOpt::Minimum )
-	{
-		QVector< WhereDrawn > r;
-		r.append( { 0, 0.0, cw.firstItemHeight() } );
-
-		return r;
-	}
-
 	cw.append( { 0.0, lineHeight, false, true, false, "" } );
+
+	switch( heightCalcOpt )
+	{
+		case CalcHeightOpt::Minimum :
+		{
+			QVector< WhereDrawn > r;
+			r.append( { 0, 0.0, ( withNewLine ? lineHeight + cw.firstItemHeight() :
+				cw.firstItemHeight() ) } );
+
+			return r;
+		}
+
+		case CalcHeightOpt::Full :
+		{
+			QVector< WhereDrawn > r;
+			r.append( { 0, 0.0, ( withNewLine ? lineHeight + cw.totalHeight() :
+				cw.totalHeight() ) } );
+
+			return r;
+		}
+
+		default :
+			break;
+	}
 
 	cw.calcScale( pdfData.coords.pageWidth - pdfData.coords.margins.left -
 		pdfData.coords.margins.right - offset );
@@ -1052,20 +1068,20 @@ PdfRenderer::drawImage( PdfAuxData & pdfData, const RenderOpts & renderOpts,
 				pdfData.coords.x += offset;
 
 			double x = 0.0;
-			double scale = 1.0;
+			double imgScale = 1.0;
 			const double availableWidth = pdfData.coords.pageWidth - pdfData.coords.margins.left -
 				pdfData.coords.margins.right - offset;
 			double availableHeight = pdfData.coords.y - pdfData.coords.margins.bottom;
 
 			if( pdfImg.GetWidth() > availableWidth )
-				scale = availableWidth / pdfImg.GetWidth();
+				imgScale = ( availableWidth / pdfImg.GetWidth() ) * scale;
 
 			const double pageHeight = pdfData.coords.pageHeight - pdfData.coords.margins.top -
 				pdfData.coords.margins.bottom;
 
-			if( pdfImg.GetHeight() * scale > pageHeight )
+			if( pdfImg.GetHeight() * imgScale > pageHeight )
 			{
-				scale = pageHeight / ( pdfImg.GetHeight() * scale );
+				imgScale = ( pageHeight / ( pdfImg.GetHeight() * imgScale ) ) * scale;
 
 				pdfData.painter->FinishPage();
 
@@ -1073,7 +1089,7 @@ PdfRenderer::drawImage( PdfAuxData & pdfData, const RenderOpts & renderOpts,
 
 				pdfData.coords.x += offset;
 			}
-			else if( pdfImg.GetHeight() * scale > availableHeight )
+			else if( pdfImg.GetHeight() * imgScale > availableHeight )
 			{
 				pdfData.painter->FinishPage();
 
@@ -1082,17 +1098,17 @@ PdfRenderer::drawImage( PdfAuxData & pdfData, const RenderOpts & renderOpts,
 				pdfData.coords.x += offset;
 			}
 
-			if( pdfImg.GetWidth() * scale < availableWidth )
-				x = ( availableWidth - pdfImg.GetWidth() * scale ) / 2.0;
+			if( pdfImg.GetWidth() * imgScale < availableWidth )
+				x = ( availableWidth - pdfImg.GetWidth() * imgScale ) / 2.0;
 
 			pdfData.painter->DrawImage( pdfData.coords.x + x,
-				pdfData.coords.y - pdfImg.GetHeight() * scale,
-				&pdfImg, scale, scale );
+				pdfData.coords.y - pdfImg.GetHeight() * imgScale,
+				&pdfImg, imgScale, imgScale );
 
-			pdfData.coords.y -= pdfImg.GetHeight() * scale;
+			pdfData.coords.y -= pdfImg.GetHeight() * imgScale;
 
 			QRectF r( pdfData.coords.x + x, pdfData.coords.y,
-				pdfImg.GetWidth() * scale, pdfImg.GetHeight() * scale );
+				pdfImg.GetWidth() * imgScale, pdfImg.GetHeight() * imgScale );
 
 			moveToNewLine( pdfData, offset, lineHeight, 1.0 );
 
@@ -1129,22 +1145,23 @@ PdfRenderer::drawImage( PdfAuxData & pdfData, const RenderOpts & renderOpts,
 
 			const auto lineHeight = font->GetFontMetrics()->GetLineSpacing();
 
-			height += lineHeight * 2.0;
+			if( !firstInParagraph )
+				height += lineHeight;
 
-			double scale = 1.0;
+			double imgScale = 1.0;
 			const double availableWidth = pdfData.coords.pageWidth - pdfData.coords.margins.left -
 				pdfData.coords.margins.right - offset;
 
 			if( pdfImg.GetWidth() > availableWidth )
-				scale = availableWidth / pdfImg.GetWidth();
+				imgScale = ( availableWidth / pdfImg.GetWidth() ) * scale;
 
 			const double pageHeight = pdfData.coords.pageHeight - pdfData.coords.margins.top -
 				pdfData.coords.margins.bottom;
 
-			if( pdfImg.GetHeight() * scale > pageHeight )
-				scale = pageHeight / ( pdfImg.GetHeight() * scale );
+			if( pdfImg.GetHeight() * imgScale > pageHeight )
+				imgScale = ( pageHeight / ( pdfImg.GetHeight() * imgScale ) ) * scale;
 
-			height += pdfImg.GetHeight() * scale;
+			height += pdfImg.GetHeight() * imgScale;
 		}
 
 		pdfData.coords.x = pdfData.coords.margins.left + offset;

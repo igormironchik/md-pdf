@@ -335,6 +335,27 @@ private:
 			}
 		}
 
+		//! \return Total height.
+		double totalHeight() const
+		{
+			double h = 0.0;
+			bool first = true;
+
+			for( int i = 0, last = m_width.size(); i < last; ++i )
+			{
+				if( first )
+				{
+					h += m_width.at( i ).height;
+					first = false;
+				}
+
+				if( m_width.at( i ).isNewLine )
+					first = true;
+			}
+
+			return h;
+		}
+
 	private:
 		//! Is drawing?
 		bool m_drawing = false;
