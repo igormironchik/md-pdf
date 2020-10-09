@@ -1297,12 +1297,26 @@ PdfRenderer::drawCode( PdfAuxData & pdfData, const RenderOpts & renderOpts,
 		pdfData.doc, scale );
 	const auto lineHeight = font->GetFontMetrics()->GetLineSpacing();
 
-	if( heightCalcOpt == CalcHeightOpt::Minimum )
+	switch( heightCalcOpt )
 	{
-		QVector< WhereDrawn > r;
-		r.append( { 0, 0.0, textLHeight * 2.0 + lineHeight } );
+		case CalcHeightOpt::Minimum :
+		{
+			QVector< WhereDrawn > r;
+			r.append( { 0, 0.0, textLHeight * 2.0 + lineHeight } );
 
-		return r;
+			return r;
+		}
+
+		case CalcHeightOpt::Full :
+		{
+			QVector< WhereDrawn > r;
+			r.append( { 0, 0.0, textLHeight * 2.0 + lineHeight * ( lines.size() + 1 ) } );
+
+			return r;
+		}
+
+		default :
+			break;
 	}
 
 	pdfData.painter->SetFont( font );
