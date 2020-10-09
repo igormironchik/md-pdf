@@ -365,11 +365,6 @@ PdfRenderer::drawHeading( PdfAuxData & pdfData, const RenderOpts & renderOpts,
 	switch( heightCalcOpt )
 	{
 		case CalcHeightOpt::Minimum :
-		{
-			ret.append( { -1, 0.0, font->GetFontMetrics()->GetLineSpacing() } );
-			return ret;
-		}
-
 		case CalcHeightOpt::Full :
 		{
 			ret.append( { -1, 0.0, height } );
