@@ -30,6 +30,9 @@
 #include <QThread>
 #include <QBuffer>
 
+//! Footnote scale.
+static const float c_footnoteScale = 0.75;
+
 
 //! Internal exception.
 class PdfRendererError {
@@ -55,6 +58,7 @@ private:
 
 PdfRenderer::PdfRenderer()
 	:	m_terminate( false )
+	,	m_footnoteNum( 1 )
 {
 	connect( this, &PdfRenderer::start, this, &PdfRenderer::renderImpl,
 		Qt::QueuedConnection );
@@ -459,8 +463,9 @@ PdfRenderer::drawHeading( PdfAuxData & pdfData, const RenderOpts & renderOpts,
 
 QVector< QPair< QRectF, int > >
 PdfRenderer::drawText( PdfAuxData & pdfData, const RenderOpts & renderOpts,
-	MD::Text * item, QSharedPointer< MD::Document > doc, bool & newLine, double offset,
-	bool firstInParagraph, CustomWidth * cw, float scale )
+	MD::Text * item, QSharedPointer< MD::Document > doc, bool & newLine,
+	PdfFont * footnoteFont, float footnoteFontScale, MD::Item * nextItem, int footnoteNum,
+	double offset, bool firstInParagraph, CustomWidth * cw, float scale )
 {
 	auto * spaceFont = createFont( renderOpts.m_textFont, false, false,
 		renderOpts.m_textFontSize, pdfData.doc, scale );
@@ -476,7 +481,8 @@ PdfRenderer::drawText( PdfAuxData & pdfData, const RenderOpts & renderOpts,
 
 	return drawString( pdfData, renderOpts, item->text(),
 		spaceFont, font, font->GetFontMetrics()->GetLineSpacing(),
-		doc, newLine, offset, firstInParagraph, cw );
+		doc, newLine, footnoteFont, footnoteFontScale, nextItem, footnoteNum, offset,
+		firstInParagraph, cw );
 }
 
 namespace /* anonymous */ {
@@ -516,8 +522,9 @@ normalizeRects( const QVector< QPair< QRectF, int > > & rects )
 
 QVector< QPair< QRectF, int > >
 PdfRenderer::drawLink( PdfAuxData & pdfData, const RenderOpts & renderOpts,
-	MD::Link * item, QSharedPointer< MD::Document > doc, bool & newLine, double offset,
-	bool firstInParagraph, CustomWidth * cw, float scale )
+	MD::Link * item, QSharedPointer< MD::Document > doc, bool & newLine,
+	PdfFont * footnoteFont, float footnoteFontScale, MD::Item * nextItem, int footnoteNum,
+	double offset, bool firstInParagraph, CustomWidth * cw, float scale )
 {
 	QVector< QPair< QRectF, int > > rects;
 
@@ -553,7 +560,8 @@ PdfRenderer::drawLink( PdfAuxData & pdfData, const RenderOpts & renderOpts,
 			createFont( renderOpts.m_textFont, false, false, renderOpts.m_textFontSize,
 				pdfData.doc, scale ),
 			font, font->GetFontMetrics()->GetLineSpacing(),
-			doc, newLine, offset, firstInParagraph, cw ) );
+			doc, newLine, footnoteFont, footnoteFontScale, nextItem, footnoteNum, offset,
+			firstInParagraph, cw ) );
 
 		pdfData.painter->Restore();
 	}
@@ -590,7 +598,8 @@ PdfRenderer::drawLink( PdfAuxData & pdfData, const RenderOpts & renderOpts,
 QVector< QPair< QRectF, int > >
 PdfRenderer::drawString( PdfAuxData & pdfData, const RenderOpts & renderOpts,
 	const QString & str, PdfFont * spaceFont, PdfFont * font, double lineHeight,
-	QSharedPointer< MD::Document > doc, bool & newLine, double offset,
+	QSharedPointer< MD::Document > doc, bool & newLine, PdfFont * footnoteFont,
+	float footnoteFontScale, MD::Item * nextItem, int footnoteNum, double offset,
 	bool firstInParagraph, CustomWidth * cw, const QColor & background )
 {
 	Q_UNUSED( doc )
@@ -600,6 +609,21 @@ PdfRenderer::drawString( PdfAuxData & pdfData, const RenderOpts & renderOpts,
 
 	if( cw && !cw->isDrawing() )
 		draw = false;
+
+	bool footnoteAtEnd = false;
+	double footnoteWidth = 0.0;
+
+	if( nextItem && nextItem->type() == MD::ItemType::FootnoteRef )
+		footnoteAtEnd = true;
+
+	if( footnoteAtEnd )
+	{
+		const auto old = footnoteFont->GetFontSize();
+		footnoteFont->SetFontSize( old * footnoteFontScale );
+		footnoteWidth = footnoteFont->GetFontMetrics()->StringWidth( createPdfString(
+			QString::number( footnoteNum ) ) );
+		footnoteFont->SetFontSize( old );
+	}
 
 	auto newLineFn = [&] ()
 	{
@@ -648,7 +672,8 @@ PdfRenderer::drawString( PdfAuxData & pdfData, const RenderOpts & renderOpts,
 			scale = cw->scale();
 
 		const auto xv = pdfData.coords.x + w * scale / 100.0 + font->GetFontMetrics()->StringWidth(
-			createPdfString( words.first() ) );
+				createPdfString( words.first() ) ) +
+			( words.size() == 1 && footnoteAtEnd ? footnoteWidth : 0.0 );
 
 		if( xv < wv || qAbs( xv - wv ) < 0.01 )
 		{
@@ -688,7 +713,8 @@ PdfRenderer::drawString( PdfAuxData & pdfData, const RenderOpts & renderOpts,
 
 		const auto length = font->GetFontMetrics()->StringWidth( str );
 
-		const auto xv = pdfData.coords.x + length;
+		const auto xv = pdfData.coords.x + length +
+			( it + 1 == last && footnoteAtEnd ? footnoteWidth : 0.0 );
 
 		if( xv < wv || qAbs( xv - wv ) < 0.01 )
 		{
@@ -713,7 +739,8 @@ PdfRenderer::drawString( PdfAuxData & pdfData, const RenderOpts & renderOpts,
 					length, lineHeight ), pdfData.currentPageIdx ) );
 			}
 			else if( cw )
-				cw->append( { length, lineHeight, false, false, true, *it } );
+				cw->append( { length + ( it + 1 == last && footnoteAtEnd ? footnoteWidth : 0.0 ),
+					lineHeight, false, false, true, *it } );
 
 			pdfData.coords.x += length;
 
@@ -768,7 +795,8 @@ PdfRenderer::drawString( PdfAuxData & pdfData, const RenderOpts & renderOpts,
 		// Need to move to new line.
 		else
 		{
-			const auto xv = pdfData.coords.margins.left + offset + length;
+			const auto xv = pdfData.coords.margins.left + offset + length +
+				( it + 1 == last && footnoteAtEnd ? footnoteWidth : 0.0 );
 
 			if( xv < wv || qAbs( xv - wv ) < 0.01 )
 			{
@@ -788,9 +816,14 @@ PdfRenderer::drawString( PdfAuxData & pdfData, const RenderOpts & renderOpts,
 						pdfData.currentPageIdx ) );
 				}
 				else if( cw )
-					cw->append( { font->GetFontMetrics()->StringWidth( str ), lineHeight, false, false, true, *it } );
+					cw->append( { font->GetFontMetrics()->StringWidth( str ),
+						lineHeight, false, false, true, *it } );
 
 				newLineFn();
+
+				if( cw && it + 1 == last && footnoteAtEnd )
+					cw->append( { footnoteWidth, lineHeight, false, false, true,
+						QString::number( footnoteNum ) } );
 			}
 		}
 	}
@@ -811,7 +844,8 @@ PdfRenderer::drawInlinedCode( PdfAuxData & pdfData, const RenderOpts & renderOpt
 
 	return drawString( pdfData, renderOpts, item->text(), font, font,
 		textFont->GetFontMetrics()->GetLineSpacing(),
-		doc, newLine, offset, firstInParagraph, cw, renderOpts.m_codeBackground );
+		doc, newLine, nullptr, 1.0, nullptr, m_footnoteNum,
+		offset, firstInParagraph, cw, renderOpts.m_codeBackground );
 }
 
 void
@@ -883,6 +917,8 @@ PdfRenderer::drawParagraph( PdfAuxData & pdfData, const RenderOpts & renderOpts,
 	auto * font = createFont( renderOpts.m_textFont, false, false,
 		renderOpts.m_textFontSize, pdfData.doc, scale );
 
+	auto * footnoteFont = font;
+
 	const auto lineHeight = font->GetFontMetrics()->GetLineSpacing();
 
 	if( withNewLine && heightCalcOpt == CalcHeightOpt::Unknown )
@@ -904,6 +940,8 @@ PdfRenderer::drawParagraph( PdfAuxData & pdfData, const RenderOpts & renderOpts,
 	CustomWidth cw;
 	auto y = pdfData.coords.y;
 
+	auto footnoteNum = m_footnoteNum;
+
 	// Calculate words/lines/spaces widthes.
 	for( auto it = item->items().begin(), last = item->items().end(); it != last; ++it )
 	{
@@ -918,7 +956,9 @@ PdfRenderer::drawParagraph( PdfAuxData & pdfData, const RenderOpts & renderOpts,
 		{
 			case MD::ItemType::Text :
 				drawText( pdfData, renderOpts, static_cast< MD::Text* > ( it->data() ),
-					doc, newLine, offset, it == item->items().begin(), &cw, scale );
+					doc, newLine, footnoteFont, c_footnoteScale,
+					( it + 1 != last ? ( it + 1 )->data() : nullptr ),
+					footnoteNum, offset, it == item->items().begin(), &cw, scale );
 				break;
 
 			case MD::ItemType::Code :
@@ -928,7 +968,9 @@ PdfRenderer::drawParagraph( PdfAuxData & pdfData, const RenderOpts & renderOpts,
 
 			case MD::ItemType::Link :
 				drawLink( pdfData, renderOpts, static_cast< MD::Link* > ( it->data() ),
-					doc, newLine, offset, it == item->items().begin(), &cw, scale );
+					doc, newLine, footnoteFont, c_footnoteScale,
+					( it + 1 != last ? ( it + 1 )->data() : nullptr ),
+					footnoteNum, offset, it == item->items().begin(), &cw, scale );
 				break;
 
 			case MD::ItemType::Image :
@@ -941,6 +983,10 @@ PdfRenderer::drawParagraph( PdfAuxData & pdfData, const RenderOpts & renderOpts,
 				cw.append( { 0.0, lineHeight, false, true, false, "" } );
 				pdfData.coords.x = pdfData.coords.margins.left + offset;
 			}
+				break;
+
+			case MD::ItemType::FootnoteRef :
+				++footnoteNum;
 				break;
 
 			default :
@@ -997,7 +1043,8 @@ PdfRenderer::drawParagraph( PdfAuxData & pdfData, const RenderOpts & renderOpts,
 		{
 			case MD::ItemType::Text :
 				rects.append( drawText( pdfData, renderOpts, static_cast< MD::Text* > ( it->data() ),
-					doc, newLine, offset, it == item->items().begin(), &cw, scale ) );
+					doc, newLine, nullptr, 1.0, nullptr, m_footnoteNum,
+					offset, it == item->items().begin(), &cw, scale ) );
 				break;
 
 			case MD::ItemType::Code :
@@ -1006,8 +1053,9 @@ PdfRenderer::drawParagraph( PdfAuxData & pdfData, const RenderOpts & renderOpts,
 				break;
 
 			case MD::ItemType::Link :
-				rects.append(drawLink( pdfData, renderOpts, static_cast< MD::Link* > ( it->data() ),
-					doc, newLine, offset, it == item->items().begin(), &cw, scale ) );
+				rects.append( drawLink( pdfData, renderOpts, static_cast< MD::Link* > ( it->data() ),
+					doc, newLine, nullptr, 1.0, nullptr, m_footnoteNum,
+					offset, it == item->items().begin(), &cw, scale ) );
 				break;
 
 			case MD::ItemType::Image :
@@ -1017,6 +1065,29 @@ PdfRenderer::drawParagraph( PdfAuxData & pdfData, const RenderOpts & renderOpts,
 
 			case MD::ItemType::LineBreak :
 				moveToNewLine( pdfData, offset, lineHeight );
+				break;
+
+			case MD::ItemType::FootnoteRef :
+			{
+				const auto str = createPdfString( QString::number( m_footnoteNum ) );
+
+				const auto old = footnoteFont->GetFontSize();
+				footnoteFont->SetFontSize( old * c_footnoteScale );
+
+				const auto w = footnoteFont->GetFontMetrics()->StringWidth( str );
+
+				rects.append( qMakePair( QRectF( pdfData.coords.x, pdfData.coords.y,
+						w, lineHeight ),
+					pdfData.currentPageIdx ) );
+
+				++m_footnoteNum;
+
+				pdfData.painter->DrawText( pdfData.coords.x, pdfData.coords.y + lineHeight -
+					footnoteFont->GetFontMetrics()->GetLineSpacing(), str );
+				footnoteFont->SetFontSize( old );
+
+				pdfData.coords.x += w;
+			}
 				break;
 
 			default :

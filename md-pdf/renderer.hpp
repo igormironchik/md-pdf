@@ -369,9 +369,9 @@ private:
 
 	//! Draw text.
 	QVector< QPair< QRectF, int > > drawText( PdfAuxData & pdfData, const RenderOpts & renderOpts,
-		MD::Text * item, QSharedPointer< MD::Document > doc, bool & newLine, double offset = 0.0,
-		bool firstInParagraph = false, CustomWidth * cw = nullptr,
-		float scale = 1.0 );
+		MD::Text * item, QSharedPointer< MD::Document > doc, bool & newLine, PdfFont * footnoteFont,
+		float footnoteFontScale, MD::Item * nextItem, int footnoteNum, double offset = 0.0,
+		bool firstInParagraph = false, CustomWidth * cw = nullptr, float scale = 1.0 );
 	//! Draw inlined code.
 	QVector< QPair< QRectF, int > > drawInlinedCode( PdfAuxData & pdfData, const RenderOpts & renderOpts,
 		MD::Code * item, QSharedPointer< MD::Document > doc, bool & newLine, double offset,
@@ -380,11 +380,13 @@ private:
 	//! Draw string.
 	QVector< QPair< QRectF, int > > drawString( PdfAuxData & pdfData, const RenderOpts & renderOpts,
 		const QString & str, PdfFont * spaceFont, PdfFont * font, double lineHeight,
-		QSharedPointer< MD::Document > doc, bool & newLine, double offset,
+		QSharedPointer< MD::Document > doc, bool & newLine, PdfFont * footnoteFont,
+		float footnoteFontScale, MD::Item * nextItem, int footnoteNum, double offset,
 		bool firstInParagraph, CustomWidth * cw = nullptr, const QColor & background = QColor() );
 	//! Draw link.
 	QVector< QPair< QRectF, int > > drawLink( PdfAuxData & pdfData, const RenderOpts & renderOpts,
-		MD::Link * item, QSharedPointer< MD::Document > doc, bool & newLine, double offset = 0.0,
+		MD::Link * item, QSharedPointer< MD::Document > doc, bool & newLine, PdfFont * footnoteFont,
+		float footnoteFontScale, MD::Item * nextItem, int footnoteNum, double offset = 0.0,
 		bool firstInParagraph = false, CustomWidth * cw = nullptr,
 		float scale = 1.0 );
 	//! Draw image.
@@ -548,6 +550,8 @@ private:
 	QMultiMap< QString, QVector< QPair< QRectF, int > > > m_unresolvedLinks;
 	//! Cache of images.
 	QMap< QString, QImage > m_imageCache;
+	//! Footnote counter.
+	int m_footnoteNum;
 }; // class Renderer
 
 
