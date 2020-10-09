@@ -217,7 +217,8 @@ private:
 	//! Draw heading.
 	QVector< WhereDrawn > drawHeading( PdfAuxData & pdfData, const RenderOpts & renderOpts,
 		MD::Heading * item, QSharedPointer< MD::Document > doc, double offset = 0.0,
-		double nextItemMinHeight = 0.0, float fontScale = 1.0 );
+		double nextItemMinHeight = 0.0, CalcHeightOpt heightCalcOpt = CalcHeightOpt::Unknown,
+		float fontScale = 1.0 );
 	//! Draw paragraph.
 	QVector< WhereDrawn > drawParagraph( PdfAuxData & pdfData, const RenderOpts & renderOpts,
 		MD::Paragraph * item, QSharedPointer< MD::Document > doc, double offset = 0.0,

@@ -331,7 +331,7 @@ PdfRenderer::createQString( const PdfString & str )
 QVector< WhereDrawn >
 PdfRenderer::drawHeading( PdfAuxData & pdfData, const RenderOpts & renderOpts,
 	MD::Heading * item, QSharedPointer< MD::Document > doc, double offset,
-	double nextItemMinHeight, float fontScale )
+	double nextItemMinHeight, CalcHeightOpt heightCalcOpt, float fontScale )
 {
 	QVector< WhereDrawn > ret;
 
@@ -342,7 +342,8 @@ PdfRenderer::drawHeading( PdfAuxData & pdfData, const RenderOpts & renderOpts,
 			return ret;
 	}
 
-	emit status( tr( "Drawing heading." ) );
+	if( heightCalcOpt == CalcHeightOpt::Unknown )
+		emit status( tr( "Drawing heading." ) );
 
 	PdfFont * font = createFont( renderOpts.m_textFont.toLocal8Bit().data(),
 		true, false, renderOpts.m_textFontSize + 16 - ( item->level() < 7 ? item->level() * 2 : 12 ),
@@ -360,6 +361,24 @@ PdfRenderer::drawHeading( PdfAuxData & pdfData, const RenderOpts & renderOpts,
 	const double height = lines.size() * font->GetFontMetrics()->GetLineSpacing();
 	const double availableHeight = pdfData.coords.pageHeight - pdfData.coords.margins.top -
 		pdfData.coords.margins.bottom;
+
+	switch( heightCalcOpt )
+	{
+		case CalcHeightOpt::Minimum :
+		{
+			ret.append( { -1, 0.0, font->GetFontMetrics()->GetLineSpacing() } );
+			return ret;
+		}
+
+		case CalcHeightOpt::Full :
+		{
+			ret.append( { -1, 0.0, height } );
+			return ret;
+		}
+
+		default :
+			break;
+	}
 
 	pdfData.coords.y -= c_beforeHeading;
 
@@ -387,7 +406,8 @@ PdfRenderer::drawHeading( PdfAuxData & pdfData, const RenderOpts & renderOpts,
 	{
 		pdfData.painter->FinishPage();
 		createPage( pdfData );
-		return drawHeading( pdfData, renderOpts, item, doc, offset, nextItemMinHeight );
+		return drawHeading( pdfData, renderOpts, item, doc, offset, nextItemMinHeight,
+			heightCalcOpt, fontScale );
 	}
 	// Otherwise we need to split heading to place it on different pages.
 	else
@@ -435,7 +455,8 @@ PdfRenderer::drawHeading( PdfAuxData & pdfData, const RenderOpts & renderOpts,
 
 		createPage( pdfData );
 
-		ret.append( drawHeading( pdfData, renderOpts, item, doc, offset, nextItemMinHeight ) );
+		ret.append( drawHeading( pdfData, renderOpts, item, doc, offset, nextItemMinHeight,
+			heightCalcOpt, fontScale ) );
 
 		return ret;
 	}
@@ -1415,7 +1436,7 @@ PdfRenderer::drawBlockquote( PdfAuxData & pdfData, const RenderOpts & renderOpts
 						( it + 1 != last ?
 							minNecessaryHeight( pdfData, renderOpts, *( it + 1 ), doc,
 								offset + c_blockquoteBaseOffset  ) : 0.0 ),
-						fontScale ) );
+						heightCalcOpt, fontScale ) );
 				else
 				{
 					ret.append( { 0, 0.0, 0.0 } );
@@ -1632,7 +1653,7 @@ PdfRenderer::drawListItem( PdfAuxData & pdfData, const RenderOpts & renderOpts,
 						( it + 1 != last ?
 							minNecessaryHeight( pdfData, renderOpts, *( it + 1 ),  doc, offset ) :
 							0.0 ),
-						fontScale ) );
+						heightCalcOpt, fontScale ) );
 				else
 					ret.append( { 0, 0.0, 0.0 } );
 			}
