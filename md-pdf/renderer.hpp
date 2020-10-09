@@ -339,18 +339,18 @@ private:
 		double totalHeight() const
 		{
 			double h = 0.0;
-			bool first = true;
+			double max = 0.0;
 
 			for( int i = 0, last = m_width.size(); i < last; ++i )
 			{
-				if( first )
-				{
-					h += m_width.at( i ).height;
-					first = false;
-				}
+				if( m_width.at( i ).height > max )
+					max = m_width.at( i ).height;
 
 				if( m_width.at( i ).isNewLine )
-					first = true;
+				{
+					h += max;
+					max = 0.0;
+				}
 			}
 
 			return h;
