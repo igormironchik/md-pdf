@@ -218,37 +218,37 @@ private:
 	QVector< WhereDrawn > drawHeading( PdfAuxData & pdfData, const RenderOpts & renderOpts,
 		MD::Heading * item, QSharedPointer< MD::Document > doc, double offset = 0.0,
 		double nextItemMinHeight = 0.0, CalcHeightOpt heightCalcOpt = CalcHeightOpt::Unknown,
-		float fontScale = 1.0 );
+		float scale = 1.0 );
 	//! Draw paragraph.
 	QVector< WhereDrawn > drawParagraph( PdfAuxData & pdfData, const RenderOpts & renderOpts,
 		MD::Paragraph * item, QSharedPointer< MD::Document > doc, double offset = 0.0,
 		bool withNewLine = true, CalcHeightOpt heightCalcOpt = CalcHeightOpt::Unknown,
-		float fontScale = 1.0 );
+		float scale = 1.0 );
 	//! Draw block of code.
 	QVector< WhereDrawn > drawCode( PdfAuxData & pdfData, const RenderOpts & renderOpts,
 		MD::Code * item, QSharedPointer< MD::Document > doc, double offset = 0.0,
 		CalcHeightOpt heightCalcOpt = CalcHeightOpt::Unknown,
-		float fontScale = 1.0 );
+		float scale = 1.0 );
 	//! Draw blockquote.
 	QVector< WhereDrawn > drawBlockquote( PdfAuxData & pdfData, const RenderOpts & renderOpts,
 		MD::Blockquote * item, QSharedPointer< MD::Document > doc, double offset = 0.0,
 		CalcHeightOpt heightCalcOpt = CalcHeightOpt::Unknown,
-		float fontScale = 1.0 );
+		float scale = 1.0 );
 	//! Draw list.
 	QVector< WhereDrawn > drawList( PdfAuxData & pdfData, const RenderOpts & renderOpts,
 		MD::List * item, QSharedPointer< MD::Document > doc, int bulletWidth,
 		double offset = 0.0, CalcHeightOpt heightCalcOpt = CalcHeightOpt::Unknown,
-		float fontScale = 1.0 );
+		float scale = 1.0 );
 	//! Draw table.
 	QVector< WhereDrawn > drawTable( PdfAuxData & pdfData, const RenderOpts & renderOpts,
 		MD::Table * item, QSharedPointer< MD::Document > doc, double offset = 0.0,
 		CalcHeightOpt heightCalcOpt = CalcHeightOpt::Unknown,
-		float fontScale = 1.0 );
+		float scale = 1.0 );
 
 	//! \return Minimum necessary height to draw item, meant at least one line.
 	double minNecessaryHeight( PdfAuxData & pdfData, const RenderOpts & renderOpts,
 		QSharedPointer< MD::Item > item, QSharedPointer< MD::Document > doc,
-		double offset, float fontScale = 1.0 );
+		double offset, float scale = 1.0 );
 
 	//! List item type.
 	enum class ListItemType
@@ -265,7 +265,7 @@ private:
 		MD::ListItem * item, QSharedPointer< MD::Document > doc, int & idx,
 		ListItemType & prevListItemType, int bulletWidth, double offset = 0.0,
 		CalcHeightOpt heightCalcOpt = CalcHeightOpt::Unknown,
-		float fontScale = 1.0 );
+		float scale = 1.0 );
 
 	//! Auxiliary struct for calculation of spaces scales to shrink text to width.
 	struct CustomWidth {
@@ -350,12 +350,12 @@ private:
 	QVector< QPair< QRectF, int > > drawText( PdfAuxData & pdfData, const RenderOpts & renderOpts,
 		MD::Text * item, QSharedPointer< MD::Document > doc, bool & newLine, double offset = 0.0,
 		bool firstInParagraph = false, CustomWidth * cw = nullptr,
-		float fontScale = 1.0 );
+		float scale = 1.0 );
 	//! Draw inlined code.
 	QVector< QPair< QRectF, int > > drawInlinedCode( PdfAuxData & pdfData, const RenderOpts & renderOpts,
 		MD::Code * item, QSharedPointer< MD::Document > doc, bool & newLine, double offset,
 		bool firstInParagraph, CustomWidth * cw = nullptr,
-		float fontScale = 1.0 );
+		float scale = 1.0 );
 	//! Draw string.
 	QVector< QPair< QRectF, int > > drawString( PdfAuxData & pdfData, const RenderOpts & renderOpts,
 		const QString & str, PdfFont * spaceFont, PdfFont * font, double lineHeight,
@@ -365,12 +365,12 @@ private:
 	QVector< QPair< QRectF, int > > drawLink( PdfAuxData & pdfData, const RenderOpts & renderOpts,
 		MD::Link * item, QSharedPointer< MD::Document > doc, bool & newLine, double offset = 0.0,
 		bool firstInParagraph = false, CustomWidth * cw = nullptr,
-		float fontScale = 1.0 );
+		float scale = 1.0 );
 	//! Draw image.
 	QPair< QRectF, int > drawImage( PdfAuxData & pdfData, const RenderOpts & renderOpts,
 		MD::Image * item, QSharedPointer< MD::Document > doc, bool & newLine, double offset = 0.0,
 		bool firstInParagraph = false, CustomWidth * cw = nullptr,
-		float fontScale = 1.0 );
+		float scale = 1.0 );
 
 	//! Item in the table's cell.
 	struct CellItem {
@@ -469,7 +469,7 @@ private:
 	QVector< QVector< CellData > >
 	createAuxTable( PdfAuxData & pdfData, const RenderOpts & renderOpts,
 		MD::Table * item, QSharedPointer< MD::Document > doc,
-		float fontScale = 1.0 );
+		float scale = 1.0 );
 	//! Calculate size of the cells in the table.
 	void calculateCellsSize( PdfAuxData & pdfData, QVector< QVector< CellData > > & auxTable,
 		double spaceWidth, double offset, double lineHeight );
@@ -477,7 +477,7 @@ private:
 	QVector< WhereDrawn > drawTableRow( QVector< QVector< CellData > > & table, int row,
 		PdfAuxData & pdfData, double offset, double lineHeight,
 		const RenderOpts & renderOpts, QSharedPointer< MD::Document > doc,
-		float fontScale = 1.0 );
+		float scale = 1.0 );
 	//! Draw table border.
 	void drawTableBorder( PdfAuxData & pdfData, int startPage, QVector< WhereDrawn > & ret,
 		const RenderOpts & renderOpts, double offset, const QVector< QVector< CellData > > & table,

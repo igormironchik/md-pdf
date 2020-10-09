@@ -331,7 +331,7 @@ PdfRenderer::createQString( const PdfString & str )
 QVector< WhereDrawn >
 PdfRenderer::drawHeading( PdfAuxData & pdfData, const RenderOpts & renderOpts,
 	MD::Heading * item, QSharedPointer< MD::Document > doc, double offset,
-	double nextItemMinHeight, CalcHeightOpt heightCalcOpt, float fontScale )
+	double nextItemMinHeight, CalcHeightOpt heightCalcOpt, float scale )
 {
 	QVector< WhereDrawn > ret;
 
@@ -347,7 +347,7 @@ PdfRenderer::drawHeading( PdfAuxData & pdfData, const RenderOpts & renderOpts,
 
 	PdfFont * font = createFont( renderOpts.m_textFont.toLocal8Bit().data(),
 		true, false, renderOpts.m_textFontSize + 16 - ( item->level() < 7 ? item->level() * 2 : 12 ),
-		pdfData.doc, fontScale );
+		pdfData.doc, scale );
 
 	pdfData.painter->SetFont( font );
 	pdfData.painter->SetColor( 0.0, 0.0, 0.0 );
@@ -407,7 +407,7 @@ PdfRenderer::drawHeading( PdfAuxData & pdfData, const RenderOpts & renderOpts,
 		pdfData.painter->FinishPage();
 		createPage( pdfData );
 		return drawHeading( pdfData, renderOpts, item, doc, offset, nextItemMinHeight,
-			heightCalcOpt, fontScale );
+			heightCalcOpt, scale );
 	}
 	// Otherwise we need to split heading to place it on different pages.
 	else
@@ -456,7 +456,7 @@ PdfRenderer::drawHeading( PdfAuxData & pdfData, const RenderOpts & renderOpts,
 		createPage( pdfData );
 
 		ret.append( drawHeading( pdfData, renderOpts, item, doc, offset, nextItemMinHeight,
-			heightCalcOpt, fontScale ) );
+			heightCalcOpt, scale ) );
 
 		return ret;
 	}
@@ -465,14 +465,14 @@ PdfRenderer::drawHeading( PdfAuxData & pdfData, const RenderOpts & renderOpts,
 QVector< QPair< QRectF, int > >
 PdfRenderer::drawText( PdfAuxData & pdfData, const RenderOpts & renderOpts,
 	MD::Text * item, QSharedPointer< MD::Document > doc, bool & newLine, double offset,
-	bool firstInParagraph, CustomWidth * cw, float fontScale )
+	bool firstInParagraph, CustomWidth * cw, float scale )
 {
 	auto * spaceFont = createFont( renderOpts.m_textFont, false, false,
-		renderOpts.m_textFontSize, pdfData.doc, fontScale );
+		renderOpts.m_textFontSize, pdfData.doc, scale );
 
 	auto * font = createFont( renderOpts.m_textFont, item->opts() & MD::TextOption::BoldText,
 		item->opts() & MD::TextOption::ItalicText,
-		renderOpts.m_textFontSize, pdfData.doc, fontScale );
+		renderOpts.m_textFontSize, pdfData.doc, scale );
 
 	if( item->opts() & MD::TextOption::StrikethroughText )
 		font->SetStrikeOut( true );
@@ -522,7 +522,7 @@ normalizeRects( const QVector< QPair< QRectF, int > > & rects )
 QVector< QPair< QRectF, int > >
 PdfRenderer::drawLink( PdfAuxData & pdfData, const RenderOpts & renderOpts,
 	MD::Link * item, QSharedPointer< MD::Document > doc, bool & newLine, double offset,
-	bool firstInParagraph, CustomWidth * cw, float fontScale )
+	bool firstInParagraph, CustomWidth * cw, float scale )
 {
 	QVector< QPair< QRectF, int > > rects;
 
@@ -546,7 +546,7 @@ PdfRenderer::drawLink( PdfAuxData & pdfData, const RenderOpts & renderOpts,
 
 		auto * font = createFont( renderOpts.m_textFont, item->textOptions() & MD::TextOption::BoldText,
 			item->textOptions() & MD::TextOption::ItalicText, renderOpts.m_textFontSize,
-			pdfData.doc, fontScale );
+			pdfData.doc, scale );
 
 		if( item->textOptions() & MD::TextOption::StrikethroughText )
 			font->SetStrikeOut( true );
@@ -556,7 +556,7 @@ PdfRenderer::drawLink( PdfAuxData & pdfData, const RenderOpts & renderOpts,
 		rects = normalizeRects( drawString( pdfData, renderOpts,
 			( !item->text().isEmpty() ? item->text() : url ),
 			createFont( renderOpts.m_textFont, false, false, renderOpts.m_textFontSize,
-				pdfData.doc, fontScale ),
+				pdfData.doc, scale ),
 			font, font->GetFontMetrics()->GetLineSpacing(),
 			doc, newLine, offset, firstInParagraph, cw ) );
 
@@ -806,13 +806,13 @@ PdfRenderer::drawString( PdfAuxData & pdfData, const RenderOpts & renderOpts,
 QVector< QPair< QRectF, int > >
 PdfRenderer::drawInlinedCode( PdfAuxData & pdfData, const RenderOpts & renderOpts,
 	MD::Code * item, QSharedPointer< MD::Document > doc, bool & newLine, double offset,
-	bool firstInParagraph, CustomWidth * cw, float fontScale )
+	bool firstInParagraph, CustomWidth * cw, float scale )
 {
 	auto * textFont = createFont( renderOpts.m_textFont, false, false, renderOpts.m_textFontSize,
-		pdfData.doc, fontScale );
+		pdfData.doc, scale );
 
 	auto * font = createFont( renderOpts.m_codeFont, false, false, renderOpts.m_codeFontSize,
-		pdfData.doc, fontScale );
+		pdfData.doc, scale );
 
 	return drawString( pdfData, renderOpts, item->text(), font, font,
 		textFont->GetFontMetrics()->GetLineSpacing(),
@@ -871,7 +871,7 @@ QVector< WhereDrawn > toWhereDrawn( const QVector< QPair< QRectF, int > > & rect
 QVector< WhereDrawn >
 PdfRenderer::drawParagraph( PdfAuxData & pdfData, const RenderOpts & renderOpts,
 	MD::Paragraph * item, QSharedPointer< MD::Document > doc, double offset, bool withNewLine,
-	CalcHeightOpt heightCalcOpt, float fontScale )
+	CalcHeightOpt heightCalcOpt, float scale )
 {
 	QVector< QPair< QRectF, int > > rects;
 
@@ -886,7 +886,7 @@ PdfRenderer::drawParagraph( PdfAuxData & pdfData, const RenderOpts & renderOpts,
 		emit status( tr( "Drawing paragraph." ) );
 
 	auto * font = createFont( renderOpts.m_textFont, false, false,
-		renderOpts.m_textFontSize, pdfData.doc, fontScale );
+		renderOpts.m_textFontSize, pdfData.doc, scale );
 
 	const auto lineHeight = font->GetFontMetrics()->GetLineSpacing();
 
@@ -923,22 +923,22 @@ PdfRenderer::drawParagraph( PdfAuxData & pdfData, const RenderOpts & renderOpts,
 		{
 			case MD::ItemType::Text :
 				drawText( pdfData, renderOpts, static_cast< MD::Text* > ( it->data() ),
-					doc, newLine, offset, it == item->items().begin(), &cw, fontScale );
+					doc, newLine, offset, it == item->items().begin(), &cw, scale );
 				break;
 
 			case MD::ItemType::Code :
 				drawInlinedCode( pdfData, renderOpts, static_cast< MD::Code* > ( it->data() ),
-					doc, newLine, offset, it == item->items().begin(), &cw, fontScale );
+					doc, newLine, offset, it == item->items().begin(), &cw, scale );
 				break;
 
 			case MD::ItemType::Link :
 				drawLink( pdfData, renderOpts, static_cast< MD::Link* > ( it->data() ),
-					doc, newLine, offset, it == item->items().begin(), &cw, fontScale );
+					doc, newLine, offset, it == item->items().begin(), &cw, scale );
 				break;
 
 			case MD::ItemType::Image :
 				drawImage( pdfData, renderOpts, static_cast< MD::Image* > ( it->data() ),
-					doc, newLine, offset, it == item->items().begin(), &cw, fontScale );
+					doc, newLine, offset, it == item->items().begin(), &cw, scale );
 				break;
 
 			case MD::ItemType::LineBreak :
@@ -986,22 +986,22 @@ PdfRenderer::drawParagraph( PdfAuxData & pdfData, const RenderOpts & renderOpts,
 		{
 			case MD::ItemType::Text :
 				rects.append( drawText( pdfData, renderOpts, static_cast< MD::Text* > ( it->data() ),
-					doc, newLine, offset, it == item->items().begin(), &cw, fontScale ) );
+					doc, newLine, offset, it == item->items().begin(), &cw, scale ) );
 				break;
 
 			case MD::ItemType::Code :
 				rects.append( drawInlinedCode( pdfData, renderOpts, static_cast< MD::Code* > ( it->data() ),
-					doc, newLine, offset, it == item->items().begin(), &cw, fontScale ) );
+					doc, newLine, offset, it == item->items().begin(), &cw, scale ) );
 				break;
 
 			case MD::ItemType::Link :
 				rects.append(drawLink( pdfData, renderOpts, static_cast< MD::Link* > ( it->data() ),
-					doc, newLine, offset, it == item->items().begin(), &cw, fontScale ) );
+					doc, newLine, offset, it == item->items().begin(), &cw, scale ) );
 				break;
 
 			case MD::ItemType::Image :
 				rects.append( drawImage( pdfData, renderOpts, static_cast< MD::Image* > ( it->data() ),
-					doc, newLine, offset, it == item->items().begin(), &cw, fontScale ) );
+					doc, newLine, offset, it == item->items().begin(), &cw, scale ) );
 				break;
 
 			case MD::ItemType::LineBreak :
@@ -1019,7 +1019,7 @@ PdfRenderer::drawParagraph( PdfAuxData & pdfData, const RenderOpts & renderOpts,
 QPair< QRectF, int >
 PdfRenderer::drawImage( PdfAuxData & pdfData, const RenderOpts & renderOpts,
 	MD::Image * item, QSharedPointer< MD::Document > doc, bool & newLine, double offset,
-	bool firstInParagraph, CustomWidth * cw, float fontScale )
+	bool firstInParagraph, CustomWidth * cw, float scale )
 {
 	Q_UNUSED( doc )
 
@@ -1047,7 +1047,7 @@ PdfRenderer::drawImage( PdfAuxData & pdfData, const RenderOpts & renderOpts,
 			newLine = true;
 
 			auto * font = createFont( renderOpts.m_textFont, false, false,
-				renderOpts.m_textFontSize, pdfData.doc, fontScale );
+				renderOpts.m_textFontSize, pdfData.doc, scale );
 
 			const auto lineHeight = font->GetFontMetrics()->GetLineSpacing();
 
@@ -1130,7 +1130,7 @@ PdfRenderer::drawImage( PdfAuxData & pdfData, const RenderOpts & renderOpts,
 			newLine = true;
 
 			auto * font = createFont( renderOpts.m_textFont, false, false,
-				renderOpts.m_textFontSize, pdfData.doc, fontScale );
+				renderOpts.m_textFontSize, pdfData.doc, scale );
 
 			const auto lineHeight = font->GetFontMetrics()->GetLineSpacing();
 
@@ -1253,7 +1253,7 @@ PdfRenderer::loadImage( MD::Image * item )
 QVector< WhereDrawn >
 PdfRenderer::drawCode( PdfAuxData & pdfData, const RenderOpts & renderOpts,
 	MD::Code * item, QSharedPointer< MD::Document > doc, double offset, CalcHeightOpt heightCalcOpt,
-	float fontScale )
+	float scale )
 {
 	Q_UNUSED( doc )
 
@@ -1261,7 +1261,7 @@ PdfRenderer::drawCode( PdfAuxData & pdfData, const RenderOpts & renderOpts,
 		emit status( tr( "Drawing code." ) );
 
 	auto * textFont = createFont( renderOpts.m_textFont, false, false, renderOpts.m_textFontSize,
-		pdfData.doc, fontScale );
+		pdfData.doc, scale );
 	const auto textLHeight = textFont->GetFontMetrics()->GetLineSpacing();
 
 	QStringList lines;
@@ -1282,7 +1282,7 @@ PdfRenderer::drawCode( PdfAuxData & pdfData, const RenderOpts & renderOpts,
 	}
 
 	auto * font = createFont( renderOpts.m_codeFont, false, false, renderOpts.m_codeFontSize,
-		pdfData.doc, fontScale );
+		pdfData.doc, scale );
 	const auto lineHeight = font->GetFontMetrics()->GetLineSpacing();
 
 	if( heightCalcOpt == CalcHeightOpt::Minimum )
@@ -1408,7 +1408,7 @@ PdfRenderer::drawCode( PdfAuxData & pdfData, const RenderOpts & renderOpts,
 QVector< WhereDrawn >
 PdfRenderer::drawBlockquote( PdfAuxData & pdfData, const RenderOpts & renderOpts,
 	MD::Blockquote * item, QSharedPointer< MD::Document > doc, double offset,
-	CalcHeightOpt heightCalcOpt, float fontScale )
+	CalcHeightOpt heightCalcOpt, float scale )
 {
 	QVector< WhereDrawn > ret;
 
@@ -1436,7 +1436,7 @@ PdfRenderer::drawBlockquote( PdfAuxData & pdfData, const RenderOpts & renderOpts
 						( it + 1 != last ?
 							minNecessaryHeight( pdfData, renderOpts, *( it + 1 ), doc,
 								offset + c_blockquoteBaseOffset  ) : 0.0 ),
-						heightCalcOpt, fontScale ) );
+						heightCalcOpt, scale ) );
 				else
 				{
 					ret.append( { 0, 0.0, 0.0 } );
@@ -1450,21 +1450,21 @@ PdfRenderer::drawBlockquote( PdfAuxData & pdfData, const RenderOpts & renderOpts
 				ret.append( drawParagraph( pdfData, renderOpts,
 					static_cast< MD::Paragraph* > ( it->data() ),
 					doc, offset + c_blockquoteBaseOffset, true, heightCalcOpt,
-					fontScale ) );
+					scale ) );
 				break;
 
 			case MD::ItemType::Code :
 				ret.append( drawCode( pdfData, renderOpts,
 					static_cast< MD::Code* > ( it->data() ),
 					doc, offset + c_blockquoteBaseOffset, heightCalcOpt,
-					fontScale ) );
+					scale ) );
 				break;
 
 			case MD::ItemType::Blockquote :
 				ret.append( drawBlockquote( pdfData, renderOpts,
 					static_cast< MD::Blockquote* > ( it->data() ),
 					doc, offset + c_blockquoteBaseOffset, heightCalcOpt,
-					fontScale ) );
+					scale ) );
 				break;
 
 			case MD::ItemType::List :
@@ -1473,13 +1473,13 @@ PdfRenderer::drawBlockquote( PdfAuxData & pdfData, const RenderOpts & renderOpts
 				const auto bulletWidth = maxListNumberWidth( list );
 
 				auto * font = createFont( m_opts.m_textFont, false, false,
-					m_opts.m_textFontSize, pdfData.doc, fontScale );
+					m_opts.m_textFontSize, pdfData.doc, scale );
 				pdfData.coords.y -= font->GetFontMetrics()->GetLineSpacing();
 
 				ret.append( drawList( pdfData, renderOpts,
 					list,
 					doc, bulletWidth, offset + c_blockquoteBaseOffset, heightCalcOpt,
-					fontScale ) );
+					scale ) );
 			}
 				break;
 
@@ -1487,7 +1487,7 @@ PdfRenderer::drawBlockquote( PdfAuxData & pdfData, const RenderOpts & renderOpts
 				ret.append( drawTable( pdfData, renderOpts,
 					static_cast< MD::Table* > ( it->data() ),
 					doc, offset + c_blockquoteBaseOffset, heightCalcOpt,
-					fontScale ) );
+					scale ) );
 				break;
 
 			default :
@@ -1542,7 +1542,7 @@ PdfRenderer::drawBlockquote( PdfAuxData & pdfData, const RenderOpts & renderOpts
 QVector< WhereDrawn >
 PdfRenderer::drawList( PdfAuxData & pdfData, const RenderOpts & renderOpts,
 	MD::List * item, QSharedPointer< MD::Document > doc, int bulletWidth, double offset,
-	CalcHeightOpt heightCalcOpt, float fontScale )
+	CalcHeightOpt heightCalcOpt, float scale )
 {
 	QVector< WhereDrawn > ret;
 
@@ -1565,7 +1565,7 @@ PdfRenderer::drawList( PdfAuxData & pdfData, const RenderOpts & renderOpts,
 			ret.append( drawListItem( pdfData, renderOpts,
 				static_cast< MD::ListItem* > ( it->data() ), doc, idx,
 				prevListItemType, bulletWidth, offset, heightCalcOpt,
-				fontScale ) );
+				scale ) );
 
 		if( heightCalcOpt == CalcHeightOpt::Minimum )
 			break;
@@ -1578,10 +1578,10 @@ QVector< WhereDrawn >
 PdfRenderer::drawListItem( PdfAuxData & pdfData, const RenderOpts & renderOpts,
 	MD::ListItem * item, QSharedPointer< MD::Document > doc, int & idx,
 	ListItemType & prevListItemType, int bulletWidth, double offset, CalcHeightOpt heightCalcOpt,
-	float fontScale )
+	float scale )
 {
 	auto * font = createFont( renderOpts.m_textFont, false, false, renderOpts.m_textFontSize,
-		pdfData.doc, fontScale );
+		pdfData.doc, scale );
 	const auto lineHeight = font->GetFontMetrics()->GetLineSpacing();
 
 	if( heightCalcOpt == CalcHeightOpt::Unknown )
@@ -1653,7 +1653,7 @@ PdfRenderer::drawListItem( PdfAuxData & pdfData, const RenderOpts & renderOpts,
 						( it + 1 != last ?
 							minNecessaryHeight( pdfData, renderOpts, *( it + 1 ),  doc, offset ) :
 							0.0 ),
-						heightCalcOpt, fontScale ) );
+						heightCalcOpt, scale ) );
 				else
 					ret.append( { 0, 0.0, 0.0 } );
 			}
@@ -1664,7 +1664,7 @@ PdfRenderer::drawListItem( PdfAuxData & pdfData, const RenderOpts & renderOpts,
 				ret.append( drawParagraph( pdfData, renderOpts,
 					static_cast< MD::Paragraph* > ( it->data() ),
 					doc, offset, ( it != item->items().cbegin() ), heightCalcOpt,
-					fontScale ) );
+					scale ) );
 
 				addExtraSpace = ( it != item->items().cbegin() );
 			}
@@ -1674,7 +1674,7 @@ PdfRenderer::drawListItem( PdfAuxData & pdfData, const RenderOpts & renderOpts,
 			{
 				ret.append( drawCode( pdfData, renderOpts,
 					static_cast< MD::Code* > ( it->data() ),
-					doc, offset, heightCalcOpt, fontScale ) );
+					doc, offset, heightCalcOpt, scale ) );
 
 				addExtraSpace = false;
 			}
@@ -1684,7 +1684,7 @@ PdfRenderer::drawListItem( PdfAuxData & pdfData, const RenderOpts & renderOpts,
 			{
 				ret.append( drawBlockquote( pdfData, renderOpts,
 					static_cast< MD::Blockquote* > ( it->data() ),
-					doc, offset, heightCalcOpt, fontScale ) );
+					doc, offset, heightCalcOpt, scale ) );
 
 				addExtraSpace = ( it != item->items().cbegin() );
 			}
@@ -1694,13 +1694,13 @@ PdfRenderer::drawListItem( PdfAuxData & pdfData, const RenderOpts & renderOpts,
 				ret.append( drawList( pdfData, renderOpts,
 					static_cast< MD::List* > ( it->data() ),
 					doc, bulletWidth, offset, heightCalcOpt,
-					fontScale ) );
+					scale ) );
 				break;
 
 			case MD::ItemType::Table :
 				ret.append( drawTable( pdfData, renderOpts,
 					static_cast< MD::Table* > ( it->data() ),
-					doc, offset, heightCalcOpt, fontScale ) );
+					doc, offset, heightCalcOpt, scale ) );
 				break;
 
 			default :
@@ -1760,7 +1760,7 @@ PdfRenderer::maxListNumberWidth( MD::List * list ) const
 
 QVector< QVector< PdfRenderer::CellData > >
 PdfRenderer::createAuxTable( PdfAuxData & pdfData, const RenderOpts & renderOpts,
-	MD::Table * item, QSharedPointer< MD::Document > doc, float fontScale )
+	MD::Table * item, QSharedPointer< MD::Document > doc, float scale )
 {
 	const auto columnsCount = item->columnsCount();
 
@@ -1790,7 +1790,7 @@ PdfRenderer::createAuxTable( PdfAuxData & pdfData, const RenderOpts & renderOpts
 						auto * font = createFont( renderOpts.m_textFont,
 							t->opts() & MD::TextOption::BoldText,
 							t->opts() & MD::TextOption::ItalicText,
-							renderOpts.m_textFontSize, pdfData.doc, fontScale );
+							renderOpts.m_textFontSize, pdfData.doc, scale );
 
 						if( t->opts() & MD::TextOption::StrikethroughText )
 							font->SetStrikeOut( true );
@@ -1816,7 +1816,7 @@ PdfRenderer::createAuxTable( PdfAuxData & pdfData, const RenderOpts & renderOpts
 						auto * c = static_cast< MD::Code* > ( it->data() );
 
 						auto * font = createFont( renderOpts.m_codeFont, false, false,
-							renderOpts.m_codeFontSize, pdfData.doc, fontScale );
+							renderOpts.m_codeFontSize, pdfData.doc, scale );
 
 						const auto words = c->text().split( QLatin1Char( ' ' ),
 							Qt::SkipEmptyParts );
@@ -1841,7 +1841,7 @@ PdfRenderer::createAuxTable( PdfAuxData & pdfData, const RenderOpts & renderOpts
 							l->textOptions() & MD::TextOption::BoldText,
 							l->textOptions() & MD::TextOption::ItalicText,
 							renderOpts.m_textFontSize, pdfData.doc,
-							fontScale );
+							scale );
 
 						if( l->textOptions() & MD::TextOption::StrikethroughText )
 							font->SetStrikeOut( true );
@@ -1946,7 +1946,7 @@ PdfRenderer::calculateCellsSize( PdfAuxData & pdfData, QVector< QVector< CellDat
 QVector< WhereDrawn >
 PdfRenderer::drawTable( PdfAuxData & pdfData, const RenderOpts & renderOpts,
 	MD::Table * item, QSharedPointer< MD::Document > doc, double offset, CalcHeightOpt heightCalcOpt,
-	float fontScale )
+	float scale )
 {
 	QVector< WhereDrawn > ret;
 
@@ -1961,7 +1961,7 @@ PdfRenderer::drawTable( PdfAuxData & pdfData, const RenderOpts & renderOpts,
 		emit status( tr( "Drawing table." ) );
 
 	auto * font = createFont( renderOpts.m_textFont, false, false, renderOpts.m_textFontSize,
-		pdfData.doc, fontScale );
+		pdfData.doc, scale );
 	const auto lineHeight = font->GetFontMetrics()->GetLineSpacing();
 	const auto spaceWidth = font->GetFontMetrics()->StringWidth( PdfString( " " ) );
 
@@ -1994,7 +1994,7 @@ PdfRenderer::drawTable( PdfAuxData & pdfData, const RenderOpts & renderOpts,
 
 	for( int row = 0; row < auxTable[ 0 ].size(); ++row )
 		ret.append( drawTableRow( auxTable, row, pdfData, offset, lineHeight, renderOpts,
-			doc, fontScale ) );
+			doc, scale ) );
 
 	return ret;
 }
@@ -2002,7 +2002,7 @@ PdfRenderer::drawTable( PdfAuxData & pdfData, const RenderOpts & renderOpts,
 QVector< WhereDrawn >
 PdfRenderer::drawTableRow( QVector< QVector< CellData > > & table, int row, PdfAuxData & pdfData,
 	double offset, double lineHeight, const RenderOpts & renderOpts,
-	QSharedPointer< MD::Document > doc, float fontScale )
+	QSharedPointer< MD::Document > doc, float scale )
 {
 	QVector< WhereDrawn > ret;
 
@@ -2016,7 +2016,7 @@ PdfRenderer::drawTableRow( QVector< QVector< CellData > > & table, int row, PdfA
 	emit status( tr( "Drawing table row." ) );
 
 	auto * font = createFont( renderOpts.m_textFont, false, false, renderOpts.m_textFontSize,
-		pdfData.doc, fontScale );
+		pdfData.doc, scale );
 
 	const auto startPage = pdfData.currentPageIdx;
 	const auto startY = pdfData.coords.y;
@@ -2481,7 +2481,7 @@ PdfRenderer::processLinksInTable( PdfAuxData & pdfData,
 double
 PdfRenderer::minNecessaryHeight( PdfAuxData & pdfData, const RenderOpts & renderOpts,
 	QSharedPointer< MD::Item > item, QSharedPointer< MD::Document > doc,
-	double offset, float fontScale )
+	double offset, float scale )
 {
 	QVector< WhereDrawn > ret;
 
@@ -2493,14 +2493,14 @@ PdfRenderer::minNecessaryHeight( PdfAuxData & pdfData, const RenderOpts & render
 		case MD::ItemType::Paragraph :
 		{
 			ret = drawParagraph( pdfData, renderOpts, static_cast< MD::Paragraph* > ( item.data() ),
-				doc, offset, true, CalcHeightOpt::Minimum, fontScale );
+				doc, offset, true, CalcHeightOpt::Minimum, scale );
 		}
 			break;
 
 		case MD::ItemType::Code :
 		{
 			ret = drawCode( pdfData, renderOpts, static_cast< MD::Code* > ( item.data() ),
-				doc, offset, CalcHeightOpt::Minimum, fontScale );
+				doc, offset, CalcHeightOpt::Minimum, scale );
 		}
 			break;
 
@@ -2508,7 +2508,7 @@ PdfRenderer::minNecessaryHeight( PdfAuxData & pdfData, const RenderOpts & render
 		{
 			ret = drawBlockquote( pdfData, renderOpts,
 				static_cast< MD::Blockquote* > ( item.data() ),
-				doc, offset, CalcHeightOpt::Minimum, fontScale );
+				doc, offset, CalcHeightOpt::Minimum, scale );
 		}
 			break;
 
@@ -2518,11 +2518,11 @@ PdfRenderer::minNecessaryHeight( PdfAuxData & pdfData, const RenderOpts & render
 			const auto bulletWidth = maxListNumberWidth( list );
 
 			auto * font = createFont( m_opts.m_textFont, false, false,
-				m_opts.m_textFontSize, pdfData.doc, fontScale );
+				m_opts.m_textFontSize, pdfData.doc, scale );
 			pdfData.coords.y -= font->GetFontMetrics()->GetLineSpacing();
 
 			ret = drawList( pdfData, m_opts, list, m_doc, bulletWidth, offset,
-				CalcHeightOpt::Minimum, fontScale );
+				CalcHeightOpt::Minimum, scale );
 		}
 			break;
 
@@ -2530,7 +2530,7 @@ PdfRenderer::minNecessaryHeight( PdfAuxData & pdfData, const RenderOpts & render
 		{
 			ret = drawTable( pdfData, renderOpts,
 				static_cast< MD::Table* > ( item.data() ),
-				doc, offset, CalcHeightOpt::Minimum, fontScale );
+				doc, offset, CalcHeightOpt::Minimum, scale );
 		}
 			break;
 
