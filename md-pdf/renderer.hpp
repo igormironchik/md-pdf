@@ -186,7 +186,7 @@ private slots:
 private:
 	//! Create font.
 	PdfFont * createFont( const QString & name, bool bold, bool italic, float size,
-		PdfMemDocument * doc );
+		PdfMemDocument * doc, float scale = 1.0 );
 	//! Create new page.
 	void createPage( PdfAuxData & pdfData );
 	//! Convert QString to PdfString.
@@ -204,6 +204,16 @@ private:
 	//! Max width of numbered list bullet.
 	int maxListNumberWidth( MD::List * list ) const;
 
+	//! What calculation of height to do?
+	enum class CalcHeightOpt {
+		//! Don't calculate, do drawing.
+		Unknown = 0,
+		//! Calculate minimum requred height (at least one line).
+		Minimum = 1,
+		//! Calculate full height.
+		Full = 2
+	}; // enum class CalcHeightOpt
+
 	//! Draw heading.
 	QVector< WhereDrawn > drawHeading( PdfAuxData & pdfData, const RenderOpts & renderOpts,
 		MD::Heading * item, QSharedPointer< MD::Document > doc, double offset = 0.0,
@@ -211,23 +221,23 @@ private:
 	//! Draw paragraph.
 	QVector< WhereDrawn > drawParagraph( PdfAuxData & pdfData, const RenderOpts & renderOpts,
 		MD::Paragraph * item, QSharedPointer< MD::Document > doc, double offset = 0.0,
-		bool withNewLine = true, bool justCalcHeight = false );
+		bool withNewLine = true, CalcHeightOpt heightCalcOpt = CalcHeightOpt::Unknown );
 	//! Draw block of code.
 	QVector< WhereDrawn > drawCode( PdfAuxData & pdfData, const RenderOpts & renderOpts,
 		MD::Code * item, QSharedPointer< MD::Document > doc, double offset = 0.0,
-		bool justCalcHeight = false );
+		CalcHeightOpt heightCalcOpt = CalcHeightOpt::Unknown );
 	//! Draw blockquote.
 	QVector< WhereDrawn > drawBlockquote( PdfAuxData & pdfData, const RenderOpts & renderOpts,
 		MD::Blockquote * item, QSharedPointer< MD::Document > doc, double offset = 0.0,
-		bool justCalcHeight = false );
+		CalcHeightOpt heightCalcOpt = CalcHeightOpt::Unknown );
 	//! Draw list.
 	QVector< WhereDrawn > drawList( PdfAuxData & pdfData, const RenderOpts & renderOpts,
 		MD::List * item, QSharedPointer< MD::Document > doc, int bulletWidth,
-		double offset = 0.0, bool justCalcHeight = false );
+		double offset = 0.0, CalcHeightOpt heightCalcOpt = CalcHeightOpt::Unknown );
 	//! Draw table.
 	QVector< WhereDrawn > drawTable( PdfAuxData & pdfData, const RenderOpts & renderOpts,
 		MD::Table * item, QSharedPointer< MD::Document > doc, double offset = 0.0,
-		bool justCalcHeight = false );
+		CalcHeightOpt heightCalcOpt = CalcHeightOpt::Unknown );
 
 	//! \return Minimum necessary height to draw item, meant at least one line.
 	double minNecessaryHeight( PdfAuxData & pdfData, const RenderOpts & renderOpts,
@@ -248,7 +258,7 @@ private:
 	QVector< WhereDrawn > drawListItem( PdfAuxData & pdfData, const RenderOpts & renderOpts,
 		MD::ListItem * item, QSharedPointer< MD::Document > doc, int & idx,
 		ListItemType & prevListItemType, int bulletWidth, double offset = 0.0,
-		bool justCalcHeight = false );
+		CalcHeightOpt heightCalcOpt = CalcHeightOpt::Unknown );
 
 	//! Auxiliary struct for calculation of spaces scales to shrink text to width.
 	struct CustomWidth {
