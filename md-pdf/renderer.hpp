@@ -435,7 +435,7 @@ private:
 			width = w;
 		}
 
-		void heightToWidth( double lineHeight, double spaceWidth )
+		void heightToWidth( double lineHeight, double spaceWidth, float scale )
 		{
 			height = 0.0;
 
@@ -473,7 +473,7 @@ private:
 				}
 				else
 				{
-					height += it->image.height() / ( it->image.width() / width );
+					height += it->image.height() / ( it->image.width() / width ) * scale;
 					newLine = true;
 				}
 			}
@@ -501,7 +501,7 @@ private:
 		float scale = 1.0 );
 	//! Calculate size of the cells in the table.
 	void calculateCellsSize( PdfAuxData & pdfData, QVector< QVector< CellData > > & auxTable,
-		double spaceWidth, double offset, double lineHeight );
+		double spaceWidth, double offset, double lineHeight, float scale );
 	//! Draw table's row.
 	QVector< WhereDrawn > drawTableRow( QVector< QVector< CellData > > & table, int row,
 		PdfAuxData & pdfData, double offset, double lineHeight,

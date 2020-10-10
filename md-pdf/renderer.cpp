@@ -2049,7 +2049,7 @@ PdfRenderer::createAuxTable( PdfAuxData & pdfData, const RenderOpts & renderOpts
 
 void
 PdfRenderer::calculateCellsSize( PdfAuxData & pdfData, QVector< QVector< CellData > > & auxTable,
-	double spaceWidth, double offset, double lineHeight )
+	double spaceWidth, double offset, double lineHeight, float scale )
 {
 	QVector< double > columnWidthes;
 	columnWidthes.resize( auxTable.size() );
@@ -2067,7 +2067,7 @@ PdfRenderer::calculateCellsSize( PdfAuxData & pdfData, QVector< QVector< CellDat
 
 	for( auto it = auxTable.begin(), last = auxTable.end(); it != last; ++it )
 		for( auto cit = it->begin(), clast = it->end(); cit != clast; ++cit )
-			cit->heightToWidth( lineHeight, spaceWidth );
+			cit->heightToWidth( lineHeight, spaceWidth, scale );
 }
 
 QVector< WhereDrawn >
@@ -2094,7 +2094,7 @@ PdfRenderer::drawTable( PdfAuxData & pdfData, const RenderOpts & renderOpts,
 
 	auto auxTable = createAuxTable( pdfData, renderOpts, item, doc );
 
-	calculateCellsSize( pdfData, auxTable, spaceWidth, offset, lineHeight );
+	calculateCellsSize( pdfData, auxTable, spaceWidth, offset, lineHeight, scale );
 
 	const auto r0h = rowHeight( auxTable, 0 );
 	const bool justHeader = auxTable.at( 0 ).size() == 1;
@@ -2223,7 +2223,7 @@ PdfRenderer::drawTableRow( QVector< QVector< CellData > > & table, int row, PdfA
 					y -= lineHeight;
 
 				auto ratio = it->at( 0 ).width /
-					static_cast< double > ( c->image.width() );
+					static_cast< double > ( c->image.width() ) * scale;
 
 				auto h = static_cast< double > ( c->image.height() ) * ratio;
 
