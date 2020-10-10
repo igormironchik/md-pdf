@@ -1010,8 +1010,25 @@ PdfRenderer::drawParagraph( PdfAuxData & pdfData, const RenderOpts & renderOpts,
 		case CalcHeightOpt::Full :
 		{
 			QVector< WhereDrawn > r;
-			r.append( { 0, 0.0, ( withNewLine ? lineHeight + cw.totalHeight() :
-				cw.totalHeight() ) } );
+
+			double h = 0.0;
+			double max = 0.0;
+
+			for( auto it = cw.cbegin(), last = cw.cend(); it != last; ++it )
+			{
+				if( it == cw.cbegin() && withNewLine )
+					h += lineHeight;
+
+				if( h + it->height > max )
+					max = h + it->height;
+
+				if( it->isNewLine )
+				{
+					r.append( { 0, 0.0, max } );
+					max = 0.0;
+					h = 0.0;
+				}
+			}
 
 			return r;
 		}
@@ -1381,7 +1398,15 @@ PdfRenderer::drawCode( PdfAuxData & pdfData, const RenderOpts & renderOpts,
 		case CalcHeightOpt::Full :
 		{
 			QVector< WhereDrawn > r;
-			r.append( { 0, 0.0, textLHeight * 2.0 + lineHeight * ( lines.size() + 1 ) } );
+			r.append( { 0, 0.0, textLHeight * 2.0 + lineHeight } );
+
+			auto i = 1;
+
+			while( i < lines.size() )
+			{
+				r.append( { 0, 0.0, lineHeight } );
+				++i;
+			}
 
 			return r;
 		}

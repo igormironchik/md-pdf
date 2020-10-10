@@ -289,6 +289,12 @@ private:
 		bool isDrawing() const { return m_drawing; }
 		//! Set drawing.
 		void setDrawing( bool on = true ) { m_drawing = on; }
+
+		//! \return Begin iterator.
+		QVector< Width >::ConstIterator cbegin() const { return m_width.cbegin(); }
+		//! \return End iterator.
+		QVector< Width >::ConstIterator cend() const { return m_width.cend(); }
+
 		//! \return Height of first item.
 		double firstItemHeight() const
 		{
