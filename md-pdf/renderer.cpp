@@ -2418,7 +2418,7 @@ PdfRenderer::drawTableRow( QVector< QVector< CellData > > & table, int row, PdfA
 			}
 			else
 			{
-				const auto w = c->font->GetFontMetrics()->StringWidth(
+				auto w = c->font->GetFontMetrics()->StringWidth(
 					createPdfString( c->word.isEmpty() ? c->url : c->word ) );
 				double s = 0.0;
 
@@ -2430,9 +2430,25 @@ PdfRenderer::drawTableRow( QVector< QVector< CellData > > & table, int row, PdfA
 						s = font->GetFontMetrics()->StringWidth( PdfString( " " ) );
 				}
 
+				double fw = 0.0;
+
+				if( c + 1 != clast && !( c + 1 )->footnote.isEmpty() )
+				{
+					const auto old = ( c + 1 )->font->GetFontSize();
+					( c + 1 )->font->SetFontSize( old * scale );
+					fw = ( c + 1 )->font->GetFontMetrics()->StringWidth( createPdfString(
+						( c + 1 )->footnote ) );
+					w += fw;
+					( c + 1 )->font->SetFontSize( old );
+				}
+
 				if( text.width + s + w <= it->at( 0 ).width )
 				{
 					text.text.append( *c );
+
+					if( c + 1 != clast && !( c + 1 )->footnote.isEmpty() )
+						text.text.append( *( c + 1 ) );
+
 					text.width += s + w;
 				}
 				else
@@ -2442,6 +2458,10 @@ PdfRenderer::drawTableRow( QVector< QVector< CellData > > & table, int row, PdfA
 						drawTextLineInTable( x, y, text, lineHeight, pdfData, links,
 							font, currentPage, endPage, endY );
 						text.text.append( *c );
+
+						if( c + 1 != clast && !( c + 1 )->footnote.isEmpty() )
+							text.text.append( *( c + 1 ) );
+
 						text.width += w;
 					}
 					else
@@ -2450,8 +2470,17 @@ PdfRenderer::drawTableRow( QVector< QVector< CellData > > & table, int row, PdfA
 						text.width += w;
 						drawTextLineInTable( x, y, text, lineHeight, pdfData, links,
 							font, currentPage, endPage, endY  );
+
+						if( c + 1 != clast && !( c + 1 )->footnote.isEmpty() )
+						{
+							text.text.append( *( c + 1 ) );
+							text.width += fw;
+						}
 					}
 				}
+
+				if( c + 1 != clast && !( c + 1 )->footnote.isEmpty() )
+					++c;
 
 				textBefore = true;
 			}
@@ -2466,7 +2495,7 @@ PdfRenderer::drawTableRow( QVector< QVector< CellData > > & table, int row, PdfA
 		if( y < endY  && currentPage == pdfData.currentPageIndex() )
 			endY = y;
 
-		++ column;
+		++column;
 	}
 
 	drawTableBorder( pdfData, startPage, ret, renderOpts, offset, table, startY, endY );
