@@ -363,7 +363,7 @@ PdfRenderer::drawHeading( PdfAuxData & pdfData, const RenderOpts & renderOpts,
 		width, createPdfString( item->text() ) );
 
 	const double height = lines.size() * font->GetFontMetrics()->GetLineSpacing();
-	const double availableHeight = pdfData.coords.pageHeight - pdfData.coords.margins.top -
+	const double availableHeight = pdfData.topY( pdfData.currentPageIdx ) -
 		pdfData.currentPageAllowedY();
 
 	switch( heightCalcOpt )
@@ -415,7 +415,7 @@ PdfRenderer::drawHeading( PdfAuxData & pdfData, const RenderOpts & renderOpts,
 		std::vector< PdfString > tmp;
 		double h = 0.0;
 		std::size_t i = 0;
-		double available = pdfData.coords.pageHeight - pdfData.coords.margins.top -
+		double available = pdfData.topY( pdfData.currentPageIdx ) -
 			pdfData.currentPageAllowedY();
 		const double spacing = font->GetFontMetrics()->GetLineSpacing();
 
@@ -1165,7 +1165,7 @@ PdfRenderer::drawImage( PdfAuxData & pdfData, const RenderOpts & renderOpts,
 			if( pdfImg.GetWidth() > availableWidth )
 				imgScale = ( availableWidth / pdfImg.GetWidth() ) * scale;
 
-			const double pageHeight = pdfData.coords.pageHeight - pdfData.coords.margins.top -
+			const double pageHeight = pdfData.topY( pdfData.currentPageIdx ) -
 				pdfData.coords.margins.bottom;
 
 			if( pdfImg.GetHeight() * imgScale > pageHeight )
@@ -1226,7 +1226,7 @@ PdfRenderer::drawImage( PdfAuxData & pdfData, const RenderOpts & renderOpts,
 			QByteArray data;
 			QBuffer buf( &data );
 
-			img.save( &buf, "jpg" );
+			img.save( &buf, "png" );
 
 			PdfImage pdfImg( pdfData.doc );
 			pdfImg.LoadFromData( reinterpret_cast< unsigned char * >( data.data() ), data.size() );
@@ -1248,7 +1248,7 @@ PdfRenderer::drawImage( PdfAuxData & pdfData, const RenderOpts & renderOpts,
 			if( pdfImg.GetWidth() > availableWidth )
 				imgScale = ( availableWidth / pdfImg.GetWidth() ) * scale;
 
-			const double pageHeight = pdfData.coords.pageHeight - pdfData.coords.margins.top -
+			const double pageHeight = pdfData.topY( pdfData.currentPageIdx ) -
 				pdfData.coords.margins.bottom;
 
 			if( pdfImg.GetHeight() * imgScale > pageHeight )
@@ -1566,7 +1566,7 @@ PdfRenderer::drawBlockquote( PdfAuxData & pdfData, const RenderOpts & renderOpts
 						heightCalcOpt, scale ) );
 				else
 				{
-					ret.append( { 0, 0.0, 0.0 } );
+					ret.append( { -1, 0.0, 0.0 } );
 
 					return ret;
 				}
@@ -1785,7 +1785,7 @@ PdfRenderer::drawListItem( PdfAuxData & pdfData, const RenderOpts & renderOpts,
 							0.0 ),
 						heightCalcOpt, scale ) );
 				else
-					ret.append( { 0, 0.0, 0.0 } );
+					ret.append( { -1, 0.0, 0.0 } );
 			}
 				break;
 
@@ -2109,17 +2109,17 @@ PdfRenderer::drawTable( PdfAuxData & pdfData, const RenderOpts & renderOpts,
 	{
 		case CalcHeightOpt::Minimum :
 		{
-			ret.append( { 0, 0.0, r0h + r1h + c_tableMargin * ( justHeader ? 2.0 : 4.0 ) } );
+			ret.append( { -1, 0.0, r0h + r1h + c_tableMargin * ( justHeader ? 2.0 : 4.0 ) } );
 
 			return ret;
 		}
 
 		case CalcHeightOpt::Full :
 		{
-			ret.append( { 0, 0.0, r0h + r1h + c_tableMargin * ( justHeader ? 2.0 : 4.0 ) } );
+			ret.append( { -1, 0.0, r0h + r1h + c_tableMargin * ( justHeader ? 2.0 : 4.0 ) } );
 
 			for( int i = 2; i < auxTable.size(); ++i )
-				ret.append( { 0, 0.0, rowHeight( auxTable, i ) + c_tableMargin * 2.0 } );
+				ret.append( { -1, 0.0, rowHeight( auxTable, i ) + c_tableMargin * 2.0 } );
 
 			return ret;
 		}
@@ -2209,7 +2209,7 @@ PdfRenderer::drawTableRow( QVector< QVector< CellData > > & table, int row, PdfA
 		{
 			newPageInTable( pdfData, currentPage, endPage, endY );
 
-			y = pdfData.coords.pageHeight - pdfData.coords.margins.top;
+			y = pdfData.topY( currentPage );
 		}
 
 		bool textBefore = false;
@@ -2234,10 +2234,10 @@ PdfRenderer::drawTableRow( QVector< QVector< CellData > > & table, int row, PdfA
 				{
 					newPageInTable( pdfData, currentPage, endPage, endY );
 
-					y = pdfData.coords.pageHeight - pdfData.coords.margins.top;
+					y = pdfData.topY( currentPage );
 				}
 
-				const auto availableHeight = pdfData.coords.pageHeight - pdfData.coords.margins.top -
+				const auto availableHeight = pdfData.topY( currentPage ) -
 					pdfData.currentPageAllowedY();
 
 				if( h > availableHeight )
@@ -2252,7 +2252,7 @@ PdfRenderer::drawTableRow( QVector< QVector< CellData > > & table, int row, PdfA
 				QByteArray data;
 				QBuffer buf( &data );
 
-				c->image.save( &buf, "jpg" );
+				c->image.save( &buf, "png" );
 
 				PdfImage img( pdfData.doc );
 				img.LoadFromData( reinterpret_cast< unsigned char * >( data.data() ), data.size() );
@@ -2379,7 +2379,7 @@ PdfRenderer::drawTableBorder( PdfAuxData & pdfData, int startPage, QVector< Wher
 		{
 			auto x = startX;
 			auto y = pdfData.allowedY( i );
-			auto sy = pdfData.coords.pageHeight - pdfData.coords.margins.top;
+			auto sy = pdfData.topY( i );
 
 			pdfData.painter->DrawLine( x, sy, x, y );
 
@@ -2391,14 +2391,13 @@ PdfRenderer::drawTableBorder( PdfAuxData & pdfData, int startPage, QVector< Wher
 			}
 
 			ret.append( { i, pdfData.allowedY( i ),
-				pdfData.coords.pageHeight - pdfData.coords.margins.top -
-					pdfData.allowedY( i ) } );
+				pdfData.topY( i ) - pdfData.allowedY( i ) } );
 		}
 		else
 		{
 			auto x = startX;
 			auto y = endY;
-			auto sy = pdfData.coords.pageHeight - pdfData.coords.margins.top;
+			auto sy = pdfData.topY( i );
 
 			pdfData.painter->DrawLine( x, sy, x, y );
 
@@ -2412,7 +2411,7 @@ PdfRenderer::drawTableBorder( PdfAuxData & pdfData, int startPage, QVector< Wher
 			pdfData.painter->DrawLine( startX, y, endX, y );
 
 			ret.append( { pdfData.currentPageIdx, endY,
-				pdfData.coords.pageHeight - pdfData.coords.margins.top - endY } );
+				pdfData.topY( i ) - endY } );
 		}
 
 		pdfData.painter->Restore();
@@ -2430,7 +2429,7 @@ PdfRenderer::drawTextLineInTable( double x, double & y, TextToDraw & text, doubl
 	{
 		newPageInTable( pdfData, currentPage, endPage, endY );
 
-		y = pdfData.coords.pageHeight - pdfData.coords.margins.top - lineHeight;
+		y = pdfData.topY( currentPage ) - lineHeight;
 	}
 
 	if( text.width <= text.availableWidth )

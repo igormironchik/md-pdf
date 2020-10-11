@@ -140,6 +140,22 @@ struct PdfAuxData {
 	QMap< int, double > reserved;
 	bool drawFootnotes = false;
 
+	double topY( int page ) const
+	{
+		if( !drawFootnotes )
+			return coords.pageHeight - coords.margins.top;
+		else
+			return topFootnoteY( page );
+	}
+
+	double topFootnoteY( int page ) const
+	{
+		if( reserved.contains( page ) )
+			return reserved[ page ];
+		else
+			return 0.0;
+	}
+
 	double currentPageAllowedY() const
 	{
 		return allowedY( currentPageIdx );
