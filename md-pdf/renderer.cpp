@@ -23,14 +23,13 @@
 // md-pdf include.
 #include "renderer.hpp"
 #include "syntax.hpp"
+#include "const.hpp"
 
 // Qt include.
 #include <QFileInfo>
 #include <QNetworkAccessManager>
 #include <QThread>
 #include <QBuffer>
-
-static const double c_mmInPt = 25.4 / 72.0;
 
 
 //! Internal exception.

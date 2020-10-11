@@ -25,6 +25,7 @@
 #include "md_parser.hpp"
 #include "renderer.hpp"
 #include "progress.hpp"
+#include "const.hpp"
 
 // Qt include.
 #include <QToolButton>
@@ -37,8 +38,6 @@
 
 // podofo include.
 #include <podofo/podofo.h>
-
-static const double c_mmInPt = 25.4 / 72;
 
 
 //

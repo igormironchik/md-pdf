@@ -29,7 +29,8 @@ set( GUI_SRC main.cpp
 	renderer.cpp
 	progress.hpp
 	progress.cpp
-	progress.ui )
+	progress.ui
+	const.hpp )
 
 set( LIB_SYNTAX_SRC syntax.cpp
 	syntax.hpp )
