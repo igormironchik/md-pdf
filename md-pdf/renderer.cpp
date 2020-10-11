@@ -32,7 +32,7 @@
 
 //! Footnote scale.
 static const float c_footnoteScale = 0.75;
-static const double c_footnoteOffset = 10 / ( 25.4 / 72.0 );
+static const double c_mmInPt = 25.4 / 72.0;
 
 
 //! Internal exception.
@@ -1153,6 +1153,11 @@ PdfRenderer::drawFootnote( PdfAuxData & pdfData, const RenderOpts & renderOpts,
 {
 	QVector< WhereDrawn > ret;
 
+	auto * font = createFont( renderOpts.m_textFont, false, false,
+		renderOpts.m_textFontSize, pdfData.doc, c_footnoteScale );
+	auto footnoteOffset = 4.0 / c_mmInPt + font->GetFontMetrics()->StringWidth( createPdfString(
+		QString::number( m_footnoteNum - 1 ) ) );
+
 	for( auto it = note->items().cbegin(), last = note->items().cend(); it != last; ++it )
 	{
 		{
@@ -1167,7 +1172,7 @@ PdfRenderer::drawFootnote( PdfAuxData & pdfData, const RenderOpts & renderOpts,
 			case MD::ItemType::Heading :
 				ret.append( drawHeading( pdfData, renderOpts,
 					static_cast< MD::Heading* > ( it->data() ),
-					doc, c_footnoteOffset,
+					doc, footnoteOffset,
 					// If there is another item after heading we need to know its min
 					// height to glue heading with it.
 					( it + 1 != last ?
@@ -1177,19 +1182,19 @@ PdfRenderer::drawFootnote( PdfAuxData & pdfData, const RenderOpts & renderOpts,
 
 			case MD::ItemType::Paragraph :
 				ret.append( drawParagraph( pdfData, renderOpts,
-					static_cast< MD::Paragraph* > ( it->data() ), doc, c_footnoteOffset,
+					static_cast< MD::Paragraph* > ( it->data() ), doc, footnoteOffset,
 					true, heightCalcOpt, c_footnoteScale ) );
 				break;
 
 			case MD::ItemType::Code :
 				ret.append( drawCode( pdfData, renderOpts, static_cast< MD::Code* > ( it->data() ),
-					doc, c_footnoteOffset, heightCalcOpt, c_footnoteScale ) );
+					doc, footnoteOffset, heightCalcOpt, c_footnoteScale ) );
 				break;
 
 			case MD::ItemType::Blockquote :
 				ret.append( drawBlockquote( pdfData, renderOpts,
 					static_cast< MD::Blockquote* > ( it->data() ),
-					doc, c_footnoteOffset, heightCalcOpt, c_footnoteScale ) );
+					doc, footnoteOffset, heightCalcOpt, c_footnoteScale ) );
 				break;
 
 			case MD::ItemType::List :
@@ -1197,11 +1202,9 @@ PdfRenderer::drawFootnote( PdfAuxData & pdfData, const RenderOpts & renderOpts,
 				auto * list = static_cast< MD::List* > ( it->data() );
 				const auto bulletWidth = maxListNumberWidth( list );
 
-				auto * font = createFont( renderOpts.m_textFont, false, false,
-					renderOpts.m_textFontSize, pdfData.doc, c_footnoteScale );
 				pdfData.coords.y -= font->GetFontMetrics()->GetLineSpacing();
 
-				ret.append( drawList( pdfData, renderOpts, list, doc, bulletWidth, c_footnoteOffset,
+				ret.append( drawList( pdfData, renderOpts, list, doc, bulletWidth, footnoteOffset,
 					heightCalcOpt, c_footnoteScale ) );
 			}
 				break;
@@ -1209,7 +1212,7 @@ PdfRenderer::drawFootnote( PdfAuxData & pdfData, const RenderOpts & renderOpts,
 			case MD::ItemType::Table :
 				ret.append( drawTable( pdfData, renderOpts,
 					static_cast< MD::Table* > ( it->data() ),
-					doc, c_footnoteOffset, heightCalcOpt, c_footnoteScale ) );
+					doc, footnoteOffset, heightCalcOpt, c_footnoteScale ) );
 				break;
 
 			default :
