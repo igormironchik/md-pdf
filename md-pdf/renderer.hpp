@@ -149,6 +149,14 @@ struct PdfAuxData {
 			return topFootnoteY( page );
 	}
 
+	int currentPageIndex() const
+	{
+		if( !drawFootnotes )
+			return currentPageIdx;
+		else
+			return footnotePageIdx;
+	}
+
 	double topFootnoteY( int page ) const
 	{
 		if( reserved.contains( page ) )

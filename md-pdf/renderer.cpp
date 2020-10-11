@@ -32,7 +32,7 @@
 
 //! Footnote scale.
 static const float c_footnoteScale = 0.75;
-static const double c_footnoteOffset = 100.0;
+static const double c_footnoteOffset = 10 / ( 25.4 / 72.0 );
 
 
 //! Internal exception.
@@ -388,7 +388,7 @@ PdfRenderer::drawHeading( PdfAuxData & pdfData, const RenderOpts & renderOpts,
 		width, createPdfString( item->text() ) );
 
 	const double height = lines.size() * font->GetFontMetrics()->GetLineSpacing();
-	const double availableHeight = pdfData.topY( pdfData.currentPageIdx ) -
+	const double availableHeight = pdfData.topY( pdfData.currentPageIndex() ) -
 		pdfData.currentPageAllowedY();
 
 	switch( heightCalcOpt )
@@ -422,7 +422,7 @@ PdfRenderer::drawHeading( PdfAuxData & pdfData, const RenderOpts & renderOpts,
 
 		pdfData.coords.y -= height;
 
-		ret.append( { pdfData.currentPageIdx, pdfData.coords.y, height } );
+		ret.append( { pdfData.currentPageIndex(), pdfData.coords.y, height } );
 
 		return ret;
 	}
@@ -440,7 +440,7 @@ PdfRenderer::drawHeading( PdfAuxData & pdfData, const RenderOpts & renderOpts,
 		std::vector< PdfString > tmp;
 		double h = 0.0;
 		std::size_t i = 0;
-		double available = pdfData.topY( pdfData.currentPageIdx ) -
+		double available = pdfData.topY( pdfData.currentPageIndex() ) -
 			pdfData.currentPageAllowedY();
 		const double spacing = font->GetFontMetrics()->GetLineSpacing();
 
@@ -474,7 +474,7 @@ PdfRenderer::drawHeading( PdfAuxData & pdfData, const RenderOpts & renderOpts,
 
 		pdfData.coords.y -= height;
 
-		ret.append( { pdfData.currentPageIdx, pdfData.coords.y, height } );
+		ret.append( { pdfData.currentPageIndex(), pdfData.coords.y, height } );
 
 		pdfData.painter->FinishPage();
 
@@ -716,7 +716,7 @@ PdfRenderer::drawString( PdfAuxData & pdfData, const RenderOpts & renderOpts,
 				cw->append( { w, lineHeight, true, false, true, " " } );
 
 			ret.append( qMakePair( QRectF( pdfData.coords.x, pdfData.coords.y,
-				w * scale / 100.0, lineHeight ), pdfData.currentPageIdx ) );
+				w * scale / 100.0, lineHeight ), pdfData.currentPageIndex() ) );
 
 			pdfData.coords.x += w * scale / 100.0;
 		}
@@ -763,7 +763,7 @@ PdfRenderer::drawString( PdfAuxData & pdfData, const RenderOpts & renderOpts,
 
 				pdfData.painter->DrawText( pdfData.coords.x, pdfData.coords.y, str );
 				ret.append( qMakePair( QRectF( pdfData.coords.x, pdfData.coords.y,
-					length, lineHeight ), pdfData.currentPageIdx ) );
+					length, lineHeight ), pdfData.currentPageIndex() ) );
 			}
 			else if( cw )
 				cw->append( { length + ( it + 1 == last && footnoteAtEnd ? footnoteWidth : 0.0 ),
@@ -792,7 +792,7 @@ PdfRenderer::drawString( PdfAuxData & pdfData, const RenderOpts & renderOpts,
 						font->SetFontScale( scale );
 
 						ret.append( qMakePair( QRectF( pdfData.coords.x, pdfData.coords.y,
-							spaceWidth * scale / 100.0, lineHeight ), pdfData.currentPageIdx ) );
+							spaceWidth * scale / 100.0, lineHeight ), pdfData.currentPageIndex() ) );
 
 						if( background.isValid() )
 						{
@@ -840,7 +840,7 @@ PdfRenderer::drawString( PdfAuxData & pdfData, const RenderOpts & renderOpts,
 					pdfData.painter->DrawText( pdfData.coords.x, pdfData.coords.y, str );
 					ret.append( qMakePair( QRectF( pdfData.coords.x, pdfData.coords.y,
 							font->GetFontMetrics()->StringWidth( str ), lineHeight ),
-						pdfData.currentPageIdx ) );
+						pdfData.currentPageIndex() ) );
 				}
 				else if( cw )
 					cw->append( { font->GetFontMetrics()->StringWidth( str ),
@@ -1126,7 +1126,7 @@ PdfRenderer::drawParagraph( PdfAuxData & pdfData, const RenderOpts & renderOpts,
 
 					rects.append( qMakePair( QRectF( pdfData.coords.x, pdfData.coords.y,
 							w, lineHeight ),
-						pdfData.currentPageIdx ) );
+						pdfData.currentPageIndex() ) );
 
 					++m_footnoteNum;
 
@@ -1276,7 +1276,7 @@ PdfRenderer::drawImage( PdfAuxData & pdfData, const RenderOpts & renderOpts,
 			if( pdfImg.GetWidth() > availableWidth )
 				imgScale = ( availableWidth / pdfImg.GetWidth() ) * scale;
 
-			const double pageHeight = pdfData.topY( pdfData.currentPageIdx ) -
+			const double pageHeight = pdfData.topY( pdfData.currentPageIndex() ) -
 				pdfData.coords.margins.bottom;
 
 			if( pdfImg.GetHeight() * imgScale > pageHeight )
@@ -1287,7 +1287,7 @@ PdfRenderer::drawImage( PdfAuxData & pdfData, const RenderOpts & renderOpts,
 
 				createPage( pdfData );
 
-				pdfData.reserveSpaceOn( pdfData.currentPageIdx );
+				pdfData.reserveSpaceOn( pdfData.currentPageIndex() );
 
 				pdfData.coords.x += offset;
 			}
@@ -1297,7 +1297,7 @@ PdfRenderer::drawImage( PdfAuxData & pdfData, const RenderOpts & renderOpts,
 
 				createPage( pdfData );
 
-				pdfData.reserveSpaceOn( pdfData.currentPageIdx );
+				pdfData.reserveSpaceOn( pdfData.currentPageIndex() );
 
 				pdfData.coords.x += offset;
 			}
@@ -1316,7 +1316,7 @@ PdfRenderer::drawImage( PdfAuxData & pdfData, const RenderOpts & renderOpts,
 
 			moveToNewLine( pdfData, offset, lineHeight, 1.0 );
 
-			return qMakePair( r, pdfData.currentPageIdx );
+			return qMakePair( r, pdfData.currentPageIndex() );
 		}
 		else
 			throw PdfRendererError( tr( "Unable to load image: %1.\n\n"
@@ -1359,7 +1359,7 @@ PdfRenderer::drawImage( PdfAuxData & pdfData, const RenderOpts & renderOpts,
 			if( pdfImg.GetWidth() > availableWidth )
 				imgScale = ( availableWidth / pdfImg.GetWidth() ) * scale;
 
-			const double pageHeight = pdfData.topY( pdfData.currentPageIdx ) -
+			const double pageHeight = pdfData.topY( pdfData.currentPageIndex() ) -
 				pdfData.coords.margins.bottom;
 
 			if( pdfImg.GetHeight() * imgScale > pageHeight )
@@ -1371,7 +1371,7 @@ PdfRenderer::drawImage( PdfAuxData & pdfData, const RenderOpts & renderOpts,
 		pdfData.coords.x = pdfData.coords.margins.left + offset;
 		cw->append( { 0.0, height, false, true, false, "" } );
 
-		return qMakePair( QRectF(), pdfData.currentPageIdx );
+		return qMakePair( QRectF(), pdfData.currentPageIndex() );
 	}
 }
 
@@ -1573,7 +1573,7 @@ PdfRenderer::drawCode( PdfAuxData & pdfData, const RenderOpts & renderOpts,
 			pdfData.painter->Fill();
 			pdfData.painter->Restore();
 
-			ret.append( { pdfData.currentPageIdx, y, h + lineHeight } );
+			ret.append( { pdfData.currentPageIndex(), y, h + lineHeight } );
 		}
 
 		for( ; i < j; ++i )
@@ -1775,7 +1775,7 @@ PdfRenderer::drawBlockquote( PdfAuxData & pdfData, const RenderOpts & renderOpts
 		pdfData.painter->Restore();
 	}
 
-	pdfData.painter->SetPage( pdfData.doc->GetPage( pdfData.currentPageIdx ) );
+	pdfData.painter->SetPage( pdfData.doc->GetPage( pdfData.currentPageIndex() ) );
 
 	return ret;
 }
@@ -1954,7 +1954,7 @@ PdfRenderer::drawListItem( PdfAuxData & pdfData, const RenderOpts & renderOpts,
 
 	if( addExtraSpace )
 	{
-		ret.append( { pdfData.currentPageIdx, pdfData.coords.y, lineHeight } );
+		ret.append( { pdfData.currentPageIndex(), pdfData.coords.y, lineHeight } );
 
 		if( heightCalcOpt != CalcHeightOpt::Full )
 			moveToNewLine( pdfData, offset, lineHeight, 1.0 );
@@ -2244,7 +2244,7 @@ PdfRenderer::drawTable( PdfAuxData & pdfData, const RenderOpts & renderOpts,
 	{
 		createPage( pdfData );
 
-		pdfData.reserveSpaceOn( pdfData.currentPageIdx );
+		pdfData.reserveSpaceOn( pdfData.currentPageIndex() );
 	}
 
 	moveToNewLine( pdfData, offset, lineHeight, 1.0 );
@@ -2275,7 +2275,7 @@ PdfRenderer::drawTableRow( QVector< QVector< CellData > > & table, int row, PdfA
 	auto * font = createFont( renderOpts.m_textFont, false, false, renderOpts.m_textFontSize,
 		pdfData.doc, scale );
 
-	const auto startPage = pdfData.currentPageIdx;
+	const auto startPage = pdfData.currentPageIndex();
 	const auto startY = pdfData.coords.y;
 	auto endPage = startPage;
 	auto endY = startY;
@@ -2421,7 +2421,7 @@ PdfRenderer::drawTableRow( QVector< QVector< CellData > > & table, int row, PdfA
 
 		y -= c_tableMargin - font->GetFontMetrics()->GetDescent();
 
-		if( y < endY  && currentPage == pdfData.currentPageIdx )
+		if( y < endY  && currentPage == pdfData.currentPageIndex() )
 			endY = y;
 
 		++ column;
@@ -2430,7 +2430,7 @@ PdfRenderer::drawTableRow( QVector< QVector< CellData > > & table, int row, PdfA
 	drawTableBorder( pdfData, startPage, ret, renderOpts, offset, table, startY, endY );
 
 	pdfData.coords.y = endY;
-	pdfData.painter->SetPage( pdfData.doc->GetPage( pdfData.currentPageIdx ) );
+	pdfData.painter->SetPage( pdfData.doc->GetPage( pdfData.currentPageIndex() ) );
 
 	processLinksInTable( pdfData, links, doc );
 
@@ -2442,7 +2442,7 @@ PdfRenderer::drawTableBorder( PdfAuxData & pdfData, int startPage, QVector< Wher
 	const RenderOpts & renderOpts, double offset, const QVector< QVector< CellData > > & table,
 	double startY, double endY )
 {
-	for( int i = startPage; i <= pdfData.currentPageIdx; ++i )
+	for( int i = startPage; i <= pdfData.currentPageIndex(); ++i )
 	{
 		pdfData.painter->SetPage( pdfData.doc->GetPage( i ) );
 
@@ -2465,7 +2465,7 @@ PdfRenderer::drawTableBorder( PdfAuxData & pdfData, int startPage, QVector< Wher
 			auto x = startX;
 			auto y = endY;
 
-			if( i == pdfData.currentPageIdx )
+			if( i == pdfData.currentPageIndex() )
 			{
 				pdfData.painter->DrawLine( startX, endY, endX, endY );
 				pdfData.painter->DrawLine( x, startY, x, endY );
@@ -2483,10 +2483,10 @@ PdfRenderer::drawTableBorder( PdfAuxData & pdfData, int startPage, QVector< Wher
 				pdfData.painter->DrawLine( x, startY, x, y );
 			}
 
-			ret.append( { i, ( i < pdfData.currentPageIdx ? pdfData.allowedY( i ) : endY ),
-				( i < pdfData.currentPageIdx ? startY - pdfData.allowedY( i ) : startY - endY  ) } );
+			ret.append( { i, ( i < pdfData.currentPageIndex() ? pdfData.allowedY( i ) : endY ),
+				( i < pdfData.currentPageIndex() ? startY - pdfData.allowedY( i ) : startY - endY  ) } );
 		}
-		else if( i < pdfData.currentPageIdx )
+		else if( i < pdfData.currentPageIndex() )
 		{
 			auto x = startX;
 			auto y = pdfData.allowedY( i );
@@ -2521,7 +2521,7 @@ PdfRenderer::drawTableBorder( PdfAuxData & pdfData, int startPage, QVector< Wher
 
 			pdfData.painter->DrawLine( startX, y, endX, y );
 
-			ret.append( { pdfData.currentPageIdx, endY,
+			ret.append( { pdfData.currentPageIndex(), endY,
 				pdfData.topY( i ) - endY } );
 		}
 
@@ -2658,13 +2658,13 @@ void
 PdfRenderer::newPageInTable( PdfAuxData & pdfData, int & currentPage, int & endPage,
 	double & endY )
 {
-	if( currentPage + 1 > pdfData.currentPageIdx )
+	if( currentPage + 1 > pdfData.currentPageIndex() )
 	{
 		createPage( pdfData );
 
-		if( pdfData.currentPageIdx > endPage )
+		if( pdfData.currentPageIndex() > endPage )
 		{
-			endPage = pdfData.currentPageIdx;
+			endPage = pdfData.currentPageIndex();
 			endY = pdfData.coords.y;
 		}
 
