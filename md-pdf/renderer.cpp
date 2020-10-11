@@ -371,7 +371,8 @@ PdfRenderer::drawHeading( PdfAuxData & pdfData, const RenderOpts & renderOpts,
 		case CalcHeightOpt::Minimum :
 		case CalcHeightOpt::Full :
 		{
-			ret.append( { -1, 0.0, height } );
+			for( std::size_t i = 0; i < lines.size(); ++i )
+				ret.append( { -1, 0.0, font->GetFontMetrics()->GetLineSpacing() } );
 			return ret;
 		}
 
