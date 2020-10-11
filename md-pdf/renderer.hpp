@@ -38,6 +38,9 @@
 
 using namespace PoDoFo;
 
+//! Footnote scale.
+static const float c_footnoteScale = 0.75;
+
 
 //
 // RenderOpts
@@ -482,6 +485,7 @@ private:
 		QString word;
 		QImage image;
 		QString url;
+		QString footnote;
 		QColor color;
 		QColor background;
 		PdfFont * font = nullptr;
@@ -494,6 +498,16 @@ private:
 				return image.width();
 			else if( !url.isEmpty() )
 				return font->GetFontMetrics()->StringWidth( createPdfString( url ) );
+			else if( !footnote.isEmpty() )
+			{
+				const auto old = font->GetFontSize();
+				font->SetFontSize( old * c_footnoteScale );
+				const auto w = font->GetFontMetrics()->StringWidth( createPdfString(
+					footnote ) );
+				font->SetFontSize( old );
+
+				return w;
+			}
 			else
 				return 0.0;
 		}
@@ -535,6 +549,9 @@ private:
 
 					if( it != items.cbegin() && it->font == ( it - 1 )->font )
 						sw = it->font->GetFontMetrics()->StringWidth( PdfString( " " ) );
+
+					if( it + 1 != last && !( it + 1 )->footnote.isEmpty() )
+						sw = 0.0;
 
 					if( it + 1 != last )
 					{

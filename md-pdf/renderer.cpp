@@ -30,8 +30,6 @@
 #include <QThread>
 #include <QBuffer>
 
-//! Footnote scale.
-static const float c_footnoteScale = 0.75;
 static const double c_mmInPt = 25.4 / 72.0;
 
 
@@ -922,6 +920,16 @@ QVector< WhereDrawn > toWhereDrawn( const QVector< QPair< QRectF, int > > & rect
 	return ret;
 }
 
+double totalHeight( const QVector< WhereDrawn > & where )
+{
+	double h = 0.0;
+
+	for( const auto & w : qAsConst( where ) )
+		h += w.height;
+
+	return h;
+}
+
 } /* namespace anonymous */
 
 QVector< WhereDrawn >
@@ -1135,6 +1143,18 @@ PdfRenderer::drawParagraph( PdfAuxData & pdfData, const RenderOpts & renderOpts,
 					footnoteFont->SetFontSize( old );
 
 					pdfData.coords.x += w;
+
+					auto f = doc->footnotesMap()[ ref->id() ];
+
+					PdfAuxData tmpData = pdfData;
+					tmpData.coords = { { pdfData.coords.margins.left, pdfData.coords.margins.right,
+							pdfData.coords.margins.top, pdfData.coords.margins.bottom },
+						pdfData.page->GetPageSize().GetWidth(),
+						pdfData.page->GetPageSize().GetHeight(),
+						pdfData.coords.margins.left, pdfData.page->GetPageSize().GetHeight() -
+							pdfData.coords.margins.top };
+					const auto h = footnoteHeight( tmpData, renderOpts,
+						doc, f.data() );
 				}
 			}
 				break;
@@ -2149,6 +2169,26 @@ PdfRenderer::createAuxTable( PdfAuxData & pdfData, const RenderOpts & renderOpts
 					}
 						break;
 
+					case MD::ItemType::FootnoteRef :
+					{
+						auto * ref = static_cast< MD::FootnoteRef* > ( it->data() );
+
+						if( doc->footnotesMap().contains( ref->id() ) )
+						{
+							auto * font = createFont( renderOpts.m_textFont,
+								false, false,
+								renderOpts.m_textFontSize, pdfData.doc,
+								scale );
+
+							CellItem item;
+							item.font = font;
+							item.footnote = QString::number( m_footnoteNum++ );
+
+							data.items.append( item );
+						}
+					}
+						break;
+
 					default :
 						break;
 				}
@@ -2621,6 +2661,24 @@ PdfRenderer::drawTextLineInTable( double x, double & y, TextToDraw & text, doubl
 				currentPage ) );
 
 		x += it->width();
+
+		if( it + 1 != last && !( it + 1 )->footnote.isEmpty() )
+		{
+			++it;
+
+			const auto str = createPdfString( it->footnote );
+
+			const auto old = it->font->GetFontSize();
+			it->font->SetFontSize( old * c_footnoteScale );
+
+			const auto w = it->font->GetFontMetrics()->StringWidth( str );
+
+			pdfData.painter->DrawText( x, y + lineHeight -
+				it->font->GetFontMetrics()->GetLineSpacing(), str );
+			it->font->SetFontSize( old );
+
+			x += w;
+		}
 
 		if( it + 1 != last )
 		{
