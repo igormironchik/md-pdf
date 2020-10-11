@@ -741,7 +741,8 @@ Parser::parseFormattedTextLinksImages( QStringList & fr, QSharedPointer< Block >
 	auto addFootnoteRef = [&]( const QString & lnk )
 	{
 		QSharedPointer< FootnoteRef > fnr(
-			new FootnoteRef( lnk + QDir::separator() + workingPath + fileName ) );
+			new FootnoteRef( QStringLiteral( "#" ) + lnk +
+				QDir::separator() + workingPath + fileName ) );
 
 		data.fnref.append( fnr );
 		data.lexems.append( Lex::FootnoteRef );

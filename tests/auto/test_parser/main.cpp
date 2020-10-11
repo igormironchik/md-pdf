@@ -1519,7 +1519,7 @@ TEST_CASE( "links" )
 	auto f1 = static_cast< MD::FootnoteRef* > ( p->items().at( 4 ).data() );
 
 	REQUIRE( f1->id() ==
-		QString::fromLatin1( "ref" ) + QDir::separator() + wd + QStringLiteral( "test31.md" ) );
+		QString::fromLatin1( "#ref" ) + QDir::separator() + wd + QStringLiteral( "test31.md" ) );
 
 	REQUIRE( !doc->labeledLinks().isEmpty() );
 	REQUIRE( doc->labeledLinks().contains( label ) );
@@ -1538,7 +1538,7 @@ TEST_CASE( "links" )
 		f1 = static_cast< MD::FootnoteRef* > ( p->items().at( 0 ).data() );
 
 		REQUIRE( f1->id() ==
-			QString::fromLatin1( "ref" ) + QDir::separator() + wd + QStringLiteral( "test31.md" ) );
+			QString::fromLatin1( "#ref" ) + QDir::separator() + wd + QStringLiteral( "test31.md" ) );
 
 		auto t = static_cast< MD::Text* > ( p->items().at( 1 ).data() );
 

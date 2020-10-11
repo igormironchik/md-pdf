@@ -310,6 +310,13 @@ private:
 	double minNecessaryHeight( PdfAuxData & pdfData, const RenderOpts & renderOpts,
 		QSharedPointer< MD::Item > item, QSharedPointer< MD::Document > doc,
 		double offset, float scale = 1.0 );
+	//! \return Height of the footnote.
+	QVector< WhereDrawn > drawFootnote( PdfAuxData & pdfData, const RenderOpts & renderOpts,
+		QSharedPointer< MD::Document > doc, MD::Footnote * note,
+		CalcHeightOpt heightCalcOpt = CalcHeightOpt::Unknown );
+	//! \return Height of the footnote.
+	QVector< WhereDrawn > footnoteHeight( PdfAuxData & pdfData, const RenderOpts & renderOpts,
+		QSharedPointer< MD::Document > doc, MD::Footnote * note );
 
 	//! List item type.
 	enum class ListItemType
