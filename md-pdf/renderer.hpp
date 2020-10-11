@@ -137,6 +137,38 @@ struct PdfAuxData {
 	PdfPage * page = nullptr;
 	int currentPageIdx = -1;
 	CoordsPageAttribs coords;
+	QMap< int, double > reserved;
+
+	double currentPageAllowedY() const
+	{
+		return allowedY( currentPageIdx );
+	}
+
+	double allowedY( int page ) const
+	{
+		if( reserved.contains( page ) )
+			return reserved[ page ];
+		else
+			return coords.margins.bottom;
+	}
+
+	void reserveSpaceOn( int page )
+	{
+		if( reserved.contains( page ) )
+		{
+			double r = reserved[ page ];
+			reserved.remove( page );
+
+			while( reserved.contains( ++page ) )
+			{
+				const double tmp = reserved[ page ];
+				reserved[ page ] = r;
+				r = tmp;
+			}
+
+			reserved[ page ] = r;
+		}
+	}
 }; // struct PdfAuxData;
 
 //! Where was the item drawn?

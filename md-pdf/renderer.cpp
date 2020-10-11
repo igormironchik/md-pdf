@@ -364,7 +364,7 @@ PdfRenderer::drawHeading( PdfAuxData & pdfData, const RenderOpts & renderOpts,
 
 	const double height = lines.size() * font->GetFontMetrics()->GetLineSpacing();
 	const double availableHeight = pdfData.coords.pageHeight - pdfData.coords.margins.top -
-		pdfData.coords.margins.bottom;
+		pdfData.currentPageAllowedY();
 
 	switch( heightCalcOpt )
 	{
@@ -382,7 +382,7 @@ PdfRenderer::drawHeading( PdfAuxData & pdfData, const RenderOpts & renderOpts,
 	pdfData.coords.y -= c_beforeHeading;
 
 	// If heading can be placed with next item on current page.
-	if( pdfData.coords.y - height - nextItemMinHeight > pdfData.coords.margins.bottom )
+	if( pdfData.coords.y - height - nextItemMinHeight > pdfData.currentPageAllowedY() )
 	{
 		pdfData.painter->DrawMultiLineText( pdfData.coords.margins.left + offset,
 			pdfData.coords.y - height,
@@ -415,7 +415,7 @@ PdfRenderer::drawHeading( PdfAuxData & pdfData, const RenderOpts & renderOpts,
 		double h = 0.0;
 		std::size_t i = 0;
 		double available = pdfData.coords.pageHeight - pdfData.coords.margins.top -
-			pdfData.coords.margins.bottom;
+			pdfData.currentPageAllowedY();
 		const double spacing = font->GetFontMetrics()->GetLineSpacing();
 
 		while( available >= spacing )
@@ -855,7 +855,7 @@ PdfRenderer::moveToNewLine( PdfAuxData & pdfData, double xOffset, double yOffset
 	pdfData.coords.x = pdfData.coords.margins.left + xOffset;
 	pdfData.coords.y -= yOffset * yOffsetMultiplier;
 
-	if( pdfData.coords.y - yOffset < pdfData.coords.margins.bottom )
+	if( pdfData.coords.y - yOffset < pdfData.currentPageAllowedY() )
 	{
 		pdfData.painter->FinishPage();
 		createPage( pdfData );
@@ -1159,7 +1159,7 @@ PdfRenderer::drawImage( PdfAuxData & pdfData, const RenderOpts & renderOpts,
 			double imgScale = 1.0;
 			const double availableWidth = pdfData.coords.pageWidth - pdfData.coords.margins.left -
 				pdfData.coords.margins.right - offset;
-			double availableHeight = pdfData.coords.y - pdfData.coords.margins.bottom;
+			double availableHeight = pdfData.coords.y - pdfData.currentPageAllowedY();
 
 			if( pdfImg.GetWidth() > availableWidth )
 				imgScale = ( availableWidth / pdfImg.GetWidth() ) * scale;
@@ -1175,6 +1175,8 @@ PdfRenderer::drawImage( PdfAuxData & pdfData, const RenderOpts & renderOpts,
 
 				createPage( pdfData );
 
+				pdfData.reserveSpaceOn( pdfData.currentPageIdx );
+
 				pdfData.coords.x += offset;
 			}
 			else if( pdfImg.GetHeight() * imgScale > availableHeight )
@@ -1182,6 +1184,8 @@ PdfRenderer::drawImage( PdfAuxData & pdfData, const RenderOpts & renderOpts,
 				pdfData.painter->FinishPage();
 
 				createPage( pdfData );
+
+				pdfData.reserveSpaceOn( pdfData.currentPageIdx );
 
 				pdfData.coords.x += offset;
 			}
@@ -1368,7 +1372,7 @@ PdfRenderer::drawCode( PdfAuxData & pdfData, const RenderOpts & renderOpts,
 
 	if( heightCalcOpt == CalcHeightOpt::Unknown )
 	{
-		if( pdfData.coords.y - ( textLHeight * 2.0 ) < pdfData.coords.margins.bottom )
+		if( pdfData.coords.y - ( textLHeight * 2.0 ) < pdfData.currentPageAllowedY() )
 			createPage( pdfData );
 		else
 			pdfData.coords.y -= textLHeight * 2.0;
@@ -1438,7 +1442,7 @@ PdfRenderer::drawCode( PdfAuxData & pdfData, const RenderOpts & renderOpts,
 		int j = i;
 		double h = 0.0;
 
-		while( y - lineHeight > pdfData.coords.margins.bottom && j < lines.size() )
+		while( y - lineHeight > pdfData.currentPageAllowedY() && j < lines.size() )
 		{
 			h += lineHeight;
 			y -= lineHeight;
@@ -1551,7 +1555,7 @@ PdfRenderer::drawBlockquote( PdfAuxData & pdfData, const RenderOpts & renderOpts
 		{
 			case MD::ItemType::Heading :
 			{
-				if( heightCalcOpt == CalcHeightOpt::Unknown )
+				if( heightCalcOpt != CalcHeightOpt::Minimum )
 					ret.append( drawHeading( pdfData, renderOpts,
 						static_cast< MD::Heading* > ( it->data() ),
 						doc, offset + c_blockquoteBaseOffset,
@@ -1713,7 +1717,7 @@ PdfRenderer::drawListItem( PdfAuxData & pdfData, const RenderOpts & renderOpts,
 	{
 		pdfData.painter->SetFont( font );
 
-		if( pdfData.coords.y - lineHeight < pdfData.coords.margins.bottom )
+		if( pdfData.coords.y - lineHeight < pdfData.currentPageAllowedY() )
 			createPage( pdfData );
 
 		pdfData.coords.y -= lineHeight;
@@ -1771,7 +1775,7 @@ PdfRenderer::drawListItem( PdfAuxData & pdfData, const RenderOpts & renderOpts,
 		{
 			case MD::ItemType::Heading :
 			{
-				if( heightCalcOpt == CalcHeightOpt::Unknown )
+				if( heightCalcOpt != CalcHeightOpt::Minimum )
 					ret.append( drawHeading( pdfData, renderOpts,
 						static_cast< MD::Heading* > ( it->data() ),
 						doc, offset,
@@ -2124,13 +2128,11 @@ PdfRenderer::drawTable( PdfAuxData & pdfData, const RenderOpts & renderOpts,
 	}
 
 	if( pdfData.coords.y - ( r0h + r1h + c_tableMargin * ( justHeader ? 2.0 : 4.0 ) ) <
-		pdfData.coords.margins.bottom )
+		pdfData.currentPageAllowedY() )
 	{
-		if( r0h + r1h + c_tableMargin * ( justHeader ? 2.0 : 4.0 ) <= pdfData.coords.pageHeight -
-			pdfData.coords.margins.top - pdfData.coords.margins.bottom )
-		{
-			createPage( pdfData );
-		}
+		createPage( pdfData );
+
+		pdfData.reserveSpaceOn( pdfData.currentPageIdx );
 	}
 
 	moveToNewLine( pdfData, offset, lineHeight, 1.0 );
@@ -2202,7 +2204,7 @@ PdfRenderer::drawTableRow( QVector< QVector< CellData > > & table, int row, PdfA
 		double x = startX;
 		double y = startY - c_tableMargin;
 
-		if( y < pdfData.coords.margins.bottom )
+		if( y < pdfData.currentPageAllowedY() )
 		{
 			newPageInTable( pdfData, currentPage, endPage, endY );
 
@@ -2227,7 +2229,7 @@ PdfRenderer::drawTableRow( QVector< QVector< CellData > > & table, int row, PdfA
 
 				auto h = static_cast< double > ( c->image.height() ) * ratio;
 
-				if(  y - h < pdfData.coords.margins.bottom )
+				if(  y - h < pdfData.currentPageAllowedY() )
 				{
 					newPageInTable( pdfData, currentPage, endPage, endY );
 
@@ -2235,7 +2237,7 @@ PdfRenderer::drawTableRow( QVector< QVector< CellData > > & table, int row, PdfA
 				}
 
 				const auto availableHeight = pdfData.coords.pageHeight - pdfData.coords.margins.top -
-					pdfData.coords.margins.bottom;
+					pdfData.currentPageAllowedY();
 
 				if( h > availableHeight )
 					ratio = availableHeight / static_cast< double > ( c->image.height() );
@@ -2358,8 +2360,8 @@ PdfRenderer::drawTableBorder( PdfAuxData & pdfData, int startPage, QVector< Wher
 			}
 			else
 			{
-				pdfData.painter->DrawLine( x, startY, x, pdfData.coords.margins.bottom );
-				y = pdfData.coords.margins.bottom;
+				pdfData.painter->DrawLine( x, startY, x, pdfData.allowedY( i ) );
+				y = pdfData.allowedY( i );
 			}
 
 			for( int c = 0; c < table.size(); ++c )
@@ -2369,13 +2371,13 @@ PdfRenderer::drawTableBorder( PdfAuxData & pdfData, int startPage, QVector< Wher
 				pdfData.painter->DrawLine( x, startY, x, y );
 			}
 
-			ret.append( { i, ( i < pdfData.currentPageIdx ? pdfData.coords.margins.bottom : endY ),
-				( i < pdfData.currentPageIdx ? startY - pdfData.coords.margins.bottom : startY - endY  ) } );
+			ret.append( { i, ( i < pdfData.currentPageIdx ? pdfData.allowedY( i ) : endY ),
+				( i < pdfData.currentPageIdx ? startY - pdfData.allowedY( i ) : startY - endY  ) } );
 		}
 		else if( i < pdfData.currentPageIdx )
 		{
 			auto x = startX;
-			auto y = pdfData.coords.margins.bottom;
+			auto y = pdfData.allowedY( i );
 			auto sy = pdfData.coords.pageHeight - pdfData.coords.margins.top;
 
 			pdfData.painter->DrawLine( x, sy, x, y );
@@ -2387,9 +2389,9 @@ PdfRenderer::drawTableBorder( PdfAuxData & pdfData, int startPage, QVector< Wher
 				pdfData.painter->DrawLine( x, sy, x, y );
 			}
 
-			ret.append( { i, pdfData.coords.margins.bottom,
+			ret.append( { i, pdfData.allowedY( i ),
 				pdfData.coords.pageHeight - pdfData.coords.margins.top -
-					pdfData.coords.margins.bottom } );
+					pdfData.allowedY( i ) } );
 		}
 		else
 		{
@@ -2423,7 +2425,7 @@ PdfRenderer::drawTextLineInTable( double x, double & y, TextToDraw & text, doubl
 {
 	y -= lineHeight;
 
-	if( y < pdfData.coords.margins.bottom )
+	if( y < pdfData.allowedY( currentPage ) )
 	{
 		newPageInTable( pdfData, currentPage, endPage, endY );
 
