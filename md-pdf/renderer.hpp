@@ -139,6 +139,7 @@ struct PdfAuxData {
 	CoordsPageAttribs coords;
 	QMap< int, double > reserved;
 	bool drawFootnotes = false;
+	int footnotePageIdx = -1;
 
 	double topY( int page ) const
 	{
@@ -182,6 +183,9 @@ struct PdfAuxData {
 			{
 				double r = reserved[ page ];
 				reserved.remove( page );
+
+				if( page == footnotePageIdx )
+					footnotePageIdx = page + 1;
 
 				while( reserved.contains( ++page ) )
 				{

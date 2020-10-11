@@ -299,24 +299,48 @@ PdfRenderer::isFontCreatable( const QString & name )
 void
 PdfRenderer::createPage( PdfAuxData & pdfData )
 {
-	pdfData.page = pdfData.doc->CreatePage(
-		PdfPage::CreateStandardPageSize( ePdfPageSize_A4 ) );
+	auto create = [] ( PdfAuxData & pdfData )
+	{
+		pdfData.page = pdfData.doc->CreatePage(
+			PdfPage::CreateStandardPageSize( ePdfPageSize_A4 ) );
 
-	if( !pdfData.page )
-		throw PdfRendererError( QLatin1String( "Oops, can't create empty page in PDF.\n\n"
-			"This is very strange, it should not appear ever, but it is. "
-			"I'm sorry for the inconvenience." ) );
+		if( !pdfData.page )
+			throw PdfRendererError( QLatin1String( "Oops, can't create empty page in PDF.\n\n"
+				"This is very strange, it should not appear ever, but it is. "
+				"I'm sorry for the inconvenience." ) );
 
-	pdfData.painter->SetPage( pdfData.page );
+		pdfData.painter->SetPage( pdfData.page );
 
-	pdfData.coords = { { pdfData.coords.margins.left, pdfData.coords.margins.right,
-			pdfData.coords.margins.top, pdfData.coords.margins.bottom },
-		pdfData.page->GetPageSize().GetWidth(),
-		pdfData.page->GetPageSize().GetHeight(),
-		pdfData.coords.margins.left, pdfData.page->GetPageSize().GetHeight() -
-			pdfData.coords.margins.top };
+		pdfData.coords = { { pdfData.coords.margins.left, pdfData.coords.margins.right,
+				pdfData.coords.margins.top, pdfData.coords.margins.bottom },
+			pdfData.page->GetPageSize().GetWidth(),
+			pdfData.page->GetPageSize().GetHeight(),
+			pdfData.coords.margins.left, pdfData.page->GetPageSize().GetHeight() -
+				pdfData.coords.margins.top };
 
-	++pdfData.currentPageIdx;
+		++pdfData.currentPageIdx;
+	};
+
+	if( !pdfData.drawFootnotes )
+		create( pdfData );
+	else
+	{
+		for( auto it = pdfData.reserved.find( pdfData.footnotePageIdx ),
+			last = pdfData.reserved.end(); it != last; ++it )
+		{
+			pdfData.footnotePageIdx = it.key();
+			break;
+		}
+
+		if( pdfData.footnotePageIdx <= pdfData.currentPageIdx )
+			pdfData.painter->SetPage( pdfData.doc->GetPage( pdfData.footnotePageIdx ) );
+		else
+		{
+			create( pdfData );
+
+			pdfData.coords.y = pdfData.topY( pdfData.footnotePageIdx );
+		}
+	}
 }
 
 PdfString
