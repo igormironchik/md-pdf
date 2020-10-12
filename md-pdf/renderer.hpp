@@ -286,6 +286,9 @@ private:
 		Full = 2
 	}; // enum class CalcHeightOpt
 
+	//! Finish pages.
+	void finishPages( PdfAuxData & pdfData );
+
 	//! Draw heading.
 	QVector< WhereDrawn > drawHeading( PdfAuxData & pdfData, const RenderOpts & renderOpts,
 		MD::Heading * item, QSharedPointer< MD::Document > doc, double offset = 0.0,
@@ -329,7 +332,7 @@ private:
 	QVector< WhereDrawn > footnoteHeight( PdfAuxData & pdfData, const RenderOpts & renderOpts,
 		QSharedPointer< MD::Document > doc, MD::Footnote * note );
 	//! Reserve space for footnote.
-	void reserveSpaceForFootnote( PdfAuxData & pdfData, QVector< WhereDrawn > & h,
+	void reserveSpaceForFootnote( PdfAuxData & pdfData, const QVector< WhereDrawn > & h,
 		const double & currentY, int currentPage );
 	//! Add footnote.
 	void addFootnote( QSharedPointer< MD::Footnote > f, PdfAuxData & pdfData,

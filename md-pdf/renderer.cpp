@@ -93,17 +93,17 @@ PdfRenderer::renderImpl()
 
 		PdfPainter painter;
 
+		PdfAuxData pdfData;
+
+		pdfData.doc = &document;
+		pdfData.painter = &painter;
+		pdfData.coords.margins.left = m_opts.m_left;
+		pdfData.coords.margins.right = m_opts.m_right;
+		pdfData.coords.margins.top = m_opts.m_top;
+		pdfData.coords.margins.bottom = m_opts.m_bottom;
+
 		try {
 			int itemIdx = 0;
-
-			PdfAuxData pdfData;
-
-			pdfData.doc = &document;
-			pdfData.painter = &painter;
-			pdfData.coords.margins.left = m_opts.m_left;
-			pdfData.coords.margins.right = m_opts.m_right;
-			pdfData.coords.margins.top = m_opts.m_top;
-			pdfData.coords.margins.bottom = m_opts.m_bottom;
 
 			createPage( pdfData );
 
@@ -168,11 +168,7 @@ PdfRenderer::renderImpl()
 					case MD::ItemType::PageBreak :
 					{
 						if( itemIdx < itemsCount )
-						{
-							painter.FinishPage();
-
 							createPage( pdfData );
-						}
 					}
 						break;
 
@@ -191,9 +187,21 @@ PdfRenderer::renderImpl()
 					static_cast< double > (itemsCount) * 100.0 ) );
 			}
 
-			painter.FinishPage();
+			if( !m_footnotes.isEmpty() )
+			{
+				pdfData.drawFootnotes = true;
+				pdfData.coords.x = pdfData.coords.margins.left;
+				pdfData.coords.y = pdfData.topFootnoteY( pdfData.footnotePageIdx );
+
+				pdfData.painter->SetPage( pdfData.doc->GetPage( pdfData.footnotePageIdx ) );
+
+				for( const auto & f : qAsConst( m_footnotes ) )
+					drawFootnote( pdfData, m_opts, m_doc, f.data() );
+			}
 
 			resolveLinks( pdfData );
+
+			finishPages( pdfData );
 
 			document.Write( m_fileName.toLocal8Bit().data() );
 
@@ -202,7 +210,7 @@ PdfRenderer::renderImpl()
 		catch( const PdfError & e )
 		{
 			try {
-				painter.FinishPage();
+				finishPages( pdfData );
 				document.Write( m_fileName.toLocal8Bit().data() );
 			}
 			catch( ... )
@@ -214,7 +222,7 @@ PdfRenderer::renderImpl()
 		catch( const PdfRendererError & e )
 		{
 			try {
-				painter.FinishPage();
+				finishPages( pdfData );
 				document.Write( m_fileName.toLocal8Bit().data() );
 			}
 			catch( ... )
@@ -234,6 +242,16 @@ PdfRenderer::renderImpl()
 	}
 
 	deleteLater();
+}
+
+void
+PdfRenderer::finishPages( PdfAuxData & pdfData )
+{
+	for( int i = 0; i <= pdfData.currentPageIdx; ++i )
+	{
+		pdfData.painter->SetPage( pdfData.doc->GetPage( i ) );
+		pdfData.painter->FinishPage();
+	}
 }
 
 void
@@ -323,15 +341,23 @@ PdfRenderer::createPage( PdfAuxData & pdfData )
 		create( pdfData );
 	else
 	{
-		for( auto it = pdfData.reserved.find( pdfData.footnotePageIdx ),
-			last = pdfData.reserved.end(); it != last; ++it )
-		{
+		auto it = pdfData.reserved.find( pdfData.footnotePageIdx );
+
+		if( it != pdfData.reserved.end() )
+			++it;
+
+		if( it != pdfData.reserved.end() )
 			pdfData.footnotePageIdx = it.key();
-			break;
-		}
+		else
+			++pdfData.footnotePageIdx;
+
 
 		if( pdfData.footnotePageIdx <= pdfData.currentPageIdx )
+		{
 			pdfData.painter->SetPage( pdfData.doc->GetPage( pdfData.footnotePageIdx ) );
+			pdfData.coords.x = pdfData.coords.margins.left;
+			pdfData.coords.y = pdfData.topFootnoteY( pdfData.footnotePageIdx );
+		}
 		else
 		{
 			create( pdfData );
@@ -426,7 +452,6 @@ PdfRenderer::drawHeading( PdfAuxData & pdfData, const RenderOpts & renderOpts,
 	// If heading can be placed with next item on empty page.
 	else if( height + nextItemMinHeight <= availableHeight )
 	{
-		pdfData.painter->FinishPage();
 		createPage( pdfData );
 		return drawHeading( pdfData, renderOpts, item, doc, offset, nextItemMinHeight,
 			heightCalcOpt, scale );
@@ -472,8 +497,6 @@ PdfRenderer::drawHeading( PdfAuxData & pdfData, const RenderOpts & renderOpts,
 		pdfData.coords.y -= height;
 
 		ret.append( { pdfData.currentPageIndex(), pdfData.coords.y, height } );
-
-		pdfData.painter->FinishPage();
 
 		createPage( pdfData );
 
@@ -680,7 +703,7 @@ PdfRenderer::drawString( PdfAuxData & pdfData, const RenderOpts & renderOpts,
 
 	const auto words = str.split( QLatin1Char( ' ' ), Qt::SkipEmptyParts );
 
-	const auto wv = pdfData.coords.pageWidth - pdfData.coords.margins.right;
+	const auto wv = pdfData.coords.pageWidth - pdfData.coords.margins.right - offset;
 
 	// We need to draw space char if previous word with comma.
 	if( !firstInParagraph && !newLine && !words.isEmpty() &&
@@ -876,12 +899,16 @@ void
 PdfRenderer::moveToNewLine( PdfAuxData & pdfData, double xOffset, double yOffset,
 	double yOffsetMultiplier )
 {
+	if( pdfData.drawFootnotes )
+	{
+		int i = 0;
+		++i;
+	}
 	pdfData.coords.x = pdfData.coords.margins.left + xOffset;
 	pdfData.coords.y -= yOffset * yOffsetMultiplier;
 
-	if( pdfData.coords.y - yOffset < pdfData.currentPageAllowedY() )
+	if( pdfData.coords.y < pdfData.currentPageAllowedY() )
 	{
-		pdfData.painter->FinishPage();
 		createPage( pdfData );
 		pdfData.coords.x = pdfData.coords.margins.left + xOffset;
 	}
@@ -961,7 +988,6 @@ PdfRenderer::drawParagraph( PdfAuxData & pdfData, const RenderOpts & renderOpts,
 
 		if( pdfData.coords.y < pdfData.coords.margins.bottom )
 		{
-			pdfData.painter->FinishPage();
 			createPage( pdfData );
 			pdfData.coords.x = pdfData.coords.margins.left + offset;
 		}
@@ -1156,7 +1182,7 @@ PdfRenderer::drawParagraph( PdfAuxData & pdfData, const RenderOpts & renderOpts,
 }
 
 void
-PdfRenderer::reserveSpaceForFootnote( PdfAuxData & pdfData, QVector< WhereDrawn > & h,
+PdfRenderer::reserveSpaceForFootnote( PdfAuxData & pdfData, const QVector< WhereDrawn > & h,
 	const double & currentY, int currentPage )
 {
 	const auto topY = pdfData.topFootnoteY( currentPage );
@@ -1183,20 +1209,20 @@ PdfRenderer::reserveSpaceForFootnote( PdfAuxData & pdfData, QVector< WhereDrawn 
 	{
 		height = 0.0;
 
-		while( !h.isEmpty() )
+		for( int i = 0; i < h.size(); ++i )
 		{
-			const auto tmp = h.constFirst().height;
+			const auto tmp = h[ i ].height;
 
 			if( height + tmp < available )
-			{
 				height += tmp;
-				h.removeFirst();
-			}
 			else
 			{
-				add( height, currentPage );
+				if( height > 0.01 )
+					add( height, currentPage );
 
-				reserveSpaceForFootnote( pdfData, h, pdfData.coords.margins.top, currentPage + 1 );
+				reserveSpaceForFootnote( pdfData, h.mid( i, h.size() - i ),
+					pdfData.coords.pageHeight - pdfData.coords.margins.top,
+					currentPage + 1 );
 
 				break;
 			}
@@ -1343,8 +1369,6 @@ PdfRenderer::drawImage( PdfAuxData & pdfData, const RenderOpts & renderOpts,
 			{
 				imgScale = ( pageHeight / ( pdfImg.GetHeight() * imgScale ) ) * scale;
 
-				pdfData.painter->FinishPage();
-
 				createPage( pdfData );
 
 				pdfData.reserveSpaceOn( pdfData.currentPageIndex() );
@@ -1353,8 +1377,6 @@ PdfRenderer::drawImage( PdfAuxData & pdfData, const RenderOpts & renderOpts,
 			}
 			else if( pdfImg.GetHeight() * imgScale > availableHeight )
 			{
-				pdfData.painter->FinishPage();
-
 				createPage( pdfData );
 
 				pdfData.reserveSpaceOn( pdfData.currentPageIndex() );
@@ -1818,8 +1840,6 @@ PdfRenderer::drawBlockquote( PdfAuxData & pdfData, const RenderOpts & renderOpts
 			map[ where.pageIdx ].y = where.y;
 		}
 	}
-
-	pdfData.painter->FinishPage();
 
 	// Draw blockquote left vertival bar.
 	for( auto it = map.cbegin(), last = map.cend(); it != last; ++it )
