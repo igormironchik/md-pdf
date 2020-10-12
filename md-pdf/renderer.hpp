@@ -143,6 +143,7 @@ struct PdfAuxData {
 	QMap< int, double > reserved;
 	bool drawFootnotes = false;
 	int footnotePageIdx = -1;
+	int currentFootnote = 1;
 
 	double topY( int page ) const
 	{

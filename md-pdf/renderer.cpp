@@ -195,6 +195,15 @@ PdfRenderer::renderImpl()
 
 				pdfData.painter->SetPage( pdfData.doc->GetPage( pdfData.footnotePageIdx ) );
 
+				pdfData.painter->Save();
+				pdfData.painter->SetColor( m_opts.m_borderColor.redF(),
+					m_opts.m_borderColor.greenF(),
+					m_opts.m_borderColor.blueF() );
+				pdfData.painter->DrawLine( pdfData.coords.margins.left, pdfData.coords.y,
+					pdfData.coords.pageWidth - pdfData.coords.margins.right,
+					pdfData.coords.y );
+				pdfData.painter->Restore();
+
 				for( const auto & f : qAsConst( m_footnotes ) )
 					drawFootnote( pdfData, m_opts, m_doc, f.data() );
 			}
@@ -357,6 +366,15 @@ PdfRenderer::createPage( PdfAuxData & pdfData )
 			pdfData.painter->SetPage( pdfData.doc->GetPage( pdfData.footnotePageIdx ) );
 			pdfData.coords.x = pdfData.coords.margins.left;
 			pdfData.coords.y = pdfData.topFootnoteY( pdfData.footnotePageIdx );
+
+			pdfData.painter->Save();
+			pdfData.painter->SetColor( m_opts.m_borderColor.redF(),
+				m_opts.m_borderColor.greenF(),
+				m_opts.m_borderColor.blueF() );
+			pdfData.painter->DrawLine( pdfData.coords.margins.left, pdfData.coords.y,
+				pdfData.coords.pageWidth - pdfData.coords.margins.right,
+				pdfData.coords.y );
+			pdfData.painter->Restore();
 		}
 		else
 		{
@@ -899,17 +917,13 @@ void
 PdfRenderer::moveToNewLine( PdfAuxData & pdfData, double xOffset, double yOffset,
 	double yOffsetMultiplier )
 {
-	if( pdfData.drawFootnotes )
-	{
-		int i = 0;
-		++i;
-	}
 	pdfData.coords.x = pdfData.coords.margins.left + xOffset;
 	pdfData.coords.y -= yOffset * yOffsetMultiplier;
 
 	if( pdfData.coords.y < pdfData.currentPageAllowedY() )
 	{
 		createPage( pdfData );
+
 		pdfData.coords.x = pdfData.coords.margins.left + xOffset;
 	}
 }
@@ -979,6 +993,8 @@ PdfRenderer::drawParagraph( PdfAuxData & pdfData, const RenderOpts & renderOpts,
 
 	const auto lineHeight = font->GetFontMetrics()->GetLineSpacing();
 
+	const auto oldPageId = pdfData.footnotePageIdx;
+
 	if( withNewLine && heightCalcOpt == CalcHeightOpt::Unknown )
 		moveToNewLine( pdfData, 0.0, lineHeight, 2.0 );
 
@@ -989,9 +1005,13 @@ PdfRenderer::drawParagraph( PdfAuxData & pdfData, const RenderOpts & renderOpts,
 		if( pdfData.coords.y < pdfData.coords.margins.bottom )
 		{
 			createPage( pdfData );
+
 			pdfData.coords.x = pdfData.coords.margins.left + offset;
 		}
 	}
+
+	if( pdfData.drawFootnotes && oldPageId != pdfData.footnotePageIdx && withNewLine )
+		moveToNewLine( pdfData, 0.0, lineHeight, 2.0 );
 
 	bool newLine = false;
 	CustomWidth cw;
@@ -1236,10 +1256,13 @@ PdfRenderer::drawFootnote( PdfAuxData & pdfData, const RenderOpts & renderOpts,
 {
 	QVector< WhereDrawn > ret;
 
+	static const double c_offset = 2.0;
+
 	auto * font = createFont( renderOpts.m_textFont, false, false,
 		renderOpts.m_textFontSize, pdfData.doc, c_footnoteScale );
-	auto footnoteOffset = 4.0 / c_mmInPt + font->GetFontMetrics()->StringWidth( createPdfString(
-		QString::number( m_footnoteNum - 1 ) ) );
+	auto footnoteOffset = c_offset * 2.0 / c_mmInPt +
+		font->GetFontMetrics()->StringWidth( createPdfString(
+			QString::number( m_footnoteNum - 1 ) ) );
 
 	for( auto it = note->items().cbegin(), last = note->items().cend(); it != last; ++it )
 	{
@@ -1300,6 +1323,25 @@ PdfRenderer::drawFootnote( PdfAuxData & pdfData, const RenderOpts & renderOpts,
 
 			default :
 				break;
+		}
+
+		// Draw footnote number.
+		if( it == note->items().cbegin() && heightCalcOpt == CalcHeightOpt::Unknown )
+		{
+			const auto str = createPdfString( QString::number( pdfData.currentFootnote ) );
+			const auto w = font->GetFontMetrics()->StringWidth( str );
+			const auto y = ret.constFirst().y + ret.constFirst().height -
+				font->GetFontMetrics()->GetLineSpacing();
+			const auto x = pdfData.coords.margins.left + footnoteOffset -
+				c_offset - w;
+			const auto p = ret.constFirst().pageIdx;
+
+			pdfData.painter->SetPage( pdfData.doc->GetPage( p ) );
+			pdfData.painter->SetFont( font );
+			pdfData.painter->DrawText( x, y, str );
+			pdfData.painter->SetPage( pdfData.doc->GetPage( pdfData.footnotePageIdx ) );
+
+			++pdfData.currentFootnote;
 		}
 	}
 
