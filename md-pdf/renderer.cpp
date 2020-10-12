@@ -32,6 +32,10 @@
 #include <QBuffer>
 
 
+//
+// PdfRendererError
+//
+
 //! Internal exception.
 class PdfRendererError {
 public:
@@ -48,6 +52,236 @@ public:
 private:
 	QString m_what;
 }; // class PdfRendererError
+
+
+//
+// PdfAuxData
+//
+
+double
+PdfAuxData::topY( int page ) const
+{
+	if( !drawFootnotes )
+		return coords.pageHeight - coords.margins.top;
+	else
+		return topFootnoteY( page );
+}
+
+int
+PdfAuxData::currentPageIndex() const
+{
+	if( !drawFootnotes )
+		return currentPageIdx;
+	else
+		return footnotePageIdx;
+}
+
+double
+PdfAuxData::topFootnoteY( int page ) const
+{
+	if( reserved.contains( page ) )
+		return reserved[ page ];
+	else
+		return 0.0;
+}
+
+double
+PdfAuxData::currentPageAllowedY() const
+{
+	return allowedY( currentPageIdx );
+}
+
+double
+PdfAuxData::allowedY( int page ) const
+{
+	if( !drawFootnotes )
+	{
+		if( reserved.contains( page ) )
+			return reserved[ page ];
+		else
+			return coords.margins.bottom;
+	}
+	else
+		return coords.margins.bottom;
+}
+
+void
+PdfAuxData::reserveSpaceOn( int page )
+{
+	if( !drawFootnotes )
+	{
+		if( reserved.contains( page ) )
+		{
+			double r = reserved[ page ];
+			reserved.remove( page );
+
+			if( page == footnotePageIdx )
+				footnotePageIdx = page + 1;
+
+			while( reserved.contains( ++page ) )
+			{
+				const double tmp = reserved[ page ];
+				reserved[ page ] = r;
+				r = tmp;
+			}
+
+			reserved[ page ] = r;
+		}
+	}
+}
+
+
+//
+// PdfRenderer::CustomWidth
+//
+
+double
+PdfRenderer::CustomWidth::firstItemHeight() const
+{
+	if( !m_width.isEmpty() )
+		return m_width.constFirst().height;
+	else
+		return 0.0;
+}
+
+void
+PdfRenderer::CustomWidth::calcScale( double lineWidth )
+{
+	double w = 0.0;
+	double sw = 0.0;
+	double ww = 0.0;
+
+	for( int i = 0, last = m_width.size(); i < last; ++i )
+	{
+		w += m_width.at( i ).width;
+
+		if( m_width.at( i ).isSpace )
+			sw += m_width.at( i ).width;
+		else
+			ww += m_width.at( i ).width;
+
+		if( m_width.at( i ).isNewLine )
+		{
+			if( m_width.at( i ).shrink )
+			{
+				auto ss = ( lineWidth - w + sw ) / sw;
+
+				while( ww + sw * ss > lineWidth )
+					ss -= 0.001;
+
+				m_scale.append( 100.0 * ss );
+			}
+			else
+				m_scale.append( 100.0 );
+
+			w = 0.0;
+			sw = 0.0;
+			ww = 0.0;
+		}
+	}
+}
+
+double
+PdfRenderer::CustomWidth::totalHeight() const
+{
+	double h = 0.0;
+	double max = 0.0;
+
+	for( int i = 0, last = m_width.size(); i < last; ++i )
+	{
+		if( m_width.at( i ).height > max )
+			max = m_width.at( i ).height;
+
+		if( m_width.at( i ).isNewLine )
+		{
+			h += max;
+			max = 0.0;
+		}
+	}
+
+	return h;
+}
+
+
+//
+// PdfRenderer::CellItem
+//
+
+double
+PdfRenderer::CellItem::width() const
+{
+	if( !word.isEmpty() )
+		return font->GetFontMetrics()->StringWidth( createPdfString( word ) );
+	else if( !image.isNull() )
+		return image.width();
+	else if( !url.isEmpty() )
+		return font->GetFontMetrics()->StringWidth( createPdfString( url ) );
+	else if( !footnote.isEmpty() )
+	{
+		const auto old = font->GetFontSize();
+		font->SetFontSize( old * c_footnoteScale );
+		const auto w = font->GetFontMetrics()->StringWidth( createPdfString(
+			footnote ) );
+		font->SetFontSize( old );
+
+		return w;
+	}
+	else
+		return 0.0;
+}
+
+
+//
+// PdfRenderer::CellData
+//
+
+void
+PdfRenderer::CellData::heightToWidth( double lineHeight, double spaceWidth, float scale )
+{
+	height = 0.0;
+
+	bool newLine = true;
+
+	double w = 0.0;
+
+	for( auto it = items.cbegin(), last = items.cend(); it != last; ++it )
+	{
+		if( it->image.isNull() )
+		{
+			if( newLine )
+				height += lineHeight;
+
+			w += it->width();
+
+			if( w >= width )
+				newLine = true;
+
+			double sw = spaceWidth;
+
+			if( it != items.cbegin() && it->font == ( it - 1 )->font )
+				sw = it->font->GetFontMetrics()->StringWidth( PdfString( " " ) );
+
+			if( it + 1 != last && !( it + 1 )->footnote.isEmpty() )
+				sw = 0.0;
+
+			if( it + 1 != last )
+			{
+				if( w + sw + ( it + 1 )->width() > width )
+					newLine = true;
+				else
+				{
+					w += sw;
+					newLine = false;
+				}
+			}
+		}
+		else
+		{
+			height += it->image.height() / ( it->image.width() / width ) * scale;
+			newLine = true;
+		}
+	}
+}
 
 
 //
@@ -263,6 +497,20 @@ PdfRenderer::clean()
 	m_dests.clear();
 	m_unresolvedLinks.clear();
 	PdfEncodingFactory::FreeGlobalEncodingInstances();
+}
+
+double
+PdfRenderer::rowHeight( const QVector< QVector< CellData > > & table, int row )
+{
+	double h = 0.0;
+
+	for( auto it = table.cbegin(), last = table.cend(); it != last; ++it )
+	{
+		if( (*it)[ row ].height > h )
+			h = (*it)[ row ].height;
+	}
+
+	return  h;
 }
 
 void
