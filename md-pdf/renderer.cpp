@@ -126,7 +126,8 @@ PdfRenderer::renderImpl()
 							// If there is another item after heading we need to know its min
 							// height to glue heading with it.
 							( it + 1 != last ?
-								minNecessaryHeight( pdfData, m_opts, *( it + 1 ), m_doc, 0.0 ) :
+								minNecessaryHeight( pdfData, m_opts, *( it + 1 ), m_doc, 0.0,
+									1.0, false ) :
 								0.0 ) );
 						break;
 
@@ -529,7 +530,7 @@ QVector< QPair< QRectF, int > >
 PdfRenderer::drawText( PdfAuxData & pdfData, const RenderOpts & renderOpts,
 	MD::Text * item, QSharedPointer< MD::Document > doc, bool & newLine,
 	PdfFont * footnoteFont, float footnoteFontScale, MD::Item * nextItem, int footnoteNum,
-	double offset, bool firstInParagraph, CustomWidth * cw, float scale )
+	double offset, bool firstInParagraph, CustomWidth * cw, float scale, bool inFootnote )
 {
 	auto * spaceFont = createFont( renderOpts.m_textFont, false, false,
 		renderOpts.m_textFontSize, pdfData.doc, scale );
@@ -546,7 +547,7 @@ PdfRenderer::drawText( PdfAuxData & pdfData, const RenderOpts & renderOpts,
 	return drawString( pdfData, renderOpts, item->text(),
 		spaceFont, font, font->GetFontMetrics()->GetLineSpacing(),
 		doc, newLine, footnoteFont, footnoteFontScale, nextItem, footnoteNum, offset,
-		firstInParagraph, cw );
+		firstInParagraph, cw, QColor(), inFootnote );
 }
 
 namespace /* anonymous */ {
@@ -588,7 +589,7 @@ QVector< QPair< QRectF, int > >
 PdfRenderer::drawLink( PdfAuxData & pdfData, const RenderOpts & renderOpts,
 	MD::Link * item, QSharedPointer< MD::Document > doc, bool & newLine,
 	PdfFont * footnoteFont, float footnoteFontScale, MD::Item * nextItem, int footnoteNum,
-	double offset, bool firstInParagraph, CustomWidth * cw, float scale )
+	double offset, bool firstInParagraph, CustomWidth * cw, float scale, bool inFootnote )
 {
 	QVector< QPair< QRectF, int > > rects;
 
@@ -625,7 +626,7 @@ PdfRenderer::drawLink( PdfAuxData & pdfData, const RenderOpts & renderOpts,
 				pdfData.doc, scale ),
 			font, font->GetFontMetrics()->GetLineSpacing(),
 			doc, newLine, footnoteFont, footnoteFontScale, nextItem, footnoteNum, offset,
-			firstInParagraph, cw ) );
+			firstInParagraph, cw, QColor(), inFootnote ) );
 
 		pdfData.painter->Restore();
 	}
@@ -664,7 +665,7 @@ PdfRenderer::drawString( PdfAuxData & pdfData, const RenderOpts & renderOpts,
 	const QString & str, PdfFont * spaceFont, PdfFont * font, double lineHeight,
 	QSharedPointer< MD::Document > doc, bool & newLine, PdfFont * footnoteFont,
 	float footnoteFontScale, MD::Item * nextItem, int footnoteNum, double offset,
-	bool firstInParagraph, CustomWidth * cw, const QColor & background )
+	bool firstInParagraph, CustomWidth * cw, const QColor & background, bool inFootnote )
 {
 	Q_UNUSED( doc )
 	Q_UNUSED( renderOpts )
@@ -678,7 +679,8 @@ PdfRenderer::drawString( PdfAuxData & pdfData, const RenderOpts & renderOpts,
 	double footnoteWidth = 0.0;
 
 	if( nextItem && nextItem->type() == MD::ItemType::FootnoteRef &&
-		doc->footnotesMap().contains( static_cast< MD::FootnoteRef* > ( nextItem )->id() ) )
+		doc->footnotesMap().contains( static_cast< MD::FootnoteRef* > ( nextItem )->id() ) &&
+		!inFootnote )
 			footnoteAtEnd = true;
 
 	if( footnoteAtEnd )
@@ -899,7 +901,7 @@ PdfRenderer::drawString( PdfAuxData & pdfData, const RenderOpts & renderOpts,
 QVector< QPair< QRectF, int > >
 PdfRenderer::drawInlinedCode( PdfAuxData & pdfData, const RenderOpts & renderOpts,
 	MD::Code * item, QSharedPointer< MD::Document > doc, bool & newLine, double offset,
-	bool firstInParagraph, CustomWidth * cw, float scale )
+	bool firstInParagraph, CustomWidth * cw, float scale, bool inFootnote )
 {
 	auto * textFont = createFont( renderOpts.m_textFont, false, false, renderOpts.m_textFontSize,
 		pdfData.doc, scale );
@@ -910,7 +912,7 @@ PdfRenderer::drawInlinedCode( PdfAuxData & pdfData, const RenderOpts & renderOpt
 	return drawString( pdfData, renderOpts, item->text(), font, font,
 		textFont->GetFontMetrics()->GetLineSpacing(),
 		doc, newLine, nullptr, 1.0, nullptr, m_footnoteNum,
-		offset, firstInParagraph, cw, renderOpts.m_codeBackground );
+		offset, firstInParagraph, cw, renderOpts.m_codeBackground, inFootnote );
 }
 
 void
@@ -972,7 +974,7 @@ double totalHeight( const QVector< WhereDrawn > & where )
 QVector< WhereDrawn >
 PdfRenderer::drawParagraph( PdfAuxData & pdfData, const RenderOpts & renderOpts,
 	MD::Paragraph * item, QSharedPointer< MD::Document > doc, double offset, bool withNewLine,
-	CalcHeightOpt heightCalcOpt, float scale )
+	CalcHeightOpt heightCalcOpt, float scale, bool inFootnote )
 {
 	QVector< QPair< QRectF, int > > rects;
 
@@ -1035,19 +1037,20 @@ PdfRenderer::drawParagraph( PdfAuxData & pdfData, const RenderOpts & renderOpts,
 				drawText( pdfData, renderOpts, static_cast< MD::Text* > ( it->data() ),
 					doc, newLine, footnoteFont, c_footnoteScale,
 					( it + 1 != last ? ( it + 1 )->data() : nullptr ),
-					footnoteNum, offset, it == item->items().begin(), &cw, scale );
+					footnoteNum, offset, it == item->items().begin(), &cw, scale,
+					inFootnote );
 				break;
 
 			case MD::ItemType::Code :
 				drawInlinedCode( pdfData, renderOpts, static_cast< MD::Code* > ( it->data() ),
-					doc, newLine, offset, it == item->items().begin(), &cw, scale );
+					doc, newLine, offset, it == item->items().begin(), &cw, scale, inFootnote );
 				break;
 
 			case MD::ItemType::Link :
 				drawLink( pdfData, renderOpts, static_cast< MD::Link* > ( it->data() ),
 					doc, newLine, footnoteFont, c_footnoteScale,
 					( it + 1 != last ? ( it + 1 )->data() : nullptr ),
-					footnoteNum, offset, it == item->items().begin(), &cw, scale );
+					footnoteNum, offset, it == item->items().begin(), &cw, scale, inFootnote );
 				break;
 
 			case MD::ItemType::Image :
@@ -1138,18 +1141,18 @@ PdfRenderer::drawParagraph( PdfAuxData & pdfData, const RenderOpts & renderOpts,
 			case MD::ItemType::Text :
 				rects.append( drawText( pdfData, renderOpts, static_cast< MD::Text* > ( it->data() ),
 					doc, newLine, nullptr, 1.0, nullptr, m_footnoteNum,
-					offset, it == item->items().begin(), &cw, scale ) );
+					offset, it == item->items().begin(), &cw, scale, inFootnote ) );
 				break;
 
 			case MD::ItemType::Code :
 				rects.append( drawInlinedCode( pdfData, renderOpts, static_cast< MD::Code* > ( it->data() ),
-					doc, newLine, offset, it == item->items().begin(), &cw, scale ) );
+					doc, newLine, offset, it == item->items().begin(), &cw, scale, inFootnote ) );
 				break;
 
 			case MD::ItemType::Link :
 				rects.append( drawLink( pdfData, renderOpts, static_cast< MD::Link* > ( it->data() ),
 					doc, newLine, nullptr, 1.0, nullptr, m_footnoteNum,
-					offset, it == item->items().begin(), &cw, scale ) );
+					offset, it == item->items().begin(), &cw, scale, inFootnote ) );
 				break;
 
 			case MD::ItemType::Image :
@@ -1163,32 +1166,35 @@ PdfRenderer::drawParagraph( PdfAuxData & pdfData, const RenderOpts & renderOpts,
 
 			case MD::ItemType::FootnoteRef :
 			{
-				auto * ref = static_cast< MD::FootnoteRef* > ( it->data() );
-
-				if( doc->footnotesMap().contains( ref->id()  ) )
+				if( !inFootnote )
 				{
-					const auto str = createPdfString( QString::number( m_footnoteNum ) );
+					auto * ref = static_cast< MD::FootnoteRef* > ( it->data() );
 
-					const auto old = footnoteFont->GetFontSize();
-					footnoteFont->SetFontSize( old * c_footnoteScale );
+					if( doc->footnotesMap().contains( ref->id()  ) )
+					{
+						const auto str = createPdfString( QString::number( m_footnoteNum ) );
 
-					const auto w = footnoteFont->GetFontMetrics()->StringWidth( str );
+						const auto old = footnoteFont->GetFontSize();
+						footnoteFont->SetFontSize( old * c_footnoteScale );
 
-					rects.append( qMakePair( QRectF( pdfData.coords.x, pdfData.coords.y,
-							w, lineHeight ),
-						pdfData.currentPageIndex() ) );
+						const auto w = footnoteFont->GetFontMetrics()->StringWidth( str );
 
-					++m_footnoteNum;
+						rects.append( qMakePair( QRectF( pdfData.coords.x, pdfData.coords.y,
+								w, lineHeight ),
+							pdfData.currentPageIndex() ) );
 
-					pdfData.painter->DrawText( pdfData.coords.x, pdfData.coords.y + lineHeight -
-						footnoteFont->GetFontMetrics()->GetLineSpacing(), str );
-					footnoteFont->SetFontSize( old );
+						++m_footnoteNum;
 
-					pdfData.coords.x += w;
+						pdfData.painter->DrawText( pdfData.coords.x, pdfData.coords.y + lineHeight -
+							footnoteFont->GetFontMetrics()->GetLineSpacing(), str );
+						footnoteFont->SetFontSize( old );
 
-					auto f = doc->footnotesMap()[ ref->id() ];
+						pdfData.coords.x += w;
 
-					addFootnote( f, pdfData, renderOpts, doc );
+						auto f = doc->footnotesMap()[ ref->id() ];
+
+						addFootnote( f, pdfData, renderOpts, doc );
+					}
 				}
 			}
 				break;
@@ -1282,14 +1288,15 @@ PdfRenderer::drawFootnote( PdfAuxData & pdfData, const RenderOpts & renderOpts,
 					// If there is another item after heading we need to know its min
 					// height to glue heading with it.
 					( it + 1 != last ?
-						minNecessaryHeight( pdfData, renderOpts, *( it + 1 ), doc, 0.0 ) :
+						minNecessaryHeight( pdfData, renderOpts, *( it + 1 ), doc, 0.0,
+							c_footnoteScale, true ) :
 						0.0 ), heightCalcOpt, c_footnoteScale ) );
 				break;
 
 			case MD::ItemType::Paragraph :
 				ret.append( drawParagraph( pdfData, renderOpts,
 					static_cast< MD::Paragraph* > ( it->data() ), doc, footnoteOffset,
-					true, heightCalcOpt, c_footnoteScale ) );
+					true, heightCalcOpt, c_footnoteScale, true ) );
 				break;
 
 			case MD::ItemType::Code :
@@ -1300,7 +1307,7 @@ PdfRenderer::drawFootnote( PdfAuxData & pdfData, const RenderOpts & renderOpts,
 			case MD::ItemType::Blockquote :
 				ret.append( drawBlockquote( pdfData, renderOpts,
 					static_cast< MD::Blockquote* > ( it->data() ),
-					doc, footnoteOffset, heightCalcOpt, c_footnoteScale ) );
+					doc, footnoteOffset, heightCalcOpt, c_footnoteScale, true ) );
 				break;
 
 			case MD::ItemType::List :
@@ -1311,14 +1318,14 @@ PdfRenderer::drawFootnote( PdfAuxData & pdfData, const RenderOpts & renderOpts,
 				pdfData.coords.y -= font->GetFontMetrics()->GetLineSpacing();
 
 				ret.append( drawList( pdfData, renderOpts, list, doc, bulletWidth, footnoteOffset,
-					heightCalcOpt, c_footnoteScale ) );
+					heightCalcOpt, c_footnoteScale, true ) );
 			}
 				break;
 
 			case MD::ItemType::Table :
 				ret.append( drawTable( pdfData, renderOpts,
 					static_cast< MD::Table* > ( it->data() ),
-					doc, footnoteOffset, heightCalcOpt, c_footnoteScale ) );
+					doc, footnoteOffset, heightCalcOpt, c_footnoteScale, true ) );
 				break;
 
 			default :
@@ -1770,7 +1777,7 @@ PdfRenderer::drawCode( PdfAuxData & pdfData, const RenderOpts & renderOpts,
 QVector< WhereDrawn >
 PdfRenderer::drawBlockquote( PdfAuxData & pdfData, const RenderOpts & renderOpts,
 	MD::Blockquote * item, QSharedPointer< MD::Document > doc, double offset,
-	CalcHeightOpt heightCalcOpt, float scale )
+	CalcHeightOpt heightCalcOpt, float scale, bool inFootnote )
 {
 	QVector< WhereDrawn > ret;
 
@@ -1797,7 +1804,7 @@ PdfRenderer::drawBlockquote( PdfAuxData & pdfData, const RenderOpts & renderOpts
 						doc, offset + c_blockquoteBaseOffset,
 						( it + 1 != last ?
 							minNecessaryHeight( pdfData, renderOpts, *( it + 1 ), doc,
-								offset + c_blockquoteBaseOffset  ) : 0.0 ),
+								offset + c_blockquoteBaseOffset, scale, inFootnote  ) : 0.0 ),
 						heightCalcOpt, scale ) );
 				else
 				{
@@ -1812,7 +1819,7 @@ PdfRenderer::drawBlockquote( PdfAuxData & pdfData, const RenderOpts & renderOpts
 				ret.append( drawParagraph( pdfData, renderOpts,
 					static_cast< MD::Paragraph* > ( it->data() ),
 					doc, offset + c_blockquoteBaseOffset, true, heightCalcOpt,
-					scale ) );
+					scale, inFootnote ) );
 				break;
 
 			case MD::ItemType::Code :
@@ -1826,7 +1833,7 @@ PdfRenderer::drawBlockquote( PdfAuxData & pdfData, const RenderOpts & renderOpts
 				ret.append( drawBlockquote( pdfData, renderOpts,
 					static_cast< MD::Blockquote* > ( it->data() ),
 					doc, offset + c_blockquoteBaseOffset, heightCalcOpt,
-					scale ) );
+					scale, inFootnote ) );
 				break;
 
 			case MD::ItemType::List :
@@ -1841,7 +1848,7 @@ PdfRenderer::drawBlockquote( PdfAuxData & pdfData, const RenderOpts & renderOpts
 				ret.append( drawList( pdfData, renderOpts,
 					list,
 					doc, bulletWidth, offset + c_blockquoteBaseOffset, heightCalcOpt,
-					scale ) );
+					scale, inFootnote ) );
 			}
 				break;
 
@@ -1849,7 +1856,7 @@ PdfRenderer::drawBlockquote( PdfAuxData & pdfData, const RenderOpts & renderOpts
 				ret.append( drawTable( pdfData, renderOpts,
 					static_cast< MD::Table* > ( it->data() ),
 					doc, offset + c_blockquoteBaseOffset, heightCalcOpt,
-					scale ) );
+					scale, inFootnote ) );
 				break;
 
 			default :
@@ -1905,7 +1912,7 @@ PdfRenderer::drawBlockquote( PdfAuxData & pdfData, const RenderOpts & renderOpts
 QVector< WhereDrawn >
 PdfRenderer::drawList( PdfAuxData & pdfData, const RenderOpts & renderOpts,
 	MD::List * item, QSharedPointer< MD::Document > doc, int bulletWidth, double offset,
-	CalcHeightOpt heightCalcOpt, float scale )
+	CalcHeightOpt heightCalcOpt, float scale, bool inFootnote )
 {
 	QVector< WhereDrawn > ret;
 
@@ -1928,7 +1935,7 @@ PdfRenderer::drawList( PdfAuxData & pdfData, const RenderOpts & renderOpts,
 			ret.append( drawListItem( pdfData, renderOpts,
 				static_cast< MD::ListItem* > ( it->data() ), doc, idx,
 				prevListItemType, bulletWidth, offset, heightCalcOpt,
-				scale ) );
+				scale, inFootnote ) );
 
 		if( heightCalcOpt == CalcHeightOpt::Minimum )
 			break;
@@ -1941,7 +1948,7 @@ QVector< WhereDrawn >
 PdfRenderer::drawListItem( PdfAuxData & pdfData, const RenderOpts & renderOpts,
 	MD::ListItem * item, QSharedPointer< MD::Document > doc, int & idx,
 	ListItemType & prevListItemType, int bulletWidth, double offset, CalcHeightOpt heightCalcOpt,
-	float scale )
+	float scale, bool inFootnote )
 {
 	auto * font = createFont( renderOpts.m_textFont, false, false, renderOpts.m_textFontSize,
 		pdfData.doc, scale );
@@ -2014,7 +2021,8 @@ PdfRenderer::drawListItem( PdfAuxData & pdfData, const RenderOpts & renderOpts,
 						static_cast< MD::Heading* > ( it->data() ),
 						doc, offset,
 						( it + 1 != last ?
-							minNecessaryHeight( pdfData, renderOpts, *( it + 1 ),  doc, offset ) :
+							minNecessaryHeight( pdfData, renderOpts, *( it + 1 ),  doc, offset,
+								scale, inFootnote ) :
 							0.0 ),
 						heightCalcOpt, scale ) );
 				else
@@ -2027,7 +2035,7 @@ PdfRenderer::drawListItem( PdfAuxData & pdfData, const RenderOpts & renderOpts,
 				ret.append( drawParagraph( pdfData, renderOpts,
 					static_cast< MD::Paragraph* > ( it->data() ),
 					doc, offset, ( it != item->items().cbegin() ), heightCalcOpt,
-					scale ) );
+					scale, inFootnote ) );
 
 				addExtraSpace = ( it != item->items().cbegin() );
 			}
@@ -2047,7 +2055,7 @@ PdfRenderer::drawListItem( PdfAuxData & pdfData, const RenderOpts & renderOpts,
 			{
 				ret.append( drawBlockquote( pdfData, renderOpts,
 					static_cast< MD::Blockquote* > ( it->data() ),
-					doc, offset, heightCalcOpt, scale ) );
+					doc, offset, heightCalcOpt, scale, inFootnote ) );
 
 				addExtraSpace = ( it != item->items().cbegin() );
 			}
@@ -2057,13 +2065,13 @@ PdfRenderer::drawListItem( PdfAuxData & pdfData, const RenderOpts & renderOpts,
 				ret.append( drawList( pdfData, renderOpts,
 					static_cast< MD::List* > ( it->data() ),
 					doc, bulletWidth, offset, heightCalcOpt,
-					scale ) );
+					scale, inFootnote ) );
 				break;
 
 			case MD::ItemType::Table :
 				ret.append( drawTable( pdfData, renderOpts,
 					static_cast< MD::Table* > ( it->data() ),
-					doc, offset, heightCalcOpt, scale ) );
+					doc, offset, heightCalcOpt, scale, inFootnote ) );
 				break;
 
 			default :
@@ -2125,7 +2133,7 @@ PdfRenderer::maxListNumberWidth( MD::List * list ) const
 
 QVector< QVector< PdfRenderer::CellData > >
 PdfRenderer::createAuxTable( PdfAuxData & pdfData, const RenderOpts & renderOpts,
-	MD::Table * item, QSharedPointer< MD::Document > doc, float scale )
+	MD::Table * item, QSharedPointer< MD::Document > doc, float scale, bool inFootnote )
 {
 	const auto columnsCount = item->columnsCount();
 
@@ -2270,21 +2278,24 @@ PdfRenderer::createAuxTable( PdfAuxData & pdfData, const RenderOpts & renderOpts
 
 					case MD::ItemType::FootnoteRef :
 					{
-						auto * ref = static_cast< MD::FootnoteRef* > ( it->data() );
-
-						if( doc->footnotesMap().contains( ref->id() ) )
+						if( !inFootnote )
 						{
-							auto * font = createFont( renderOpts.m_textFont,
-								false, false,
-								renderOpts.m_textFontSize, pdfData.doc,
-								scale );
+							auto * ref = static_cast< MD::FootnoteRef* > ( it->data() );
 
-							CellItem item;
-							item.font = font;
-							item.footnote = QString::number( m_footnoteNum++ );
-							item.footnoteObj = doc->footnotesMap()[ ref->id() ];
+							if( doc->footnotesMap().contains( ref->id() ) )
+							{
+								auto * font = createFont( renderOpts.m_textFont,
+									false, false,
+									renderOpts.m_textFontSize, pdfData.doc,
+									scale );
 
-							data.items.append( item );
+								CellItem item;
+								item.font = font;
+								item.footnote = QString::number( m_footnoteNum++ );
+								item.footnoteObj = doc->footnotesMap()[ ref->id() ];
+
+								data.items.append( item );
+							}
 						}
 					}
 						break;
@@ -2332,7 +2343,7 @@ PdfRenderer::calculateCellsSize( PdfAuxData & pdfData, QVector< QVector< CellDat
 QVector< WhereDrawn >
 PdfRenderer::drawTable( PdfAuxData & pdfData, const RenderOpts & renderOpts,
 	MD::Table * item, QSharedPointer< MD::Document > doc, double offset, CalcHeightOpt heightCalcOpt,
-	float scale )
+	float scale, bool inFootnote )
 {
 	QVector< WhereDrawn > ret;
 
@@ -2351,7 +2362,7 @@ PdfRenderer::drawTable( PdfAuxData & pdfData, const RenderOpts & renderOpts,
 	const auto lineHeight = font->GetFontMetrics()->GetLineSpacing();
 	const auto spaceWidth = font->GetFontMetrics()->StringWidth( PdfString( " " ) );
 
-	auto auxTable = createAuxTable( pdfData, renderOpts, item, doc );
+	auto auxTable = createAuxTable( pdfData, renderOpts, item, doc, scale, inFootnote );
 
 	calculateCellsSize( pdfData, auxTable, spaceWidth, offset, lineHeight, scale );
 
@@ -2396,7 +2407,7 @@ PdfRenderer::drawTable( PdfAuxData & pdfData, const RenderOpts & renderOpts,
 
 	for( int row = 0; row < auxTable[ 0 ].size(); ++row )
 		ret.append( drawTableRow( auxTable, row, pdfData, offset, lineHeight, renderOpts,
-			doc, footnotes, scale ) );
+			doc, footnotes, scale, inFootnote ) );
 
 	for( const auto & f : qAsConst( footnotes ) )
 		addFootnote( f, pdfData, renderOpts, doc );
@@ -2429,7 +2440,7 @@ QVector< WhereDrawn >
 PdfRenderer::drawTableRow( QVector< QVector< CellData > > & table, int row, PdfAuxData & pdfData,
 	double offset, double lineHeight, const RenderOpts & renderOpts,
 	QSharedPointer< MD::Document > doc, QVector< QSharedPointer< MD::Footnote > > & footnotes,
-	float scale )
+	float scale, bool inFootnote )
 {
 	QVector< WhereDrawn > ret;
 
@@ -2499,7 +2510,7 @@ PdfRenderer::drawTableRow( QVector< QVector< CellData > > & table, int row, PdfA
 		{
 			if( !c->image.isNull() && !text.text.isEmpty() )
 				drawTextLineInTable( x, y, text, lineHeight, pdfData, links, font, currentPage,
-					endPage, endY, footnotes );
+					endPage, endY, footnotes, inFootnote );
 
 			if( !c->image.isNull() )
 			{
@@ -2584,7 +2595,7 @@ PdfRenderer::drawTableRow( QVector< QVector< CellData > > & table, int row, PdfA
 					if( !text.text.isEmpty() )
 					{
 						drawTextLineInTable( x, y, text, lineHeight, pdfData, links,
-							font, currentPage, endPage, endY, footnotes );
+							font, currentPage, endPage, endY, footnotes, inFootnote );
 						text.text.append( *c );
 
 						if( c + 1 != clast && !( c + 1 )->footnote.isEmpty() )
@@ -2597,7 +2608,7 @@ PdfRenderer::drawTableRow( QVector< QVector< CellData > > & table, int row, PdfA
 						text.text.append( *c );
 						text.width += w;
 						drawTextLineInTable( x, y, text, lineHeight, pdfData, links,
-							font, currentPage, endPage, endY, footnotes  );
+							font, currentPage, endPage, endY, footnotes, inFootnote );
 
 						if( c + 1 != clast && !( c + 1 )->footnote.isEmpty() )
 						{
@@ -2616,7 +2627,7 @@ PdfRenderer::drawTableRow( QVector< QVector< CellData > > & table, int row, PdfA
 
 		if( !text.text.isEmpty() )
 			drawTextLineInTable( x, y, text, lineHeight, pdfData, links, font, currentPage,
-				endPage, endY, footnotes );
+				endPage, endY, footnotes, inFootnote );
 
 		y -= c_tableMargin - font->GetFontMetrics()->GetDescent();
 
@@ -2732,7 +2743,7 @@ void
 PdfRenderer::drawTextLineInTable( double x, double & y, TextToDraw & text, double lineHeight,
 	PdfAuxData & pdfData, QMap< QString, QVector< QPair< QRectF, int > > > & links,
 	PdfFont * font, int & currentPage, int & endPage, double & endY,
-	QVector< QSharedPointer< MD::Footnote > > & footnotes )
+	QVector< QSharedPointer< MD::Footnote > > & footnotes, bool inFootnote )
 {
 	y -= lineHeight;
 
@@ -2819,24 +2830,27 @@ PdfRenderer::drawTextLineInTable( double x, double & y, TextToDraw & text, doubl
 
 		x += it->width();
 
-		if( it + 1 != last && !( it + 1 )->footnote.isEmpty() )
+		if( !inFootnote )
 		{
-			++it;
+			if( it + 1 != last && !( it + 1 )->footnote.isEmpty() )
+			{
+				++it;
 
-			const auto str = createPdfString( it->footnote );
+				const auto str = createPdfString( it->footnote );
 
-			const auto old = it->font->GetFontSize();
-			it->font->SetFontSize( old * c_footnoteScale );
+				const auto old = it->font->GetFontSize();
+				it->font->SetFontSize( old * c_footnoteScale );
 
-			const auto w = it->font->GetFontMetrics()->StringWidth( str );
+				const auto w = it->font->GetFontMetrics()->StringWidth( str );
 
-			pdfData.painter->DrawText( x, y + lineHeight -
-				it->font->GetFontMetrics()->GetLineSpacing(), str );
-			it->font->SetFontSize( old );
+				pdfData.painter->DrawText( x, y + lineHeight -
+					it->font->GetFontMetrics()->GetLineSpacing(), str );
+				it->font->SetFontSize( old );
 
-			x += w;
+				x += w;
 
-			footnotes.append( it->footnoteObj );
+				footnotes.append( it->footnoteObj );
+			}
 		}
 
 		if( it + 1 != last )
@@ -2957,7 +2971,7 @@ PdfRenderer::processLinksInTable( PdfAuxData & pdfData,
 double
 PdfRenderer::minNecessaryHeight( PdfAuxData & pdfData, const RenderOpts & renderOpts,
 	QSharedPointer< MD::Item > item, QSharedPointer< MD::Document > doc,
-	double offset, float scale )
+	double offset, float scale, bool inFootnote )
 {
 	QVector< WhereDrawn > ret;
 
@@ -2969,7 +2983,7 @@ PdfRenderer::minNecessaryHeight( PdfAuxData & pdfData, const RenderOpts & render
 		case MD::ItemType::Paragraph :
 		{
 			ret = drawParagraph( pdfData, renderOpts, static_cast< MD::Paragraph* > ( item.data() ),
-				doc, offset, true, CalcHeightOpt::Minimum, scale );
+				doc, offset, true, CalcHeightOpt::Minimum, scale, inFootnote );
 		}
 			break;
 
@@ -2984,7 +2998,7 @@ PdfRenderer::minNecessaryHeight( PdfAuxData & pdfData, const RenderOpts & render
 		{
 			ret = drawBlockquote( pdfData, renderOpts,
 				static_cast< MD::Blockquote* > ( item.data() ),
-				doc, offset, CalcHeightOpt::Minimum, scale );
+				doc, offset, CalcHeightOpt::Minimum, scale, inFootnote );
 		}
 			break;
 
@@ -2998,7 +3012,7 @@ PdfRenderer::minNecessaryHeight( PdfAuxData & pdfData, const RenderOpts & render
 			pdfData.coords.y -= font->GetFontMetrics()->GetLineSpacing();
 
 			ret = drawList( pdfData, m_opts, list, m_doc, bulletWidth, offset,
-				CalcHeightOpt::Minimum, scale );
+				CalcHeightOpt::Minimum, scale, inFootnote );
 		}
 			break;
 
@@ -3006,7 +3020,7 @@ PdfRenderer::minNecessaryHeight( PdfAuxData & pdfData, const RenderOpts & render
 		{
 			ret = drawTable( pdfData, renderOpts,
 				static_cast< MD::Table* > ( item.data() ),
-				doc, offset, CalcHeightOpt::Minimum, scale );
+				doc, offset, CalcHeightOpt::Minimum, scale, inFootnote );
 		}
 			break;
 
