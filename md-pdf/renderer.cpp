@@ -128,23 +128,23 @@ PdfRenderer::renderImpl()
 							( it + 1 != last ?
 								minNecessaryHeight( pdfData, m_opts, *( it + 1 ), m_doc, 0.0,
 									1.0, false ) :
-								0.0 ) );
+								0.0 ), CalcHeightOpt::Unknown, 1.0 );
 						break;
 
 					case MD::ItemType::Paragraph :
 						drawParagraph( pdfData, m_opts, static_cast< MD::Paragraph* > ( it->data() ),
-							m_doc );
+							m_doc, 0.0, true, CalcHeightOpt::Unknown, 1.0, false );
 						break;
 
 					case MD::ItemType::Code :
 						drawCode( pdfData, m_opts, static_cast< MD::Code* > ( it->data() ),
-							m_doc );
+							m_doc, 0.0, CalcHeightOpt::Unknown, 1.0 );
 						break;
 
 					case MD::ItemType::Blockquote :
 						drawBlockquote( pdfData, m_opts,
 							static_cast< MD::Blockquote* > ( it->data() ),
-							m_doc );
+							m_doc, 0.0, CalcHeightOpt::Unknown, 1.0, false );
 						break;
 
 					case MD::ItemType::List :
@@ -163,7 +163,7 @@ PdfRenderer::renderImpl()
 					case MD::ItemType::Table :
 						drawTable( pdfData, m_opts,
 							static_cast< MD::Table* > ( it->data() ),
-							m_doc );
+							m_doc, 0.0, CalcHeightOpt::Unknown, 1.0, false );
 						break;
 
 					case MD::ItemType::PageBreak :
@@ -206,7 +206,7 @@ PdfRenderer::renderImpl()
 				pdfData.painter->Restore();
 
 				for( const auto & f : qAsConst( m_footnotes ) )
-					drawFootnote( pdfData, m_opts, m_doc, f.data() );
+					drawFootnote( pdfData, m_opts, m_doc, f.data(), CalcHeightOpt::Unknown );
 			}
 
 			resolveLinks( pdfData );
@@ -1161,7 +1161,7 @@ PdfRenderer::drawParagraph( PdfAuxData & pdfData, const RenderOpts & renderOpts,
 				break;
 
 			case MD::ItemType::LineBreak :
-				moveToNewLine( pdfData, offset, lineHeight );
+				moveToNewLine( pdfData, offset, lineHeight, 1.0 );
 				break;
 
 			case MD::ItemType::FootnoteRef :
