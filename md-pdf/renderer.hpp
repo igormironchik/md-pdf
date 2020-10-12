@@ -328,6 +328,12 @@ private:
 	//! \return Height of the footnote.
 	QVector< WhereDrawn > footnoteHeight( PdfAuxData & pdfData, const RenderOpts & renderOpts,
 		QSharedPointer< MD::Document > doc, MD::Footnote * note );
+	//! Reserve space for footnote.
+	void reserveSpaceForFootnote( PdfAuxData & pdfData, QVector< WhereDrawn > & h,
+		const double & currentY, int currentPage );
+	//! Add footnote.
+	void addFootnote( QSharedPointer< MD::Footnote > f, PdfAuxData & pdfData,
+		const RenderOpts & renderOpts, QSharedPointer< MD::Document > doc );
 
 	//! List item type.
 	enum class ListItemType
@@ -489,6 +495,7 @@ private:
 		QColor color;
 		QColor background;
 		PdfFont * font = nullptr;
+		QSharedPointer< MD::Footnote > footnoteObj;
 
 		double width() const
 		{
@@ -599,6 +606,7 @@ private:
 	QVector< WhereDrawn > drawTableRow( QVector< QVector< CellData > > & table, int row,
 		PdfAuxData & pdfData, double offset, double lineHeight,
 		const RenderOpts & renderOpts, QSharedPointer< MD::Document > doc,
+		QVector< QSharedPointer< MD::Footnote > > & footnotes,
 		float scale = 1.0 );
 	//! Draw table border.
 	void drawTableBorder( PdfAuxData & pdfData, int startPage, QVector< WhereDrawn > & ret,
@@ -623,7 +631,8 @@ private:
 	//! Draw text line in the cell.
 	void drawTextLineInTable( double x, double & y, TextToDraw & text, double lineHeight,
 		PdfAuxData & pdfData, QMap< QString, QVector< QPair< QRectF, int > > > & links,
-		PdfFont * font, int & currentPage, int & endPage, double & endY );
+		PdfFont * font, int & currentPage, int & endPage, double & endY,
+		QVector< QSharedPointer< MD::Footnote > > & footnotes );
 	//! Create new page in table.
 	void newPageInTable( PdfAuxData & pdfData, int & currentPage, int & endPage,
 		double & endY );
@@ -651,6 +660,8 @@ private:
 	QMap< QString, QImage > m_imageCache;
 	//! Footnote counter.
 	int m_footnoteNum;
+	//! Footnotes to draw.
+	QVector< QSharedPointer< MD::Footnote > > m_footnotes;
 }; // class Renderer
 
 

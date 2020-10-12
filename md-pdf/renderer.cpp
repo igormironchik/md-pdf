@@ -921,12 +921,9 @@ QVector< WhereDrawn > toWhereDrawn( const QVector< QPair< QRectF, int > > & rect
 
 double totalHeight( const QVector< WhereDrawn > & where )
 {
-	double h = 0.0;
-
-	for( const auto & w : qAsConst( where ) )
-		h += w.height;
-
-	return h;
+	return std::accumulate( where.cbegin(), where.cend(), 0.0,
+		[] ( const double & val, const WhereDrawn & cur ) -> double
+			{ return ( val + cur.height ); } );
 }
 
 } /* namespace anonymous */
@@ -1145,15 +1142,7 @@ PdfRenderer::drawParagraph( PdfAuxData & pdfData, const RenderOpts & renderOpts,
 
 					auto f = doc->footnotesMap()[ ref->id() ];
 
-					PdfAuxData tmpData = pdfData;
-					tmpData.coords = { { pdfData.coords.margins.left, pdfData.coords.margins.right,
-							pdfData.coords.margins.top, pdfData.coords.margins.bottom },
-						pdfData.page->GetPageSize().GetWidth(),
-						pdfData.page->GetPageSize().GetHeight(),
-						pdfData.coords.margins.left, pdfData.page->GetPageSize().GetHeight() -
-							pdfData.coords.margins.top };
-					const auto h = footnoteHeight( tmpData, renderOpts,
-						doc, f.data() );
+					addFootnote( f, pdfData, renderOpts, doc );
 				}
 			}
 				break;
@@ -1164,6 +1153,55 @@ PdfRenderer::drawParagraph( PdfAuxData & pdfData, const RenderOpts & renderOpts,
 	}
 
 	return toWhereDrawn( normalizeRects( rects ), pdfData.coords.pageHeight );
+}
+
+void
+PdfRenderer::reserveSpaceForFootnote( PdfAuxData & pdfData, QVector< WhereDrawn > & h,
+	const double & currentY, int currentPage )
+{
+	const auto topY = pdfData.topFootnoteY( currentPage );
+	const auto available = currentY - topY -
+		( qAbs( topY ) < 0.01 ? pdfData.coords.margins.bottom : 0.0 );
+
+	auto height = totalHeight( h );
+
+	auto add = [&pdfData] ( const double & height, int currentPage )
+	{
+		if( pdfData.reserved.contains( currentPage ) )
+			pdfData.reserved[ currentPage ] += height;
+		else
+			pdfData.reserved.insert( currentPage,
+				height + pdfData.coords.margins.bottom );
+
+		if( pdfData.footnotePageIdx == -1 )
+			pdfData.footnotePageIdx = currentPage;
+	};
+
+	if( height < available )
+		add( height, currentPage );
+	else
+	{
+		height = 0.0;
+
+		while( !h.isEmpty() )
+		{
+			const auto tmp = h.constFirst().height;
+
+			if( height + tmp < available )
+			{
+				height += tmp;
+				h.removeFirst();
+			}
+			else
+			{
+				add( height, currentPage );
+
+				reserveSpaceForFootnote( pdfData, h, pdfData.coords.margins.top, currentPage + 1 );
+
+				break;
+			}
+		}
+	}
 }
 
 QVector< WhereDrawn >
@@ -2182,6 +2220,7 @@ PdfRenderer::createAuxTable( PdfAuxData & pdfData, const RenderOpts & renderOpts
 							CellItem item;
 							item.font = font;
 							item.footnote = QString::number( m_footnoteNum++ );
+							item.footnoteObj = doc->footnotesMap()[ ref->id() ];
 
 							data.items.append( item );
 						}
@@ -2291,17 +2330,44 @@ PdfRenderer::drawTable( PdfAuxData & pdfData, const RenderOpts & renderOpts,
 
 	moveToNewLine( pdfData, offset, lineHeight, 1.0 );
 
+	QVector< QSharedPointer< MD::Footnote > > footnotes;
+
 	for( int row = 0; row < auxTable[ 0 ].size(); ++row )
 		ret.append( drawTableRow( auxTable, row, pdfData, offset, lineHeight, renderOpts,
-			doc, scale ) );
+			doc, footnotes, scale ) );
+
+	for( const auto & f : qAsConst( footnotes ) )
+		addFootnote( f, pdfData, renderOpts, doc );
 
 	return ret;
+}
+
+void
+PdfRenderer::addFootnote( QSharedPointer< MD::Footnote > f, PdfAuxData & pdfData,
+	const RenderOpts & renderOpts, QSharedPointer< MD::Document > doc )
+{
+	PdfAuxData tmpData = pdfData;
+	tmpData.coords = { { pdfData.coords.margins.left, pdfData.coords.margins.right,
+			pdfData.coords.margins.top, pdfData.coords.margins.bottom },
+		pdfData.page->GetPageSize().GetWidth(),
+		pdfData.page->GetPageSize().GetHeight(),
+		pdfData.coords.margins.left, pdfData.page->GetPageSize().GetHeight() -
+			pdfData.coords.margins.top };
+
+	auto h = footnoteHeight( tmpData, renderOpts,
+		doc, f.data() );
+
+	reserveSpaceForFootnote( pdfData, h, pdfData.coords.y,
+		pdfData.currentPageIdx );
+
+	m_footnotes.append( f );
 }
 
 QVector< WhereDrawn >
 PdfRenderer::drawTableRow( QVector< QVector< CellData > > & table, int row, PdfAuxData & pdfData,
 	double offset, double lineHeight, const RenderOpts & renderOpts,
-	QSharedPointer< MD::Document > doc, float scale )
+	QSharedPointer< MD::Document > doc, QVector< QSharedPointer< MD::Footnote > > & footnotes,
+	float scale )
 {
 	QVector< WhereDrawn > ret;
 
@@ -2371,7 +2437,7 @@ PdfRenderer::drawTableRow( QVector< QVector< CellData > > & table, int row, PdfA
 		{
 			if( !c->image.isNull() && !text.text.isEmpty() )
 				drawTextLineInTable( x, y, text, lineHeight, pdfData, links, font, currentPage,
-					endPage, endY );
+					endPage, endY, footnotes );
 
 			if( !c->image.isNull() )
 			{
@@ -2456,7 +2522,7 @@ PdfRenderer::drawTableRow( QVector< QVector< CellData > > & table, int row, PdfA
 					if( !text.text.isEmpty() )
 					{
 						drawTextLineInTable( x, y, text, lineHeight, pdfData, links,
-							font, currentPage, endPage, endY );
+							font, currentPage, endPage, endY, footnotes );
 						text.text.append( *c );
 
 						if( c + 1 != clast && !( c + 1 )->footnote.isEmpty() )
@@ -2469,7 +2535,7 @@ PdfRenderer::drawTableRow( QVector< QVector< CellData > > & table, int row, PdfA
 						text.text.append( *c );
 						text.width += w;
 						drawTextLineInTable( x, y, text, lineHeight, pdfData, links,
-							font, currentPage, endPage, endY  );
+							font, currentPage, endPage, endY, footnotes  );
 
 						if( c + 1 != clast && !( c + 1 )->footnote.isEmpty() )
 						{
@@ -2488,7 +2554,7 @@ PdfRenderer::drawTableRow( QVector< QVector< CellData > > & table, int row, PdfA
 
 		if( !text.text.isEmpty() )
 			drawTextLineInTable( x, y, text, lineHeight, pdfData, links, font, currentPage,
-				endPage, endY );
+				endPage, endY, footnotes );
 
 		y -= c_tableMargin - font->GetFontMetrics()->GetDescent();
 
@@ -2603,7 +2669,8 @@ PdfRenderer::drawTableBorder( PdfAuxData & pdfData, int startPage, QVector< Wher
 void
 PdfRenderer::drawTextLineInTable( double x, double & y, TextToDraw & text, double lineHeight,
 	PdfAuxData & pdfData, QMap< QString, QVector< QPair< QRectF, int > > > & links,
-	PdfFont * font, int & currentPage, int & endPage, double & endY )
+	PdfFont * font, int & currentPage, int & endPage, double & endY,
+	QVector< QSharedPointer< MD::Footnote > > & footnotes )
 {
 	y -= lineHeight;
 
@@ -2706,6 +2773,8 @@ PdfRenderer::drawTextLineInTable( double x, double & y, TextToDraw & text, doubl
 			it->font->SetFontSize( old );
 
 			x += w;
+
+			footnotes.append( it->footnoteObj );
 		}
 
 		if( it + 1 != last )
