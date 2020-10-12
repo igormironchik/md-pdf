@@ -640,6 +640,9 @@ private:
 		const QMap< QString, QVector< QPair< QRectF, int > > > & links,
 		QSharedPointer< MD::Document > doc );
 
+	//! Draw horizontal line.
+	void drawHorizontalLine( PdfAuxData & pdfData, const RenderOpts & renderOpts );
+
 private:
 	//! Name of the output file.
 	QString m_fileName;

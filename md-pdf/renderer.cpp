@@ -196,14 +196,7 @@ PdfRenderer::renderImpl()
 
 				pdfData.painter->SetPage( pdfData.doc->GetPage( pdfData.footnotePageIdx ) );
 
-				pdfData.painter->Save();
-				pdfData.painter->SetColor( m_opts.m_borderColor.redF(),
-					m_opts.m_borderColor.greenF(),
-					m_opts.m_borderColor.blueF() );
-				pdfData.painter->DrawLine( pdfData.coords.margins.left, pdfData.coords.y,
-					pdfData.coords.pageWidth - pdfData.coords.margins.right,
-					pdfData.coords.y );
-				pdfData.painter->Restore();
+				drawHorizontalLine( pdfData, m_opts );
 
 				for( const auto & f : qAsConst( m_footnotes ) )
 					drawFootnote( pdfData, m_opts, m_doc, f.data(), CalcHeightOpt::Unknown );
@@ -368,14 +361,7 @@ PdfRenderer::createPage( PdfAuxData & pdfData )
 			pdfData.coords.x = pdfData.coords.margins.left;
 			pdfData.coords.y = pdfData.topFootnoteY( pdfData.footnotePageIdx );
 
-			pdfData.painter->Save();
-			pdfData.painter->SetColor( m_opts.m_borderColor.redF(),
-				m_opts.m_borderColor.greenF(),
-				m_opts.m_borderColor.blueF() );
-			pdfData.painter->DrawLine( pdfData.coords.margins.left, pdfData.coords.y,
-				pdfData.coords.pageWidth - pdfData.coords.margins.right,
-				pdfData.coords.y );
-			pdfData.painter->Restore();
+			drawHorizontalLine( pdfData, m_opts );
 		}
 		else
 		{
@@ -384,6 +370,19 @@ PdfRenderer::createPage( PdfAuxData & pdfData )
 			pdfData.coords.y = pdfData.topY( pdfData.footnotePageIdx );
 		}
 	}
+}
+
+void
+PdfRenderer::drawHorizontalLine( PdfAuxData & pdfData, const RenderOpts & renderOpts )
+{
+	pdfData.painter->Save();
+	pdfData.painter->SetColor( renderOpts.m_borderColor.redF(),
+		renderOpts.m_borderColor.greenF(),
+		renderOpts.m_borderColor.blueF() );
+	pdfData.painter->DrawLine( pdfData.coords.margins.left, pdfData.coords.y,
+		pdfData.coords.pageWidth - pdfData.coords.margins.right,
+		pdfData.coords.y );
+	pdfData.painter->Restore();
 }
 
 PdfString
