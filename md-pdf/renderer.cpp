@@ -130,6 +130,25 @@ PdfAuxData::reserveSpaceOn( int page )
 	}
 }
 
+void
+PdfAuxData::drawText( double x, double y, const PdfString & text )
+{
+	painter->DrawText( x, y, text );
+}
+
+void
+PdfAuxData::drawMultiLineText( double x, double y, double width, double height,
+	const PdfString & text )
+{
+	painter->DrawMultiLineText( x, y, width, height, text );
+}
+
+void
+PdfAuxData::drawImage( double x, double y, PdfImage * img, double xScale, double yScale )
+{
+	painter->DrawImage( x, y, img, xScale, yScale );
+}
+
 
 //
 // PdfRenderer::CustomWidth
@@ -699,7 +718,7 @@ PdfRenderer::drawHeading( PdfAuxData & pdfData, const RenderOpts & renderOpts,
 	// If heading can be placed with next item on current page.
 	if( pdfData.coords.y - height - nextItemMinHeight > pdfData.currentPageAllowedY() )
 	{
-		pdfData.painter->DrawMultiLineText( pdfData.coords.margins.left + offset,
+		pdfData.drawMultiLineText( pdfData.coords.margins.left + offset,
 			pdfData.coords.y - height,
 			width, height, createPdfString( item->text() ) );
 
@@ -751,7 +770,7 @@ PdfRenderer::drawHeading( PdfAuxData & pdfData, const RenderOpts & renderOpts,
 
 		item->setText( toSave.simplified() );
 
-		pdfData.painter->DrawMultiLineText( pdfData.coords.margins.left + offset,
+		pdfData.drawMultiLineText( pdfData.coords.margins.left + offset,
 			pdfData.coords.y - h,
 			width, h, createPdfString( text ) );
 
@@ -996,7 +1015,7 @@ PdfRenderer::drawString( PdfAuxData & pdfData, const RenderOpts & renderOpts,
 			{
 				spaceFont->SetFontScale( scale );
 
-				pdfData.painter->DrawText( pdfData.coords.x, pdfData.coords.y, " " );
+				pdfData.drawText( pdfData.coords.x, pdfData.coords.y, " " );
 
 				spaceFont->SetFontScale( 100.0 );
 			}
@@ -1049,7 +1068,7 @@ PdfRenderer::drawString( PdfAuxData & pdfData, const RenderOpts & renderOpts,
 					pdfData.painter->Restore();
 				}
 
-				pdfData.painter->DrawText( pdfData.coords.x, pdfData.coords.y, str );
+				pdfData.drawText( pdfData.coords.x, pdfData.coords.y, str );
 				ret.append( qMakePair( QRectF( pdfData.coords.x, pdfData.coords.y,
 					length, lineHeight ), pdfData.currentPageIndex() ) );
 			}
@@ -1094,7 +1113,7 @@ PdfRenderer::drawString( PdfAuxData & pdfData, const RenderOpts & renderOpts,
 							pdfData.painter->Restore();
 						}
 
-						pdfData.painter->DrawText( pdfData.coords.x, pdfData.coords.y, " " );
+						pdfData.drawText( pdfData.coords.x, pdfData.coords.y, " " );
 
 						font->SetFontScale( 100.0 );
 					}
@@ -1125,7 +1144,7 @@ PdfRenderer::drawString( PdfAuxData & pdfData, const RenderOpts & renderOpts,
 
 				if( draw )
 				{
-					pdfData.painter->DrawText( pdfData.coords.x, pdfData.coords.y, str );
+					pdfData.drawText( pdfData.coords.x, pdfData.coords.y, str );
 					ret.append( qMakePair( QRectF( pdfData.coords.x, pdfData.coords.y,
 							font->GetFontMetrics()->StringWidth( str ), lineHeight ),
 						pdfData.currentPageIndex() ) );
@@ -1433,7 +1452,7 @@ PdfRenderer::drawParagraph( PdfAuxData & pdfData, const RenderOpts & renderOpts,
 
 						++m_footnoteNum;
 
-						pdfData.painter->DrawText( pdfData.coords.x, pdfData.coords.y + lineHeight -
+						pdfData.drawText( pdfData.coords.x, pdfData.coords.y + lineHeight -
 							footnoteFont->GetFontMetrics()->GetLineSpacing(), str );
 						footnoteFont->SetFontSize( old );
 
@@ -1593,7 +1612,7 @@ PdfRenderer::drawFootnote( PdfAuxData & pdfData, const RenderOpts & renderOpts,
 
 			pdfData.painter->SetPage( pdfData.doc->GetPage( p ) );
 			pdfData.painter->SetFont( font );
-			pdfData.painter->DrawText( x, y, str );
+			pdfData.drawText( x, y, str );
 			pdfData.painter->SetPage( pdfData.doc->GetPage( pdfData.footnotePageIdx ) );
 
 			++pdfData.currentFootnote;
@@ -1684,7 +1703,7 @@ PdfRenderer::drawImage( PdfAuxData & pdfData, const RenderOpts & renderOpts,
 			if( pdfImg.GetWidth() * imgScale < availableWidth )
 				x = ( availableWidth - pdfImg.GetWidth() * imgScale ) / 2.0;
 
-			pdfData.painter->DrawImage( pdfData.coords.x + x,
+			pdfData.drawImage( pdfData.coords.x + x,
 				pdfData.coords.y - pdfImg.GetHeight() * imgScale,
 				&pdfImg, imgScale, imgScale );
 
@@ -1996,7 +2015,7 @@ PdfRenderer::drawCode( PdfAuxData & pdfData, const RenderOpts & renderOpts,
 				const auto length = colored[ currentWord ].endPos -
 					colored[ currentWord ].startPos + 1;
 
-				pdfData.painter->DrawText( pdfData.coords.x, pdfData.coords.y,
+				pdfData.drawText( pdfData.coords.x, pdfData.coords.y,
 					createPdfString( lines.at( i ).mid( colored[ currentWord ].startPos, length ) ) );
 
 				pdfData.coords.x += spaceWidth * length;
@@ -2228,7 +2247,7 @@ PdfRenderer::drawListItem( PdfAuxData & pdfData, const RenderOpts & renderOpts,
 
 			const QString idxText = QString::number( idx ) + QLatin1Char( '.' );
 
-			pdfData.painter->DrawText( pdfData.coords.margins.left + offset,
+			pdfData.drawText( pdfData.coords.margins.left + offset,
 				pdfData.coords.y, createPdfString( idxText ) );
 		}
 		else
@@ -2799,7 +2818,7 @@ PdfRenderer::drawTableRow( QVector< QVector< CellData > > & table, int row, PdfA
 
 				y -= static_cast< double > ( c->image.height() ) * ratio;
 
-				pdfData.painter->DrawImage( x + o, y, &img, ratio, ratio );
+				pdfData.drawImage( x + o, y, &img, ratio, ratio );
 
 				textBefore = false;
 			}
@@ -3067,7 +3086,7 @@ PdfRenderer::drawTextLineInTable( double x, double & y, TextToDraw & text, doubl
 				it->color.greenF(), it->color.blueF() );
 
 		pdfData.painter->SetFont( it->font );
-		pdfData.painter->DrawText( x, y, createPdfString( it->word.isEmpty() ?
+		pdfData.drawText( x, y, createPdfString( it->word.isEmpty() ?
 			it->url : it->word ) );
 
 		pdfData.painter->Restore();
@@ -3091,7 +3110,7 @@ PdfRenderer::drawTextLineInTable( double x, double & y, TextToDraw & text, doubl
 
 				const auto w = it->font->GetFontMetrics()->StringWidth( str );
 
-				pdfData.painter->DrawText( x, y + lineHeight -
+				pdfData.drawText( x, y + lineHeight -
 					it->font->GetFontMetrics()->GetLineSpacing(), str );
 				it->font->SetFontSize( old );
 

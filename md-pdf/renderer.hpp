@@ -166,6 +166,14 @@ struct PdfAuxData {
 	double allowedY( int page ) const;
 	//! Reserve space for drawing, i.e. move footnotes on the next page.
 	void reserveSpaceOn( int page );
+
+	//! Draw text
+	void drawText( double x, double y, const PdfString & text );
+	//! Draw multiline text.
+	void drawMultiLineText( double x, double y, double width, double height,
+		const PdfString & text );
+	//! Draw image.
+	void drawImage( double x, double y, PdfImage * img, double xScale, double yScale );
 }; // struct PdfAuxData;
 
 //! Where was the item drawn?
