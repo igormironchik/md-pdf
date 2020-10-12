@@ -429,8 +429,8 @@ PdfRenderer::drawHeading( PdfAuxData & pdfData, const RenderOpts & renderOpts,
 		width, createPdfString( item->text() ) );
 
 	const double height = lines.size() * font->GetFontMetrics()->GetLineSpacing();
-	const double availableHeight = pdfData.topY( pdfData.currentPageIndex() ) -
-		pdfData.currentPageAllowedY();
+	const double availableHeight = pdfData.coords.pageHeight -
+		pdfData.coords.margins.top - pdfData.coords.margins.bottom;
 
 	switch( heightCalcOpt )
 	{
@@ -471,6 +471,7 @@ PdfRenderer::drawHeading( PdfAuxData & pdfData, const RenderOpts & renderOpts,
 	else if( height + nextItemMinHeight <= availableHeight )
 	{
 		createPage( pdfData );
+		pdfData.reserveSpaceOn( pdfData.currentPageIdx );
 		return drawHeading( pdfData, renderOpts, item, doc, offset, nextItemMinHeight,
 			heightCalcOpt, scale );
 	}
