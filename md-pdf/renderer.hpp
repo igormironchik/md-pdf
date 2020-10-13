@@ -237,7 +237,7 @@ private:
 	void moveToNewLine( PdfAuxData & pdfData, double xOffset, double yOffset,
 		double yOffsetMultiplier );
 	//! Load image.
-	QImage loadImage( MD::Image * item );
+	QByteArray loadImage( MD::Image * item );
 	//! Make all links clickable.
 	void resolveLinks( PdfAuxData & pdfData );
 	//! Max width of numbered list bullet.
@@ -394,7 +394,7 @@ private:
 	//! Item in the table's cell.
 	struct CellItem {
 		QString word;
-		QImage image;
+		QByteArray image;
 		QString url;
 		QString footnote;
 		QColor color;
@@ -403,7 +403,7 @@ private:
 		QSharedPointer< MD::Footnote > footnoteObj;
 
 		//! \return Width of the item.
-		double width() const;
+		double width( PdfAuxData & pdfData ) const;
 	}; // struct CellItem
 
 	//! Cell in the table.
@@ -415,7 +415,8 @@ private:
 
 		void setWidth( double w ) { width = w; }
 		//! Calculate height for the given width.
-		void heightToWidth( double lineHeight, double spaceWidth, float scale );
+		void heightToWidth( double lineHeight, double spaceWidth, float scale,
+			PdfAuxData & pdfData );
 	}; //  struct CellData
 
 	//! \return Height of the row.
@@ -482,7 +483,7 @@ private:
 	//! Links that not yet clickable.
 	QMultiMap< QString, QVector< QPair< QRectF, int > > > m_unresolvedLinks;
 	//! Cache of images.
-	QMap< QString, QImage > m_imageCache;
+	QMap< QString, QByteArray > m_imageCache;
 	//! Footnote counter.
 	int m_footnoteNum;
 	//! Footnotes to draw.

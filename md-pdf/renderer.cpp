@@ -233,12 +233,18 @@ PdfRenderer::CustomWidth::totalHeight() const
 //
 
 double
-PdfRenderer::CellItem::width() const
+PdfRenderer::CellItem::width( PdfAuxData & pdfData ) const
 {
 	if( !word.isEmpty() )
 		return font->GetFontMetrics()->StringWidth( createPdfString( word ) );
 	else if( !image.isNull() )
-		return image.width();
+	{
+		PdfImage pdfImg( pdfData.doc );
+		pdfImg.LoadFromData( reinterpret_cast< const unsigned char * >( image.data() ),
+			image.size() );
+
+		return pdfImg.GetWidth();
+	}
 	else if( !url.isEmpty() )
 		return font->GetFontMetrics()->StringWidth( createPdfString( url ) );
 	else if( !footnote.isEmpty() )
@@ -261,7 +267,8 @@ PdfRenderer::CellItem::width() const
 //
 
 void
-PdfRenderer::CellData::heightToWidth( double lineHeight, double spaceWidth, float scale )
+PdfRenderer::CellData::heightToWidth( double lineHeight, double spaceWidth, float scale,
+	PdfAuxData & pdfData )
 {
 	height = 0.0;
 
@@ -276,7 +283,7 @@ PdfRenderer::CellData::heightToWidth( double lineHeight, double spaceWidth, floa
 			if( newLine )
 				height += lineHeight;
 
-			w += it->width();
+			w += it->width( pdfData );
 
 			if( w >= width )
 				newLine = true;
@@ -291,7 +298,7 @@ PdfRenderer::CellData::heightToWidth( double lineHeight, double spaceWidth, floa
 
 			if( it + 1 != last )
 			{
-				if( w + sw + ( it + 1 )->width() > width )
+				if( w + sw + ( it + 1 )->width( pdfData ) > width )
 					newLine = true;
 				else
 				{
@@ -302,7 +309,11 @@ PdfRenderer::CellData::heightToWidth( double lineHeight, double spaceWidth, floa
 		}
 		else
 		{
-			height += it->image.height() / ( it->image.width() / width ) * scale;
+			PdfImage pdfImg( pdfData.doc );
+			pdfImg.LoadFromData( reinterpret_cast< const unsigned char * >( it->image.data() ),
+				it->image.size() );
+
+			height += pdfImg.GetHeight() / ( pdfImg.GetWidth() / width ) * scale;
 			newLine = true;
 		}
 	}
@@ -1663,13 +1674,8 @@ PdfRenderer::drawImage( PdfAuxData & pdfData, const RenderOpts & renderOpts,
 
 		if( !img.isNull() )
 		{
-			QByteArray data;
-			QBuffer buf( &data );
-
-			img.save( &buf, "png" );
-
 			PdfImage pdfImg( pdfData.doc );
-			pdfImg.LoadFromData( reinterpret_cast< unsigned char * >( data.data() ), data.size() );
+			pdfImg.LoadFromData( reinterpret_cast< const unsigned char * >( img.data() ), img.size() );
 
 			newLine = true;
 
@@ -1746,13 +1752,8 @@ PdfRenderer::drawImage( PdfAuxData & pdfData, const RenderOpts & renderOpts,
 
 		if( !img.isNull() )
 		{
-			QByteArray data;
-			QBuffer buf( &data );
-
-			img.save( &buf, "png" );
-
 			PdfImage pdfImg( pdfData.doc );
-			pdfImg.LoadFromData( reinterpret_cast< unsigned char * >( data.data() ), data.size() );
+			pdfImg.LoadFromData( reinterpret_cast< const unsigned char * >( img.data() ), img.size() );
 
 			newLine = true;
 
@@ -1844,7 +1845,7 @@ LoadImageFromNetwork::loadError( QNetworkReply::NetworkError )
 	m_thread->quit();
 }
 
-QImage
+QByteArray
 PdfRenderer::loadImage( MD::Image * item )
 {
 	if( m_imageCache.contains( item->url() ) )
@@ -1873,9 +1874,20 @@ PdfRenderer::loadImage( MD::Image * item )
 				"This image is not a local existing file, and not in the Web. Check your Markdown." )
 					.arg( item->url() ) );
 
-	m_imageCache.insert( item->url(), img );
+	QByteArray data;
+	QBuffer buf( &data );
 
-	return img;
+	QString fmt = QStringLiteral( "png" );
+
+	if( item->url().endsWith( QStringLiteral( "jpg" ) ) ||
+		item->url().endsWith( QStringLiteral( "jpeg" ) ))
+			fmt = QStringLiteral( "jpg" );
+
+	img.save( &buf, fmt.toLatin1().constData() );
+
+	m_imageCache.insert( item->url(), data );
+
+	return data;
 }
 
 QVector< WhereDrawn >
@@ -2618,7 +2630,7 @@ PdfRenderer::calculateCellsSize( PdfAuxData & pdfData, QVector< QVector< CellDat
 
 	for( auto it = auxTable.begin(), last = auxTable.end(); it != last; ++it )
 		for( auto cit = it->begin(), clast = it->end(); cit != clast; ++cit )
-			cit->heightToWidth( lineHeight, spaceWidth, scale );
+			cit->heightToWidth( lineHeight, spaceWidth, scale, pdfData );
 }
 
 QVector< WhereDrawn >
@@ -2798,10 +2810,13 @@ PdfRenderer::drawTableRow( QVector< QVector< CellData > > & table, int row, PdfA
 				if( textBefore )
 					y -= lineHeight;
 
-				auto ratio = it->at( 0 ).width /
-					static_cast< double > ( c->image.width() ) * scale;
+				PdfImage img( pdfData.doc );
+				img.LoadFromData( reinterpret_cast< const unsigned char * >( c->image.data() ),
+					c->image.size() );
 
-				auto h = static_cast< double > ( c->image.height() ) * ratio;
+				auto ratio = it->at( 0 ).width / img.GetWidth() * scale;
+
+				auto h = img.GetHeight() * ratio;
 
 				if(  y - h < pdfData.currentPageAllowedY() )
 				{
@@ -2814,23 +2829,15 @@ PdfRenderer::drawTableRow( QVector< QVector< CellData > > & table, int row, PdfA
 					pdfData.currentPageAllowedY();
 
 				if( h > availableHeight )
-					ratio = availableHeight / static_cast< double > ( c->image.height() );
+					ratio = availableHeight / img.GetHeight();
 
-				const auto w = static_cast< double > ( c->image.width() ) * ratio;
+				const auto w = img.GetWidth() * ratio;
 				auto o = 0.0;
 
 				if( w < table[ column ][ 0 ].width )
 					o = ( table[ column ][ 0 ].width - w ) / 2.0;
 
-				QByteArray data;
-				QBuffer buf( &data );
-
-				c->image.save( &buf, "png" );
-
-				PdfImage img( pdfData.doc );
-				img.LoadFromData( reinterpret_cast< unsigned char * >( data.data() ), data.size() );
-
-				y -= static_cast< double > ( c->image.height() ) * ratio;
+				y -= img.GetHeight() * ratio;
 
 				pdfData.drawImage( x + o, y, &img, ratio, ratio );
 
@@ -3086,7 +3093,7 @@ PdfRenderer::drawTextLineInTable( double x, double & y, TextToDraw & text, doubl
 				it->background.redF() );
 
 			pdfData.painter->Rectangle( x, y + it->font->GetFontMetrics()->GetDescent(),
-				it->width(), it->font->GetFontMetrics()->GetLineSpacing() );
+				it->width( pdfData ), it->font->GetFontMetrics()->GetLineSpacing() );
 
 			pdfData.painter->Fill();
 
@@ -3106,10 +3113,10 @@ PdfRenderer::drawTextLineInTable( double x, double & y, TextToDraw & text, doubl
 		pdfData.painter->Restore();
 
 		if( !it->url.isEmpty() )
-			links[ it->url ].append( qMakePair( QRectF( x, y, it->width(), lineHeight ),
+			links[ it->url ].append( qMakePair( QRectF( x, y, it->width( pdfData ), lineHeight ),
 				currentPage ) );
 
-		x += it->width();
+		x += it->width( pdfData );
 
 		if( !inFootnote )
 		{
