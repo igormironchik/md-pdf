@@ -423,7 +423,7 @@ PdfRenderer::renderImpl()
 						const auto bulletWidth = maxListNumberWidth( list );
 
 						auto * font = createFont( m_opts.m_textFont, false, false,
-							m_opts.m_textFontSize, pdfData.doc, 1.0 );
+							m_opts.m_textFontSize, pdfData.doc, 1.0, pdfData );
 						pdfData.coords.y -= font->GetFontMetrics()->GetLineSpacing();
 
 						drawList( pdfData, m_opts, list, m_doc, bulletWidth );
@@ -570,11 +570,19 @@ PdfRenderer::resolveLinks( PdfAuxData & pdfData )
 
 PdfFont *
 PdfRenderer::createFont( const QString & name, bool bold, bool italic, float size,
-	PdfMemDocument * doc, float scale )
+	PdfMemDocument * doc, float scale, const PdfAuxData & pdfData )
 {
+#ifdef MD_PDF_TESTING
+	auto * font = doc->CreateFont( name.toLocal8Bit().data(), bold, italic , false,
+		PdfEncodingFactory::GlobalIdentityEncodingInstance(),
+		PdfFontCache::eFontCreationFlags_None, true, pdfData.fonts[ name ].toLocal8Bit().data() );
+#else
+	Q_UNUSED( pdfData )
+
 	auto * font = doc->CreateFont( name.toLocal8Bit().data(), bold, italic , false,
 		PdfEncodingFactory::GlobalIdentityEncodingInstance(),
 		PdfFontCache::eFontCreationFlags_None );
+#endif // MD_PDF_TESTING
 
 	if( !font )
 		throw PdfRendererError( tr( "Unable to create font: %1. Please choose another one.\n\n"
@@ -703,7 +711,7 @@ PdfRenderer::drawHeading( PdfAuxData & pdfData, const RenderOpts & renderOpts,
 
 	PdfFont * font = createFont( renderOpts.m_textFont.toLocal8Bit().data(),
 		true, false, renderOpts.m_textFontSize + 16 - ( item->level() < 7 ? item->level() * 2 : 12 ),
-		pdfData.doc, scale );
+		pdfData.doc, scale, pdfData );
 
 	pdfData.painter->SetFont( font );
 	pdfData.painter->SetColor( 0.0, 0.0, 0.0 );
@@ -820,11 +828,11 @@ PdfRenderer::drawText( PdfAuxData & pdfData, const RenderOpts & renderOpts,
 	double offset, bool firstInParagraph, CustomWidth * cw, float scale, bool inFootnote )
 {
 	auto * spaceFont = createFont( renderOpts.m_textFont, false, false,
-		renderOpts.m_textFontSize, pdfData.doc, scale );
+		renderOpts.m_textFontSize, pdfData.doc, scale, pdfData );
 
 	auto * font = createFont( renderOpts.m_textFont, item->opts() & MD::TextOption::BoldText,
 		item->opts() & MD::TextOption::ItalicText,
-		renderOpts.m_textFontSize, pdfData.doc, scale );
+		renderOpts.m_textFontSize, pdfData.doc, scale, pdfData );
 
 	if( item->opts() & MD::TextOption::StrikethroughText )
 		font->SetStrikeOut( true );
@@ -900,7 +908,7 @@ PdfRenderer::drawLink( PdfAuxData & pdfData, const RenderOpts & renderOpts,
 
 		auto * font = createFont( renderOpts.m_textFont, item->textOptions() & MD::TextOption::BoldText,
 			item->textOptions() & MD::TextOption::ItalicText, renderOpts.m_textFontSize,
-			pdfData.doc, scale );
+			pdfData.doc, scale, pdfData );
 
 		if( item->textOptions() & MD::TextOption::StrikethroughText )
 			font->SetStrikeOut( true );
@@ -910,7 +918,7 @@ PdfRenderer::drawLink( PdfAuxData & pdfData, const RenderOpts & renderOpts,
 		rects = normalizeRects( drawString( pdfData, renderOpts,
 			( !item->text().isEmpty() ? item->text() : url ),
 			createFont( renderOpts.m_textFont, false, false, renderOpts.m_textFontSize,
-				pdfData.doc, scale ),
+				pdfData.doc, scale, pdfData ),
 			font, font->GetFontMetrics()->GetLineSpacing(),
 			doc, newLine, footnoteFont, footnoteFontScale, nextItem, footnoteNum, offset,
 			firstInParagraph, cw, QColor(), inFootnote ) );
@@ -1191,10 +1199,10 @@ PdfRenderer::drawInlinedCode( PdfAuxData & pdfData, const RenderOpts & renderOpt
 	bool firstInParagraph, CustomWidth * cw, float scale, bool inFootnote )
 {
 	auto * textFont = createFont( renderOpts.m_textFont, false, false, renderOpts.m_textFontSize,
-		pdfData.doc, scale );
+		pdfData.doc, scale, pdfData );
 
 	auto * font = createFont( renderOpts.m_codeFont, false, false, renderOpts.m_codeFontSize,
-		pdfData.doc, scale );
+		pdfData.doc, scale, pdfData );
 
 	return drawString( pdfData, renderOpts, item->text(), font, font,
 		textFont->GetFontMetrics()->GetLineSpacing(),
@@ -1276,7 +1284,7 @@ PdfRenderer::drawParagraph( PdfAuxData & pdfData, const RenderOpts & renderOpts,
 		emit status( tr( "Drawing paragraph." ) );
 
 	auto * font = createFont( renderOpts.m_textFont, false, false,
-		renderOpts.m_textFontSize, pdfData.doc, scale );
+		renderOpts.m_textFontSize, pdfData.doc, scale, pdfData );
 
 	auto * footnoteFont = font;
 
@@ -1557,7 +1565,7 @@ PdfRenderer::drawFootnote( PdfAuxData & pdfData, const RenderOpts & renderOpts,
 	static const double c_offset = 2.0;
 
 	auto * font = createFont( renderOpts.m_textFont, false, false,
-		renderOpts.m_textFontSize, pdfData.doc, c_footnoteScale );
+		renderOpts.m_textFontSize, pdfData.doc, c_footnoteScale, pdfData );
 	auto footnoteOffset = c_offset * 2.0 / c_mmInPt +
 		font->GetFontMetrics()->StringWidth( createPdfString(
 			QString::number( doc->footnotesMap().size() ) ) );
@@ -1680,7 +1688,7 @@ PdfRenderer::drawImage( PdfAuxData & pdfData, const RenderOpts & renderOpts,
 			newLine = true;
 
 			auto * font = createFont( renderOpts.m_textFont, false, false,
-				renderOpts.m_textFontSize, pdfData.doc, scale );
+				renderOpts.m_textFontSize, pdfData.doc, scale, pdfData );
 
 			const auto lineHeight = font->GetFontMetrics()->GetLineSpacing();
 
@@ -1758,7 +1766,7 @@ PdfRenderer::drawImage( PdfAuxData & pdfData, const RenderOpts & renderOpts,
 			newLine = true;
 
 			auto * font = createFont( renderOpts.m_textFont, false, false,
-				renderOpts.m_textFontSize, pdfData.doc, scale );
+				renderOpts.m_textFontSize, pdfData.doc, scale, pdfData );
 
 			const auto lineHeight = font->GetFontMetrics()->GetLineSpacing();
 
@@ -1901,7 +1909,7 @@ PdfRenderer::drawCode( PdfAuxData & pdfData, const RenderOpts & renderOpts,
 		emit status( tr( "Drawing code." ) );
 
 	auto * textFont = createFont( renderOpts.m_textFont, false, false, renderOpts.m_textFontSize,
-		pdfData.doc, scale );
+		pdfData.doc, scale, pdfData );
 	const auto textLHeight = textFont->GetFontMetrics()->GetLineSpacing();
 
 	QStringList lines;
@@ -1922,7 +1930,7 @@ PdfRenderer::drawCode( PdfAuxData & pdfData, const RenderOpts & renderOpts,
 	}
 
 	auto * font = createFont( renderOpts.m_codeFont, false, false, renderOpts.m_codeFontSize,
-		pdfData.doc, scale );
+		pdfData.doc, scale, pdfData );
 	const auto lineHeight = font->GetFontMetrics()->GetLineSpacing();
 
 	switch( heightCalcOpt )
@@ -2135,7 +2143,7 @@ PdfRenderer::drawBlockquote( PdfAuxData & pdfData, const RenderOpts & renderOpts
 				const auto bulletWidth = maxListNumberWidth( list );
 
 				auto * font = createFont( m_opts.m_textFont, false, false,
-					m_opts.m_textFontSize, pdfData.doc, scale );
+					m_opts.m_textFontSize, pdfData.doc, scale, pdfData );
 				pdfData.coords.y -= font->GetFontMetrics()->GetLineSpacing();
 
 				ret.append( drawList( pdfData, renderOpts,
@@ -2244,7 +2252,7 @@ PdfRenderer::drawListItem( PdfAuxData & pdfData, const RenderOpts & renderOpts,
 	float scale, bool inFootnote )
 {
 	auto * font = createFont( renderOpts.m_textFont, false, false, renderOpts.m_textFontSize,
-		pdfData.doc, scale );
+		pdfData.doc, scale, pdfData );
 	const auto lineHeight = font->GetFontMetrics()->GetLineSpacing();
 
 	if( heightCalcOpt == CalcHeightOpt::Unknown )
@@ -2456,7 +2464,7 @@ PdfRenderer::createAuxTable( PdfAuxData & pdfData, const RenderOpts & renderOpts
 						auto * font = createFont( renderOpts.m_textFont,
 							t->opts() & MD::TextOption::BoldText,
 							t->opts() & MD::TextOption::ItalicText,
-							renderOpts.m_textFontSize, pdfData.doc, scale );
+							renderOpts.m_textFontSize, pdfData.doc, scale, pdfData );
 
 						if( t->opts() & MD::TextOption::StrikethroughText )
 							font->SetStrikeOut( true );
@@ -2482,7 +2490,7 @@ PdfRenderer::createAuxTable( PdfAuxData & pdfData, const RenderOpts & renderOpts
 						auto * c = static_cast< MD::Code* > ( it->data() );
 
 						auto * font = createFont( renderOpts.m_codeFont, false, false,
-							renderOpts.m_codeFontSize, pdfData.doc, scale );
+							renderOpts.m_codeFontSize, pdfData.doc, scale, pdfData );
 
 						const auto words = c->text().split( QLatin1Char( ' ' ),
 							Qt::SkipEmptyParts );
@@ -2507,7 +2515,7 @@ PdfRenderer::createAuxTable( PdfAuxData & pdfData, const RenderOpts & renderOpts
 							l->textOptions() & MD::TextOption::BoldText,
 							l->textOptions() & MD::TextOption::ItalicText,
 							renderOpts.m_textFontSize, pdfData.doc,
-							scale );
+							scale, pdfData );
 
 						if( l->textOptions() & MD::TextOption::StrikethroughText )
 							font->SetStrikeOut( true );
@@ -2580,7 +2588,7 @@ PdfRenderer::createAuxTable( PdfAuxData & pdfData, const RenderOpts & renderOpts
 								auto * font = createFont( renderOpts.m_textFont,
 									false, false,
 									renderOpts.m_textFontSize, pdfData.doc,
-									scale );
+									scale, pdfData );
 
 								CellItem item;
 								item.font = font;
@@ -2651,7 +2659,7 @@ PdfRenderer::drawTable( PdfAuxData & pdfData, const RenderOpts & renderOpts,
 		emit status( tr( "Drawing table." ) );
 
 	auto * font = createFont( renderOpts.m_textFont, false, false, renderOpts.m_textFontSize,
-		pdfData.doc, scale );
+		pdfData.doc, scale, pdfData );
 	const auto lineHeight = font->GetFontMetrics()->GetLineSpacing();
 	const auto spaceWidth = font->GetFontMetrics()->StringWidth( PdfString( " " ) );
 
@@ -2747,7 +2755,7 @@ PdfRenderer::drawTableRow( QVector< QVector< CellData > > & table, int row, PdfA
 	emit status( tr( "Drawing table row." ) );
 
 	auto * font = createFont( renderOpts.m_textFont, false, false, renderOpts.m_textFontSize,
-		pdfData.doc, scale );
+		pdfData.doc, scale, pdfData );
 
 	const auto startPage = pdfData.currentPageIndex();
 	const auto startY = pdfData.coords.y;
@@ -3296,7 +3304,7 @@ PdfRenderer::minNecessaryHeight( PdfAuxData & pdfData, const RenderOpts & render
 			const auto bulletWidth = maxListNumberWidth( list );
 
 			auto * font = createFont( m_opts.m_textFont, false, false,
-				m_opts.m_textFontSize, pdfData.doc, scale );
+				m_opts.m_textFontSize, pdfData.doc, scale, pdfData );
 			pdfData.coords.y -= font->GetFontMetrics()->GetLineSpacing();
 
 			ret = drawList( pdfData, m_opts, list, m_doc, bulletWidth, offset,

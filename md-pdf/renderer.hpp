@@ -156,6 +156,10 @@ struct PdfAuxData {
 	//! Is this first item on the page?
 	bool firstOnPage = true;
 
+#ifdef MD_PDF_TESTING
+	QMap< QString, QString > fonts;
+#endif // MD_PDF_TESTING
+
 	//! \return Top Y coordinate on the page.
 	double topY( int page ) const;
 	//! \return Current page index.
@@ -225,7 +229,7 @@ private slots:
 private:
 	//! Create font.
 	PdfFont * createFont( const QString & name, bool bold, bool italic, float size,
-		PdfMemDocument * doc, float scale );
+		PdfMemDocument * doc, float scale, const PdfAuxData & pdfData );
 	//! Create new page.
 	void createPage( PdfAuxData & pdfData );
 	//! Convert QString to PdfString.
