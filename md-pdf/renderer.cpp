@@ -133,6 +133,8 @@ PdfAuxData::reserveSpaceOn( int page )
 void
 PdfAuxData::drawText( double x, double y, const PdfString & text )
 {
+	firstOnPage = false;
+
 	painter->DrawText( x, y, text );
 }
 
@@ -140,12 +142,16 @@ void
 PdfAuxData::drawMultiLineText( double x, double y, double width, double height,
 	const PdfString & text )
 {
+	firstOnPage = false;
+
 	painter->DrawMultiLineText( x, y, width, height, text );
 }
 
 void
 PdfAuxData::drawImage( double x, double y, PdfImage * img, double xScale, double yScale )
 {
+	firstOnPage = false;
+
 	painter->DrawImage( x, y, img, xScale, yScale );
 }
 
@@ -595,6 +601,8 @@ PdfRenderer::createPage( PdfAuxData & pdfData )
 				"This is very strange, it should not appear ever, but it is. "
 				"I'm sorry for the inconvenience." ) );
 
+		pdfData.firstOnPage = true;
+
 		pdfData.painter->SetPage( pdfData.page );
 
 		pdfData.coords = { { pdfData.coords.margins.left, pdfData.coords.margins.right,
@@ -713,7 +721,8 @@ PdfRenderer::drawHeading( PdfAuxData & pdfData, const RenderOpts & renderOpts,
 			break;
 	}
 
-	pdfData.coords.y -= c_beforeHeading;
+	if( !pdfData.firstOnPage || pdfData.drawFootnotes )
+		pdfData.coords.y -= c_beforeHeading;
 
 	// If heading can be placed with next item on current page.
 	if( pdfData.coords.y - height - nextItemMinHeight > pdfData.currentPageAllowedY() )
@@ -1264,8 +1273,9 @@ PdfRenderer::drawParagraph( PdfAuxData & pdfData, const RenderOpts & renderOpts,
 
 	const auto oldPageId = pdfData.footnotePageIdx;
 
-	if( withNewLine && heightCalcOpt == CalcHeightOpt::Unknown )
-		moveToNewLine( pdfData, 0.0, lineHeight, 2.0 );
+	if( ( withNewLine && !pdfData.firstOnPage && heightCalcOpt == CalcHeightOpt::Unknown ) ||
+		( withNewLine && pdfData.drawFootnotes && heightCalcOpt == CalcHeightOpt::Unknown ) )
+			moveToNewLine( pdfData, 0.0, lineHeight, 2.0 );
 
 	if( heightCalcOpt == CalcHeightOpt::Unknown )
 	{
@@ -1348,8 +1358,11 @@ PdfRenderer::drawParagraph( PdfAuxData & pdfData, const RenderOpts & renderOpts,
 		case CalcHeightOpt::Minimum :
 		{
 			QVector< WhereDrawn > r;
-			r.append( { 0, 0.0, ( withNewLine ? lineHeight + cw.firstItemHeight() :
-				cw.firstItemHeight() ) } );
+			r.append( { 0, 0.0,
+				( ( withNewLine && !pdfData.firstOnPage ) ||
+					( withNewLine && pdfData.drawFootnotes ) ?
+						lineHeight + cw.firstItemHeight() :
+						cw.firstItemHeight() ) } );
 
 			return r;
 		}
@@ -1363,8 +1376,9 @@ PdfRenderer::drawParagraph( PdfAuxData & pdfData, const RenderOpts & renderOpts,
 
 			for( auto it = cw.cbegin(), last = cw.cend(); it != last; ++it )
 			{
-				if( it == cw.cbegin() && withNewLine )
-					h += lineHeight;
+				if( it == cw.cbegin() && ( ( withNewLine && !pdfData.firstOnPage ) ||
+					( withNewLine && pdfData.drawFootnotes ) ) )
+						h += lineHeight;
 
 				if( h + it->height > max )
 					max = h + it->height;

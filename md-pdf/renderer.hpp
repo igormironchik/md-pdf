@@ -153,6 +153,8 @@ struct PdfAuxData {
 	int footnotePageIdx = -1;
 	//! Current index of the footnote (for drawing number in the PDF).
 	int currentFootnote = 1;
+	//! Is this first item on the page?
+	bool firstOnPage = true;
 
 	//! \return Top Y coordinate on the page.
 	double topY( int page ) const;
