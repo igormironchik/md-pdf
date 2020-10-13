@@ -10,4 +10,3 @@ ignore:
   - "md-pdf/main_window.*"
   - "md-pdf/main.*"
   - "md-pdf/progress.*"
-  - "md-pdf/renderer.*"

@@ -15,7 +15,8 @@ endif( ENABLE_COVERAGE )
 
 set( SRC main.cpp
 	../../../md-pdf/renderer.cpp
-	../../../md-pdf/renderer.hpp )
+	../../../md-pdf/renderer.hpp
+	test_footnotes_data.hpp )
 
 add_definitions( -DMD_PDF_TESTING )
 
