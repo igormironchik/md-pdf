@@ -22,7 +22,6 @@
 
 #include <md-pdf/renderer.hpp>
 
-#include <QCoreApplication>
 #include <QObject>
 #include <QtTest/QtTest>
 
@@ -47,6 +46,6 @@ TestRender::testFootnotes()
 }
 
 
-QTEST_MAIN( TestRender )
+QTEST_GUILESS_MAIN( TestRender )
 
 #include "main.moc"
