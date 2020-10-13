@@ -25,6 +25,11 @@
 #include "syntax.hpp"
 #include "const.hpp"
 
+#ifdef MD_PDF_TESTING
+#include <test_const.hpp>
+#include <QtTest/QtTest>
+#endif // MD_PDF_TESTING
+
 // Qt include.
 #include <QFileInfo>
 #include <QNetworkAccessManager>
@@ -135,7 +140,24 @@ PdfAuxData::drawText( double x, double y, const PdfString & text )
 {
 	firstOnPage = false;
 
+#ifndef MD_PDF_TESTING
 	painter->DrawText( x, y, text );
+#else
+	if( printDrawings )
+		(*drawingsStream) << QStringLiteral(
+			"{ DrawPrimitive::Type::Text, QStringLiteral( \"%1\" ), %2, %3, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0 },\n" )
+				.arg( PdfRenderer::createQString( text ).replace( QLatin1String( "\"" ), QLatin1String( "\\\"" ) ),
+					QString::number( x, 'f', 16 ),
+					QString::number( y, 'f', 16 ) );
+	else
+	{
+		int pos = testPos++;
+		QCOMPARE( DrawPrimitive::Type::Text, testData.at( pos ).type );
+		QCOMPARE( PdfRenderer::createQString( text ), testData.at( pos ).text );
+		QCOMPARE( x, testData.at( pos ).x );
+		QCOMPARE( y, testData.at( pos ).y );
+	}
+#endif // MD_PDF_TESTING
 }
 
 void
@@ -144,7 +166,27 @@ PdfAuxData::drawMultiLineText( double x, double y, double width, double height,
 {
 	firstOnPage = false;
 
+#ifndef MD_PDF_TESTING
 	painter->DrawMultiLineText( x, y, width, height, text );
+#else
+	if( printDrawings )
+		(*drawingsStream) << QStringLiteral(
+			"{ DrawPrimitive::Type::MultilineText, QStringLiteral( \"%1\" ), %2, %3, 0.0, 0.0, %4, %5, 0.0, 0.0 },\n" )
+				.arg( PdfRenderer::createQString( text ).replace( QLatin1String( "\"" ), QLatin1String( "\\\"" ) ),
+					QString::number( x, 'f', 16 ),
+					QString::number( y, 'f', 16 ), QString::number( width, 'f', 16 ),
+					QString::number( height, 'f', 16 ) );
+	else
+	{
+		int pos = testPos++;
+		QCOMPARE( DrawPrimitive::Type::MultilineText, testData.at( pos ).type );
+		QCOMPARE( PdfRenderer::createQString( text ), testData.at( pos ).text );
+		QCOMPARE( x, testData.at( pos ).x );
+		QCOMPARE( y, testData.at( pos ).y );
+		QCOMPARE( width, testData.at( pos ).width );
+		QCOMPARE( height, testData.at( pos ).height );
+	}
+#endif // MD_PDF_TESTING
 }
 
 void
@@ -152,7 +194,75 @@ PdfAuxData::drawImage( double x, double y, PdfImage * img, double xScale, double
 {
 	firstOnPage = false;
 
+#ifndef MD_PDF_TESTING
 	painter->DrawImage( x, y, img, xScale, yScale );
+#else
+	if( printDrawings )
+		(*drawingsStream) << QStringLiteral(
+			"{ DrawPrimitive::Type::Image, QStringLiteral( \"\" ), %2, %3, 0.0, 0.0, 0.0, 0.0, %4, %5 },\n" )
+				.arg( QString::number( x, 'f', 16 ), QString::number( y, 'f', 16 ),
+					QString::number( xScale, 'f', 16 ), QString::number( yScale, 'f', 16 ) );
+	else
+	{
+		int pos = testPos++;
+		QCOMPARE( x, testData.at( pos ).x );
+		QCOMPARE( y, testData.at( pos ).y );
+		QCOMPARE( xScale, testData.at( pos ).xScale );
+		QCOMPARE( yScale, testData.at( pos ).yScale );
+	}
+#endif // MD_PDF_TESTING
+}
+
+void
+PdfAuxData::drawLine( double x1, double y1, double x2, double y2 )
+{
+#ifndef MD_PDF_TESTING
+	painter->DrawLine( x1, y1, x2, y2 );
+#else
+	if( printDrawings )
+		(*drawingsStream) << QStringLiteral(
+			"{ DrawPrimitive::Type::Line, QStringLiteral( \"\" ), %1, %2, %3, %4, 0.0, 0.0, 0.0, 0.0 },\n" )
+				.arg( QString::number( x1, 'f', 16 ), QString::number( y1, 'f', 16 ),
+					QString::number( x2, 'f', 16 ), QString::number( y2, 'f', 16 ) );
+	else
+	{
+		int pos = testPos++;
+		QCOMPARE( x1, testData.at( pos ).x );
+		QCOMPARE( y1, testData.at( pos ).y );
+		QCOMPARE( x2, testData.at( pos ).x2 );
+		QCOMPARE( y2, testData.at( pos ).y2 );
+	}
+#endif // MD_PDF_TESTING
+}
+
+void
+PdfAuxData::save( const QString & fileName )
+{
+#ifndef MD_PDF_TESTING
+	doc->Write( fileName.toLocal8Bit().data() );
+#endif // MD_PDF_TESTING
+}
+
+void
+PdfAuxData::drawRectangle( double x, double y, double width, double height )
+{
+#ifndef MD_PDF_TESTING
+	painter->Rectangle( x, y, width, height );
+#else
+	if( printDrawings )
+		(*drawingsStream) << QStringLiteral(
+			"{ DrawPrimitive::Type::Rectangle, QStringLiteral( \"\" ), %1, %2, 0.0, 0.0, %3, %4, 0.0, 0.0 },\n" )
+				.arg( QString::number( x, 'f', 16 ), QString::number( y, 'f', 16 ),
+					QString::number( width, 'f', 16 ), QString::number( height, 'f', 16 ) );
+	else
+	{
+		int pos = testPos++;
+		QCOMPARE( x, testData.at( pos ).x );
+		QCOMPARE( y, testData.at( pos ).y );
+		QCOMPARE( width, testData.at( pos ).width );
+		QCOMPARE( height, testData.at( pos ).height );
+	}
+#endif // MD_PDF_TESTING
 }
 
 
@@ -372,6 +482,29 @@ PdfRenderer::renderImpl()
 		pdfData.coords.margins.top = m_opts.m_top;
 		pdfData.coords.margins.bottom = m_opts.m_bottom;
 
+#ifdef MD_PDF_TESTING
+		pdfData.fonts[ QStringLiteral( "Droid Serif" ) ] = c_font;
+		pdfData.fonts[ QStringLiteral( "Droid Serif Bold" ) ] = c_boldFont;
+		pdfData.fonts[ QStringLiteral( "Droid Serif Italic" ) ] = c_italicFont;
+		pdfData.fonts[ QStringLiteral( "Droid Serif Bold Italic" ) ] = c_boldItalicFont;
+		pdfData.fonts[ QStringLiteral( "Courier New" ) ] = c_monoFont;
+
+		if( m_opts.printDrawings )
+		{
+			pdfData.printDrawings = true;
+
+			pdfData.drawingsFile.reset( new QFile( QStringLiteral( "./data.txt" ) ) );
+			if( !pdfData.drawingsFile->open( QIODevice::WriteOnly ) )
+				QFAIL( "Unable to open file for dump drawings." );
+
+			pdfData.drawingsStream.reset( new QTextStream( pdfData.drawingsFile.get() ) );
+
+			(*pdfData.drawingsStream) << "{\n";
+		}
+		else
+			pdfData.testData = m_opts.testData;
+#endif // MD_PDF_TESTING
+
 		try {
 			int itemIdx = 0;
 
@@ -476,7 +609,7 @@ PdfRenderer::renderImpl()
 
 			finishPages( pdfData );
 
-			document.Write( m_fileName.toLocal8Bit().data() );
+			pdfData.save( m_fileName );
 
 			emit done( m_terminate );
 		}
@@ -484,7 +617,7 @@ PdfRenderer::renderImpl()
 		{
 			try {
 				finishPages( pdfData );
-				document.Write( m_fileName.toLocal8Bit().data() );
+				pdfData.save( m_fileName );
 			}
 			catch( ... )
 			{
@@ -496,7 +629,7 @@ PdfRenderer::renderImpl()
 		{
 			try {
 				finishPages( pdfData );
-				document.Write( m_fileName.toLocal8Bit().data() );
+				pdfData.save( m_fileName );
 			}
 			catch( ... )
 			{
@@ -504,6 +637,14 @@ PdfRenderer::renderImpl()
 
 			emit error( e.what() );
 		}
+
+#ifdef MD_PDF_TESTING
+		if( m_opts.printDrawings )
+		{
+			(*pdfData.drawingsStream) << "}\n";
+			pdfData.drawingsFile->close();
+		}
+#endif // MD_PDF_TESTING
 	}
 
 	try {
@@ -573,9 +714,13 @@ PdfRenderer::createFont( const QString & name, bool bold, bool italic, float siz
 	PdfMemDocument * doc, float scale, const PdfAuxData & pdfData )
 {
 #ifdef MD_PDF_TESTING
+	const QString internalName = name + ( bold ? QStringLiteral( " Bold" ) : QString() ) +
+		( italic ? QStringLiteral( " Italic" ) : QString() );
+
 	auto * font = doc->CreateFont( name.toLocal8Bit().data(), bold, italic , false,
 		PdfEncodingFactory::GlobalIdentityEncodingInstance(),
-		PdfFontCache::eFontCreationFlags_None, true, pdfData.fonts[ name ].toLocal8Bit().data() );
+		PdfFontCache::eFontCreationFlags_None, true,
+		pdfData.fonts[ internalName ].toLocal8Bit().data() );
 #else
 	Q_UNUSED( pdfData )
 
@@ -673,7 +818,7 @@ PdfRenderer::drawHorizontalLine( PdfAuxData & pdfData, const RenderOpts & render
 	pdfData.painter->SetColor( renderOpts.m_borderColor.redF(),
 		renderOpts.m_borderColor.greenF(),
 		renderOpts.m_borderColor.blueF() );
-	pdfData.painter->DrawLine( pdfData.coords.margins.left, pdfData.coords.y,
+	pdfData.drawLine( pdfData.coords.margins.left, pdfData.coords.y,
 		pdfData.coords.pageWidth - pdfData.coords.margins.right,
 		pdfData.coords.y );
 	pdfData.painter->Restore();
@@ -1089,7 +1234,7 @@ PdfRenderer::drawString( PdfAuxData & pdfData, const RenderOpts & renderOpts,
 					pdfData.painter->Save();
 					pdfData.painter->SetColor( background.redF(),
 						background.greenF(), background.blueF() );
-					pdfData.painter->Rectangle( pdfData.coords.x, pdfData.coords.y +
+					pdfData.drawRectangle( pdfData.coords.x, pdfData.coords.y +
 						font->GetFontMetrics()->GetDescent(), length,
 						font->GetFontMetrics()->GetLineSpacing() );
 					pdfData.painter->Fill();
@@ -1134,7 +1279,7 @@ PdfRenderer::drawString( PdfAuxData & pdfData, const RenderOpts & renderOpts,
 							pdfData.painter->Save();
 							pdfData.painter->SetColor( background.redF(),
 								background.greenF(), background.blueF() );
-							pdfData.painter->Rectangle( pdfData.coords.x, pdfData.coords.y +
+							pdfData.drawRectangle( pdfData.coords.x, pdfData.coords.y +
 								font->GetFontMetrics()->GetDescent(), spaceWidth * scale / 100.0,
 								font->GetFontMetrics()->GetLineSpacing() );
 							pdfData.painter->Fill();
@@ -1999,7 +2144,7 @@ PdfRenderer::drawCode( PdfAuxData & pdfData, const RenderOpts & renderOpts,
 			pdfData.painter->SetColor( renderOpts.m_codeBackground.redF(),
 				renderOpts.m_codeBackground.greenF(),
 				renderOpts.m_codeBackground.blueF() );
-			pdfData.painter->Rectangle( pdfData.coords.x, y,
+			pdfData.drawRectangle( pdfData.coords.x, y,
 				pdfData.coords.pageWidth - pdfData.coords.x - pdfData.coords.margins.right,
 				 h + lineHeight );
 			pdfData.painter->Fill();
@@ -2199,7 +2344,7 @@ PdfRenderer::drawBlockquote( PdfAuxData & pdfData, const RenderOpts & renderOpts
 		pdfData.painter->SetColor( renderOpts.m_borderColor.redF(),
 			renderOpts.m_borderColor.greenF(),
 			renderOpts.m_borderColor.blueF() );
-		pdfData.painter->Rectangle( pdfData.coords.margins.left + offset, it.value().y,
+		pdfData.drawRectangle( pdfData.coords.margins.left + offset, it.value().y,
 			c_blockquoteMarkWidth, it.value().height );
 		pdfData.painter->Fill();
 		pdfData.painter->Restore();
@@ -2966,19 +3111,19 @@ PdfRenderer::drawTableBorder( PdfAuxData & pdfData, int startPage, QVector< Wher
 
 		if( i == startPage )
 		{
-			pdfData.painter->DrawLine( startX, startY, endX, startY );
+			pdfData.drawLine( startX, startY, endX, startY );
 
 			auto x = startX;
 			auto y = endY;
 
 			if( i == pdfData.currentPageIndex() )
 			{
-				pdfData.painter->DrawLine( startX, endY, endX, endY );
-				pdfData.painter->DrawLine( x, startY, x, endY );
+				pdfData.drawLine( startX, endY, endX, endY );
+				pdfData.drawLine( x, startY, x, endY );
 			}
 			else
 			{
-				pdfData.painter->DrawLine( x, startY, x, pdfData.allowedY( i ) );
+				pdfData.drawLine( x, startY, x, pdfData.allowedY( i ) );
 				y = pdfData.allowedY( i );
 			}
 
@@ -2986,7 +3131,7 @@ PdfRenderer::drawTableBorder( PdfAuxData & pdfData, int startPage, QVector< Wher
 			{
 				x += table.at( c ).at( 0 ).width + c_tableMargin * 2.0;
 
-				pdfData.painter->DrawLine( x, startY, x, y );
+				pdfData.drawLine( x, startY, x, y );
 			}
 
 			ret.append( { i, ( i < pdfData.currentPageIndex() ? pdfData.allowedY( i ) : endY ),
@@ -2998,13 +3143,13 @@ PdfRenderer::drawTableBorder( PdfAuxData & pdfData, int startPage, QVector< Wher
 			auto y = pdfData.allowedY( i );
 			auto sy = pdfData.topY( i );
 
-			pdfData.painter->DrawLine( x, sy, x, y );
+			pdfData.drawLine( x, sy, x, y );
 
 			for( int c = 0; c < table.size(); ++c )
 			{
 				x += table.at( c ).at( 0 ).width + c_tableMargin * 2.0;
 
-				pdfData.painter->DrawLine( x, sy, x, y );
+				pdfData.drawLine( x, sy, x, y );
 			}
 
 			ret.append( { i, pdfData.allowedY( i ),
@@ -3016,16 +3161,16 @@ PdfRenderer::drawTableBorder( PdfAuxData & pdfData, int startPage, QVector< Wher
 			auto y = endY;
 			auto sy = pdfData.topY( i );
 
-			pdfData.painter->DrawLine( x, sy, x, y );
+			pdfData.drawLine( x, sy, x, y );
 
 			for( int c = 0; c < table.size(); ++c )
 			{
 				x += table.at( c ).at( 0 ).width + c_tableMargin * 2.0;
 
-				pdfData.painter->DrawLine( x, sy, x, y );
+				pdfData.drawLine( x, sy, x, y );
 			}
 
-			pdfData.painter->DrawLine( startX, y, endX, y );
+			pdfData.drawLine( startX, y, endX, y );
 
 			ret.append( { pdfData.currentPageIndex(), endY,
 				pdfData.topY( i ) - endY } );
@@ -3100,7 +3245,7 @@ PdfRenderer::drawTextLineInTable( double x, double & y, TextToDraw & text, doubl
 				it->background.greenF(),
 				it->background.redF() );
 
-			pdfData.painter->Rectangle( x, y + it->font->GetFontMetrics()->GetDescent(),
+			pdfData.drawRectangle( x, y + it->font->GetFontMetrics()->GetDescent(),
 				it->width( pdfData ), it->font->GetFontMetrics()->GetLineSpacing() );
 
 			pdfData.painter->Fill();
@@ -3163,7 +3308,7 @@ PdfRenderer::drawTextLineInTable( double x, double & y, TextToDraw & text, doubl
 
 				const auto sw = it->font->GetFontMetrics()->StringWidth( PdfString( " " ) );
 
-				pdfData.painter->Rectangle( x, y + it->font->GetFontMetrics()->GetDescent(),
+				pdfData.drawRectangle( x, y + it->font->GetFontMetrics()->GetDescent(),
 					sw, it->font->GetFontMetrics()->GetLineSpacing() );
 
 				x += sw;

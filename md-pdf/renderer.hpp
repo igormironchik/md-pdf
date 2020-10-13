@@ -33,6 +33,11 @@
 #include <QImage>
 #include <QNetworkReply>
 
+#ifdef MD_PDF_TESTING
+#include <QFile>
+#include <QTextStream>
+#endif // MD_PDF_TESTING
+
 // podofo include.
 #include <podofo/podofo.h>
 
@@ -40,6 +45,30 @@ using namespace PoDoFo;
 
 //! Footnote scale.
 static const float c_footnoteScale = 0.75;
+
+
+#ifdef MD_PDF_TESTING
+struct DrawPrimitive {
+	enum class Type {
+		Text = 0,
+		Line,
+		Rectangle,
+		Image,
+		MultilineText
+	};
+
+	Type type;
+	QString text;
+	double x;
+	double y;
+	double x2;
+	double y2;
+	double width;
+	double height;
+	double xScale;
+	double yScale;
+};
+#endif // MD_PDF_TESTING
 
 
 //
@@ -77,6 +106,11 @@ struct RenderOpts
 	double m_top;
 	//! Bottom margin.
 	double m_bottom;
+
+#ifdef MD_PDF_TESTING
+	bool printDrawings = false;
+	QVector< DrawPrimitive > testData;
+#endif // MD_PDF_TESTING
 }; // struct RenderOpts
 
 
@@ -133,6 +167,7 @@ struct CoordsPageAttribs {
 	double y = 0.0;
 }; // struct CoordsPageAttribs
 
+
 //! Auxiliary struct for rendering.
 struct PdfAuxData {
 	//! Document.
@@ -158,6 +193,11 @@ struct PdfAuxData {
 
 #ifdef MD_PDF_TESTING
 	QMap< QString, QString > fonts;
+	QSharedPointer< QFile > drawingsFile;
+	QSharedPointer< QTextStream > drawingsStream;
+	bool printDrawings = false;
+	QVector< DrawPrimitive > testData;
+	int testPos = 0;
 #endif // MD_PDF_TESTING
 
 	//! \return Top Y coordinate on the page.
@@ -180,6 +220,12 @@ struct PdfAuxData {
 		const PdfString & text );
 	//! Draw image.
 	void drawImage( double x, double y, PdfImage * img, double xScale, double yScale );
+	//! Draw line.
+	void drawLine( double x1, double y1, double x2, double y2 );
+	//! Save document.
+	void save( const QString & fileName );
+	//! Draw rectangle.
+	void drawRectangle( double x, double y, double width, double height );
 }; // struct PdfAuxData;
 
 //! Where was the item drawn?
@@ -211,6 +257,11 @@ public:
 	//! \return Is font can be created?
 	static bool isFontCreatable( const QString & font );
 
+	//! Convert QString to PdfString.
+	static PdfString createPdfString( const QString & text );
+	//! Convert PdfString to QString.
+	static QString createQString( const PdfString & str );
+
 public slots:
 	//! Render document. \note Document can be changed during rendering.
 	//! Don't reuse the same document twice.
@@ -232,10 +283,6 @@ private:
 		PdfMemDocument * doc, float scale, const PdfAuxData & pdfData );
 	//! Create new page.
 	void createPage( PdfAuxData & pdfData );
-	//! Convert QString to PdfString.
-	static PdfString createPdfString( const QString & text );
-	//! Convert PdfString to QString.
-	static QString createQString( const PdfString & str );
 
 	//! Draw empty line.
 	void moveToNewLine( PdfAuxData & pdfData, double xOffset, double yOffset,

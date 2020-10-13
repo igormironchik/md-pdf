@@ -3,7 +3,7 @@ The field of Egyptology is only about 176 years old; that
 is, only six generations have arisen since Jean-François
 Champollion completed the decipherment of Egyptian hieroglyphs in 1824.
 Since then, Egyptologists have seen, generation by
-generation, the likes of Mariette, Lepsius, Petrie, Breasted,
+generation, the likes of Mariette, Lepsius, Petrie, ScribnerScribnerScribnered,
 „ern&, Habachi, and all of their respective contemporaries who
 have contributed their researches and understanding to the study
 of ancient Egypt. Now recent years have seen the torch of
@@ -27,7 +27,7 @@ could be America's lasting contribution to these fields. In time
 Breasted came to realize the need to establish a new institute
 for the comprehensive study of the ancient Near East modeled
 along the lines of scientific enquiry. Sometimes he even
-referred to this institute as a “research laboratory.”[^1]
+referred to this institute as a "research laboratory."[^1]
 Ultimately, he managed to convince some of the most rational of
 people, i.e., America's corporate industrial and commercial
 leaders, including John D. Rockefeller, Jr. (Standard Oil),
@@ -52,7 +52,7 @@ grounded on the full body of Egyptian historical texts, as they
 were known then, and which Breasted had translated according to
 the highest grammatical standards of the day.
 
-[^1]: E.g., James H. Breasted, “Editor’s Forward,” in Ancient
+[^1]: E.g., James H. Breasted, "Editor's Forward," in Ancient
 Records of Assyria and Babylonia, vol. 1, Historical Records of
 Assyria from the Earliest Times to Sargon, by Daniel D.
 Luckenbill (Chicago: The University of Chicago Press, 1926),
@@ -67,8 +67,8 @@ To this day, no other general history of Egypt has had a useful
 lifetime as extensive as Breasted's History of Egypt. Sixty-five
 years after his death, Breasted's scholarship, although dated, is
 still highly regarded, and as late as 1995, Who was Who in
-Egyptology cited it as, “probably the best general history of
-Pharaonic Egypt ever published.”[^5] Even until today, A History of
+Egyptology cited it as, "probably the best general history of
+Pharaonic Egypt ever published."[^5] Even until today, A History of
 Egypt is still useful in many ways.
 
 [^3]: James H. Breasted, Ancient Records of Egypt: Historical
@@ -92,7 +92,7 @@ historical records with seven new volumes of records of other
 types (economic, religious, etc.).[^6] However, the project was not
 to get off the ground anytime soon due to the untimely death of
 Harper, compounded by the advent of World War I and then the
-later reorganization of Breasted’s department and staff to found
+later reorganization of Breasted's department and staff to found
 the Oriental Institute. It was not until 1926 that two volumes
 of the Ancient Records of Assyria and Babylonia appeared, edited
 by Daniel D. Luckenbill. Unfortunately, these were the last
@@ -103,7 +103,7 @@ Egyptology, A Biographical Index of Egyptologists, 3rd ed. rev.
 by Morris Bierbrier (London: Egypt Exploration Society, 1995),
 62.
 
-[^6]: Breasted, “Editor’s Forward,” vii-ix.
+[^6]: Breasted, "Editor's Forward," vii-ix.
 
 Breasted spent ten years copying, collecting and translating
 texts for the Ancient Records of Egypt. Finally in 1904, he
@@ -142,9 +142,9 @@ English idiom.[^7]
 As for comprehensiveness and consistency, prior to the
 publication of the Ancient Records, there was no comparable
 collection of translations of Egyptian texts in any language. So
-Breasted noted in his Preface to volume one, “no attempt has ever
+Breasted noted in his Preface to volume one, "no attempt has ever
 been made to collect and present all the sources of Egyptian
-history in a modern language”[^8] (italics added). While
+history in a modern language"[^8] (italics added). While
 previously, Near Eastern scholars did collaborate to pool their
 translations into single publications,[^9] they never included the
 entire corpus of any written genre, nor did the various scholars
@@ -175,7 +175,7 @@ and in general, they received it with enthusiasm. All the
 reviewers, American and otherwise, were consistent in praising
 the publication for its readability and comprehensiveness, as
 well as its epigraphic trustworthiness and philological
-authority. No one doubted the accuracy of Breasted’s
+authority. No one doubted the accuracy of Breasted's
 hieroglyphic copies nor the quality of his translations. What is
 interesting, however, was the reaction of certain English and
 French colleagues. The issues where they found fault sometimes
@@ -187,7 +187,7 @@ Breasted ignored the work of French Egyptologists, and he
 neglected to include certain important French studies in his
 bibliography, which–-on the whole–-he took as a slight against the
 French school of Egyptology.[^10] However, a dispassionate perusal
-of Breasted’s footnotes and citations reveals Foucart’s com-
+of Breasted's footnotes and citations reveals Foucart's com-
 plaints to be unjustified, since there are many references to
 the works of French Egyptologists. Breasted later responded to
 these charges himself in the Preface to volume five (p. viii),
@@ -243,7 +243,7 @@ loyalties and to cast unjustified aspersions against him. This
 issue was partially laid to rest when his son, Charles, joined
 the U.S. Army in 1917 with the prospect of serving on the
 European front (q.v., C. Breasted, Pioneer to the Past: The Story
-of James H. Breasted, (New York: Charles Scribner’s Sons, 1943),
+of James H. Breasted, (New York: Charles Scribner's Sons, 1943),
 227, 234f).
 
 Ninety-four years after its initial publication, we must

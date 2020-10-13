@@ -23,10 +23,20 @@ include_directories( ${CMAKE_CURRENT_SOURCE_DIR}
 	${CMAKE_CURRENT_SOURCE_DIR}/../../..
 	${CMAKE_CURRENT_SOURCE_DIR}/../../../3rdparty
 	${CMAKE_CURRENT_SOURCE_DIR}/../../../3rdparty/podofo-trunk/src
-	${CMAKE_CURRENT_BINARY_DIR}/../../../3rdparty/podofo-trunk )
+	${CMAKE_CURRENT_BINARY_DIR}/../../../3rdparty/podofo-trunk
+	${CMAKE_CURRENT_BINARY_DIR} )
 
 link_directories( ${CMAKE_CURRENT_BINARY_DIR}/../../../3rdparty/podofo-trunk/src/podofo )
 link_directories( ${CMAKE_CURRENT_BINARY_DIR}/../../../3rdparty/podofo-trunk/src )
+
+set( NORMAL_FONT ${CMAKE_CURRENT_SOURCE_DIR}/../../fonts/droid_serif.ttf )
+set( ITALIC_FONT ${CMAKE_CURRENT_SOURCE_DIR}/../../fonts/droid_serif_italic.ttf )
+set( BOLD_FONT ${CMAKE_CURRENT_SOURCE_DIR}/../../fonts/droid_serif_bold.ttf )
+set( BOLD_ITALIC_FONT ${CMAKE_CURRENT_SOURCE_DIR}/../../fonts/droid_serif_italic_bold.ttf )
+set( MONO_FONT ${CMAKE_CURRENT_SOURCE_DIR}/../../fonts/courier_new_mc_serif.ttf )
+set( WORKING_FOLDER ${CMAKE_CURRENT_SOURCE_DIR} )
+
+configure_file( test_const.hpp.in test_const.hpp @ONLY )
 
 link_directories( ${CMAKE_CURRENT_SOURCE_DIR}/../../../lib )
 
