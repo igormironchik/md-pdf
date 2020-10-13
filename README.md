@@ -32,6 +32,7 @@ GNU GPL version 3
 To build this application first of all install dependencies of PoDoFo
 
 * freetype
+* libjpeg
 * libpng
 * zlib
 
