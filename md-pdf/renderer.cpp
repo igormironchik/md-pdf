@@ -999,7 +999,7 @@ PdfRenderer::drawString( PdfAuxData & pdfData, const RenderOpts & renderOpts,
 
 	const auto words = str.split( QLatin1Char( ' ' ), Qt::SkipEmptyParts );
 
-	const auto wv = pdfData.coords.pageWidth - pdfData.coords.margins.right - offset;
+	const auto wv = pdfData.coords.pageWidth - pdfData.coords.margins.right;
 
 	// We need to draw space char if previous word with comma.
 	if( !firstInParagraph && !newLine && !words.isEmpty() &&
@@ -1277,10 +1277,10 @@ PdfRenderer::drawParagraph( PdfAuxData & pdfData, const RenderOpts & renderOpts,
 		( withNewLine && pdfData.drawFootnotes && heightCalcOpt == CalcHeightOpt::Unknown ) )
 			moveToNewLine( pdfData, 0.0, lineHeight, 2.0 );
 
+	pdfData.coords.x = pdfData.coords.margins.left + offset;
+
 	if( heightCalcOpt == CalcHeightOpt::Unknown )
 	{
-		pdfData.coords.x = pdfData.coords.margins.left + offset;
-
 		if( pdfData.coords.y < pdfData.coords.margins.bottom )
 		{
 			createPage( pdfData );
@@ -1549,7 +1549,7 @@ PdfRenderer::drawFootnote( PdfAuxData & pdfData, const RenderOpts & renderOpts,
 		renderOpts.m_textFontSize, pdfData.doc, c_footnoteScale );
 	auto footnoteOffset = c_offset * 2.0 / c_mmInPt +
 		font->GetFontMetrics()->StringWidth( createPdfString(
-			QString::number( m_footnoteNum - 1 ) ) );
+			QString::number( doc->footnotesMap().size() ) ) );
 
 	for( auto it = note->items().cbegin(), last = note->items().cend(); it != last; ++it )
 	{
