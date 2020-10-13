@@ -232,7 +232,7 @@ in Egyptology, and it remains so today.
 
 [^10]: Journal des Savants (June 1906): 335-336; (August 1907):
 445-448.
-    
+
 [^11]: [Anon.], The Atheneum (July 18, 1907): 25. It is true that
 throughout Breasted's career, his colleagues did identify him
 closely with German Egyptologists and German Egyptology in
