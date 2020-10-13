@@ -1275,7 +1275,7 @@ PdfRenderer::drawParagraph( PdfAuxData & pdfData, const RenderOpts & renderOpts,
 
 	if( ( withNewLine && !pdfData.firstOnPage && heightCalcOpt == CalcHeightOpt::Unknown ) ||
 		( withNewLine && pdfData.drawFootnotes && heightCalcOpt == CalcHeightOpt::Unknown ) )
-			moveToNewLine( pdfData, 0.0, lineHeight, 2.0 );
+			moveToNewLine( pdfData, offset, lineHeight, 2.0 );
 
 	pdfData.coords.x = pdfData.coords.margins.left + offset;
 
@@ -1290,7 +1290,7 @@ PdfRenderer::drawParagraph( PdfAuxData & pdfData, const RenderOpts & renderOpts,
 	}
 
 	if( pdfData.drawFootnotes && oldPageId != pdfData.footnotePageIdx && withNewLine )
-		moveToNewLine( pdfData, 0.0, lineHeight, 2.0 );
+		moveToNewLine( pdfData, offset, lineHeight, 2.0 );
 
 	bool newLine = false;
 	CustomWidth cw;
