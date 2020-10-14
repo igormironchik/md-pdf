@@ -151,6 +151,9 @@ PdfAuxData::drawText( double x, double y, const PdfString & text )
 					QString::number( y, 'f', 16 ) );
 	else
 	{
+		if( QTest::currentTestFailed() )
+			self->terminate();
+
 		int pos = testPos++;
 		QCOMPARE( DrawPrimitive::Type::Text, testData.at( pos ).type );
 		QCOMPARE( PdfRenderer::createQString( text ), testData.at( pos ).text );
@@ -178,6 +181,9 @@ PdfAuxData::drawMultiLineText( double x, double y, double width, double height,
 					QString::number( height, 'f', 16 ) );
 	else
 	{
+		if( QTest::currentTestFailed() )
+			self->terminate();
+
 		int pos = testPos++;
 		QCOMPARE( DrawPrimitive::Type::MultilineText, testData.at( pos ).type );
 		QCOMPARE( PdfRenderer::createQString( text ), testData.at( pos ).text );
@@ -204,6 +210,9 @@ PdfAuxData::drawImage( double x, double y, PdfImage * img, double xScale, double
 					QString::number( xScale, 'f', 16 ), QString::number( yScale, 'f', 16 ) );
 	else
 	{
+		if( QTest::currentTestFailed() )
+			self->terminate();
+
 		int pos = testPos++;
 		QCOMPARE( x, testData.at( pos ).x );
 		QCOMPARE( y, testData.at( pos ).y );
@@ -226,6 +235,9 @@ PdfAuxData::drawLine( double x1, double y1, double x2, double y2 )
 					QString::number( x2, 'f', 16 ), QString::number( y2, 'f', 16 ) );
 	else
 	{
+		if( QTest::currentTestFailed() )
+			self->terminate();
+
 		int pos = testPos++;
 		QCOMPARE( x1, testData.at( pos ).x );
 		QCOMPARE( y1, testData.at( pos ).y );
@@ -256,6 +268,9 @@ PdfAuxData::drawRectangle( double x, double y, double width, double height )
 					QString::number( width, 'f', 16 ), QString::number( height, 'f', 16 ) );
 	else
 	{
+		if( QTest::currentTestFailed() )
+			self->terminate();
+
 		int pos = testPos++;
 		QCOMPARE( x, testData.at( pos ).x );
 		QCOMPARE( y, testData.at( pos ).y );
@@ -488,6 +503,8 @@ PdfRenderer::renderImpl()
 		pdfData.fonts[ QStringLiteral( "Droid Serif Italic" ) ] = c_italicFont;
 		pdfData.fonts[ QStringLiteral( "Droid Serif Bold Italic" ) ] = c_boldItalicFont;
 		pdfData.fonts[ QStringLiteral( "Courier New" ) ] = c_monoFont;
+
+		pdfData.self = this;
 
 		if( m_opts.printDrawings )
 		{

@@ -167,6 +167,8 @@ struct CoordsPageAttribs {
 	double y = 0.0;
 }; // struct CoordsPageAttribs
 
+class PdfRenderer;
+
 
 //! Auxiliary struct for rendering.
 struct PdfAuxData {
@@ -198,6 +200,7 @@ struct PdfAuxData {
 	bool printDrawings = false;
 	QVector< DrawPrimitive > testData;
 	int testPos = 0;
+	PdfRenderer * self = nullptr;
 #endif // MD_PDF_TESTING
 
 	//! \return Top Y coordinate on the page.
