@@ -831,9 +831,9 @@ PdfRenderer::createPage( PdfAuxData & pdfData )
 			pdfData.coords.y = pdfData.topFootnoteY( pdfData.footnotePageIdx );
 		}
 
-		drawHorizontalLine( pdfData, m_opts );
-
 		pdfData.coords.y -= pdfData.extraInFootnote;
+
+		drawHorizontalLine( pdfData, m_opts );
 
 		if( pdfData.continueParagraph )
 			pdfData.coords.y -= pdfData.lineHeight;

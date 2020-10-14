@@ -3458,7 +3458,7 @@ static const QVector< DrawPrimitive >  c_testFootnotesData = {
 { DrawPrimitive::Type::Text, QStringLiteral( " " ), 150.7731529896653626, 50.0000000000000284, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0 },
 { DrawPrimitive::Type::Text, QStringLiteral( "vii-ix." ), 152.3317467396653626, 50.0000000000000284, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0 },
 { DrawPrimitive::Type::Text, QStringLiteral( "6" ), 62.6930748646653626, 50.0000000000000284, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0 },
-{ DrawPrimitive::Type::Line, QStringLiteral( "" ), 50.0000000000000000, 164.8541666666666856, 545.0000000000000000, 164.8541666666666856, 0.0, 0.0, 0.0, 0.0 },
+{ DrawPrimitive::Type::Line, QStringLiteral( "" ), 50.0000000000000000, 161.7500000000000284, 545.0000000000000000, 161.7500000000000284, 0.0, 0.0, 0.0, 0.0 },
 { DrawPrimitive::Type::Text, QStringLiteral( "Breasted," ), 68.0475670521653626, 147.7812500000000284, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0 },
 { DrawPrimitive::Type::Text, QStringLiteral( " " ), 94.5993248646653626, 147.7812500000000284, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0 },
 { DrawPrimitive::Type::Text, QStringLiteral( "Ancient" ), 96.1579186146653626, 147.7812500000000284, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0 },
