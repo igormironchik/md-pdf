@@ -1,4 +1,6 @@
 
+[![Build Status](https://travis-ci.org/igormironchik/md-pdf.svg?branch=master)](https://travis-ci.org/igormironchik/md-pdf)[![codecov](https://codecov.io/gh/igormironchik/md-pdf/branch/master/graph/badge.svg?token=LA0S72FLL2)](https://codecov.io/gh/igormironchik/md-pdf)[![License: GPL](https://img.shields.io/badge/license-GPL-blue)](https://opensource.org/licenses/GPL-3.0)
+
 # About
 
 Converter of Markdown to PDF.
@@ -22,10 +24,6 @@ But we don't afraid of bugs. Just post the issue here, and I will fix it
 as soon as possible.
 
 The application is tested on Mac OS, Linux, Windows 10.
-
-# License
-
-GNU GPL version 3
 
 # Building
 
