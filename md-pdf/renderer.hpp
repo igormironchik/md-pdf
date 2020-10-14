@@ -192,6 +192,12 @@ struct PdfAuxData {
 	int currentFootnote = 1;
 	//! Is this first item on the page?
 	bool firstOnPage = true;
+	//! Continue drawing of paragraph?
+	bool continueParagraph = false;
+	//! Current line height.
+	double lineHeight = 0.0;
+	//! Extra space before footnotes.
+	double extraInFootnote = 0.0;
 
 #ifdef MD_PDF_TESTING
 	QMap< QString, QString > fonts;
@@ -351,8 +357,8 @@ private:
 	QVector< WhereDrawn > footnoteHeight( PdfAuxData & pdfData, const RenderOpts & renderOpts,
 		QSharedPointer< MD::Document > doc, MD::Footnote * note );
 	//! Reserve space for footnote.
-	void reserveSpaceForFootnote( PdfAuxData & pdfData, const QVector< WhereDrawn > & h,
-		const double & currentY, int currentPage );
+	void reserveSpaceForFootnote( PdfAuxData & pdfData, const RenderOpts & renderOpts,
+		const QVector< WhereDrawn > & h, const double & currentY, int currentPage );
 	//! Add footnote.
 	void addFootnote( QSharedPointer< MD::Footnote > f, PdfAuxData & pdfData,
 		const RenderOpts & renderOpts, QSharedPointer< MD::Document > doc );

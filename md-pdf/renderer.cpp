@@ -314,7 +314,7 @@ PdfRenderer::CustomWidth::calcScale( double lineWidth )
 		{
 			if( m_width.at( i ).shrink )
 			{
-				auto ss = ( lineWidth - w + sw ) / sw;
+				auto ss = ( lineWidth - ww ) / sw;
 
 				while( ww + sw * ss > lineWidth )
 					ss -= 0.001;
@@ -525,6 +525,12 @@ PdfRenderer::renderImpl()
 		try {
 			int itemIdx = 0;
 
+			{
+				auto * font = createFont( m_opts.m_textFont, false, false, m_opts.m_textFontSize,
+					pdfData.doc, 1.0, pdfData );
+				pdfData.extraInFootnote = font->GetFontMetrics()->GetLineSpacing() / 3.0;
+			}
+
 			createPage( pdfData );
 
 			for( auto it = m_doc->items().cbegin(), last = m_doc->items().cend(); it != last; ++it )
@@ -612,7 +618,8 @@ PdfRenderer::renderImpl()
 			{
 				pdfData.drawFootnotes = true;
 				pdfData.coords.x = pdfData.coords.margins.left;
-				pdfData.coords.y = pdfData.topFootnoteY( pdfData.footnotePageIdx );
+				pdfData.coords.y = pdfData.topFootnoteY( pdfData.footnotePageIdx ) -
+					pdfData.extraInFootnote;
 
 				pdfData.painter->SetPage( pdfData.doc->GetPage( pdfData.footnotePageIdx ) );
 
@@ -816,15 +823,20 @@ PdfRenderer::createPage( PdfAuxData & pdfData )
 			pdfData.painter->SetPage( pdfData.doc->GetPage( pdfData.footnotePageIdx ) );
 			pdfData.coords.x = pdfData.coords.margins.left;
 			pdfData.coords.y = pdfData.topFootnoteY( pdfData.footnotePageIdx );
-
-			drawHorizontalLine( pdfData, m_opts );
 		}
 		else
 		{
 			create( pdfData );
 
-			pdfData.coords.y = pdfData.topY( pdfData.footnotePageIdx );
+			pdfData.coords.y = pdfData.topFootnoteY( pdfData.footnotePageIdx );
 		}
+
+		drawHorizontalLine( pdfData, m_opts );
+
+		pdfData.coords.y -= pdfData.extraInFootnote;
+
+		if( pdfData.continueParagraph )
+			pdfData.coords.y -= pdfData.lineHeight;
 	}
 }
 
@@ -1190,7 +1202,7 @@ PdfRenderer::drawString( PdfAuxData & pdfData, const RenderOpts & renderOpts,
 
 		const auto w = spaceFont->GetFontMetrics()->StringWidth( " " );
 
-		auto scale = 1.0;
+		auto scale = 100.0;
 
 		if( draw && cw )
 			scale = cw->scale();
@@ -1273,7 +1285,7 @@ PdfRenderer::drawString( PdfAuxData & pdfData, const RenderOpts & renderOpts,
 			{
 				const auto spaceWidth = font->GetFontMetrics()->StringWidth( " " );
 				const auto nextLength = font->GetFontMetrics()->StringWidth( createPdfString(
-					*( it + 1 ) ) );
+					*( it + 1 ) ) ) + ( it + 2 == last && footnoteAtEnd ? footnoteWidth : 0.0 );
 
 				auto scale = 100.0;
 
@@ -1452,6 +1464,8 @@ PdfRenderer::drawParagraph( PdfAuxData & pdfData, const RenderOpts & renderOpts,
 
 	const auto lineHeight = font->GetFontMetrics()->GetLineSpacing();
 
+	pdfData.lineHeight = lineHeight;
+
 	const auto oldPageId = pdfData.footnotePageIdx;
 
 	if( ( withNewLine && !pdfData.firstOnPage && heightCalcOpt == CalcHeightOpt::Unknown ) ||
@@ -1588,6 +1602,8 @@ PdfRenderer::drawParagraph( PdfAuxData & pdfData, const RenderOpts & renderOpts,
 	pdfData.coords.y = y;
 	pdfData.coords.x = pdfData.coords.margins.left + offset;
 
+	pdfData.continueParagraph = true;
+
 	// Actual drawing.
 	for( auto it = item->items().begin(), last = item->items().end(); it != last; ++it )
 	{
@@ -1666,18 +1682,24 @@ PdfRenderer::drawParagraph( PdfAuxData & pdfData, const RenderOpts & renderOpts,
 		}
 	}
 
+	pdfData.continueParagraph = false;
+
 	return toWhereDrawn( normalizeRects( rects ), pdfData.coords.pageHeight );
 }
 
 void
-PdfRenderer::reserveSpaceForFootnote( PdfAuxData & pdfData, const QVector< WhereDrawn > & h,
-	const double & currentY, int currentPage )
+PdfRenderer::reserveSpaceForFootnote( PdfAuxData & pdfData, const RenderOpts & renderOpts,
+	const QVector< WhereDrawn > & h, const double & currentY, int currentPage )
 {
 	const auto topY = pdfData.topFootnoteY( currentPage );
 	const auto available = currentY - topY -
 		( qAbs( topY ) < 0.01 ? pdfData.coords.margins.bottom : 0.0 );
 
 	auto height = totalHeight( h );
+	auto extra = 0.0;
+
+	if( !pdfData.reserved.contains( currentPage ) )
+		extra = pdfData.extraInFootnote;
 
 	auto add = [&pdfData] ( const double & height, int currentPage )
 	{
@@ -1691,11 +1713,13 @@ PdfRenderer::reserveSpaceForFootnote( PdfAuxData & pdfData, const QVector< Where
 			pdfData.footnotePageIdx = currentPage;
 	};
 
-	if( height < available )
-		add( height, currentPage );
+	int p = currentPage;
+
+	if( height + extra < available )
+		add( height + extra, currentPage );
 	else
 	{
-		height = 0.0;
+		height = extra;
 
 		for( int i = 0; i < h.size(); ++i )
 		{
@@ -1705,12 +1729,14 @@ PdfRenderer::reserveSpaceForFootnote( PdfAuxData & pdfData, const QVector< Where
 				height += tmp;
 			else
 			{
-				if( height > 0.01 )
+				if( qAbs( height - extra ) > 0.01 )
 					add( height, currentPage );
 
-				reserveSpaceForFootnote( pdfData, h.mid( i, h.size() - i ),
+				reserveSpaceForFootnote( pdfData, renderOpts, h.mid( i, h.size() - i ),
 					pdfData.coords.pageHeight - pdfData.coords.margins.top,
 					currentPage + 1 );
+
+				++p;
 
 				break;
 			}
@@ -2893,7 +2919,7 @@ PdfRenderer::addFootnote( QSharedPointer< MD::Footnote > f, PdfAuxData & pdfData
 	auto h = footnoteHeight( tmpData, renderOpts,
 		doc, f.data() );
 
-	reserveSpaceForFootnote( pdfData, h, pdfData.coords.y,
+	reserveSpaceForFootnote( pdfData, renderOpts, h, pdfData.coords.y,
 		pdfData.currentPageIdx );
 
 	m_footnotes.append( f );
