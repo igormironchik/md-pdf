@@ -3416,6 +3416,10 @@ PdfRenderer::minNecessaryHeight( PdfAuxData & pdfData, const RenderOpts & render
 {
 	QVector< WhereDrawn > ret;
 
+	PdfAuxData tmp = pdfData;
+	tmp.coords.y = tmp.coords.pageHeight - tmp.coords.margins.top;
+	tmp.coords.x = tmp.coords.margins.left + offset;
+
 	switch( item->type() )
 	{
 		case MD::ItemType::Heading :
@@ -3423,21 +3427,21 @@ PdfRenderer::minNecessaryHeight( PdfAuxData & pdfData, const RenderOpts & render
 
 		case MD::ItemType::Paragraph :
 		{
-			ret = drawParagraph( pdfData, renderOpts, static_cast< MD::Paragraph* > ( item.data() ),
+			ret = drawParagraph( tmp, renderOpts, static_cast< MD::Paragraph* > ( item.data() ),
 				doc, offset, true, CalcHeightOpt::Minimum, scale, inFootnote );
 		}
 			break;
 
 		case MD::ItemType::Code :
 		{
-			ret = drawCode( pdfData, renderOpts, static_cast< MD::Code* > ( item.data() ),
+			ret = drawCode( tmp, renderOpts, static_cast< MD::Code* > ( item.data() ),
 				doc, offset, CalcHeightOpt::Minimum, scale );
 		}
 			break;
 
 		case MD::ItemType::Blockquote :
 		{
-			ret = drawBlockquote( pdfData, renderOpts,
+			ret = drawBlockquote( tmp, renderOpts,
 				static_cast< MD::Blockquote* > ( item.data() ),
 				doc, offset, CalcHeightOpt::Minimum, scale, inFootnote );
 		}
@@ -3450,16 +3454,16 @@ PdfRenderer::minNecessaryHeight( PdfAuxData & pdfData, const RenderOpts & render
 
 			auto * font = createFont( m_opts.m_textFont, false, false,
 				m_opts.m_textFontSize, pdfData.doc, scale, pdfData );
-			pdfData.coords.y -= font->GetFontMetrics()->GetLineSpacing();
+			tmp.coords.y -= font->GetFontMetrics()->GetLineSpacing();
 
-			ret = drawList( pdfData, m_opts, list, m_doc, bulletWidth, offset,
+			ret = drawList( tmp, m_opts, list, m_doc, bulletWidth, offset,
 				CalcHeightOpt::Minimum, scale, inFootnote );
 		}
 			break;
 
 		case MD::ItemType::Table :
 		{
-			ret = drawTable( pdfData, renderOpts,
+			ret = drawTable( tmp, renderOpts,
 				static_cast< MD::Table* > ( item.data() ),
 				doc, offset, CalcHeightOpt::Minimum, scale, inFootnote );
 		}
