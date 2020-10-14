@@ -30,6 +30,7 @@
 #include "test_table1_data.hpp"
 #include "test_table2_data.hpp"
 #include "test_blockquote_data.hpp"
+#include "test_complex_data.hpp"
 
 #include <QObject>
 #include <QtTest/QtTest>
@@ -54,6 +55,8 @@ private slots:
 	void testTableWithText();
 	//! Test blockquotes.
 	void testBlockquote();
+	//! Complex test.
+	void testComplex();
 }; // class TestRender
 
 namespace /* anonymous */ {
@@ -134,6 +137,13 @@ TestRender::testBlockquote()
 {
 	testRendering( c_folder + QStringLiteral( "/../../manual/blockquote.md" ),
 		c_testBlockquoteData, false );
+}
+
+void
+TestRender::testComplex()
+{
+	testRendering( c_folder + QStringLiteral( "/../../manual/complex.md" ),
+		c_testComplexData, false );
 }
 
 
