@@ -23,8 +23,11 @@
 #include <md-pdf/renderer.hpp>
 #include <md-pdf/md_parser.hpp>
 #include <md-pdf/md_doc.hpp>
+
 #include <test_const.hpp>
+
 #include "test_footnotes_data.hpp"
+#include "test_table1_data.hpp"
 
 #include <QObject>
 #include <QtTest/QtTest>
@@ -43,16 +46,20 @@ class TestRender final
 private slots:
 	//! Test footnotes rendering.
 	void testFootnotes();
+	//! Test table with images.
+	void testTableWithImage();
 }; // class TestRender
 
+namespace /* anonymous */ {
+
 void
-TestRender::testFootnotes()
+testRendering( const QString & fileName, const QVector< DrawPrimitive > & data,
+	bool printPrimitives )
 {
 	try {
 		MD::Parser parser;
 
-		auto doc = parser.parse( c_folder + QStringLiteral( "/../../manual/footnotes.md" ),
-			false );
+		auto doc = parser.parse( fileName, false );
 
 		RenderOpts opts;
 		opts.m_borderColor = Qt::black;
@@ -70,8 +77,8 @@ TestRender::testFootnotes()
 		opts.m_textFontSize = 8.0;
 		opts.m_top = 50.0;
 
-		opts.testData = c_testFootnotesData;
-		opts.printDrawings = false;
+		opts.testData = data;
+		opts.printDrawings = printPrimitives;
 
 		auto * render = new PdfRenderer;
 
@@ -91,6 +98,22 @@ TestRender::testFootnotes()
 	{
 		QFAIL( "Parsing of Markdown failed. Test aborted." );
 	}
+}
+
+} /* namespace anonymous */
+
+void
+TestRender::testFootnotes()
+{
+	testRendering( c_folder + QStringLiteral( "/../../manual/footnotes.md" ),
+		c_testFootnotesData, false );
+}
+
+void
+TestRender::testTableWithImage()
+{
+	testRendering( c_folder + QStringLiteral( "/../../manual/table.md" ),
+		c_testTableWithImagesData, false );
 }
 
 
