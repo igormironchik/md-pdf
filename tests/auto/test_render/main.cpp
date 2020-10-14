@@ -31,6 +31,7 @@
 #include "test_table2_data.hpp"
 #include "test_blockquote_data.hpp"
 #include "test_complex_data.hpp"
+#include "test_image_in_text_data.hpp"
 
 #include <QObject>
 #include <QtTest/QtTest>
@@ -57,6 +58,8 @@ private slots:
 	void testBlockquote();
 	//! Complex test.
 	void testComplex();
+	//! Test image in text.
+	void testImageInText();
 }; // class TestRender
 
 namespace /* anonymous */ {
@@ -144,6 +147,13 @@ TestRender::testComplex()
 {
 	testRendering( c_folder + QStringLiteral( "/../../manual/complex.md" ),
 		c_testComplexData, false );
+}
+
+void
+TestRender::testImageInText()
+{
+	testRendering( c_folder + QStringLiteral( "/../../manual/image_in_text.md" ),
+		c_testImageInTextData, false );
 }
 
 

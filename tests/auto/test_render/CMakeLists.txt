@@ -20,7 +20,8 @@ set( SRC main.cpp
 	test_table1_data.hpp
 	test_table2_data.hpp
 	test_blockquote_data.hpp
-	test_complex_data.hpp )
+	test_complex_data.hpp
+	test_image_in_text_data.hpp )
 
 add_definitions( -DMD_PDF_TESTING )
 
