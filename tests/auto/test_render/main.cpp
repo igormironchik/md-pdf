@@ -29,6 +29,7 @@
 #include "test_footnotes_data.hpp"
 #include "test_table1_data.hpp"
 #include "test_table2_data.hpp"
+#include "test_blockquote_data.hpp"
 
 #include <QObject>
 #include <QtTest/QtTest>
@@ -51,6 +52,8 @@ private slots:
 	void testTableWithImage();
 	//! Test table with text.
 	void testTableWithText();
+	//! Test blockquotes.
+	void testBlockquote();
 }; // class TestRender
 
 namespace /* anonymous */ {
@@ -124,6 +127,13 @@ TestRender::testTableWithText()
 {
 	testRendering( c_folder + QStringLiteral( "/../../manual/table2.md" ),
 		c_testTableWithTextData, false );
+}
+
+void
+TestRender::testBlockquote()
+{
+	testRendering( c_folder + QStringLiteral( "/../../manual/blockquote.md" ),
+		c_testBlockquoteData, false );
 }
 
 
