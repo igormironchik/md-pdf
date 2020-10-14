@@ -17,7 +17,8 @@ set( SRC main.cpp
 	../../../md-pdf/renderer.cpp
 	../../../md-pdf/renderer.hpp
 	test_footnotes_data.hpp
-	test_table1_data.hpp )
+	test_table1_data.hpp
+	test_table2_data.hpp )
 
 add_definitions( -DMD_PDF_TESTING )
 

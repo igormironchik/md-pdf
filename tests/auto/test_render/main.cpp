@@ -28,6 +28,7 @@
 
 #include "test_footnotes_data.hpp"
 #include "test_table1_data.hpp"
+#include "test_table2_data.hpp"
 
 #include <QObject>
 #include <QtTest/QtTest>
@@ -48,6 +49,8 @@ private slots:
 	void testFootnotes();
 	//! Test table with images.
 	void testTableWithImage();
+	//! Test table with text.
+	void testTableWithText();
 }; // class TestRender
 
 namespace /* anonymous */ {
@@ -114,6 +117,13 @@ TestRender::testTableWithImage()
 {
 	testRendering( c_folder + QStringLiteral( "/../../manual/table.md" ),
 		c_testTableWithImagesData, false );
+}
+
+void
+TestRender::testTableWithText()
+{
+	testRendering( c_folder + QStringLiteral( "/../../manual/table2.md" ),
+		c_testTableWithTextData, false );
 }
 
 
