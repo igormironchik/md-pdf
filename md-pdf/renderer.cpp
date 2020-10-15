@@ -111,7 +111,7 @@ PdfAuxData::allowedY( int page ) const
 }
 
 void
-PdfAuxData::reserveSpaceOn( int page )
+PdfAuxData::freeSpaceOn( int page )
 {
 	if( !drawFootnotes )
 	{
@@ -974,7 +974,7 @@ PdfRenderer::drawHeading( PdfAuxData & pdfData, const RenderOpts & renderOpts,
 	else if( height + nextItemMinHeight <= availableHeight )
 	{
 		createPage( pdfData );
-		pdfData.reserveSpaceOn( pdfData.currentPageIdx );
+		pdfData.freeSpaceOn( pdfData.currentPageIdx );
 		return drawHeading( pdfData, renderOpts, item, doc, offset, nextItemMinHeight,
 			heightCalcOpt, scale );
 	}
@@ -1426,7 +1426,8 @@ PdfRenderer::moveToNewLine( PdfAuxData & pdfData, double xOffset, double yOffset
 	pdfData.coords.x = pdfData.coords.margins.left + xOffset;
 	pdfData.coords.y -= yOffset * yOffsetMultiplier;
 
-	if( pdfData.coords.y < pdfData.currentPageAllowedY() )
+	if( pdfData.coords.y < pdfData.currentPageAllowedY() &&
+		qAbs( pdfData.coords.y - pdfData.currentPageAllowedY() ) > 0.1 )
 	{
 		createPage( pdfData );
 
@@ -1748,8 +1749,6 @@ PdfRenderer::reserveSpaceForFootnote( PdfAuxData & pdfData, const RenderOpts & r
 			pdfData.footnotePageIdx = currentPage;
 	};
 
-	int p = currentPage;
-
 	if( height + extra < available )
 		add( height + extra, currentPage );
 	else
@@ -1770,8 +1769,6 @@ PdfRenderer::reserveSpaceForFootnote( PdfAuxData & pdfData, const RenderOpts & r
 				reserveSpaceForFootnote( pdfData, renderOpts, h.mid( i, h.size() - i ),
 					pdfData.coords.pageHeight - pdfData.coords.margins.top,
 					currentPage + 1 );
-
-				++p;
 
 				break;
 			}
@@ -1938,7 +1935,7 @@ PdfRenderer::drawImage( PdfAuxData & pdfData, const RenderOpts & renderOpts,
 
 				createPage( pdfData );
 
-				pdfData.reserveSpaceOn( pdfData.currentPageIndex() );
+				pdfData.freeSpaceOn( pdfData.currentPageIndex() );
 
 				pdfData.coords.x += offset;
 			}
@@ -1946,7 +1943,7 @@ PdfRenderer::drawImage( PdfAuxData & pdfData, const RenderOpts & renderOpts,
 			{
 				createPage( pdfData );
 
-				pdfData.reserveSpaceOn( pdfData.currentPageIndex() );
+				pdfData.freeSpaceOn( pdfData.currentPageIndex() );
 
 				pdfData.coords.x += offset;
 			}
@@ -2901,7 +2898,7 @@ PdfRenderer::drawTable( PdfAuxData & pdfData, const RenderOpts & renderOpts,
 	{
 		createPage( pdfData );
 
-		pdfData.reserveSpaceOn( pdfData.currentPageIndex() );
+		pdfData.freeSpaceOn( pdfData.currentPageIndex() );
 	}
 
 	moveToNewLine( pdfData, offset, lineHeight, 1.0 );

@@ -223,7 +223,7 @@ struct PdfAuxData {
 	//! \return Minimum allowe Y coordinate on the page.
 	double allowedY( int page ) const;
 	//! Reserve space for drawing, i.e. move footnotes on the next page.
-	void reserveSpaceOn( int page );
+	void freeSpaceOn( int page );
 
 	//! Draw text
 	void drawText( double x, double y, const PdfString & text );
