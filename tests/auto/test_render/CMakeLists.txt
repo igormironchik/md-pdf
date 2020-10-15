@@ -21,7 +21,13 @@ set( SRC main.cpp
 	test_table2_data.hpp
 	test_blockquote_data.hpp
 	test_complex_data.hpp
-	test_image_in_text_data.hpp )
+	test_image_in_text_data.hpp
+	test_footnotes_data_big_font.hpp
+	test_table1_data_big_font.hpp
+	test_table2_data_big_font.hpp
+	test_blockquote_data_big_font.hpp
+	test_complex_data_big_font.hpp
+	test_image_in_text_data_big_font.hpp )
 
 add_definitions( -DMD_PDF_TESTING )
 

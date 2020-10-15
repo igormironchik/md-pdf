@@ -33,6 +33,13 @@
 #include "test_complex_data.hpp"
 #include "test_image_in_text_data.hpp"
 
+#include "test_footnotes_data_big_font.hpp"
+#include "test_table1_data_big_font.hpp"
+#include "test_table2_data_big_font.hpp"
+#include "test_blockquote_data_big_font.hpp"
+#include "test_complex_data_big_font.hpp"
+#include "test_image_in_text_data_big_font.hpp"
+
 #include <QObject>
 #include <QtTest/QtTest>
 #include <QSignalSpy>
@@ -60,13 +67,26 @@ private slots:
 	void testComplex();
 	//! Test image in text.
 	void testImageInText();
+
+	//! Test footnotes rendering.
+	void testFootnotesBigFont();
+	//! Test table with images.
+	void testTableWithImageBigFont();
+	//! Test table with text.
+	void testTableWithTextBigFont();
+	//! Test blockquotes.
+	void testBlockquoteBigFont();
+	//! Complex test.
+	void testComplexBigFont();
+	//! Test image in text.
+	void testImageInTextBigFont();
 }; // class TestRender
 
 namespace /* anonymous */ {
 
 void
 testRendering( const QString & fileName, const QVector< DrawPrimitive > & data,
-	bool printPrimitives )
+	bool printPrimitives, double textFontSize, double codeFontSize )
 {
 	try {
 		MD::Parser parser;
@@ -79,14 +99,14 @@ testRendering( const QString & fileName, const QVector< DrawPrimitive > & data,
 		opts.m_codeBackground = Qt::black;
 		opts.m_codeColor = Qt::black;
 		opts.m_codeFont = QStringLiteral( "Courier New" );
-		opts.m_codeFontSize = 8.0;
+		opts.m_codeFontSize = codeFontSize;
 		opts.m_commentColor = Qt::black;
 		opts.m_keywordColor = Qt::black;
 		opts.m_left = 50.0;
 		opts.m_linkColor = Qt::black;
 		opts.m_right = 50.0;
 		opts.m_textFont = QStringLiteral( "Droid Serif" );
-		opts.m_textFontSize = 8.0;
+		opts.m_textFontSize = textFontSize;
 		opts.m_top = 50.0;
 
 		opts.testData = data;
@@ -118,42 +138,84 @@ void
 TestRender::testFootnotes()
 {
 	testRendering( c_folder + QStringLiteral( "/../../manual/footnotes.md" ),
-		c_testFootnotesData, false );
+		c_testFootnotesData, false, 8.0, 8.0 );
 }
 
 void
 TestRender::testTableWithImage()
 {
 	testRendering( c_folder + QStringLiteral( "/../../manual/table.md" ),
-		c_testTableWithImagesData, false );
+		c_testTableWithImagesData, false, 8.0, 8.0 );
 }
 
 void
 TestRender::testTableWithText()
 {
 	testRendering( c_folder + QStringLiteral( "/../../manual/table2.md" ),
-		c_testTableWithTextData, false );
+		c_testTableWithTextData, false, 8.0, 8.0 );
 }
 
 void
 TestRender::testBlockquote()
 {
 	testRendering( c_folder + QStringLiteral( "/../../manual/blockquote.md" ),
-		c_testBlockquoteData, false );
+		c_testBlockquoteData, false, 8.0, 8.0 );
 }
 
 void
 TestRender::testComplex()
 {
 	testRendering( c_folder + QStringLiteral( "/../../manual/complex.md" ),
-		c_testComplexData, false );
+		c_testComplexData, false, 8.0, 8.0 );
 }
 
 void
 TestRender::testImageInText()
 {
 	testRendering( c_folder + QStringLiteral( "/../../manual/image_in_text.md" ),
-		c_testImageInTextData, false );
+		c_testImageInTextData, false, 8.0, 8.0 );
+}
+
+void
+TestRender::testFootnotesBigFont()
+{
+	testRendering( c_folder + QStringLiteral( "/../../manual/footnotes.md" ),
+		c_testFootnotesBigFontData, false, 16.0, 14.0 );
+}
+
+void
+TestRender::testTableWithImageBigFont()
+{
+	testRendering( c_folder + QStringLiteral( "/../../manual/table.md" ),
+		c_testTableWithImagesBigFontData, false, 16.0, 14.0 );
+}
+
+void
+TestRender::testTableWithTextBigFont()
+{
+	testRendering( c_folder + QStringLiteral( "/../../manual/table2.md" ),
+		c_testTableWithTextBigFontData, false, 16.0, 14.0 );
+}
+
+void
+TestRender::testBlockquoteBigFont()
+{
+	testRendering( c_folder + QStringLiteral( "/../../manual/blockquote.md" ),
+		c_testBlockquoteBigFontData, false, 16.0, 14.0 );
+}
+
+void
+TestRender::testComplexBigFont()
+{
+	testRendering( c_folder + QStringLiteral( "/../../manual/complex.md" ),
+		c_testComplexBigFontData, false, 16.0, 14.0 );
+}
+
+void
+TestRender::testImageInTextBigFont()
+{
+	testRendering( c_folder + QStringLiteral( "/../../manual/image_in_text.md" ),
+		c_testImageInTextBigFontData, false, 16.0, 14.0 );
 }
 
 
