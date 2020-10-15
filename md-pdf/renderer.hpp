@@ -32,6 +32,7 @@
 #include <QMutex>
 #include <QImage>
 #include <QNetworkReply>
+#include <QStack>
 
 #ifdef MD_PDF_TESTING
 #include <QFile>
@@ -198,6 +199,8 @@ struct PdfAuxData {
 	double lineHeight = 0.0;
 	//! Extra space before footnotes.
 	double extraInFootnote = 0.0;
+	//! Colors stack.
+	QStack< QColor > m_colorsStack;
 
 #ifdef MD_PDF_TESTING
 	QMap< QString, QString > fonts;
@@ -235,6 +238,13 @@ struct PdfAuxData {
 	void save( const QString & fileName );
 	//! Draw rectangle.
 	void drawRectangle( double x, double y, double width, double height );
+
+	//! Set color.
+	void setColor( const QColor & c );
+	//! Restore color.
+	void restoreColor();
+	//! Repeat color (needed after new page creation).
+	void repeatColor();
 }; // struct PdfAuxData;
 
 //! Where was the item drawn?

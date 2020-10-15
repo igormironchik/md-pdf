@@ -280,6 +280,31 @@ PdfAuxData::drawRectangle( double x, double y, double width, double height )
 #endif // MD_PDF_TESTING
 }
 
+void
+PdfAuxData::setColor( const QColor & c )
+{
+	m_colorsStack.push( c );
+
+	painter->SetColor( c.redF(), c.greenF(), c.blueF() );
+}
+
+void
+PdfAuxData::restoreColor()
+{
+	if( m_colorsStack.size() > 1 )
+		m_colorsStack.pop();
+
+	repeatColor();
+}
+
+void
+PdfAuxData::repeatColor()
+{
+	const auto & c = m_colorsStack.top();
+
+	painter->SetColor( c.redF(), c.greenF(), c.blueF() );
+}
+
 
 //
 // PdfRenderer::CustomWidth
@@ -499,10 +524,13 @@ PdfRenderer::renderImpl()
 
 		pdfData.doc = &document;
 		pdfData.painter = &painter;
+
 		pdfData.coords.margins.left = m_opts.m_left;
 		pdfData.coords.margins.right = m_opts.m_right;
 		pdfData.coords.margins.top = m_opts.m_top;
 		pdfData.coords.margins.bottom = m_opts.m_bottom;
+
+		pdfData.m_colorsStack.push( Qt::black );
 
 #ifdef MD_PDF_TESTING
 		pdfData.fonts[ QStringLiteral( "Droid Serif" ) ] = c_font;
@@ -845,19 +873,19 @@ PdfRenderer::createPage( PdfAuxData & pdfData )
 		if( pdfData.continueParagraph )
 			pdfData.coords.y -= pdfData.lineHeight;
 	}
+
+	if( pdfData.m_colorsStack.size() > 1 )
+		pdfData.repeatColor();
 }
 
 void
 PdfRenderer::drawHorizontalLine( PdfAuxData & pdfData, const RenderOpts & renderOpts )
 {
-	pdfData.painter->Save();
-	pdfData.painter->SetColor( renderOpts.m_borderColor.redF(),
-		renderOpts.m_borderColor.greenF(),
-		renderOpts.m_borderColor.blueF() );
+	pdfData.setColor( renderOpts.m_borderColor );
 	pdfData.drawLine( pdfData.coords.margins.left, pdfData.coords.y,
 		pdfData.coords.pageWidth - pdfData.coords.margins.right,
 		pdfData.coords.y );
-	pdfData.painter->Restore();
+	pdfData.restoreColor();
 }
 
 PdfString
@@ -895,7 +923,6 @@ PdfRenderer::drawHeading( PdfAuxData & pdfData, const RenderOpts & renderOpts,
 		pdfData.doc, scale, pdfData );
 
 	pdfData.painter->SetFont( font );
-	pdfData.painter->SetColor( 0.0, 0.0, 0.0 );
 
 	const double width = pdfData.coords.pageWidth - pdfData.coords.margins.left -
 		pdfData.coords.margins.right - offset;
@@ -1085,10 +1112,7 @@ PdfRenderer::drawLink( PdfAuxData & pdfData, const RenderOpts & renderOpts,
 	// If text link.
 	if( item->img()->isEmpty() )
 	{
-		pdfData.painter->Save();
-		pdfData.painter->SetColor( renderOpts.m_linkColor.redF(),
-			renderOpts.m_linkColor.greenF(),
-			renderOpts.m_linkColor.blueF() );
+		pdfData.setColor( renderOpts.m_linkColor );
 
 		auto * font = createFont( renderOpts.m_textFont, item->textOptions() & MD::TextOption::BoldText,
 			item->textOptions() & MD::TextOption::ItalicText, renderOpts.m_textFontSize,
@@ -1107,7 +1131,7 @@ PdfRenderer::drawLink( PdfAuxData & pdfData, const RenderOpts & renderOpts,
 			doc, newLine, footnoteFont, footnoteFontScale, nextItem, footnoteNum, offset,
 			firstInParagraph, cw, QColor(), inFootnote ) );
 
-		pdfData.painter->Restore();
+		pdfData.restoreColor();
 	}
 	// Otherwise image link.
 	else
@@ -1248,6 +1272,11 @@ PdfRenderer::drawString( PdfAuxData & pdfData, const RenderOpts & renderOpts,
 	// Draw words.
 	for( auto it = words.begin(), last = words.end(); it != last; ++it )
 	{
+		if( *it == QStringLiteral( "including" ) )
+		{
+			int i = 0;
+			++i;
+		}
 		{
 			QMutexLocker lock( &m_mutex );
 
@@ -1270,14 +1299,12 @@ PdfRenderer::drawString( PdfAuxData & pdfData, const RenderOpts & renderOpts,
 			{
 				if( background.isValid() )
 				{
-					pdfData.painter->Save();
-					pdfData.painter->SetColor( background.redF(),
-						background.greenF(), background.blueF() );
+					pdfData.setColor( background );
 					pdfData.drawRectangle( pdfData.coords.x, pdfData.coords.y +
 						font->GetFontMetrics()->GetDescent(), length,
 						font->GetFontMetrics()->GetLineSpacing() );
 					pdfData.painter->Fill();
-					pdfData.painter->Restore();
+					pdfData.restoreColor();
 				}
 
 				pdfData.drawText( pdfData.coords.x, pdfData.coords.y, str );
@@ -1315,14 +1342,12 @@ PdfRenderer::drawString( PdfAuxData & pdfData, const RenderOpts & renderOpts,
 
 						if( background.isValid() )
 						{
-							pdfData.painter->Save();
-							pdfData.painter->SetColor( background.redF(),
-								background.greenF(), background.blueF() );
+							pdfData.setColor( background );
 							pdfData.drawRectangle( pdfData.coords.x, pdfData.coords.y +
 								font->GetFontMetrics()->GetDescent(), spaceWidth * scale / 100.0,
 								font->GetFontMetrics()->GetLineSpacing() );
 							pdfData.painter->Fill();
-							pdfData.painter->Restore();
+							pdfData.restoreColor();
 						}
 
 						pdfData.drawText( pdfData.coords.x, pdfData.coords.y, " " );
@@ -2193,15 +2218,12 @@ PdfRenderer::drawCode( PdfAuxData & pdfData, const RenderOpts & renderOpts,
 
 		if( i < j )
 		{
-			pdfData.painter->Save();
-			pdfData.painter->SetColor( renderOpts.m_codeBackground.redF(),
-				renderOpts.m_codeBackground.greenF(),
-				renderOpts.m_codeBackground.blueF() );
+			pdfData.setColor( renderOpts.m_codeBackground );
 			pdfData.drawRectangle( pdfData.coords.x, y,
 				pdfData.coords.pageWidth - pdfData.coords.x - pdfData.coords.margins.right,
 				 h + lineHeight );
 			pdfData.painter->Fill();
-			pdfData.painter->Restore();
+			pdfData.restoreColor();
 
 			ret.append( { pdfData.currentPageIndex(), y, h + lineHeight } );
 		}
@@ -2215,32 +2237,18 @@ PdfRenderer::drawCode( PdfAuxData & pdfData, const RenderOpts & renderOpts,
 				if( currentWord == colored.size() || colored[ currentWord ].line != i )
 					break;
 
-				pdfData.painter->Save();
-
 				switch( colored[ currentWord ].color )
 				{
 					case Syntax::ColorRole::Keyword :
-					{
-						pdfData.painter->SetColor( renderOpts.m_keywordColor.redF(),
-							renderOpts.m_keywordColor.greenF(),
-							renderOpts.m_keywordColor.blueF() );
-					}
+						pdfData.setColor( renderOpts.m_keywordColor );
 						break;
 
 					case Syntax::ColorRole::Regular :
-					{
-						pdfData.painter->SetColor( renderOpts.m_codeColor.redF(),
-							renderOpts.m_codeColor.greenF(),
-							renderOpts.m_codeColor.blueF() );
-					}
+						pdfData.setColor( renderOpts.m_codeColor );
 						break;
 
 					case Syntax::ColorRole::Comment :
-					{
-						pdfData.painter->SetColor( renderOpts.m_commentColor.redF(),
-							renderOpts.m_commentColor.greenF(),
-							renderOpts.m_commentColor.blueF() );
-					}
+						pdfData.setColor( renderOpts.m_commentColor );
 						break;
 				}
 
@@ -2252,7 +2260,7 @@ PdfRenderer::drawCode( PdfAuxData & pdfData, const RenderOpts & renderOpts,
 
 				pdfData.coords.x += spaceWidth * length;
 
-				pdfData.painter->Restore();
+				pdfData.restoreColor();
 
 				++currentWord;
 			}
@@ -2393,14 +2401,11 @@ PdfRenderer::drawBlockquote( PdfAuxData & pdfData, const RenderOpts & renderOpts
 	for( auto it = map.cbegin(), last = map.cend(); it != last; ++it )
 	{
 		pdfData.painter->SetPage( pdfData.doc->GetPage( it.key() ) );
-		pdfData.painter->Save();
-		pdfData.painter->SetColor( renderOpts.m_borderColor.redF(),
-			renderOpts.m_borderColor.greenF(),
-			renderOpts.m_borderColor.blueF() );
+		pdfData.setColor( renderOpts.m_borderColor );
 		pdfData.drawRectangle( pdfData.coords.margins.left + offset, it.value().y,
 			c_blockquoteMarkWidth, it.value().height );
 		pdfData.painter->Fill();
-		pdfData.painter->Restore();
+		pdfData.restoreColor();
 	}
 
 	pdfData.painter->SetPage( pdfData.doc->GetPage( pdfData.currentPageIndex() ) );
@@ -2486,13 +2491,12 @@ PdfRenderer::drawListItem( PdfAuxData & pdfData, const RenderOpts & renderOpts,
 		{
 			prevListItemType = ListItemType::Unordered;
 
-			pdfData.painter->Save();
-			pdfData.painter->SetColor( 0.0, 0.0, 0.0 );
+			pdfData.setColor( Qt::black );
 			const auto r = unorderedMarkWidth / 2.0;
 			pdfData.painter->Circle( pdfData.coords.margins.left + offset + r,
 				pdfData.coords.y + unorderedMarkWidth, r );
 			pdfData.painter->Fill();
-			pdfData.painter->Restore();
+			pdfData.restoreColor();
 		}
 
 		offset += orderedListNumberWidth + spaceWidth;
@@ -3150,11 +3154,7 @@ PdfRenderer::drawTableBorder( PdfAuxData & pdfData, int startPage, QVector< Wher
 	{
 		pdfData.painter->SetPage( pdfData.doc->GetPage( i ) );
 
-		pdfData.painter->Save();
-
-		pdfData.painter->SetColor( renderOpts.m_borderColor.redF(),
-			renderOpts.m_borderColor.greenF(),
-			renderOpts.m_borderColor.blueF() );
+		pdfData.setColor( renderOpts.m_borderColor );
 
 		const auto startX = pdfData.coords.margins.left + offset;
 		auto endX = startX;
@@ -3229,7 +3229,7 @@ PdfRenderer::drawTableBorder( PdfAuxData & pdfData, int startPage, QVector< Wher
 				pdfData.topY( i ) - endY } );
 		}
 
-		pdfData.painter->Restore();
+		pdfData.restoreColor();
 	}
 }
 
@@ -3292,31 +3292,24 @@ PdfRenderer::drawTextLineInTable( double x, double & y, TextToDraw & text, doubl
 	{
 		if( it->background.isValid() )
 		{
-			pdfData.painter->Save();
-
-			pdfData.painter->SetColor( it->background.redF(),
-				it->background.greenF(),
-				it->background.redF() );
+			pdfData.setColor( it->background );
 
 			pdfData.drawRectangle( x, y + it->font->GetFontMetrics()->GetDescent(),
 				it->width( pdfData ), it->font->GetFontMetrics()->GetLineSpacing() );
 
 			pdfData.painter->Fill();
 
-			pdfData.painter->Restore();
+			pdfData.restoreColor();
 		}
 
-		pdfData.painter->Save();
-
 		if( it->color.isValid() )
-			pdfData.painter->SetColor( it->color.redF(),
-				it->color.greenF(), it->color.blueF() );
+			pdfData.setColor( it->color );
 
 		pdfData.painter->SetFont( it->font );
 		pdfData.drawText( x, y, createPdfString( it->word.isEmpty() ?
 			it->url : it->word ) );
 
-		pdfData.painter->Restore();
+		pdfData.restoreColor();
 
 		if( !it->url.isEmpty() )
 			links[ it->url ].append( qMakePair( QRectF( x, y, it->width( pdfData ), lineHeight ),
@@ -3353,11 +3346,7 @@ PdfRenderer::drawTextLineInTable( double x, double & y, TextToDraw & text, doubl
 
 			if( it->background.isValid() && it->font == ( it + 1 )->font )
 			{
-				pdfData.painter->Save();
-
-				pdfData.painter->SetColor( it->background.redF(),
-					it->background.greenF(),
-					it->background.redF() );
+				pdfData.setColor( it->background );
 
 				const auto sw = it->font->GetFontMetrics()->StringWidth( PdfString( " " ) );
 
@@ -3368,7 +3357,7 @@ PdfRenderer::drawTextLineInTable( double x, double & y, TextToDraw & text, doubl
 
 				pdfData.painter->Fill();
 
-				pdfData.painter->Restore();
+				pdfData.restoreColor();
 			}
 			else
 				x += font->GetFontMetrics()->StringWidth( PdfString( " " ) );
