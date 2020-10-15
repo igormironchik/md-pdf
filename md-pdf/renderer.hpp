@@ -55,7 +55,8 @@ struct DrawPrimitive {
 		Line,
 		Rectangle,
 		Image,
-		MultilineText
+		MultilineText,
+		Unknown
 	};
 
 	Type type;
@@ -111,6 +112,7 @@ struct RenderOpts
 #ifdef MD_PDF_TESTING
 	bool printDrawings = false;
 	QVector< DrawPrimitive > testData;
+	QString testDataFileName;
 #endif // MD_PDF_TESTING
 }; // struct RenderOpts
 

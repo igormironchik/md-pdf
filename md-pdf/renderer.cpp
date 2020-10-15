@@ -144,13 +144,19 @@ PdfAuxData::drawText( double x, double y, const PdfString & text )
 	painter->DrawText( x, y, text );
 #else
 	if( printDrawings )
+	{
+		const auto s = PdfRenderer::createQString( text );
+
 		(*drawingsStream) << QStringLiteral(
-			"{ DrawPrimitive::Type::Text, QStringLiteral( \"%1\" ), %2, %3, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0 },\n" )
-				.arg( PdfRenderer::createQString( text ).replace( QLatin1String( "\"" ), QLatin1String( "\\\"" ) ),
+			"Text %1 \"%2\" %3 %4 0.0 0.0 0.0 0.0 0.0 0.0\n" )
+				.arg( QString::number( s.length() ), s,
 					QString::number( x, 'f', 16 ),
 					QString::number( y, 'f', 16 ) );
+	}
 	else
 	{
+		painter->DrawText( x, y, text );
+
 		if( QTest::currentTestFailed() )
 			self->terminate();
 
@@ -173,14 +179,20 @@ PdfAuxData::drawMultiLineText( double x, double y, double width, double height,
 	painter->DrawMultiLineText( x, y, width, height, text );
 #else
 	if( printDrawings )
+	{
+		const auto s = PdfRenderer::createQString( text );
+
 		(*drawingsStream) << QStringLiteral(
-			"{ DrawPrimitive::Type::MultilineText, QStringLiteral( \"%1\" ), %2, %3, 0.0, 0.0, %4, %5, 0.0, 0.0 },\n" )
-				.arg( PdfRenderer::createQString( text ).replace( QLatin1String( "\"" ), QLatin1String( "\\\"" ) ),
+			"MultilineText %1 \"%2\" %3 %4 0.0 0.0 %5 %6 0.0 0.0\n" )
+				.arg( QString::number( s.length() ), s,
 					QString::number( x, 'f', 16 ),
 					QString::number( y, 'f', 16 ), QString::number( width, 'f', 16 ),
 					QString::number( height, 'f', 16 ) );
+	}
 	else
 	{
+		painter->DrawMultiLineText( x, y, width, height, text );
+
 		if( QTest::currentTestFailed() )
 			self->terminate();
 
@@ -205,11 +217,13 @@ PdfAuxData::drawImage( double x, double y, PdfImage * img, double xScale, double
 #else
 	if( printDrawings )
 		(*drawingsStream) << QStringLiteral(
-			"{ DrawPrimitive::Type::Image, QStringLiteral( \"\" ), %2, %3, 0.0, 0.0, 0.0, 0.0, %4, %5 },\n" )
+			"Image 0 \"\" %2 %3 0.0 0.0 0.0 0.0 %4 %5\n" )
 				.arg( QString::number( x, 'f', 16 ), QString::number( y, 'f', 16 ),
 					QString::number( xScale, 'f', 16 ), QString::number( yScale, 'f', 16 ) );
 	else
 	{
+		painter->DrawImage( x, y, img, xScale, yScale );
+
 		if( QTest::currentTestFailed() )
 			self->terminate();
 
@@ -230,11 +244,13 @@ PdfAuxData::drawLine( double x1, double y1, double x2, double y2 )
 #else
 	if( printDrawings )
 		(*drawingsStream) << QStringLiteral(
-			"{ DrawPrimitive::Type::Line, QStringLiteral( \"\" ), %1, %2, %3, %4, 0.0, 0.0, 0.0, 0.0 },\n" )
+			"Line 0 \"\" %1 %2 %3 %4 0.0 0.0 0.0 0.0\n" )
 				.arg( QString::number( x1, 'f', 16 ), QString::number( y1, 'f', 16 ),
 					QString::number( x2, 'f', 16 ), QString::number( y2, 'f', 16 ) );
 	else
 	{
+		painter->DrawLine( x1, y1, x2, y2 );
+
 		if( QTest::currentTestFailed() )
 			self->terminate();
 
@@ -252,6 +268,9 @@ PdfAuxData::save( const QString & fileName )
 {
 #ifndef MD_PDF_TESTING
 	doc->Write( fileName.toLocal8Bit().data() );
+#else
+	if( !printDrawings )
+		doc->Write( fileName.toLocal8Bit().data() );
 #endif // MD_PDF_TESTING
 }
 
@@ -263,11 +282,13 @@ PdfAuxData::drawRectangle( double x, double y, double width, double height )
 #else
 	if( printDrawings )
 		(*drawingsStream) << QStringLiteral(
-			"{ DrawPrimitive::Type::Rectangle, QStringLiteral( \"\" ), %1, %2, 0.0, 0.0, %3, %4, 0.0, 0.0 },\n" )
+			"Rectangle 0 \"\" %1 %2 0.0 0.0 %3 %4 0.0 0.0\n" )
 				.arg( QString::number( x, 'f', 16 ), QString::number( y, 'f', 16 ),
 					QString::number( width, 'f', 16 ), QString::number( height, 'f', 16 ) );
 	else
 	{
+		painter->Rectangle( x, y, width, height );
+
 		if( QTest::currentTestFailed() )
 			self->terminate();
 
@@ -545,13 +566,11 @@ PdfRenderer::renderImpl()
 		{
 			pdfData.printDrawings = true;
 
-			pdfData.drawingsFile.reset( new QFile( QStringLiteral( "./data.txt" ) ) );
+			pdfData.drawingsFile.reset( new QFile( m_opts.testDataFileName ) );
 			if( !pdfData.drawingsFile->open( QIODevice::WriteOnly ) )
 				QFAIL( "Unable to open file for dump drawings." );
 
 			pdfData.drawingsStream.reset( new QTextStream( pdfData.drawingsFile.get() ) );
-
-			(*pdfData.drawingsStream) << "{\n";
 		}
 		else
 			pdfData.testData = m_opts.testData;
@@ -699,10 +718,7 @@ PdfRenderer::renderImpl()
 
 #ifdef MD_PDF_TESTING
 		if( m_opts.printDrawings )
-		{
-			(*pdfData.drawingsStream) << "}\n";
 			pdfData.drawingsFile->close();
-		}
 #endif // MD_PDF_TESTING
 	}
 

@@ -15,19 +15,7 @@ endif( ENABLE_COVERAGE )
 
 set( SRC main.cpp
 	../../../md-pdf/renderer.cpp
-	../../../md-pdf/renderer.hpp
-	test_footnotes_data.hpp
-	test_table1_data.hpp
-	test_table2_data.hpp
-	test_blockquote_data.hpp
-	test_complex_data.hpp
-	test_image_in_text_data.hpp
-	test_footnotes_data_big_font.hpp
-	test_table1_data_big_font.hpp
-	test_table2_data_big_font.hpp
-	test_blockquote_data_big_font.hpp
-	test_complex_data_big_font.hpp
-	test_image_in_text_data_big_font.hpp )
+	../../../md-pdf/renderer.hpp )
 
 add_definitions( -DMD_PDF_TESTING )
 
