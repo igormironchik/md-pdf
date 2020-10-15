@@ -406,16 +406,23 @@ PdfRenderer::CellData::heightToWidth( double lineHeight, double spaceWidth, floa
 		if( it->image.isNull() )
 		{
 			if( newLine )
+			{
 				height += lineHeight;
+				newLine = false;
+				w = 0.0;
+			}
 
 			w += it->width( pdfData );
 
 			if( w >= width )
+			{
 				newLine = true;
+				continue;
+			}
 
 			double sw = spaceWidth;
 
-			if( it != items.cbegin() && it->font == ( it - 1 )->font )
+			if( it != items.cbegin() && it->font != ( it - 1 )->font )
 				sw = it->font->GetFontMetrics()->StringWidth( PdfString( " " ) );
 
 			if( it + 1 != last && !( it + 1 )->footnote.isEmpty() )
@@ -954,7 +961,7 @@ PdfRenderer::drawHeading( PdfAuxData & pdfData, const RenderOpts & renderOpts,
 			pdfData.currentPageAllowedY();
 		const double spacing = font->GetFontMetrics()->GetLineSpacing();
 
-		while( available >= spacing )
+		while( i < lines.size() && available >= spacing )
 		{
 			tmp.push_back( lines.at( i ) );
 			h += spacing;
@@ -986,10 +993,13 @@ PdfRenderer::drawHeading( PdfAuxData & pdfData, const RenderOpts & renderOpts,
 
 		ret.append( { pdfData.currentPageIndex(), pdfData.coords.y, height } );
 
-		createPage( pdfData );
+		if( !item->text().isEmpty() )
+		{
+			createPage( pdfData );
 
-		ret.append( drawHeading( pdfData, renderOpts, item, doc, offset, nextItemMinHeight,
-			heightCalcOpt, scale ) );
+			ret.append( drawHeading( pdfData, renderOpts, item, doc, offset, nextItemMinHeight,
+				heightCalcOpt, scale ) );
+		}
 
 		return ret;
 	}
