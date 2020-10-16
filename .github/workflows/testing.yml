@@ -46,7 +46,7 @@ jobs:
       with:
         version: '5.15.0'
         
-    - run: sudo apt install cmake libfreetype6-dev libjpeg-dev libpng-dev zlibc zlib1g-dev libfontconfig1-dev fontconfig
+    - run: sudo apt install cmake libfreetype6-dev libjpeg-dev libpng-dev zlibc zlib1g-dev libfontconfig1-dev fontconfig lcov
 
     # Autobuild attempts to build any compiled languages  (C/C++, C#, or Java).
     # If this step fails, then you should remove it and run the build manually (see below)
