@@ -527,6 +527,10 @@ PdfRenderer::terminate()
 	QMutexLocker lock( &m_mutex );
 
 	m_terminate = true;
+
+#ifdef MD_PDF_TESTING
+	QFAIL( "Test terminated." );
+#endif
 }
 
 void
@@ -2111,6 +2115,15 @@ PdfRenderer::loadImage( MD::Image * item )
 		thread.wait();
 
 		img = load.image();
+
+#ifdef MD_PDF_TESTING
+	if( img.isNull() )
+	{
+		terminate();
+
+		QWARN( "Got empty image from network." );
+	}
+#endif
 	}
 	else
 		throw PdfRendererError(

@@ -35,4 +35,4 @@ script:
     cd build || { exit 1; }; \
     cmake -DENABLE_COVERAGE=ON -DCMAKE_BUILD_TYPE=Debug .. || { exit 1; }; \
     make || { exit 1; }; \
-    ctest --output-on-failure || { exit 1; };
+    ctest --output-on-failure --verbose || { exit 1; };
