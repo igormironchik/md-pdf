@@ -3,7 +3,7 @@
 #
 # You may wish to alter this file to override the set of languages analyzed,
 # or to provide custom queries or build logic.
-name: "CodeQL"
+name: "Testing"
 
 on:
   push:
@@ -13,12 +13,12 @@ on:
     branches: [master]
 
 jobs:
-  analyze:
-    name: Analyze
+  build_and_test:
+    name: Build and Test
     runs-on: ubuntu-latest
 
     strategy:
-      fail-fast: false
+      fail-fast: true
       matrix:
         # Override automatic language detection by changing the below list
         # Supported options are ['csharp', 'cpp', 'go', 'java', 'javascript', 'python']
@@ -40,16 +40,6 @@ jobs:
       if: ${{ github.event_name == 'pull_request' }}
       
     - run: git submodule update --init --recursive
-
-    # Initializes the CodeQL tools for scanning.
-    - name: Initialize CodeQL
-      uses: github/codeql-action/init@v1
-      with:
-        languages: ${{ matrix.language }}
-        # If you wish to specify custom queries, you can do so here or in a config file.
-        # By default, queries listed here will override any specified in a config file. 
-        # Prefix the list here with "+" to use these queries and those in the config file.
-        # queries: ./path/to/local/query, your-org/your-repo/queries@main
           
     - name: Install Qt
       uses: jurplel/install-qt-action@v2
@@ -73,6 +63,8 @@ jobs:
     - run: |
        cmake .
        make
-
-    - name: Perform CodeQL Analysis
-      uses: github/codeql-action/analyze@v1
+       ctest --output-on-failure --verbose
+       lcov --directory . --capture --output-file coverage.info coverage info
+       lcov --remove coverage.info '/usr/*' --output-file coverage.info
+       lcov --list coverage.info
+       bash <(curl -s https://codecov.io/bash)
