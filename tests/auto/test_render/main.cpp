@@ -66,6 +66,9 @@ private slots:
 	void testComplexBigFont();
 	//! Test image in text.
 	void testImageInTextBigFont();
+
+	//! Test code.
+	void testCode();
 }; // class TestRender
 
 namespace /* anonymous */ {
@@ -298,6 +301,12 @@ void
 TestRender::testImageInTextBigFont()
 {
 	doTest( QStringLiteral( "image_in_text.md" ), QStringLiteral( "_big" ), 16.0, 14.0 );
+}
+
+void
+TestRender::testCode()
+{
+	doTest( QStringLiteral( "code.md" ), QString(), 8.0, 8.0 );
 }
 
 
