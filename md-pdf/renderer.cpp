@@ -1549,6 +1549,8 @@ PdfRenderer::drawParagraph( PdfAuxData & pdfData, const RenderOpts & renderOpts,
 
 	auto footnoteNum = m_footnoteNum;
 
+	bool lineBreak = false;
+
 	// Calculate words/lines/spaces widthes.
 	for( auto it = item->items().begin(), last = item->items().end(); it != last; ++it )
 	{
@@ -1565,7 +1567,7 @@ PdfRenderer::drawParagraph( PdfAuxData & pdfData, const RenderOpts & renderOpts,
 				drawText( pdfData, renderOpts, static_cast< MD::Text* > ( it->data() ),
 					doc, newLine, footnoteFont, c_footnoteScale,
 					( it + 1 != last ? ( it + 1 )->data() : nullptr ),
-					footnoteNum, offset, it == item->items().begin(), &cw, scale,
+					footnoteNum, offset, ( it == item->items().begin() || lineBreak ), &cw, scale,
 					inFootnote );
 				break;
 
@@ -1588,6 +1590,7 @@ PdfRenderer::drawParagraph( PdfAuxData & pdfData, const RenderOpts & renderOpts,
 
 			case MD::ItemType::LineBreak :
 			{
+				lineBreak = true;
 				cw.append( { 0.0, lineHeight, false, true, false, "" } );
 				pdfData.coords.x = pdfData.coords.margins.left + offset;
 			}
@@ -1660,6 +1663,8 @@ PdfRenderer::drawParagraph( PdfAuxData & pdfData, const RenderOpts & renderOpts,
 
 	pdfData.continueParagraph = true;
 
+	lineBreak = false;
+
 	// Actual drawing.
 	for( auto it = item->items().begin(), last = item->items().end(); it != last; ++it )
 	{
@@ -1675,7 +1680,8 @@ PdfRenderer::drawParagraph( PdfAuxData & pdfData, const RenderOpts & renderOpts,
 			case MD::ItemType::Text :
 				rects.append( drawText( pdfData, renderOpts, static_cast< MD::Text* > ( it->data() ),
 					doc, newLine, nullptr, 1.0, nullptr, m_footnoteNum,
-					offset, it == item->items().begin(), &cw, scale, inFootnote ) );
+					offset, ( it == item->items().begin() || lineBreak ), &cw, scale, inFootnote ) );
+				lineBreak = false;
 				break;
 
 			case MD::ItemType::Code :
@@ -1695,6 +1701,7 @@ PdfRenderer::drawParagraph( PdfAuxData & pdfData, const RenderOpts & renderOpts,
 				break;
 
 			case MD::ItemType::LineBreak :
+				lineBreak = true;
 				moveToNewLine( pdfData, offset, lineHeight, 1.0 );
 				break;
 
@@ -1933,7 +1940,7 @@ PdfRenderer::drawImage( PdfAuxData & pdfData, const RenderOpts & renderOpts,
 			const auto lineHeight = font->GetFontMetrics()->GetLineSpacing();
 
 			if( !firstInParagraph )
-				moveToNewLine( pdfData, offset, lineHeight, 2.0 );
+				moveToNewLine( pdfData, offset, lineHeight, 1.0 );
 			else
 				pdfData.coords.x += offset;
 
@@ -3076,6 +3083,11 @@ PdfRenderer::drawTableRow( QVector< QVector< CellData > > & table, int row, PdfA
 				y -= img.GetHeight() * ratio;
 
 				pdfData.drawImage( x + o, y, &img, ratio, ratio );
+
+				if( !c->url.isEmpty() )
+					links[ c->url ].append( qMakePair( QRectF( x, y, c->width( pdfData ),
+							img.GetHeight() * ratio ),
+						currentPage ) );
 
 				textBefore = false;
 			}

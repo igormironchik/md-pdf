@@ -69,6 +69,8 @@ private slots:
 
 	//! Test code.
 	void testCode();
+	//! Test complex 2.
+	void testComplex2();
 }; // class TestRender
 
 namespace /* anonymous */ {
@@ -307,6 +309,12 @@ void
 TestRender::testCode()
 {
 	doTest( QStringLiteral( "code.md" ), QString(), 8.0, 8.0 );
+}
+
+void
+TestRender::testComplex2()
+{
+	doTest( QStringLiteral( "complex2.md" ), QStringLiteral( "_big" ), 16.0, 14.0 );
 }
 
 
