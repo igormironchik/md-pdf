@@ -1569,23 +1569,29 @@ PdfRenderer::drawParagraph( PdfAuxData & pdfData, const RenderOpts & renderOpts,
 					( it + 1 != last ? ( it + 1 )->data() : nullptr ),
 					footnoteNum, offset, ( it == item->items().begin() || lineBreak ), &cw, scale,
 					inFootnote );
+				lineBreak = false;
 				break;
 
 			case MD::ItemType::Code :
 				drawInlinedCode( pdfData, renderOpts, static_cast< MD::Code* > ( it->data() ),
-					doc, newLine, offset, it == item->items().begin(), &cw, scale, inFootnote );
+					doc, newLine, offset, ( it == item->items().begin() || lineBreak ), &cw, scale,
+					inFootnote );
+				lineBreak = false;
 				break;
 
 			case MD::ItemType::Link :
 				drawLink( pdfData, renderOpts, static_cast< MD::Link* > ( it->data() ),
 					doc, newLine, footnoteFont, c_footnoteScale,
 					( it + 1 != last ? ( it + 1 )->data() : nullptr ),
-					footnoteNum, offset, it == item->items().begin(), &cw, scale, inFootnote );
+					footnoteNum, offset, ( it == item->items().begin() || lineBreak ), &cw, scale,
+					inFootnote );
+				lineBreak = false;
 				break;
 
 			case MD::ItemType::Image :
 				drawImage( pdfData, renderOpts, static_cast< MD::Image* > ( it->data() ),
-					doc, newLine, offset, it == item->items().begin(), &cw, scale );
+					doc, newLine, offset, ( it == item->items().begin() || lineBreak ), &cw, scale );
+				lineBreak = false;
 				break;
 
 			case MD::ItemType::LineBreak :
@@ -1598,6 +1604,7 @@ PdfRenderer::drawParagraph( PdfAuxData & pdfData, const RenderOpts & renderOpts,
 
 			case MD::ItemType::FootnoteRef :
 				++footnoteNum;
+				lineBreak = false;
 				break;
 
 			default :
@@ -1686,18 +1693,22 @@ PdfRenderer::drawParagraph( PdfAuxData & pdfData, const RenderOpts & renderOpts,
 
 			case MD::ItemType::Code :
 				rects.append( drawInlinedCode( pdfData, renderOpts, static_cast< MD::Code* > ( it->data() ),
-					doc, newLine, offset, it == item->items().begin(), &cw, scale, inFootnote ) );
+					doc, newLine, offset, ( it == item->items().begin() || lineBreak ), &cw, scale,
+					inFootnote ) );
+				lineBreak = false;
 				break;
 
 			case MD::ItemType::Link :
 				rects.append( drawLink( pdfData, renderOpts, static_cast< MD::Link* > ( it->data() ),
 					doc, newLine, nullptr, 1.0, nullptr, m_footnoteNum,
-					offset, it == item->items().begin(), &cw, scale, inFootnote ) );
+					offset, ( it == item->items().begin() || lineBreak ), &cw, scale, inFootnote ) );
+				lineBreak = false;
 				break;
 
 			case MD::ItemType::Image :
 				rects.append( drawImage( pdfData, renderOpts, static_cast< MD::Image* > ( it->data() ),
-					doc, newLine, offset, it == item->items().begin(), &cw, scale ) );
+					doc, newLine, offset, ( it == item->items().begin() || lineBreak ), &cw, scale ) );
+				lineBreak = false;
 				break;
 
 			case MD::ItemType::LineBreak :
@@ -1707,6 +1718,7 @@ PdfRenderer::drawParagraph( PdfAuxData & pdfData, const RenderOpts & renderOpts,
 
 			case MD::ItemType::FootnoteRef :
 			{
+				lineBreak = false;
 				if( !inFootnote )
 				{
 					auto * ref = static_cast< MD::FootnoteRef* > ( it->data() );
