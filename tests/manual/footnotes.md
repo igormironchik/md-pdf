@@ -185,7 +185,7 @@ purely Egyptological issues. So French Egyptologist George
 Foucart, although praising the volumes overall, complained that
 Breasted ignored the work of French Egyptologists, and he
 neglected to include certain important French studies in his
-bibliography, which–-on the whole–-he took as a slight against the
+bibliography, which - on the whole - he took as a slight against the
 French school of Egyptology.[^10] However, a dispassionate perusal
 of Breasted's footnotes and citations reveals Foucart's com-
 plaints to be unjustified, since there are many references to

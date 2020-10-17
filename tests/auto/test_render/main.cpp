@@ -177,6 +177,7 @@ loadTestData( const QString & fileName, const QString & suffix )
 		return data;
 
 	QTextStream stream( &file );
+	stream.setCodec( QTextCodec::codecForName( "UTF-8" ) );
 
 	while( !stream.atEnd() )
 	{
