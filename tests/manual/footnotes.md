@@ -1,6 +1,6 @@
 
 The field of Egyptology is only about 176 years old; that
-is, only six generations have arisen since Jean-François
+is, only six generations have arisen since Jean-Francois
 Champollion completed the decipherment of Egyptian hieroglyphs in 1824.
 Since then, Egyptologists have seen, generation by
 generation, the likes of Mariette, Lepsius, Petrie, ScribnerScribnerScribnered,

@@ -1462,7 +1462,7 @@ TEST_CASE( "links" )
 
 	auto doc = parser.parse( QStringLiteral( "./test31.md" ) );
 
-	const QString wd = QDir().absolutePath() + QDir::separator();
+	const QString wd = QDir().absolutePath();
 
 	REQUIRE( doc->isEmpty() == false );
 	REQUIRE( doc->items().size() == 9 );
@@ -1480,7 +1480,7 @@ TEST_CASE( "links" )
 	REQUIRE( l0->text() == QStringLiteral( "link 0" ) );
 
 	const QString wrong = QString::fromLatin1( "#wrong-label" ) + QDir::separator() +
-		wd + QStringLiteral( "test31.md" );
+		wd + QDir::separator() + QStringLiteral( "test31.md" );
 
 	REQUIRE( l0->url() == wrong );
 
@@ -1489,19 +1489,20 @@ TEST_CASE( "links" )
 	auto l1 = static_cast< MD::Link* > ( p->items().at( 1 ).data() );
 
 	REQUIRE( l1->text() == QStringLiteral( "link 1" ) );
-	REQUIRE( l1->url() == ( wd + QStringLiteral( "a.md" ) ) );
+	REQUIRE( l1->url() == ( wd + QStringLiteral( "/a.md" ) ) );
 
 	REQUIRE( p->items().at( 2 )->type() == MD::ItemType::Link );
 
 	auto l2 = static_cast< MD::Link* > ( p->items().at( 2 ).data() );
 
 	REQUIRE( l2->text().isEmpty() );
-	REQUIRE( l2->url() == wd + QStringLiteral( "b.md" ) );
+	REQUIRE( l2->url() == wd + QStringLiteral( "/b.md" ) );
 	REQUIRE( l2->textOptions() == MD::TextOption::TextWithoutFormat );
 
 	REQUIRE( !l2->img().isNull() );
 	REQUIRE( l2->img()->text() == QStringLiteral( "image 1" ) );
-	REQUIRE( l2->img()->url() == wd + QStringLiteral( "a.png" ) );
+	REQUIRE( l2->img()->url() == wd + QDir::separator() +
+		QStringLiteral( "a.png" ) );
 
 	REQUIRE( p->items().at( 3 )->type() == MD::ItemType::Link );
 
@@ -1510,7 +1511,7 @@ TEST_CASE( "links" )
 	REQUIRE( l3->text() == QStringLiteral( "link 3" ) );
 
 	const QString label = QString::fromLatin1( "#label" ) + QDir::separator() +
-		wd + QStringLiteral( "test31.md" );
+		wd + QDir::separator() + QStringLiteral( "test31.md" );
 
 	REQUIRE( l3->url() == label );
 
@@ -1519,7 +1520,8 @@ TEST_CASE( "links" )
 	auto f1 = static_cast< MD::FootnoteRef* > ( p->items().at( 4 ).data() );
 
 	REQUIRE( f1->id() ==
-		QString::fromLatin1( "#ref" ) + QDir::separator() + wd + QStringLiteral( "test31.md" ) );
+		QString::fromLatin1( "#ref" ) + QDir::separator() + wd +
+		QDir::separator() + QStringLiteral( "test31.md" ) );
 
 	REQUIRE( !doc->labeledLinks().isEmpty() );
 	REQUIRE( doc->labeledLinks().contains( label ) );
@@ -1538,7 +1540,8 @@ TEST_CASE( "links" )
 		f1 = static_cast< MD::FootnoteRef* > ( p->items().at( 0 ).data() );
 
 		REQUIRE( f1->id() ==
-			QString::fromLatin1( "#ref" ) + QDir::separator() + wd + QStringLiteral( "test31.md" ) );
+			QString::fromLatin1( "#ref" ) + QDir::separator() + wd +
+			QDir::separator() + QStringLiteral( "test31.md" ) );
 
 		auto t = static_cast< MD::Text* > ( p->items().at( 1 ).data() );
 
@@ -1547,7 +1550,8 @@ TEST_CASE( "links" )
 		REQUIRE( doc->labeledLinks().size() == 2 );
 
 		REQUIRE( doc->labeledLinks()[ QString::fromLatin1( "#1" ) +
-			QDir::separator() + wd + QStringLiteral( "test31.md" ) ]->url() == wd + QStringLiteral( "a.md" ) );
+			QDir::separator() + wd + QDir::separator() +
+			QStringLiteral( "test31.md" ) ]->url() == wd + QStringLiteral( "/a.md" ) );
 	}
 
 	{
@@ -1562,7 +1566,8 @@ TEST_CASE( "links" )
 		auto l = static_cast< MD::Link* > ( p->items().at( 0 ).data() );
 
 		REQUIRE( l->url() == QString::fromLatin1( "#label" ) +
-			QDir::separator() + wd + QStringLiteral( "test31.md" ) );
+			QDir::separator() + wd + QDir::separator() +
+			QStringLiteral( "test31.md" ) );
 	}
 
 	REQUIRE( doc->items().at( 4 )->type() == MD::ItemType::PageBreak );
@@ -2241,7 +2246,7 @@ TEST_CASE( "linked md" )
 
 	REQUIRE( l->items().size() == 2 );
 
-	const QString wd = QDir().absolutePath() + QDir::separator();
+	const QString wd = QDir().absolutePath();
 
 	for( int i = 0; i < 2; ++i )
 	{
@@ -2260,7 +2265,7 @@ TEST_CASE( "linked md" )
 		auto lnk = static_cast< MD::Link* > ( p->items().at( 0 ).data() );
 
 		REQUIRE( lnk->text() == QStringLiteral( "Chapter 1" ) );
-		REQUIRE( lnk->url() == wd + QStringLiteral( "test42-1.md" ) );
+		REQUIRE( lnk->url() == wd + QStringLiteral( "/test42-1.md" ) );
 	}
 
 	REQUIRE( doc->items().at( 2 )->type() == MD::ItemType::PageBreak );
@@ -2268,7 +2273,7 @@ TEST_CASE( "linked md" )
 	REQUIRE( doc->items().at( 3 )->type() == MD::ItemType::Anchor );
 
 	REQUIRE( static_cast< MD::Anchor* > ( doc->items().at( 3 ).data() )->label() ==
-		wd + QStringLiteral( "test42-1.md" ) );
+		wd + QStringLiteral( "/test42-1.md" ) );
 
 	REQUIRE( doc->items().at( 4 )->type() == MD::ItemType::Paragraph );
 
@@ -2297,7 +2302,7 @@ TEST_CASE( "linked md (not recursive)" )
 
 	REQUIRE( l->items().size() == 2 );
 
-	const QString wd = QDir().absolutePath() + QDir::separator();
+	const QString wd = QDir().absolutePath();
 
 	for( int i = 0; i < 2; ++i )
 	{
@@ -2316,7 +2321,7 @@ TEST_CASE( "linked md (not recursive)" )
 		auto lnk = static_cast< MD::Link* > ( p->items().at( 0 ).data() );
 
 		REQUIRE( lnk->text() == QStringLiteral( "Chapter 1" ) );
-		REQUIRE( lnk->url() == wd + QStringLiteral( "test42-1.md" ) );
+		REQUIRE( lnk->url() == wd + QStringLiteral( "/test42-1.md" ) );
 	}
 }
 
@@ -2627,24 +2632,24 @@ TEST_CASE( "links in parent scope" )
 	MD::Parser parser;
 	auto doc = parser.parse( QStringLiteral( "./test51.md" ) );
 
-	const QString wd = QDir().absolutePath() + QDir::separator();
+	const QString wd = QDir().absolutePath();
 
 	REQUIRE( doc->items().size() == 8 );
 
 	REQUIRE( static_cast< MD::Anchor* > ( doc->items().at( 0 ).data() )->label() ==
-		wd + QStringLiteral( "test51.md" ) );
+		wd + QStringLiteral( "/test51.md" ) );
 
 	REQUIRE( doc->items().at( 1 )->type() == MD::ItemType::Paragraph );
 	REQUIRE( doc->items().at( 2 )->type() == MD::ItemType::PageBreak );
 
 	REQUIRE( static_cast< MD::Anchor* > ( doc->items().at( 3 ).data() )->label() ==
-		wd + QStringLiteral( "test51-1.md" ) );
+		wd + QStringLiteral( "/test51-1.md" ) );
 
 	REQUIRE( doc->items().at( 4 )->type() == MD::ItemType::Paragraph );
 	REQUIRE( doc->items().at( 5 )->type() == MD::ItemType::PageBreak );
 
 	REQUIRE( static_cast< MD::Anchor* > ( doc->items().at( 6 ).data() )->label() ==
-		wd + QStringLiteral( "test51-2.md" ) );
+		wd + QStringLiteral( "/test51-2.md" ) );
 
 	REQUIRE( doc->items().at( 7 )->type() == MD::ItemType::Paragraph );
 }
