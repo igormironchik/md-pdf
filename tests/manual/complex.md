@@ -2,27 +2,20 @@
 
 *   [Overview](#overview)
     *   [Philosophy](#philosophy)
-    *   [Inline HTML](#html)
-    *   [Automatic Escaping for Special Characters](#autoescape)
-*   [Block Elements](#block)
-    *   [Paragraphs and Line Breaks](#p)
-    *   [Headers](#header)
-    *   [Blockquotes](#blockquote)
-    *   [Lists](#list)
-    *   [Code Blocks](#precode)
-    *   [Horizontal Rules](#hr)
-*   [Span Elements](#span)
-    *   [Links](#link)
-    *   [Emphasis](#em)
+*   [Block Elements](#block-elements)
+    *   [Paragraphs and Line Breaks](#paragraphs-and-line-breaks)
+    *   [Headers](#headers)
+    *   [Tables](#tables)
+    *   [Blockquotes](#blockquotes)
+    *   [Lists](#lists)
+    *   [Code Blocks](#code-blocks)
+*   [Span Elements](#span-elements)
+    *   [Links](#links)
+    *   [Emphasis](#emphasis)
     *   [Code](#code)
-    *   [Images](#img)
-*   [Miscellaneous](#misc)
-    *   [Backslash Escapes](#backslash)
-    *   [Automatic Links](#autolink)
-
 
 **Note:** This document is itself written using Markdown; you
-can [see the source for it by adding '.text' to the URL](/projects/markdown/syntax.text).
+can [see the source for it here](https://raw.githubusercontent.com/mxstbr/markdown-test-file/master/TEST.md).
 
 ----
 
@@ -61,6 +54,10 @@ end a line with two or more spaces, then type return.
 ### Headers
 
 Markdown supports two styles of headers, [Setext] [1] and [atx] [2].
+
+[1]: http://docutils.sourceforge.net/mirror/setext.html
+
+[2]: http://www.aaronsw.com/2002/atx/
 
 Optionally, you may "close" atx-style headers. This is purely
 cosmetic -- you can use this if you think it looks better. The

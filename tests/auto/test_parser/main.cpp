@@ -1424,7 +1424,7 @@ TEST_CASE( "three images" )
 
 	auto i1 = static_cast< MD::Image* > ( p->items().at( 1 ).data() );
 
-	const QString wd = QDir().absolutePath() + QDir::separator();
+	const QString wd = QDir().absolutePath() + QStringLiteral( "/" );
 
 	REQUIRE( i1->text() == QStringLiteral( "Image 1" ) );
 	REQUIRE( i1->url() == wd + QStringLiteral( "a.jpg" ) );
@@ -1479,8 +1479,8 @@ TEST_CASE( "links" )
 
 	REQUIRE( l0->text() == QStringLiteral( "link 0" ) );
 
-	const QString wrong = QString::fromLatin1( "#wrong-label" ) + QDir::separator() +
-		wd + QDir::separator() + QStringLiteral( "test31.md" );
+	const QString wrong = QString::fromLatin1( "#wrong-label" ) + QStringLiteral( "/" ) +
+		wd + QStringLiteral( "/" ) + QStringLiteral( "test31.md" );
 
 	REQUIRE( l0->url() == wrong );
 
@@ -1501,7 +1501,7 @@ TEST_CASE( "links" )
 
 	REQUIRE( !l2->img().isNull() );
 	REQUIRE( l2->img()->text() == QStringLiteral( "image 1" ) );
-	REQUIRE( l2->img()->url() == wd + QDir::separator() +
+	REQUIRE( l2->img()->url() == wd + QStringLiteral( "/" ) +
 		QStringLiteral( "a.png" ) );
 
 	REQUIRE( p->items().at( 3 )->type() == MD::ItemType::Link );
@@ -1510,8 +1510,8 @@ TEST_CASE( "links" )
 
 	REQUIRE( l3->text() == QStringLiteral( "link 3" ) );
 
-	const QString label = QString::fromLatin1( "#label" ) + QDir::separator() +
-		wd + QDir::separator() + QStringLiteral( "test31.md" );
+	const QString label = QString::fromLatin1( "#label" ) + QStringLiteral( "/" ) +
+		wd + QStringLiteral( "/" ) + QStringLiteral( "test31.md" );
 
 	REQUIRE( l3->url() == label );
 
@@ -1520,8 +1520,8 @@ TEST_CASE( "links" )
 	auto f1 = static_cast< MD::FootnoteRef* > ( p->items().at( 4 ).data() );
 
 	REQUIRE( f1->id() ==
-		QString::fromLatin1( "#ref" ) + QDir::separator() + wd +
-		QDir::separator() + QStringLiteral( "test31.md" ) );
+		QString::fromLatin1( "#ref" ) + QStringLiteral( "/" ) + wd +
+		QStringLiteral( "/" ) + QStringLiteral( "test31.md" ) );
 
 	REQUIRE( !doc->labeledLinks().isEmpty() );
 	REQUIRE( doc->labeledLinks().contains( label ) );
@@ -1540,8 +1540,8 @@ TEST_CASE( "links" )
 		f1 = static_cast< MD::FootnoteRef* > ( p->items().at( 0 ).data() );
 
 		REQUIRE( f1->id() ==
-			QString::fromLatin1( "#ref" ) + QDir::separator() + wd +
-			QDir::separator() + QStringLiteral( "test31.md" ) );
+			QString::fromLatin1( "#ref" ) + QStringLiteral( "/" ) + wd +
+			QStringLiteral( "/" ) + QStringLiteral( "test31.md" ) );
 
 		auto t = static_cast< MD::Text* > ( p->items().at( 1 ).data() );
 
@@ -1550,7 +1550,7 @@ TEST_CASE( "links" )
 		REQUIRE( doc->labeledLinks().size() == 2 );
 
 		REQUIRE( doc->labeledLinks()[ QString::fromLatin1( "#1" ) +
-			QDir::separator() + wd + QDir::separator() +
+			QStringLiteral( "/" ) + wd + QStringLiteral( "/" ) +
 			QStringLiteral( "test31.md" ) ]->url() == wd + QStringLiteral( "/a.md" ) );
 	}
 
@@ -1566,7 +1566,7 @@ TEST_CASE( "links" )
 		auto l = static_cast< MD::Link* > ( p->items().at( 0 ).data() );
 
 		REQUIRE( l->url() == QString::fromLatin1( "#label" ) +
-			QDir::separator() + wd + QDir::separator() +
+			QStringLiteral( "/" ) + wd + QStringLiteral( "/" ) +
 			QStringLiteral( "test31.md" ) );
 	}
 
@@ -2386,9 +2386,9 @@ TEST_CASE( "footnote" )
 
 	REQUIRE( doc->footnotesMap().size() == 1 );
 
-	const QString wd = QDir().absolutePath() + QDir::separator();
+	const QString wd = QDir().absolutePath() + QStringLiteral( "/" );
 
-	const QString label = QString::fromLatin1( "#footnote" ) + QDir::separator() + wd +
+	const QString label = QString::fromLatin1( "#footnote" ) + QStringLiteral( "/" ) + wd +
 		QStringLiteral( "test45.md" );
 
 	REQUIRE( doc->footnotesMap().contains( label ) );
@@ -2458,8 +2458,8 @@ TEST_CASE( "headings" )
 	REQUIRE( h->text() == QStringLiteral( "Heading 3" ) );
 	REQUIRE( h->isLabeled() );
 
-	const QString wd = QDir().absolutePath() + QDir::separator();
-	const QString label = QString::fromLatin1( "#heading-3" ) + QDir::separator() +
+	const QString wd = QDir().absolutePath() + QStringLiteral( "/" );
+	const QString label = QString::fromLatin1( "#heading-3" ) + QStringLiteral( "/" ) +
 		wd + QStringLiteral( "test46.md" );
 
 	REQUIRE( h->label() == label );
@@ -2727,9 +2727,9 @@ TEST_CASE( "footnote and paragraph" )
 
 	REQUIRE( doc->footnotesMap().size() == 1 );
 
-	const QString wd = QDir().absolutePath() + QDir::separator();
+	const QString wd = QDir().absolutePath() + QStringLiteral( "/" );
 
-	const QString label = QString::fromLatin1( "#footnote" ) + QDir::separator() + wd +
+	const QString label = QString::fromLatin1( "#footnote" ) + QStringLiteral( "/" ) + wd +
 		QStringLiteral( "test55.md" );
 
 	REQUIRE( doc->footnotesMap().contains( label ) );

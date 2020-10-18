@@ -786,6 +786,14 @@ PdfRenderer::resolveLinks( PdfAuxData & pdfData )
 				annot->SetDestination( m_dests.value( it.key(), PdfDestination( pdfData.page ) ) );
 			}
 		}
+#ifdef MD_PDF_TESTING
+		else
+		{
+			terminate();
+
+			QFAIL( "Unresolved link." );
+		}
+#endif // MD_PDF_TESTING
 	}
 }
 

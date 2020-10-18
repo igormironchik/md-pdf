@@ -88,7 +88,7 @@ Parser::parseFile( const QString & fileName, bool recursive, QSharedPointer< Doc
 			TextStream stream( s );
 
 			parse( stream, doc, doc, linksToParse,
-				fi.absolutePath() + QDir::separator(), fi.fileName() );
+				fi.absolutePath() + QStringLiteral( "/" ), fi.fileName() );
 
 			f.close();
 
@@ -389,7 +389,7 @@ Parser::parseHeading( QStringList & fr, QSharedPointer< Block > parent,
 		h->setLevel( lvl );
 
 		if( !label.isEmpty() )
-			h->setLabel( label.mid( 1, label.length() - 2) + QDir::separator() +
+			h->setLabel( label.mid( 1, label.length() - 2) + QStringLiteral( "/" ) +
 				workingPath + fileName );
 
 		QSharedPointer< Paragraph > p( new Paragraph() );
@@ -435,7 +435,7 @@ Parser::parseHeading( QStringList & fr, QSharedPointer< Block > parent,
 							label.append( QStringLiteral( "-" ) );
 					}
 
-					label += QDir::separator() + workingPath + fileName;
+					label += QStringLiteral( "/" ) + workingPath + fileName;
 
 					h->setLabel( label );
 
@@ -493,7 +493,7 @@ Parser::parseFootnote( QStringList & fr, QSharedPointer< Block >,
 
 				if( !f->isEmpty() )
 					doc->insertFootnote( QString::fromLatin1( "#" ) + id +
-						QDir::separator() + workingPath + fileName, f );
+						QStringLiteral( "/" ) + workingPath + fileName, f );
 			}
 		}
 	}
@@ -742,7 +742,7 @@ Parser::parseFormattedTextLinksImages( QStringList & fr, QSharedPointer< Block >
 	{
 		QSharedPointer< FootnoteRef > fnr(
 			new FootnoteRef( QStringLiteral( "#" ) + lnk +
-				QDir::separator() + workingPath + fileName ) );
+				QStringLiteral( "/" ) + workingPath + fileName ) );
 
 		data.fnref.append( fnr );
 		data.lexems.append( Lex::FootnoteRef );
@@ -909,7 +909,7 @@ Parser::parseFormattedTextLinksImages( QStringList & fr, QSharedPointer< Block >
 
 					doc->insertLabeledLink(
 						QString::fromLatin1( "#" ) + lnkText +
-						QDir::separator() + workingPath + fileName, lnk );
+						QStringLiteral( "/" ) + workingPath + fileName, lnk );
 
 					return length;
 				}
@@ -953,7 +953,7 @@ Parser::parseFormattedTextLinksImages( QStringList & fr, QSharedPointer< Block >
 						}
 					}
 					else
-						url = url + QDir::separator() + workingPath + fileName;
+						url = url + QStringLiteral( "/" ) + workingPath + fileName;
 				}
 				else
 				{
@@ -973,7 +973,7 @@ Parser::parseFormattedTextLinksImages( QStringList & fr, QSharedPointer< Block >
 					if( i < length && line[ i ] == QLatin1Char( ']' ) )
 					{
 						url = QString::fromLatin1( "#" ) + url +
-							QDir::separator() + workingPath + fileName;
+							QStringLiteral( "/" ) + workingPath + fileName;
 
 						linksToParse.append( url );
 
