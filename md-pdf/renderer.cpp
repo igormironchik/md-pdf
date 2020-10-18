@@ -2931,17 +2931,20 @@ PdfRenderer::drawTable( PdfAuxData & pdfData, const RenderOpts & renderOpts,
 	{
 		case CalcHeightOpt::Minimum :
 		{
-			ret.append( { -1, 0.0, r0h + r1h + c_tableMargin * ( justHeader ? 2.0 : 4.0 ) } );
+			ret.append( { -1, 0.0, r0h + r1h + ( c_tableMargin * ( justHeader ? 2.0 : 4.0 ) ) +
+				lineHeight - ( font->GetFontMetrics()->GetDescent() * ( justHeader ? 1.0 : 2.0 ) ) } );
 
 			return ret;
 		}
 
 		case CalcHeightOpt::Full :
 		{
-			ret.append( { -1, 0.0, r0h + r1h + c_tableMargin * ( justHeader ? 2.0 : 4.0 ) } );
+			ret.append( { -1, 0.0, r0h + r1h + ( c_tableMargin * ( justHeader ? 2.0 : 4.0 ) ) +
+				lineHeight - ( font->GetFontMetrics()->GetDescent() * ( justHeader ? 1.0 : 2.0 ) ) } );
 
-			for( int i = 2; i < auxTable.size(); ++i )
-				ret.append( { -1, 0.0, rowHeight( auxTable, i ) + c_tableMargin * 2.0 } );
+			for( int i = 2; i < auxTable.at( 0 ).size(); ++i )
+				ret.append( { -1, 0.0, rowHeight( auxTable, i ) + c_tableMargin * 2.0 -
+					font->GetFontMetrics()->GetDescent() } );
 
 			return ret;
 		}
@@ -2950,8 +2953,9 @@ PdfRenderer::drawTable( PdfAuxData & pdfData, const RenderOpts & renderOpts,
 			break;
 	}
 
-	if( pdfData.coords.y - ( r0h + r1h + c_tableMargin * ( justHeader ? 2.0 : 4.0 ) ) <
-		pdfData.currentPageAllowedY() )
+	if( pdfData.coords.y - ( r0h + r1h + ( c_tableMargin * ( justHeader ? 2.0 : 4.0 ) ) -
+			( font->GetFontMetrics()->GetDescent() * ( justHeader ? 1.0 : 2.0 ) ) ) <
+				pdfData.currentPageAllowedY() )
 	{
 		createPage( pdfData );
 
@@ -3059,6 +3063,9 @@ PdfRenderer::drawTableRow( QVector< QVector< CellData > > & table, int row, PdfA
 			newPageInTable( pdfData, currentPage, endPage, endY );
 
 			y = pdfData.topY( currentPage );
+
+			if( pdfData.drawFootnotes )
+				y -= pdfData.extraInFootnote;
 		}
 
 		bool textBefore = false;
@@ -3087,6 +3094,9 @@ PdfRenderer::drawTableRow( QVector< QVector< CellData > > & table, int row, PdfA
 					newPageInTable( pdfData, currentPage, endPage, endY );
 
 					y = pdfData.topY( currentPage );
+
+					if( pdfData.drawFootnotes )
+						y -= pdfData.extraInFootnote;
 				}
 
 				const auto availableHeight = pdfData.topY( currentPage ) -
@@ -3255,6 +3265,9 @@ PdfRenderer::drawTableBorder( PdfAuxData & pdfData, int startPage, QVector< Wher
 			auto y = pdfData.allowedY( i );
 			auto sy = pdfData.topY( i );
 
+			if( pdfData.drawFootnotes )
+				sy -= pdfData.extraInFootnote + c_tableMargin;
+
 			pdfData.drawLine( x, sy, x, y );
 
 			for( int c = 0; c < table.size(); ++c )
@@ -3265,13 +3278,16 @@ PdfRenderer::drawTableBorder( PdfAuxData & pdfData, int startPage, QVector< Wher
 			}
 
 			ret.append( { i, pdfData.allowedY( i ),
-				pdfData.topY( i ) - pdfData.allowedY( i ) } );
+				sy - pdfData.allowedY( i ) } );
 		}
 		else
 		{
 			auto x = startX;
 			auto y = endY;
 			auto sy = pdfData.topY( i );
+
+			if( pdfData.drawFootnotes )
+				sy -= pdfData.extraInFootnote + c_tableMargin;
 
 			pdfData.drawLine( x, sy, x, y );
 
@@ -3285,7 +3301,7 @@ PdfRenderer::drawTableBorder( PdfAuxData & pdfData, int startPage, QVector< Wher
 			pdfData.drawLine( startX, y, endX, y );
 
 			ret.append( { pdfData.currentPageIndex(), endY,
-				pdfData.topY( i ) - endY } );
+				sy - endY } );
 		}
 
 		pdfData.restoreColor();
@@ -3305,6 +3321,9 @@ PdfRenderer::drawTextLineInTable( double x, double & y, TextToDraw & text, doubl
 		newPageInTable( pdfData, currentPage, endPage, endY );
 
 		y = pdfData.topY( currentPage ) - lineHeight;
+
+		if( pdfData.drawFootnotes )
+			y -= pdfData.extraInFootnote;
 	}
 
 	if( text.width <= text.availableWidth )

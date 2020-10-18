@@ -53,6 +53,8 @@ private slots:
 	void testComplex();
 	//! Test image in text.
 	void testImageInText();
+	//! Footnote with table
+	void testFootnoteWithTable();
 
 	//! Test footnotes rendering.
 	void testFootnotesBigFont();
@@ -66,6 +68,8 @@ private slots:
 	void testComplexBigFont();
 	//! Test image in text.
 	void testImageInTextBigFont();
+	//! Footnote with table
+	void testFootnoteWithTableBigFont();
 
 	//! Test code.
 	void testCode();
@@ -271,6 +275,12 @@ TestRender::testImageInText()
 }
 
 void
+TestRender::testFootnoteWithTable()
+{
+	doTest( QStringLiteral( "footnote2.md" ), QString(), 8.0, 8.0 );
+}
+
+void
 TestRender::testFootnotesBigFont()
 {
 	doTest( QStringLiteral( "footnotes.md" ), QStringLiteral( "_big" ), 16.0, 14.0 );
@@ -304,6 +314,12 @@ void
 TestRender::testImageInTextBigFont()
 {
 	doTest( QStringLiteral( "image_in_text.md" ), QStringLiteral( "_big" ), 16.0, 14.0 );
+}
+
+void
+TestRender::testFootnoteWithTableBigFont()
+{
+	doTest( QStringLiteral( "footnote2.md" ), QStringLiteral( "_big" ), 16.0, 14.0 );
 }
 
 void
