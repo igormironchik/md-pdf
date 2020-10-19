@@ -3204,7 +3204,7 @@ PdfRenderer::drawTableRow( QVector< QVector< CellData > > & table, int row, PdfA
 		++column;
 	}
 
-	drawTableBorder( pdfData, startPage, ret, renderOpts, offset, table, startY, endY );
+	drawRowBorder( pdfData, startPage, ret, renderOpts, offset, table, startY, endY );
 
 	pdfData.coords.y = endY;
 	pdfData.painter->SetPage( pdfData.doc->GetPage( pdfData.currentPageIndex() ) );
@@ -3215,7 +3215,7 @@ PdfRenderer::drawTableRow( QVector< QVector< CellData > > & table, int row, PdfA
 }
 
 void
-PdfRenderer::drawTableBorder( PdfAuxData & pdfData, int startPage, QVector< WhereDrawn > & ret,
+PdfRenderer::drawRowBorder( PdfAuxData & pdfData, int startPage, QVector< WhereDrawn > & ret,
 	const RenderOpts & renderOpts, double offset, const QVector< QVector< CellData > > & table,
 	double startY, double endY )
 {

@@ -508,7 +508,7 @@ private:
 		QVector< QSharedPointer< MD::Footnote > > & footnotes,
 		float scale, bool inFootnote );
 	//! Draw table border.
-	void drawTableBorder( PdfAuxData & pdfData, int startPage, QVector< WhereDrawn > & ret,
+	void drawRowBorder( PdfAuxData & pdfData, int startPage, QVector< WhereDrawn > & ret,
 		const RenderOpts & renderOpts, double offset, const QVector< QVector< CellData > > & table,
 		double startY, double endY );
 
