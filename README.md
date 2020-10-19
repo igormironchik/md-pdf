@@ -28,7 +28,7 @@ The application is tested on Mac OS, Linux, Windows 10.
 # Testing
 
 If you will find a bug of rendering, please, try to localize the issue in
-short Markdown an reproduce with fonts in `tests/fonts` folder (`Droid Serif` for text
+short Markdown and reproduce with fonts in `tests/fonts` folder (`Droid Serif` for text
 and `Courier New` for code). And post the issue here...
 
 # Building
