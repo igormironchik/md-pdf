@@ -947,6 +947,9 @@ PdfRenderer::drawHeading( PdfAuxData & pdfData, const RenderOpts & renderOpts,
 	if( heightCalcOpt == CalcHeightOpt::Unknown )
 		emit status( tr( "Drawing heading." ) );
 
+	if( pdfData.drawFootnotes )
+		nextItemMinHeight = 0.0;
+
 	PdfFont * font = createFont( renderOpts.m_textFont.toLocal8Bit().data(),
 		true, false, renderOpts.m_textFontSize + 16 - ( item->level() < 7 ? item->level() * 2 : 12 ),
 		pdfData.doc, scale, pdfData );
@@ -959,7 +962,8 @@ PdfRenderer::drawHeading( PdfAuxData & pdfData, const RenderOpts & renderOpts,
 	const auto lines = pdfData.painter->GetMultiLineTextAsLines(
 		width, createPdfString( item->text() ) );
 
-	const double height = lines.size() * font->GetFontMetrics()->GetLineSpacing();
+	const auto lineHeight = font->GetFontMetrics()->GetLineSpacing();
+	const double height = lines.size() * lineHeight;
 	const double availableHeight = pdfData.coords.pageHeight -
 		pdfData.coords.margins.top - pdfData.coords.margins.bottom;
 
@@ -968,8 +972,17 @@ PdfRenderer::drawHeading( PdfAuxData & pdfData, const RenderOpts & renderOpts,
 		case CalcHeightOpt::Minimum :
 		case CalcHeightOpt::Full :
 		{
-			for( std::size_t i = 0; i < lines.size(); ++i )
-				ret.append( { -1, 0.0, font->GetFontMetrics()->GetLineSpacing() } );
+			std::size_t i = 0;
+
+			if( !pdfData.firstOnPage || pdfData.drawFootnotes )
+			{
+				ret.append( { -1, 0.0,  lineHeight + c_beforeHeading } );
+				++i;
+			}
+
+			for( ; i < lines.size(); ++i )
+				ret.append( { -1, 0.0, lineHeight } );
+
 			return ret;
 		}
 
@@ -1628,7 +1641,7 @@ PdfRenderer::drawParagraph( PdfAuxData & pdfData, const RenderOpts & renderOpts,
 		case CalcHeightOpt::Minimum :
 		{
 			QVector< WhereDrawn > r;
-			r.append( { 0, 0.0,
+			r.append( { -1, 0.0,
 				( ( withNewLine && !pdfData.firstOnPage ) ||
 					( withNewLine && pdfData.drawFootnotes ) ?
 						lineHeight + cw.firstItemHeight() :
@@ -1655,7 +1668,7 @@ PdfRenderer::drawParagraph( PdfAuxData & pdfData, const RenderOpts & renderOpts,
 
 				if( it->isNewLine )
 				{
-					r.append( { 0, 0.0, max } );
+					r.append( { -1, 0.0, max } );
 					max = 0.0;
 					h = 0.0;
 				}
@@ -2199,12 +2212,12 @@ PdfRenderer::drawCode( PdfAuxData & pdfData, const RenderOpts & renderOpts,
 			pdfData.coords.y -= textLHeight * 2.0;
 
 		pdfData.coords.x = pdfData.coords.margins.left + offset;
-
-		lines = item->text().split( QLatin1Char( '\n' ), Qt::KeepEmptyParts );
-
-		for( auto it = lines.begin(), last = lines.end(); it != last; ++it )
-			it->replace( QStringLiteral( "\t" ), QStringLiteral( "    " ) );
 	}
+
+	lines = item->text().split( QLatin1Char( '\n' ), Qt::KeepEmptyParts );
+
+	for( auto it = lines.begin(), last = lines.end(); it != last; ++it )
+		it->replace( QStringLiteral( "\t" ), QStringLiteral( "    " ) );
 
 	auto * font = createFont( renderOpts.m_codeFont, false, false, renderOpts.m_codeFontSize,
 		pdfData.doc, scale, pdfData );
@@ -2215,7 +2228,8 @@ PdfRenderer::drawCode( PdfAuxData & pdfData, const RenderOpts & renderOpts,
 		case CalcHeightOpt::Minimum :
 		{
 			QVector< WhereDrawn > r;
-			r.append( { 0, 0.0, textLHeight * 2.0 + lineHeight } );
+			r.append( { -1, 0.0, textLHeight * 2.0 + lineHeight } );
+			r.append( { -1, 0.0, lineHeight } );
 
 			return r;
 		}
@@ -2223,15 +2237,17 @@ PdfRenderer::drawCode( PdfAuxData & pdfData, const RenderOpts & renderOpts,
 		case CalcHeightOpt::Full :
 		{
 			QVector< WhereDrawn > r;
-			r.append( { 0, 0.0, textLHeight * 2.0 + lineHeight } );
+			r.append( { -1, 0.0, textLHeight * 2.0 + lineHeight } );
 
 			auto i = 1;
 
 			while( i < lines.size() )
 			{
-				r.append( { 0, 0.0, lineHeight } );
+				r.append( { -1, 0.0, lineHeight } );
 				++i;
 			}
+
+			r.append( { -1, 0.0, lineHeight } );
 
 			return r;
 		}
@@ -2260,10 +2276,11 @@ PdfRenderer::drawCode( PdfAuxData & pdfData, const RenderOpts & renderOpts,
 	while( i < lines.size() )
 	{
 		auto y = pdfData.coords.y;
-		int j = i;
+		int j = i + 1;
 		double h = 0.0;
 
-		while( y - lineHeight > pdfData.currentPageAllowedY() && j < lines.size() )
+		while( ( y - lineHeight > pdfData.currentPageAllowedY() ||
+			qAbs( y - lineHeight - pdfData.currentPageAllowedY() ) < 0.1 ) && j < lines.size() )
 		{
 			h += lineHeight;
 			y -= lineHeight;
@@ -2273,7 +2290,7 @@ PdfRenderer::drawCode( PdfAuxData & pdfData, const RenderOpts & renderOpts,
 		if( i < j )
 		{
 			pdfData.setColor( renderOpts.m_codeBackground );
-			pdfData.drawRectangle( pdfData.coords.x, y,
+			pdfData.drawRectangle( pdfData.coords.x, y + font->GetFontMetrics()->GetDescent(),
 				pdfData.coords.pageWidth - pdfData.coords.x - pdfData.coords.margins.right,
 				 h + lineHeight );
 			pdfData.painter->Fill();
@@ -2497,6 +2514,14 @@ PdfRenderer::drawList( PdfAuxData & pdfData, const RenderOpts & renderOpts,
 
 		if( heightCalcOpt == CalcHeightOpt::Minimum )
 			break;
+	}
+
+	if( !ret.isEmpty() )
+	{
+		auto * font = createFont( m_opts.m_textFont, false, false,
+			m_opts.m_textFontSize, pdfData.doc, scale, pdfData );
+
+		ret.front().height += font->GetFontMetrics()->GetLineSpacing();
 	}
 
 	return ret;
