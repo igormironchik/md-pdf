@@ -1,7 +1,7 @@
 
 | Internal link   | External link |
 | --- | --- |
-| [][1] | [](https://unsplash.com/s/photos/sample) |
+| [Word][1] | [](https://unsplash.com/s/photos/sample) |
 
 [1]: word.md
 
