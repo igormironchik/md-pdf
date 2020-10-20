@@ -57,6 +57,8 @@ private slots:
 	void testFootnoteWithTable();
 	//! Complex footnote.
 	void testComplexFootnote();
+	//! One more complex test.
+	void testComplex3();
 
 	//! Test footnotes rendering.
 	void testFootnotesBigFont();
@@ -74,6 +76,8 @@ private slots:
 	void testFootnoteWithTableBigFont();
 	//! Complex footnote.
 	void testComplexFootnoteBigFont();
+	//! One more complex test.
+	void testComplex3BigFont();
 
 	//! Test code.
 	void testCode();
@@ -93,7 +97,7 @@ testRendering( const QString & fileName, const QString & suffix,
 	try {
 		MD::Parser parser;
 
-		auto doc = parser.parse( c_folder + QStringLiteral( "/../../manual/" ) + fileName, false );
+		auto doc = parser.parse( c_folder + QStringLiteral( "/../../manual/" ) + fileName, true );
 
 		RenderOpts opts;
 		opts.m_borderColor = QColor( 81, 81, 81 );
@@ -291,6 +295,12 @@ TestRender::testComplexFootnote()
 }
 
 void
+TestRender::testComplex3()
+{
+	doTest( QStringLiteral( "complex3.md" ), QString(), 8.0, 8.0 );
+}
+
+void
 TestRender::testFootnotesBigFont()
 {
 	doTest( QStringLiteral( "footnotes.md" ), QStringLiteral( "_big" ), 16.0, 14.0 );
@@ -336,6 +346,12 @@ void
 TestRender::testComplexFootnoteBigFont()
 {
 	doTest( QStringLiteral( "footnote3.md" ), QStringLiteral( "_big" ), 16.0, 14.0 );
+}
+
+void
+TestRender::testComplex3BigFont()
+{
+	doTest( QStringLiteral( "complex3.md" ), QStringLiteral( "_big" ), 16.0, 14.0 );
 }
 
 void
