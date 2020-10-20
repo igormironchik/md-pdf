@@ -1014,7 +1014,8 @@ PdfRenderer::drawHeading( PdfAuxData & pdfData, const RenderOpts & renderOpts,
 		return ret;
 	}
 	// If heading can be placed with next item on empty page.
-	else if( height + nextItemMinHeight <= availableHeight )
+	else if( height + nextItemMinHeight < availableHeight ||
+		qAbs( height + nextItemMinHeight - availableHeight ) < 0.1 )
 	{
 		createPage( pdfData );
 		pdfData.freeSpaceOn( pdfData.currentPageIdx );
@@ -3179,7 +3180,8 @@ PdfRenderer::drawTableRow( QVector< QVector< CellData > > & table, int row, PdfA
 					( c + 1 )->font->SetFontSize( old );
 				}
 
-				if( text.width + s + w <= it->at( 0 ).width )
+				if( text.width + s + w < it->at( 0 ).width ||
+					qAbs( text.width + s + w - it->at( 0 ).width ) < 0.01 )
 				{
 					text.text.append( *c );
 
@@ -3357,7 +3359,8 @@ PdfRenderer::drawTextLineInTable( double x, double & y, TextToDraw & text, doubl
 			y -= pdfData.extraInFootnote;
 	}
 
-	if( text.width <= text.availableWidth )
+	if( text.width < text.availableWidth ||
+		qAbs( text.width - text.availableWidth ) < 0.01 )
 	{
 		switch( text.alignment )
 		{
