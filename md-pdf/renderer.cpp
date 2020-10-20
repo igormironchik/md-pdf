@@ -994,7 +994,8 @@ PdfRenderer::drawHeading( PdfAuxData & pdfData, const RenderOpts & renderOpts,
 		pdfData.coords.y -= c_beforeHeading;
 
 	// If heading can be placed with next item on current page.
-	if( pdfData.coords.y - height - nextItemMinHeight > pdfData.currentPageAllowedY() )
+	if( pdfData.coords.y - height - nextItemMinHeight > pdfData.currentPageAllowedY() ||
+		qAbs( pdfData.coords.y - height - nextItemMinHeight - pdfData.currentPageAllowedY() ) < 0.1 )
 	{
 		pdfData.drawMultiLineText( pdfData.coords.margins.left + offset,
 			pdfData.coords.y - height,
@@ -2206,8 +2207,9 @@ PdfRenderer::drawCode( PdfAuxData & pdfData, const RenderOpts & renderOpts,
 
 	if( heightCalcOpt == CalcHeightOpt::Unknown )
 	{
-		if( pdfData.coords.y - ( textLHeight * 2.0 ) < pdfData.currentPageAllowedY() )
-			createPage( pdfData );
+		if( pdfData.coords.y - ( textLHeight * 2.0 ) < pdfData.currentPageAllowedY() &&
+			qAbs( pdfData.coords.y - ( textLHeight * 2.0 ) - pdfData.currentPageAllowedY() ) > 0.1 )
+				createPage( pdfData );
 		else
 			pdfData.coords.y -= textLHeight * 2.0;
 
@@ -2541,8 +2543,9 @@ PdfRenderer::drawListItem( PdfAuxData & pdfData, const RenderOpts & renderOpts,
 	{
 		pdfData.painter->SetFont( font );
 
-		if( pdfData.coords.y - lineHeight < pdfData.currentPageAllowedY() )
-			createPage( pdfData );
+		if( pdfData.coords.y - lineHeight < pdfData.currentPageAllowedY() &&
+			qAbs( pdfData.coords.y - lineHeight - pdfData.currentPageAllowedY() ) > 0.1 )
+				createPage( pdfData );
 
 		pdfData.coords.y -= lineHeight;
 
@@ -2978,9 +2981,11 @@ PdfRenderer::drawTable( PdfAuxData & pdfData, const RenderOpts & renderOpts,
 			break;
 	}
 
-	if( pdfData.coords.y - ( r0h + r1h + ( c_tableMargin * ( justHeader ? 2.0 : 4.0 ) ) -
-			( font->GetFontMetrics()->GetDescent() * ( justHeader ? 1.0 : 2.0 ) ) ) <
-				pdfData.currentPageAllowedY() )
+	const auto nonSplittableHeight = ( r0h + r1h + ( c_tableMargin * ( justHeader ? 2.0 : 4.0 ) ) -
+		( font->GetFontMetrics()->GetDescent() * ( justHeader ? 1.0 : 2.0 ) ) );
+
+	if( pdfData.coords.y - nonSplittableHeight < pdfData.currentPageAllowedY() &&
+		qAbs( pdfData.coords.y - nonSplittableHeight - pdfData.currentPageAllowedY() ) > 0.1 )
 	{
 		createPage( pdfData );
 
@@ -3083,7 +3088,7 @@ PdfRenderer::drawTableRow( QVector< QVector< CellData > > & table, int row, PdfA
 		double x = startX;
 		double y = startY - c_tableMargin;
 
-		if( y < pdfData.currentPageAllowedY() )
+		if( y < pdfData.currentPageAllowedY() && qAbs( y - pdfData.currentPageAllowedY() ) > 0.1 )
 		{
 			newPageInTable( pdfData, currentPage, endPage, endY );
 
@@ -3114,7 +3119,8 @@ PdfRenderer::drawTableRow( QVector< QVector< CellData > > & table, int row, PdfA
 
 				auto h = img.GetHeight() * ratio;
 
-				if(  y - h < pdfData.currentPageAllowedY() )
+				if(  y - h < pdfData.currentPageAllowedY() &&
+					qAbs( y - h - pdfData.currentPageAllowedY() ) > 0.1 )
 				{
 					newPageInTable( pdfData, currentPage, endPage, endY );
 
