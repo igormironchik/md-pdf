@@ -298,10 +298,15 @@ private slots:
 	//! Clean render.
 	void clean() override;
 
-private:
+protected:
+	friend struct CellItem;
+	friend struct CellData;
+
 	//! Create font.
 	PdfFont * createFont( const QString & name, bool bold, bool italic, float size,
 		PdfMemDocument * doc, float scale, const PdfAuxData & pdfData );
+
+private:
 	//! Create new page.
 	void createPage( PdfAuxData & pdfData );
 
@@ -463,6 +468,18 @@ private:
 		MD::Image * item, QSharedPointer< MD::Document > doc, bool & newLine, double offset,
 		bool firstInParagraph, CustomWidth * cw, float scale );
 
+	//! Font in table.
+	struct Font {
+		QString family;
+		bool bold;
+		bool italic;
+		bool strikethrough;
+		int size;
+	}; // struct Font
+
+	friend bool operator != ( const PdfRenderer::Font & f1, const PdfRenderer::Font & f2 );
+	friend bool operator == ( const PdfRenderer::Font & f1, const PdfRenderer::Font & f2 );
+
 	//! Item in the table's cell.
 	struct CellItem {
 		QString word;
@@ -471,11 +488,11 @@ private:
 		QString footnote;
 		QColor color;
 		QColor background;
-		PdfFont * font = nullptr;
 		QSharedPointer< MD::Footnote > footnoteObj;
+		Font font;
 
 		//! \return Width of the item.
-		double width( PdfAuxData & pdfData ) const;
+		double width( PdfAuxData & pdfData, PdfRenderer * render, float scale ) const;
 	}; // struct CellItem
 
 	//! Cell in the table.
@@ -488,7 +505,7 @@ private:
 		void setWidth( double w ) { width = w; }
 		//! Calculate height for the given width.
 		void heightToWidth( double lineHeight, double spaceWidth, float scale,
-			PdfAuxData & pdfData );
+			PdfAuxData & pdfData, PdfRenderer * render );
 	}; //  struct CellData
 
 	//! \return Height of the row.
@@ -527,7 +544,8 @@ private:
 	void drawTextLineInTable( double x, double & y, TextToDraw & text, double lineHeight,
 		PdfAuxData & pdfData, QMap< QString, QVector< QPair< QRectF, int > > > & links,
 		PdfFont * font, int & currentPage, int & endPage, double & endY,
-		QVector< QSharedPointer< MD::Footnote > > & footnotes, bool inFootnote );
+		QVector< QSharedPointer< MD::Footnote > > & footnotes, bool inFootnote,
+		float scale );
 	//! Create new page in table.
 	void newPageInTable( PdfAuxData & pdfData, int & currentPage, int & endPage,
 		double & endY );
@@ -561,6 +579,10 @@ private:
 	//! Footnotes to draw.
 	QVector< QSharedPointer< MD::Footnote > > m_footnotes;
 }; // class Renderer
+
+
+bool operator != ( const PdfRenderer::Font & f1, const PdfRenderer::Font & f2 );
+bool operator == ( const PdfRenderer::Font & f1, const PdfRenderer::Font & f2 );
 
 
 //

@@ -404,10 +404,14 @@ PdfRenderer::CustomWidth::totalHeight() const
 //
 
 double
-PdfRenderer::CellItem::width( PdfAuxData & pdfData ) const
+PdfRenderer::CellItem::width( PdfAuxData & pdfData, PdfRenderer * render, float scale ) const
 {
+	auto * f = render->createFont( font.family, font.bold, font.italic,
+		font.size, pdfData.doc, scale, pdfData );
+	f->SetStrikeOut( font.strikethrough );
+
 	if( !word.isEmpty() )
-		return font->GetFontMetrics()->StringWidth( createPdfString( word ) );
+		return f->GetFontMetrics()->StringWidth( createPdfString( word ) );
 	else if( !image.isNull() )
 	{
 		PdfImage pdfImg( pdfData.doc );
@@ -417,14 +421,14 @@ PdfRenderer::CellItem::width( PdfAuxData & pdfData ) const
 		return pdfImg.GetWidth();
 	}
 	else if( !url.isEmpty() )
-		return font->GetFontMetrics()->StringWidth( createPdfString( url ) );
+		return f->GetFontMetrics()->StringWidth( createPdfString( url ) );
 	else if( !footnote.isEmpty() )
 	{
-		const auto old = font->GetFontSize();
-		font->SetFontSize( old * c_footnoteScale );
-		const auto w = font->GetFontMetrics()->StringWidth( createPdfString(
+		const auto old = f->GetFontSize();
+		f->SetFontSize( old * c_footnoteScale );
+		const auto w = f->GetFontMetrics()->StringWidth( createPdfString(
 			footnote ) );
-		font->SetFontSize( old );
+		f->SetFontSize( old );
 
 		return w;
 	}
@@ -439,7 +443,7 @@ PdfRenderer::CellItem::width( PdfAuxData & pdfData ) const
 
 void
 PdfRenderer::CellData::heightToWidth( double lineHeight, double spaceWidth, float scale,
-	PdfAuxData & pdfData )
+	PdfAuxData & pdfData, PdfRenderer * render )
 {
 	height = 0.0;
 
@@ -458,7 +462,7 @@ PdfRenderer::CellData::heightToWidth( double lineHeight, double spaceWidth, floa
 				w = 0.0;
 			}
 
-			w += it->width( pdfData );
+			w += it->width( pdfData, render, scale );
 
 			if( w >= width )
 			{
@@ -469,14 +473,19 @@ PdfRenderer::CellData::heightToWidth( double lineHeight, double spaceWidth, floa
 			double sw = spaceWidth;
 
 			if( it != items.cbegin() && it->font != ( it - 1 )->font )
-				sw = it->font->GetFontMetrics()->StringWidth( PdfString( " " ) );
+			{
+				auto * f = render->createFont( it->font.family, it->font.bold, it->font.italic,
+					it->font.size, pdfData.doc, scale, pdfData );
+				f->SetStrikeOut( it->font.strikethrough );
+				sw = f->GetFontMetrics()->StringWidth( PdfString( " " ) );
+			}
 
 			if( it + 1 != last && !( it + 1 )->footnote.isEmpty() )
 				sw = 0.0;
 
 			if( it + 1 != last )
 			{
-				if( w + sw + ( it + 1 )->width( pdfData ) > width )
+				if( w + sw + ( it + 1 )->width( pdfData, render, scale ) > width )
 					newLine = true;
 				else
 				{
@@ -2717,10 +2726,29 @@ PdfRenderer::maxListNumberWidth( MD::List * list ) const
 	return ( counter / 10 + 1 );
 }
 
+bool
+operator != ( const PdfRenderer::Font & f1, const PdfRenderer::Font & f2 )
+{
+	return ( f1.family != f2.family || f1.bold != f2.bold ||
+		f1.italic != f2.italic || f1.strikethrough != f2.strikethrough ||
+		f1.size != f2.size );
+}
+
+bool
+operator == ( const PdfRenderer::Font & f1, const PdfRenderer::Font & f2 )
+{
+	return ( f1.family == f2.family && f1.bold == f2.bold &&
+		f1.italic == f2.italic && f1.strikethrough == f2.strikethrough &&
+		f1.size == f2.size );
+}
+
 QVector< QVector< PdfRenderer::CellData > >
 PdfRenderer::createAuxTable( PdfAuxData & pdfData, const RenderOpts & renderOpts,
 	MD::Table * item, QSharedPointer< MD::Document > doc, float scale, bool inFootnote )
 {
+	Q_UNUSED( pdfData )
+	Q_UNUSED( scale )
+
 	const auto columnsCount = item->columnsCount();
 
 	QVector< QVector< CellData > > auxTable;
@@ -2746,16 +2774,6 @@ PdfRenderer::createAuxTable( PdfAuxData & pdfData, const RenderOpts & renderOpts
 					{
 						auto * t = static_cast< MD::Text* > ( it->data() );
 
-						auto * font = createFont( renderOpts.m_textFont,
-							t->opts() & MD::TextOption::BoldText,
-							t->opts() & MD::TextOption::ItalicText,
-							renderOpts.m_textFontSize, pdfData.doc, scale, pdfData );
-
-						if( t->opts() & MD::TextOption::StrikethroughText )
-							font->SetStrikeOut( true );
-						else
-							font->SetStrikeOut( false );
-
 						const auto words = t->text().split( QLatin1Char( ' ' ),
 							Qt::SkipEmptyParts );
 
@@ -2763,7 +2781,11 @@ PdfRenderer::createAuxTable( PdfAuxData & pdfData, const RenderOpts & renderOpts
 						{
 							CellItem item;
 							item.word = w;
-							item.font = font;
+							item.font = { renderOpts.m_textFont,
+								(bool) ( t->opts() & MD::TextOption::BoldText ),
+								(bool) ( t->opts() & MD::TextOption::ItalicText ),
+								(bool) ( t->opts() & MD::TextOption::StrikethroughText ),
+								renderOpts.m_textFontSize };
 
 							data.items.append( item );
 						}
@@ -2774,9 +2796,6 @@ PdfRenderer::createAuxTable( PdfAuxData & pdfData, const RenderOpts & renderOpts
 					{
 						auto * c = static_cast< MD::Code* > ( it->data() );
 
-						auto * font = createFont( renderOpts.m_codeFont, false, false,
-							renderOpts.m_codeFontSize, pdfData.doc, scale, pdfData );
-
 						const auto words = c->text().split( QLatin1Char( ' ' ),
 							Qt::SkipEmptyParts );
 
@@ -2784,7 +2803,8 @@ PdfRenderer::createAuxTable( PdfAuxData & pdfData, const RenderOpts & renderOpts
 						{
 							CellItem item;
 							item.word = w;
-							item.font = font;
+							item.font = { renderOpts.m_codeFont, false, false, false,
+								renderOpts.m_codeFontSize };
 							item.background = renderOpts.m_codeBackground;
 
 							data.items.append( item );
@@ -2796,17 +2816,6 @@ PdfRenderer::createAuxTable( PdfAuxData & pdfData, const RenderOpts & renderOpts
 					{
 						auto * l = static_cast< MD::Link* > ( it->data() );
 
-						auto * font = createFont( renderOpts.m_textFont,
-							l->textOptions() & MD::TextOption::BoldText,
-							l->textOptions() & MD::TextOption::ItalicText,
-							renderOpts.m_textFontSize, pdfData.doc,
-							scale, pdfData );
-
-						if( l->textOptions() & MD::TextOption::StrikethroughText )
-							font->SetStrikeOut( true );
-						else
-							font->SetStrikeOut( false );
-
 						QString url = l->url();
 
 						if( doc->labeledLinks().contains( url ) )
@@ -2817,6 +2826,11 @@ PdfRenderer::createAuxTable( PdfAuxData & pdfData, const RenderOpts & renderOpts
 							CellItem item;
 							item.image = loadImage( l->img().data() );
 							item.url = url;
+							item.font = { renderOpts.m_textFont,
+								(bool) ( l->textOptions() & MD::TextOption::BoldText ),
+								(bool) ( l->textOptions() & MD::TextOption::ItalicText ),
+								(bool) ( l->textOptions() & MD::TextOption::StrikethroughText ),
+								renderOpts.m_textFontSize };
 
 							data.items.append( item );
 						}
@@ -2829,7 +2843,11 @@ PdfRenderer::createAuxTable( PdfAuxData & pdfData, const RenderOpts & renderOpts
 							{
 								CellItem item;
 								item.word = w;
-								item.font = font;
+								item.font = { renderOpts.m_textFont,
+									(bool) ( l->textOptions() & MD::TextOption::BoldText ),
+									(bool) ( l->textOptions() & MD::TextOption::ItalicText ),
+									(bool) ( l->textOptions() & MD::TextOption::StrikethroughText ),
+									renderOpts.m_textFontSize };
 								item.url = url;
 								item.color = renderOpts.m_linkColor;
 
@@ -2839,7 +2857,11 @@ PdfRenderer::createAuxTable( PdfAuxData & pdfData, const RenderOpts & renderOpts
 						else
 						{
 							CellItem item;
-							item.font = font;
+							item.font = { renderOpts.m_textFont,
+								(bool) ( l->textOptions() & MD::TextOption::BoldText ),
+								(bool) ( l->textOptions() & MD::TextOption::ItalicText ),
+								(bool) ( l->textOptions() & MD::TextOption::StrikethroughText ),
+								renderOpts.m_textFontSize };
 							item.url = url;
 							item.color = renderOpts.m_linkColor;
 
@@ -2857,6 +2879,8 @@ PdfRenderer::createAuxTable( PdfAuxData & pdfData, const RenderOpts & renderOpts
 						emit status( tr( "Loading image." ) );
 
 						item.image = loadImage( i );
+						item.font = { renderOpts.m_textFont,
+							false, false, false, renderOpts.m_textFontSize };
 
 						data.items.append( item );
 					}
@@ -2870,13 +2894,10 @@ PdfRenderer::createAuxTable( PdfAuxData & pdfData, const RenderOpts & renderOpts
 
 							if( doc->footnotesMap().contains( ref->id() ) )
 							{
-								auto * font = createFont( renderOpts.m_textFont,
-									false, false,
-									renderOpts.m_textFontSize, pdfData.doc,
-									scale, pdfData );
-
 								CellItem item;
-								item.font = font;
+								item.font = { renderOpts.m_textFont,
+									false, false, false,
+									renderOpts.m_textFontSize };
 								item.footnote = QString::number( m_footnoteNum++ );
 								item.footnoteObj = doc->footnotesMap()[ ref->id() ];
 
@@ -2923,7 +2944,7 @@ PdfRenderer::calculateCellsSize( PdfAuxData & pdfData, QVector< QVector< CellDat
 
 	for( auto it = auxTable.begin(), last = auxTable.end(); it != last; ++it )
 		for( auto cit = it->begin(), clast = it->end(); cit != clast; ++cit )
-			cit->heightToWidth( lineHeight, spaceWidth, scale, pdfData );
+			cit->heightToWidth( lineHeight, spaceWidth, scale, pdfData, this );
 }
 
 QVector< WhereDrawn >
@@ -3045,7 +3066,7 @@ PdfRenderer::drawTableRow( QVector< QVector< CellData > > & table, int row, PdfA
 
 	emit status( tr( "Drawing table row." ) );
 
-	auto * font = createFont( renderOpts.m_textFont, false, false, renderOpts.m_textFontSize,
+	auto * textFont = createFont( renderOpts.m_textFont, false, false, renderOpts.m_textFontSize,
 		pdfData.doc, scale, pdfData );
 
 	const auto startPage = pdfData.currentPageIndex();
@@ -3104,8 +3125,8 @@ PdfRenderer::drawTableRow( QVector< QVector< CellData > > & table, int row, PdfA
 		for( auto c = it->at( row ).items.cbegin(), clast = it->at( row ).items.cend(); c != clast; ++c )
 		{
 			if( !c->image.isNull() && !text.text.isEmpty() )
-				drawTextLineInTable( x, y, text, lineHeight, pdfData, links, font, currentPage,
-					endPage, endY, footnotes, inFootnote );
+				drawTextLineInTable( x, y, text, lineHeight, pdfData, links, textFont, currentPage,
+					endPage, endY, footnotes, inFootnote, scale );
 
 			if( !c->image.isNull() )
 			{
@@ -3148,7 +3169,8 @@ PdfRenderer::drawTableRow( QVector< QVector< CellData > > & table, int row, PdfA
 				pdfData.drawImage( x + o, y, &img, ratio, ratio );
 
 				if( !c->url.isEmpty() )
-					links[ c->url ].append( qMakePair( QRectF( x, y, c->width( pdfData ),
+					links[ c->url ].append( qMakePair( QRectF( x, y,
+							c->width( pdfData, this, scale ),
 							img.GetHeight() * ratio ),
 						currentPage ) );
 
@@ -3156,28 +3178,36 @@ PdfRenderer::drawTableRow( QVector< QVector< CellData > > & table, int row, PdfA
 			}
 			else
 			{
-				auto w = c->font->GetFontMetrics()->StringWidth(
+				auto * font = createFont( c->font.family, c->font.bold, c->font.italic,
+					c->font.size, pdfData.doc, scale, pdfData );
+				font->SetStrikeOut( c->font.strikethrough );
+
+				auto w = font->GetFontMetrics()->StringWidth(
 					createPdfString( c->word.isEmpty() ? c->url : c->word ) );
 				double s = 0.0;
 
 				if( !text.text.isEmpty() )
 				{
 					if( text.text.last().font == c->font )
-						s = c->font->GetFontMetrics()->StringWidth( PdfString( " " ) );
-					else
 						s = font->GetFontMetrics()->StringWidth( PdfString( " " ) );
+					else
+						s = textFont->GetFontMetrics()->StringWidth( PdfString( " " ) );
 				}
 
 				double fw = 0.0;
 
 				if( c + 1 != clast && !( c + 1 )->footnote.isEmpty() )
 				{
-					const auto old = ( c + 1 )->font->GetFontSize();
-					( c + 1 )->font->SetFontSize( old * scale );
-					fw = ( c + 1 )->font->GetFontMetrics()->StringWidth( createPdfString(
+					auto * f1 = createFont( ( c + 1 )->font.family, ( c + 1 )->font.bold,
+						( c + 1 )->font.italic, ( c + 1 )->font.size, pdfData.doc, scale, pdfData );
+					f1->SetStrikeOut( ( c + 1 )->font.strikethrough );
+
+					const auto old = f1->GetFontSize();
+					f1->SetFontSize( old * scale );
+					fw = f1->GetFontMetrics()->StringWidth( createPdfString(
 						( c + 1 )->footnote ) );
 					w += fw;
-					( c + 1 )->font->SetFontSize( old );
+					f1->SetFontSize( old );
 				}
 
 				if( text.width + s + w < it->at( 0 ).width ||
@@ -3195,7 +3225,7 @@ PdfRenderer::drawTableRow( QVector< QVector< CellData > > & table, int row, PdfA
 					if( !text.text.isEmpty() )
 					{
 						drawTextLineInTable( x, y, text, lineHeight, pdfData, links,
-							font, currentPage, endPage, endY, footnotes, inFootnote );
+							textFont, currentPage, endPage, endY, footnotes, inFootnote, scale );
 						text.text.append( *c );
 
 						if( c + 1 != clast && !( c + 1 )->footnote.isEmpty() )
@@ -3208,7 +3238,7 @@ PdfRenderer::drawTableRow( QVector< QVector< CellData > > & table, int row, PdfA
 						text.text.append( *c );
 						text.width += w;
 						drawTextLineInTable( x, y, text, lineHeight, pdfData, links,
-							font, currentPage, endPage, endY, footnotes, inFootnote );
+							textFont, currentPage, endPage, endY, footnotes, inFootnote, scale );
 
 						if( c + 1 != clast && !( c + 1 )->footnote.isEmpty() )
 						{
@@ -3226,10 +3256,10 @@ PdfRenderer::drawTableRow( QVector< QVector< CellData > > & table, int row, PdfA
 		}
 
 		if( !text.text.isEmpty() )
-			drawTextLineInTable( x, y, text, lineHeight, pdfData, links, font, currentPage,
-				endPage, endY, footnotes, inFootnote );
+			drawTextLineInTable( x, y, text, lineHeight, pdfData, links, textFont, currentPage,
+				endPage, endY, footnotes, inFootnote, scale );
 
-		y -= c_tableMargin - font->GetFontMetrics()->GetDescent();
+		y -= c_tableMargin - textFont->GetFontMetrics()->GetDescent();
 
 		if( y < endY  && currentPage == pdfData.currentPageIndex() )
 			endY = y;
@@ -3345,7 +3375,7 @@ void
 PdfRenderer::drawTextLineInTable( double x, double & y, TextToDraw & text, double lineHeight,
 	PdfAuxData & pdfData, QMap< QString, QVector< QPair< QRectF, int > > > & links,
 	PdfFont * font, int & currentPage, int & endPage, double & endY,
-	QVector< QSharedPointer< MD::Footnote > > & footnotes, bool inFootnote )
+	QVector< QSharedPointer< MD::Footnote > > & footnotes, bool inFootnote, float scale )
 {
 	y -= lineHeight;
 
@@ -3385,7 +3415,10 @@ PdfRenderer::drawTextLineInTable( double x, double & y, TextToDraw & text, doubl
 
 		double w = 0.0;
 
-		auto * fm = text.text.first().font->GetFontMetrics();
+		auto * f = createFont( text.text.first().font.family, text.text.first().font.bold,
+			text.text.first().font.italic, text.text.first().font.size, pdfData.doc, scale, pdfData );
+		f->SetStrikeOut( text.text.first().font.strikethrough );
+		auto * fm = f->GetFontMetrics();
 
 		for( const auto & ch : str )
 		{
@@ -3402,12 +3435,16 @@ PdfRenderer::drawTextLineInTable( double x, double & y, TextToDraw & text, doubl
 
 	for( auto it = text.text.cbegin(), last = text.text.cend(); it != last; ++it )
 	{
+		auto * f = createFont( it->font.family, it->font.bold,
+			it->font.italic, it->font.size, pdfData.doc, scale, pdfData );
+		f->SetStrikeOut( it->font.strikethrough );
+
 		if( it->background.isValid() )
 		{
 			pdfData.setColor( it->background );
 
-			pdfData.drawRectangle( x, y + it->font->GetFontMetrics()->GetDescent(),
-				it->width( pdfData ), it->font->GetFontMetrics()->GetLineSpacing() );
+			pdfData.drawRectangle( x, y + f->GetFontMetrics()->GetDescent(),
+				it->width( pdfData, this, scale ), f->GetFontMetrics()->GetLineSpacing() );
 
 			pdfData.painter->Fill();
 
@@ -3417,17 +3454,17 @@ PdfRenderer::drawTextLineInTable( double x, double & y, TextToDraw & text, doubl
 		if( it->color.isValid() )
 			pdfData.setColor( it->color );
 
-		pdfData.painter->SetFont( it->font );
+		pdfData.painter->SetFont( f );
 		pdfData.drawText( x, y, createPdfString( it->word.isEmpty() ?
 			it->url : it->word ) );
 
 		pdfData.restoreColor();
 
 		if( !it->url.isEmpty() )
-			links[ it->url ].append( qMakePair( QRectF( x, y, it->width( pdfData ), lineHeight ),
-				currentPage ) );
+			links[ it->url ].append( qMakePair( QRectF( x, y, it->width( pdfData, this, scale ),
+				lineHeight ), currentPage ) );
 
-		x += it->width( pdfData );
+		x += it->width( pdfData, this, scale );
 
 		if( !inFootnote )
 		{
@@ -3437,14 +3474,14 @@ PdfRenderer::drawTextLineInTable( double x, double & y, TextToDraw & text, doubl
 
 				const auto str = createPdfString( it->footnote );
 
-				const auto old = it->font->GetFontSize();
-				it->font->SetFontSize( old * c_footnoteScale );
+				const auto old = f->GetFontSize();
+				f->SetFontSize( old * c_footnoteScale );
 
-				const auto w = it->font->GetFontMetrics()->StringWidth( str );
+				const auto w = f->GetFontMetrics()->StringWidth( str );
 
 				pdfData.drawText( x, y + lineHeight -
-					it->font->GetFontMetrics()->GetLineSpacing(), str );
-				it->font->SetFontSize( old );
+					f->GetFontMetrics()->GetLineSpacing(), str );
+				f->SetFontSize( old );
 
 				x += w;
 
@@ -3460,10 +3497,10 @@ PdfRenderer::drawTextLineInTable( double x, double & y, TextToDraw & text, doubl
 			{
 				pdfData.setColor( it->background );
 
-				const auto sw = it->font->GetFontMetrics()->StringWidth( PdfString( " " ) );
+				const auto sw = f->GetFontMetrics()->StringWidth( PdfString( " " ) );
 
-				pdfData.drawRectangle( x, y + it->font->GetFontMetrics()->GetDescent(),
-					sw, it->font->GetFontMetrics()->GetLineSpacing() );
+				pdfData.drawRectangle( x, y + f->GetFontMetrics()->GetDescent(),
+					sw, f->GetFontMetrics()->GetLineSpacing() );
 
 				x += sw;
 
