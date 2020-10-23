@@ -2359,8 +2359,6 @@ PdfRenderer::drawCode( PdfAuxData & pdfData, const RenderOpts & renderOpts,
 		}
 	}
 
-	pdfData.coords.y -= lineHeight;
-
 	return ret;
 }
 
