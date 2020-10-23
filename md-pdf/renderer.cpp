@@ -2241,7 +2241,6 @@ PdfRenderer::drawCode( PdfAuxData & pdfData, const RenderOpts & renderOpts,
 		{
 			QVector< WhereDrawn > r;
 			r.append( { -1, 0.0, textLHeight * 2.0 + lineHeight } );
-			r.append( { -1, 0.0, lineHeight } );
 
 			return r;
 		}
@@ -2258,8 +2257,6 @@ PdfRenderer::drawCode( PdfAuxData & pdfData, const RenderOpts & renderOpts,
 				r.append( { -1, 0.0, lineHeight } );
 				++i;
 			}
-
-			r.append( { -1, 0.0, lineHeight } );
 
 			return r;
 		}
