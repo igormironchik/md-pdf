@@ -55,3 +55,7 @@ of Unicode characters needed by your Markdown. Just play with fonts comboboxes i
 # Screenshot
 
 ![](mdpdf.png)
+
+# Donate
+
+[Donate with BTC](https://github.com/igormironchik)
