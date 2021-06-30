@@ -58,4 +58,4 @@ of Unicode characters needed by your Markdown. Just play with fonts comboboxes i
 
 # Donate
 
-[Donate with BTC](https://github.com/igormironchik)
+[![](bitcoin-btc-logo-full.png)](https://github.com/igormironchik)
