@@ -2825,3 +2825,24 @@ TEST_CASE( "58" )
 	REQUIRE( li->items().at( 0 )->type() == MD::ItemType::Paragraph );
 	REQUIRE( li->items().at( 1 )->type() == MD::ItemType::Paragraph );
 }
+
+TEST_CASE( "59" )
+{
+	MD::Parser parser;
+
+	auto doc = parser.parse( QStringLiteral( "./test59.md" ) );
+
+	REQUIRE( doc->isEmpty() == false );
+	REQUIRE( doc->items().size() == 2 );
+
+	REQUIRE( doc->items().at( 1 )->type() == MD::ItemType::Blockquote );
+
+	auto b = static_cast< MD::Blockquote* > ( doc->items().at( 1 ).data() );
+
+	REQUIRE( b->items().size() == 4 );
+
+	REQUIRE( b->items().at( 0 )->type() == MD::ItemType::Heading );
+	REQUIRE( b->items().at( 1 )->type() == MD::ItemType::List );
+	REQUIRE( b->items().at( 2 )->type() == MD::ItemType::Paragraph );
+	REQUIRE( b->items().at( 3 )->type() == MD::ItemType::Code );
+}

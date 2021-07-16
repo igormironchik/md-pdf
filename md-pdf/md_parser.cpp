@@ -200,7 +200,7 @@ Parser::whatIsTheLine( QString & str, bool inList, int * indent, bool calcIndent
 		{
 			if( calcIndent && indent )
 			{
-				static const QRegExp ir( QLatin1String( "^\\d+\\.\\s+|\\s*(\\*|\\+|\\-){1}\\s+" ) );
+				static const QRegExp ir( QLatin1String( "^\\s*\\d+\\.\\s+|\\s*(\\*|\\+|\\-){1}\\s+" ) );
 
 				if( ir.indexIn( str ) != -1 )
 					*indent = ir.matchedLength();
@@ -1463,11 +1463,11 @@ Parser::parseBlockquote( QStringList & fr, QSharedPointer< Block > parent,
 {
 	QSharedPointer< Blockquote > bq( new Blockquote() );
 
-	const int indent = fr.first().indexOf( QLatin1Char( '>' ) );
+	const int pos = fr.first().indexOf( QLatin1Char( '>' ) );
 
 	StringListStream stream( fr );
 
-	if( indent > -1 )
+	if( pos > -1 )
 	{
 		for( auto it = fr.begin(), last = fr.end(); it != last; ++it )
 			*it = it->mid( it->indexOf( QLatin1Char( '>' ) ) + 1 );

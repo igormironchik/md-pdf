@@ -347,7 +347,7 @@ private:
 			//! Empty new line in list.
 			else if( emptyLineInList )
 			{
-				if( line.startsWith( QString( indent, QLatin1Char( ' ' ) ) ) ||
+				if( ( indent > 0 && line.startsWith( QString( indent, QLatin1Char( ' ' ) ) ) ) ||
 					lineType == BlockType::List )
 				{
 					fragment.append( QString() );
