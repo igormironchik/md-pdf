@@ -81,7 +81,8 @@ private:
 		Heading
 	}; // enum BlockType
 
-	BlockType whatIsTheLine( const QString & str, bool inList = false ) const;
+	BlockType whatIsTheLine( QString & str, bool inList = false, int * indent = nullptr,
+		bool calcIndent = false ) const;
 	void parseFragment( QStringList & fr, QSharedPointer< Block > parent,
 		QSharedPointer< Document > doc,
 		QStringList & linksToParse, const QString & workingPath,
@@ -261,6 +262,7 @@ private:
 
 		static const QRegExp footnoteRegExp( QLatin1String( "\\s*\\[\\^[^\\s]*\\]:.*" ) );
 
+		int indent = 0;
 
 		while( !stream.atEnd() )
 		{
@@ -268,7 +270,7 @@ private:
 
 			auto simplified = line.simplified();
 
-			BlockType lineType = whatIsTheLine( line, emptyLineInList );
+			BlockType lineType = whatIsTheLine( line, emptyLineInList, &indent, true );
 
 			// First line of the fragment.
 			if( !simplified.isEmpty() && type == BlockType::Unknown )
@@ -345,8 +347,7 @@ private:
 			//! Empty new line in list.
 			else if( emptyLineInList )
 			{
-				if( line.startsWith( QLatin1String( "    " ) ) ||
-					line.startsWith( QLatin1Char( '\t' ) )  ||
+				if( line.startsWith( QString( indent, QLatin1Char( ' ' ) ) ) ||
 					lineType == BlockType::List )
 				{
 					fragment.append( QString() );

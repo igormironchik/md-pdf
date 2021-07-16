@@ -2800,3 +2800,28 @@ TEST_CASE( "code with empty lines" )
 	REQUIRE( c->inlined() == false );
 	REQUIRE( c->text() == QStringLiteral( "code\n\ncode" ) );
 }
+
+TEST_CASE( "58" )
+{
+	MD::Parser parser;
+
+	auto doc = parser.parse( QStringLiteral( "./test58.md" ) );
+
+	REQUIRE( doc->isEmpty() == false );
+	REQUIRE( doc->items().size() == 2 );
+
+	REQUIRE( doc->items().at( 1 )->type() == MD::ItemType::List );
+
+	auto l = static_cast< MD::List* > ( doc->items().at( 1 ).data() );
+
+	REQUIRE( l->items().size() == 2 );
+
+	REQUIRE( l->items().at( 0 )->type() == MD::ItemType::ListItem );
+	REQUIRE( l->items().at( 1 )->type() == MD::ItemType::ListItem );
+
+	auto li = static_cast< MD::ListItem* > ( l->items().at( 1 ).data() );
+
+	REQUIRE( li->items().size() == 2 );
+	REQUIRE( li->items().at( 0 )->type() == MD::ItemType::Paragraph );
+	REQUIRE( li->items().at( 1 )->type() == MD::ItemType::Paragraph );
+}

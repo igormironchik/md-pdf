@@ -148,9 +148,10 @@ Parser::parseFile( const QString & fileName, bool recursive, QSharedPointer< Doc
 }
 
 Parser::BlockType
-Parser::whatIsTheLine( const QString & str, bool inList ) const
+Parser::whatIsTheLine( QString & str, bool inList, int * indent, bool calcIndent ) const
 {
 	const auto s = str.simplified();
+	str.replace( QLatin1Char( '\t' ), QString( 4, QLatin1Char( ' ' ) ) );
 	static const QRegExp olr( QStringLiteral( "^\\d+\\.\\s+.*" ) );
 	static const QRegExp startOfCode( QStringLiteral( "^(```|~~~)\\s*\\S*$" ) );
 
@@ -163,11 +164,10 @@ Parser::whatIsTheLine( const QString & str, bool inList ) const
 		{
 			return BlockType::List;
 		}
-		else if( str.startsWith( QLatin1String( "    " ) ) ||
-			str.startsWith( QLatin1Char( '\t' ) ) )
+		else if( str.startsWith( QString( ( indent ? *indent : 4 ), QLatin1Char( ' ' ) ) ) )
 		{
-			if( str.startsWith( QLatin1String( "        " ) ) ||
-				str.startsWith( QLatin1String( "\t\t" ) ) )
+			if( str.startsWith( QString( ( indent ? *indent : 4 ), QLatin1Char( ' ' ) ) +
+				QLatin1String( "    " ) ) )
 			{
 				return BlockType::CodeIndentedBySpaces;
 			}
@@ -198,6 +198,14 @@ Parser::whatIsTheLine( const QString & str, bool inList ) const
 			s.startsWith( QLatin1Char( '*' ) ) ) && s.length() > 1 && s[ 1 ].isSpace() ) ||
 				olr.exactMatch( s ) )
 		{
+			if( calcIndent && indent )
+			{
+				static const QRegExp ir( QLatin1String( "^\\d+\\.\\s+|\\s*(\\*|\\+|\\-){1}\\s+" ) );
+
+				if( ir.indexIn( str ) != -1 )
+					*indent = ir.matchedLength();
+			}
+
 			return BlockType::List;
 		}
 		else if( str.startsWith( QLatin1String( "    " ) ) ||
@@ -1500,7 +1508,7 @@ Parser::parseList( QStringList & fr, QSharedPointer< Block > parent,
 		for( auto last = fr.end(); it != last; ++it )
 		{
 			int s = space.indexIn( *it );
-			s = ( s > indent ? indent : s );
+			s = ( s > indent ? indent : ( s >= 0 ? s : 0 ) );
 
 			*it = it->right( it->length() - s );
 
@@ -1558,7 +1566,9 @@ Parser::parseListItem( QStringList & fr, QSharedPointer< Block > parent,
 
 	itemRegExp.indexIn( fr.first() );
 
-	data.append( fr.first().right( fr.first().length() - itemRegExp.matchedLength() ) );
+	const int indent = itemRegExp.matchedLength();
+
+	data.append( fr.first().right( fr.first().length() - indent ) );
 
 	for( auto last = fr.end(); it != last; ++it, ++pos )
 	{
@@ -1580,8 +1590,8 @@ Parser::parseListItem( QStringList & fr, QSharedPointer< Block > parent,
 		}
 		else
 		{
-			if( it->startsWith( QLatin1String( "    " ) ) )
-				*it = it->right( it->length() - 4 );
+			if( it->startsWith( QString( indent, QLatin1Char( ' ' ) ) ) )
+				*it = it->right( it->length() - indent );
 
 			data.append( *it );
 		}
