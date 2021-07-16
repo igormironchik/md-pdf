@@ -2846,3 +2846,28 @@ TEST_CASE( "59" )
 	REQUIRE( b->items().at( 2 )->type() == MD::ItemType::Paragraph );
 	REQUIRE( b->items().at( 3 )->type() == MD::ItemType::Code );
 }
+
+TEST_CASE( "60" )
+{
+	MD::Parser parser;
+
+	auto doc = parser.parse( QStringLiteral( "./test60.md" ) );
+
+	REQUIRE( doc->isEmpty() == false );
+	REQUIRE( doc->items().size() == 2 );
+
+	REQUIRE( doc->items().at( 1 )->type() == MD::ItemType::List );
+
+	auto l = static_cast< MD::List* > ( doc->items().at( 1 ).data() );
+
+	REQUIRE( l->items().size() == 1 );
+
+	REQUIRE( l->items().at( 0 )->type() == MD::ItemType::ListItem );
+
+	auto li = static_cast< MD::ListItem* > ( l->items().at( 0 ).data() );
+
+	REQUIRE( li->items().size() == 2 );
+
+	REQUIRE( li->items().at( 0 )->type() == MD::ItemType::Paragraph );
+	REQUIRE( li->items().at( 1 )->type() == MD::ItemType::List );
+}
