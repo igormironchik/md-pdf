@@ -35,6 +35,10 @@
 #include <QNetworkAccessManager>
 #include <QThread>
 #include <QBuffer>
+#include <QTemporaryFile>
+
+// Magick++ include.
+#include <Magick++.h>
 
 
 //
@@ -2089,6 +2093,36 @@ PdfRenderer::drawImage( PdfAuxData & pdfData, const RenderOpts & renderOpts,
 }
 
 //
+// convert
+//
+
+QImage
+convert( const Magick::Image & img )
+{
+	QImage qimg( static_cast< int > ( img.columns() ),
+		static_cast< int > ( img.rows() ), QImage::Format_RGB888 );
+	const Magick::PixelPacket * pixels;
+	Magick::ColorRGB rgb;
+
+	for( int y = 0; y < qimg.height(); ++y)
+	{
+		pixels = img.getConstPixels( 0, y, static_cast< std::size_t > ( qimg.width() ), 1 );
+
+		for( int x = 0; x < qimg.width(); ++x )
+		{
+			rgb = ( *( pixels + x ) );
+
+			qimg.setPixel( x, y, QColor( static_cast< int> ( 255 * rgb.red() ),
+				static_cast< int > ( 255 * rgb.green() ),
+				static_cast< int > ( 255 * rgb.blue() ) ).rgb());
+		}
+	}
+
+	return qimg;
+}
+
+
+//
 // LoadImageFromNetwork
 //
 
@@ -2131,7 +2165,32 @@ LoadImageFromNetwork::loadImpl()
 void
 LoadImageFromNetwork::loadFinished()
 {
-	m_img.loadFromData( m_reply->readAll() );
+	if( m_url.toString().toLower().endsWith( QStringLiteral( "svg" ) ) )
+	{
+		try {
+			Magick::Image img;
+			Magick::Color c(0x0, 0x0, 0x0, 0xFFFF);
+			img.backgroundColor( c );
+			const auto data = m_reply->readAll();
+			QTemporaryFile file( QStringLiteral( "XXXXXX.svg" ) );
+			if( file.open() )
+			{
+				file.write( data );
+				file.close();
+
+				img.read( file.fileName().toStdString() );
+
+				img.magick( "png" );
+
+				m_img = convert( img );
+			}
+		}
+		catch( const Magick::Exception & )
+		{
+		}
+	}
+	else
+		m_img.loadFromData( m_reply->readAll() );
 
 	m_reply->deleteLater();
 
@@ -2154,7 +2213,24 @@ PdfRenderer::loadImage( MD::Image * item )
 	QImage img;
 
 	if( QFileInfo::exists( item->url() ) )
-		img = QImage( item->url() );
+	{
+		if( item->url().toLower().endsWith( QStringLiteral( "svg" ) ) )
+		{
+			try {
+				Magick::Image mimg;
+				Magick::Color c(0x0, 0x0, 0x0, 0xFFFF);
+				mimg.backgroundColor( c );
+				mimg.read( item->url().toStdString() );
+				mimg.magick( "png" );
+				img = convert( mimg );
+			}
+			catch( const Magick::Exception & )
+			{
+			}
+		}
+		else
+			img = QImage( item->url() );
+	}
 	else if( !QUrl( item->url() ).isRelative() )
 	{
 		QThread thread;
@@ -2182,6 +2258,9 @@ PdfRenderer::loadImage( MD::Image * item )
 			tr( "Hmm, I don't know how to load this image: %1.\n\n"
 				"This image is not a local existing file, and not in the Web. Check your Markdown." )
 					.arg( item->url() ) );
+
+	if( img.isNull() )
+		throw PdfRendererError( tr( "Got empty image from \"%1\"." ).arg( item->url() ) );
 
 	QByteArray data;
 	QBuffer buf( &data );

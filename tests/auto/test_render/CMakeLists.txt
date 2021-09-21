@@ -5,6 +5,10 @@ find_package( Qt5Core 5.15 REQUIRED )
 find_package( Qt5Test 5.15 REQUIRED )
 find_package( Qt5Gui 5.15 REQUIRED )
 find_package( Qt5Network 5.15 REQUIRED )
+find_package( ImageMagick 6 EXACT REQUIRED COMPONENTS Magick++ MagickCore )
+
+add_definitions( -DMAGICKCORE_QUANTUM_DEPTH=16 )
+add_definitions( -DMAGICKCORE_HDRI_ENABLE=0 )
 
 set( CMAKE_AUTOMOC ON )
 
@@ -24,7 +28,8 @@ include_directories( ${CMAKE_CURRENT_SOURCE_DIR}
 	${CMAKE_CURRENT_SOURCE_DIR}/../../../3rdparty
 	${CMAKE_CURRENT_SOURCE_DIR}/../../../3rdparty/podofo-trunk/src
 	${CMAKE_CURRENT_BINARY_DIR}/../../../3rdparty/podofo-trunk
-	${CMAKE_CURRENT_BINARY_DIR} )
+	${CMAKE_CURRENT_BINARY_DIR}
+	${ImageMagick_INCLUDE_DIRS} )
 
 link_directories( ${CMAKE_CURRENT_BINARY_DIR}/../../../3rdparty/podofo-trunk/src/podofo )
 link_directories( ${CMAKE_CURRENT_BINARY_DIR}/../../../3rdparty/podofo-trunk/src )
@@ -42,7 +47,8 @@ link_directories( ${CMAKE_CURRENT_SOURCE_DIR}/../../../lib )
 
 add_executable( test.render ${SRC} )
 
-target_link_libraries( test.render syntax md-parser ${PODOFO_LIB} Qt5::Gui Qt5::Network Qt5::Test Qt5::Core )
+target_link_libraries( test.render syntax md-parser ${PODOFO_LIB} ${ImageMagick_LIBRARIES}
+	Qt5::Gui Qt5::Network Qt5::Test Qt5::Core )
 
 add_test( NAME test.render
 	COMMAND ${CMAKE_CURRENT_BINARY_DIR}/test.render

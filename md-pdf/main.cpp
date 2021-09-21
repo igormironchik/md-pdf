@@ -27,9 +27,14 @@
 #include <QString>
 #include <QApplication>
 
+// Magick++ include.
+#include <Magick++.h>
+
 
 int main( int argc, char ** argv )
 {
+	Magick::InitializeMagick( nullptr );
+
 	QApplication app( argc, argv );
 
 	MainWindow w;
