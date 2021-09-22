@@ -222,6 +222,7 @@ MainWindow::process()
 					m_ui->m_top->value() / c_mmInPt );
 				opts.m_bottom = ( m_ui->m_pt->isChecked() ? m_ui->m_bottom->value() :
 					m_ui->m_bottom->value() / c_mmInPt );
+				opts.m_dpi = m_ui->m_dpi->value();
 
 
 				ProgressDlg progress( pdf, this );

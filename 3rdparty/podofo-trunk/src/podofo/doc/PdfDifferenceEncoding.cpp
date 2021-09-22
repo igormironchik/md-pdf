@@ -2378,8 +2378,8 @@ PdfDifferenceEncoding::PdfDifferenceEncoding( const PdfEncodingDifference & rDif
     Init();
 }
 
-PdfDifferenceEncoding::PdfDifferenceEncoding( PdfObject* pObject, bool bAutoDelete, bool bExplicitNames )
-    : PdfEncoding( 0x00, 0xff ), PdfElement( NULL, pObject ),
+PdfDifferenceEncoding::PdfDifferenceEncoding( PdfObject* pObject, bool bAutoDelete, bool bExplicitNames, PdfObject* pToUnicode )
+    : PdfEncoding( 0x00, 0xff, pToUnicode ), PdfElement( NULL, pObject ),
       m_bAutoDelete( bAutoDelete )
 {
     CreateID();
@@ -2412,7 +2412,8 @@ PdfDifferenceEncoding::PdfDifferenceEncoding( PdfObject* pObject, bool bAutoDele
                 curCode = (*it).GetNumber();
             else if( (*it).IsName() ) 
             {
-                m_differences.AddDifference( static_cast<int>(curCode), 0, (*it).GetName(), bExplicitNames );
+                pdf_utf16be unicodeValue = PdfDifferenceEncoding::NameToUnicodeID( (*it).GetName() );
+                m_differences.AddDifference( static_cast<int>(curCode), unicodeValue, (*it).GetName(), bExplicitNames );
                 ++curCode;
             }
             
@@ -2579,6 +2580,17 @@ PdfString PdfDifferenceEncoding::ConvertToUnicode( const PdfString & rEncodedStr
         // issues so an API change is a Bad Thing (mabri: IMO at least) to do now.
         if( m_differences.Contains( static_cast<int>(pszInput[i]), name, value ) )
             pszUtf16[i] = value;
+        if( m_bToUnicodeIsLoaded )
+        {
+            value = GetUnicodeValue(pszInput[i]);
+            if (value != 0) {
+#ifdef PODOFO_IS_LITTLE_ENDIAN
+                pszUtf16[i] = (value << 8) | (value >> 8 );
+#else
+                pszUtf16[i] = value;
+#endif // PODOFO_IS_LITTLE_ENDIAN
+            }
+        }
     }
 
     PdfString ret( pszUtf16, lLen );

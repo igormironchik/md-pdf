@@ -108,6 +108,8 @@ struct RenderOpts
 	double m_top;
 	//! Bottom margin.
 	double m_bottom;
+	//! DPI.
+	quint16 m_dpi;
 
 #ifdef MD_PDF_TESTING
 	bool printDrawings = false;
@@ -203,6 +205,8 @@ struct PdfAuxData {
 	double extraInFootnote = 0.0;
 	//! Colors stack.
 	QStack< QColor > m_colorsStack;
+	//! DPI.
+	quint16 m_dpi;
 
 #ifdef MD_PDF_TESTING
 	QMap< QString, QString > fonts;

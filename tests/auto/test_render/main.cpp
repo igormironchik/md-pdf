@@ -114,6 +114,7 @@ testRendering( const QString & fileName, const QString & suffix,
 		opts.m_textFont = QStringLiteral( "Droid Serif" );
 		opts.m_textFontSize = textFontSize;
 		opts.m_top = 50.0;
+		opts.m_dpi = 150;
 
 		opts.testData = data;
 		opts.printDrawings = c_printData;

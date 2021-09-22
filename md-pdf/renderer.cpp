@@ -419,6 +419,7 @@ PdfRenderer::CellItem::width( PdfAuxData & pdfData, PdfRenderer * render, float 
 	else if( !image.isNull() )
 	{
 		PdfImage pdfImg( pdfData.doc );
+		pdfImg.SetDpi( pdfData.m_dpi );
 		pdfImg.LoadFromData( reinterpret_cast< const unsigned char * >( image.data() ),
 			image.size() );
 
@@ -501,6 +502,7 @@ PdfRenderer::CellData::heightToWidth( double lineHeight, double spaceWidth, floa
 		else
 		{
 			PdfImage pdfImg( pdfData.doc );
+			pdfImg.SetDpi( pdfData.m_dpi );
 			pdfImg.LoadFromData( reinterpret_cast< const unsigned char * >( it->image.data() ),
 				it->image.size() );
 
@@ -567,6 +569,7 @@ PdfRenderer::renderImpl()
 		pdfData.coords.margins.right = m_opts.m_right;
 		pdfData.coords.margins.top = m_opts.m_top;
 		pdfData.coords.margins.bottom = m_opts.m_bottom;
+		pdfData.m_dpi = m_opts.m_dpi;
 
 		pdfData.m_colorsStack.push( Qt::black );
 
@@ -1979,6 +1982,7 @@ PdfRenderer::drawImage( PdfAuxData & pdfData, const RenderOpts & renderOpts,
 		if( !img.isNull() )
 		{
 			PdfImage pdfImg( pdfData.doc );
+			pdfImg.SetDpi( pdfData.m_dpi );
 			pdfImg.LoadFromData( reinterpret_cast< const unsigned char * >( img.data() ), img.size() );
 
 			newLine = true;
@@ -2057,6 +2061,7 @@ PdfRenderer::drawImage( PdfAuxData & pdfData, const RenderOpts & renderOpts,
 		if( !img.isNull() )
 		{
 			PdfImage pdfImg( pdfData.doc );
+			pdfImg.SetDpi( pdfData.m_dpi );
 			pdfImg.LoadFromData( reinterpret_cast< const unsigned char * >( img.data() ), img.size() );
 
 			newLine = true;
@@ -3208,6 +3213,7 @@ PdfRenderer::drawTableRow( QVector< QVector< CellData > > & table, int row, PdfA
 					y -= lineHeight;
 
 				PdfImage img( pdfData.doc );
+				img.SetDpi( pdfData.m_dpi );
 				img.LoadFromData( reinterpret_cast< const unsigned char * >( c->image.data() ),
 					c->image.size() );
 

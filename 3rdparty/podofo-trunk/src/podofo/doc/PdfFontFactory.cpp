@@ -262,7 +262,12 @@ PdfFont* PdfFontFactory::CreateFont( FT_Library*, PdfObject* pObject )
         pEncoding   = pObject->GetIndirectKey( "Encoding" );
 
         // OC 13.08.2010: Handle missing FontDescriptor for the 14 standard fonts:
-        if( !pDescriptor )
+        // CC 09.04.2021: Handle fonts with FontDescriptor, but without the then required
+        //                additional fields as if FontDescriptor was absent as well.
+        if( !pDescriptor ||
+            !pObject->GetIndirectKey( "Widths" ) ||
+            !pObject->GetIndirectKey( "FirstChar" ) ||
+            !pObject->GetIndirectKey( "LastChar" ) )
         {
            // Check if its a PdfFontType1Base14
            PdfObject* pBaseFont = NULL;
@@ -325,7 +330,7 @@ PdfFont* PdfFontFactory::CreateFont( FT_Library*, PdfObject* pObject )
         if ( pEncoding ) // FontDescriptor may only be present in PDF 1.5+
         {
             const PdfEncoding* const pPdfEncoding =
-            PdfEncodingObjectFactory::CreateEncoding( pEncoding, NULL, true );
+            PdfEncodingObjectFactory::CreateEncoding( pEncoding, pObject->GetIndirectKey("ToUnicode"), true );
             
             pMetrics    = new PdfFontMetricsObject( pObject, pDescriptor, pPdfEncoding );
             pFont       = new PdfFontType3( pMetrics, pPdfEncoding, pObject );
