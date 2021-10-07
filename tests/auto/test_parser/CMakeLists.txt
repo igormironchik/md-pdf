@@ -1,7 +1,7 @@
 
 project( test.md_parser )
 
-find_package( Qt5Core 5.15 REQUIRED )
+find_package( Qt6Core REQUIRED )
 
 if( ENABLE_COVERAGE )
 	set( CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -g -O0 -fprofile-arcs -ftest-coverage" )
@@ -28,7 +28,7 @@ link_directories( ${CMAKE_CURRENT_SOURCE_DIR}/../../../lib )
 
 add_executable( test.md_parser ${SRC} )
 
-target_link_libraries( test.md_parser md-parser Qt5::Core )
+target_link_libraries( test.md_parser md-parser Qt6::Core )
 
 add_test( NAME test.md_parser
 	COMMAND ${CMAKE_CURRENT_BINARY_DIR}/test.md_parser

@@ -5,9 +5,9 @@ set( CMAKE_AUTOMOC ON )
 set( CMAKE_AUTORCC ON )
 set( CMAKE_AUTOUIC ON )
 
-find_package(Qt5Core 5.15 REQUIRED)
-find_package(Qt5Widgets 5.15 REQUIRED)
-find_package(Qt5Network 5.15 REQUIRED)
+find_package( Qt6Core REQUIRED )
+find_package( Qt6Widgets REQUIRED )
+find_package( Qt6Network REQUIRED )
 find_package( ImageMagick 6 EXACT REQUIRED COMPONENTS Magick++ MagickCore )
 
 add_definitions( -DMAGICKCORE_QUANTUM_DEPTH=16 )
@@ -51,11 +51,11 @@ add_library( md-parser STATIC ${LIB_SRC} )
 
 add_library( syntax STATIC ${LIB_SYNTAX_SRC} )
 
-target_link_libraries( md-parser Qt5::Core )
+target_link_libraries( md-parser Qt6::Core )
 
-target_link_libraries( syntax Qt5::Core )
+target_link_libraries( syntax Qt6::Core )
 
 add_executable( md-pdf-gui ${GUI_SRC} )
 
 target_link_libraries( md-pdf-gui md-parser syntax ${PODOFO_LIB} ${ImageMagick_LIBRARIES}
-	Qt5::Widgets Qt5::Network )
+	Qt6::Widgets Qt6::Network Qt6::Core )

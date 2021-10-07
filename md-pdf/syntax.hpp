@@ -52,11 +52,11 @@ public:
 	//! Color for the text.
 	struct Color {
 		//! Index of line.
-		int line;
+		qsizetype line;
 		//! Start position of text.
-		int startPos;
+		qsizetype startPos;
 		//! End position of text.
-		int endPos;
+		qsizetype endPos;
 		//! Color role.
 		ColorRole color;
 	}; // struct Color

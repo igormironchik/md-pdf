@@ -28,7 +28,7 @@
 
 // Qt include.
 #include <QTextStream>
-#include <QTextCodec>
+#include <QRegularExpression>
 
 // C++ include.
 #include <stdexcept>
@@ -63,12 +63,11 @@ public:
 	Parser() = default;
 	~Parser() = default;
 
-	QSharedPointer< Document > parse( const QString & fileName, bool recursive = true,
-		QTextCodec * codec = QTextCodec::codecForName( "UTF-8" ) );
+	QSharedPointer< Document > parse( const QString & fileName, bool recursive = true );
 
 private:
 	void parseFile( const QString & fileName, bool recursive, QSharedPointer< Document > doc,
-		QTextCodec * codec, QStringList * parentLinks = nullptr );
+		QStringList * parentLinks = nullptr );
 	void clearCache();
 
 	enum class BlockType {
@@ -220,9 +219,13 @@ private:
 
 				if( firstLine )
 				{
-					static const QRegExp s( QLatin1String( "[^\\s]" ) );
+					static const QRegularExpression s( QStringLiteral( "[^\\s]" ) );
 
-					spaces = s.indexIn( line );
+					const auto match = s.match( line, 0,
+						QRegularExpression::PartialPreferFirstMatch );
+
+					if( match.hasPartialMatch() )
+						spaces = match.capturedStart( 0 );
 
 					firstLine = false;
 				}
@@ -260,7 +263,7 @@ private:
 					pf();
 			};
 
-		static const QRegExp footnoteRegExp( QLatin1String( "\\s*\\[\\^[^\\s]*\\]:.*" ) );
+		static const QRegularExpression footnoteRegExp( QLatin1String( "\\s*\\[\\^[^\\s]*\\]:.*" ) );
 
 		int indent = 0;
 
@@ -294,7 +297,9 @@ private:
 				{
 					case BlockType::Text :
 					{
-						if( footnoteRegExp.exactMatch( fragment.first() ) )
+						const auto match = footnoteRegExp.match( fragment.first() );
+
+						if( match.hasMatch() )
 						{
 							fragment.append( QString() );
 

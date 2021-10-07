@@ -1,10 +1,10 @@
 
 project( test.render )
 
-find_package( Qt5Core 5.15 REQUIRED )
-find_package( Qt5Test 5.15 REQUIRED )
-find_package( Qt5Gui 5.15 REQUIRED )
-find_package( Qt5Network 5.15 REQUIRED )
+find_package( Qt6Core REQUIRED )
+find_package( Qt6Test REQUIRED )
+find_package( Qt6Gui REQUIRED )
+find_package( Qt6Network REQUIRED )
 find_package( ImageMagick 6 EXACT REQUIRED COMPONENTS Magick++ MagickCore )
 
 add_definitions( -DMAGICKCORE_QUANTUM_DEPTH=16 )
@@ -48,7 +48,7 @@ link_directories( ${CMAKE_CURRENT_SOURCE_DIR}/../../../lib )
 add_executable( test.render ${SRC} )
 
 target_link_libraries( test.render syntax md-parser ${PODOFO_LIB} ${ImageMagick_LIBRARIES}
-	Qt5::Gui Qt5::Network Qt5::Test Qt5::Core )
+	Qt6::Gui Qt6::Network Qt6::Test Qt6::Core )
 
 add_test( NAME test.render
 	COMMAND ${CMAKE_CURRENT_BINARY_DIR}/test.render
