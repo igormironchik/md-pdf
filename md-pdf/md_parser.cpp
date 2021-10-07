@@ -296,7 +296,7 @@ Parser::parseText( QStringList & fr, QSharedPointer< Block > parent,
 	QSharedPointer< Document > doc, QStringList & linksToParse,
 	const QString & workingPath, const QString & fileName )
 {
-	static const QRegularExpression fnr( QStringLiteral( "\\s*\\[\\^[^\\s]*\\]:.*" ) );
+	static const QRegularExpression fnr( QStringLiteral( "^\\s*\\[\\^[^\\s]*\\]:.*" ) );
 	static const QRegularExpression thr( QStringLiteral( "\\s*\\|\\s*" ) );
 	static const QRegularExpression tcr( QStringLiteral(
 		"^\\s*\\|?(\\s*:?-{3,}:?\\s*\\|)*\\s*:?-{3,}:?\\s*\\|?\\s*$" ) );
