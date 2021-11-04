@@ -1,7 +1,7 @@
 
 project( test.syntax )
 
-find_package( Qt5Core 5.15 REQUIRED )
+find_package( Qt6Core REQUIRED )
 
 if( ENABLE_COVERAGE )
 	set( CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -g -O0 -fprofile-arcs -ftest-coverage" )
@@ -18,7 +18,7 @@ link_directories( ${CMAKE_CURRENT_SOURCE_DIR}/../../../lib )
 
 add_executable( test.syntax ${SRC} )
 
-target_link_libraries( test.syntax syntax Qt5::Core )
+target_link_libraries( test.syntax syntax Qt6::Core )
 
 add_test( NAME test.syntax
 	COMMAND ${CMAKE_CURRENT_BINARY_DIR}/test.syntax

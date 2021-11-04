@@ -33,7 +33,6 @@
 #include <QFileDialog>
 #include <QPushButton>
 #include <QMessageBox>
-#include <QTextCodec>
 #include <QThread>
 
 // podofo include.
@@ -56,18 +55,6 @@ MainWindow::MainWindow()
 	m_ui->m_codeColor->setColor( QColor( 0, 0, 0 ) );
 	m_ui->m_keywordColor->setColor( QColor( 128, 128, 0 ) );
 	m_ui->m_commentColor->setColor( QColor( 0, 128, 0 ) );
-
-	const auto codecs = QTextCodec::availableCodecs();
-	QStringList codecsNames;
-
-	for( const auto & c : codecs )
-		codecsNames.append( c );
-
-	codecsNames.removeDuplicates();
-	codecsNames.sort();
-
-	m_ui->m_encoding->addItems( codecsNames );
-	m_ui->m_encoding->setCurrentText( QLatin1String( "UTF-8" ) );
 
 	connect( m_ui->m_linkColorBtn, &QToolButton::clicked, this, &MainWindow::changeLinkColor );
 	connect( m_ui->m_borderColorBtn, &QToolButton::clicked, this, &MainWindow::changeBorderColor );
@@ -194,8 +181,7 @@ MainWindow::process()
 		try {
 			MD::Parser parser;
 
-			auto doc = parser.parse( m_ui->m_fileName->text(), m_ui->m_recursive->isChecked(),
-				QTextCodec::codecForName( m_ui->m_encoding->currentText().toLatin1() ) );
+			auto doc = parser.parse( m_ui->m_fileName->text(), m_ui->m_recursive->isChecked() );
 
 			if( !doc->isEmpty() )
 			{

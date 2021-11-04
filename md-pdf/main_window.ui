@@ -7,7 +7,7 @@
     <x>0</x>
     <y>0</y>
     <width>597</width>
-    <height>733</height>
+    <height>703</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -605,27 +605,6 @@
          <widget class="QToolButton" name="m_fileNameBtn">
           <property name="text">
            <string>...</string>
-          </property>
-         </widget>
-        </item>
-       </layout>
-      </item>
-      <item>
-       <layout class="QHBoxLayout" name="horizontalLayout_2">
-        <item>
-         <widget class="QLabel" name="label_8">
-          <property name="text">
-           <string>Markdown files encoding</string>
-          </property>
-         </widget>
-        </item>
-        <item>
-         <widget class="QComboBox" name="m_encoding">
-          <property name="sizePolicy">
-           <sizepolicy hsizetype="Expanding" vsizetype="Fixed">
-            <horstretch>0</horstretch>
-            <verstretch>0</verstretch>
-           </sizepolicy>
           </property>
          </widget>
         </item>

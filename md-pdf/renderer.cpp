@@ -591,7 +591,6 @@ PdfRenderer::renderImpl()
 				QFAIL( "Unable to open file for dump drawings." );
 
 			pdfData.drawingsStream.reset( new QTextStream( pdfData.drawingsFile.get() ) );
-			pdfData.drawingsStream->setCodec( QTextCodec::codecForName( "UTF-8" ) );
 		}
 		else
 			pdfData.testData = m_opts.testData;

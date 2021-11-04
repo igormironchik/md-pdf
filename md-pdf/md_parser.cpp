@@ -27,7 +27,7 @@
 #include <QFileInfo>
 #include <QFile>
 #include <QDir>
-#include <QRegExp>
+#include <QRegularExpression>
 
 
 namespace MD {
@@ -54,11 +54,11 @@ ParserException::reason() const noexcept
 //
 
 QSharedPointer< Document >
-Parser::parse( const QString & fileName, bool recursive, QTextCodec * codec )
+Parser::parse( const QString & fileName, bool recursive )
 {
 	QSharedPointer< Document > doc( new Document );
 
-	parseFile( fileName, recursive, doc, codec );
+	parseFile( fileName, recursive, doc );
 
 	clearCache();
 
@@ -67,7 +67,7 @@ Parser::parse( const QString & fileName, bool recursive, QTextCodec * codec )
 
 void
 Parser::parseFile( const QString & fileName, bool recursive, QSharedPointer< Document > doc,
-	QTextCodec * codec, QStringList * parentLinks )
+	QStringList * parentLinks )
 {
 	QFileInfo fi( fileName );
 
@@ -81,7 +81,6 @@ Parser::parseFile( const QString & fileName, bool recursive, QSharedPointer< Doc
 			QStringList linksToParse;
 
 			QTextStream s( &f );
-			s.setCodec( codec );
 
 			doc->appendItem( QSharedPointer< Anchor > ( new Anchor( fi.absoluteFilePath() ) ) );
 
@@ -136,7 +135,7 @@ Parser::parseFile( const QString & fileName, bool recursive, QSharedPointer< Doc
 						if( !doc->isEmpty() && doc->items().last()->type() != ItemType::PageBreak )
 							doc->appendItem( QSharedPointer< PageBreak > ( new PageBreak() ) );
 
-						parseFile( nextFileName, recursive, doc, codec, &linksToParse );
+						parseFile( nextFileName, recursive, doc, &linksToParse );
 					}
 				}
 
@@ -152,15 +151,17 @@ Parser::whatIsTheLine( QString & str, bool inList, int * indent, bool calcIndent
 {
 	const auto s = str.simplified();
 	str.replace( QLatin1Char( '\t' ), QString( 4, QLatin1Char( ' ' ) ) );
-	static const QRegExp olr( QStringLiteral( "^\\d+\\.\\s+.*" ) );
-	static const QRegExp startOfCode( QStringLiteral( "^(```|~~~)\\s*\\S*$" ) );
+	static const QRegularExpression olr( QStringLiteral( "^\\d+\\.\\s+.*" ) );
+	static const QRegularExpression startOfCode( QStringLiteral( "^(```|~~~)\\s*\\S*$" ) );
 
 	if( inList )
 	{
+		const auto olrMatch = olr.match( s );
+
 		if( ( ( s.startsWith( QLatin1Char( '-' ) ) ||
 			s.startsWith( QLatin1Char( '+' ) ) ||
 			s.startsWith( QLatin1Char( '*' ) ) ) && s.length() > 1 && s[ 1 ].isSpace() ) ||
-				olr.exactMatch( s ) )
+				olrMatch.hasMatch() )
 		{
 			return BlockType::List;
 		}
@@ -176,7 +177,9 @@ Parser::whatIsTheLine( QString & str, bool inList, int * indent, bool calcIndent
 			else if( s.startsWith( QLatin1String( "```" ) ) ||
 				s.startsWith( QLatin1String( "~~~" ) ) )
 			{
-				if( startOfCode.exactMatch( s ) )
+				const auto startOfCodeMatch = startOfCode.match( s );
+
+				if( startOfCodeMatch.hasMatch() )
 					return BlockType::Code;
 				else
 					return BlockType::Text;
@@ -193,17 +196,22 @@ Parser::whatIsTheLine( QString & str, bool inList, int * indent, bool calcIndent
 	}
 	else
 	{
+		const auto olrMatch = olr.match( s );
+
 		if( ( ( s.startsWith( QLatin1Char( '-' ) ) ||
 			s.startsWith( QLatin1Char( '+' ) ) ||
 			s.startsWith( QLatin1Char( '*' ) ) ) && s.length() > 1 && s[ 1 ].isSpace() ) ||
-				olr.exactMatch( s ) )
+				olrMatch.hasMatch() )
 		{
 			if( calcIndent && indent )
 			{
-				static const QRegExp ir( QLatin1String( "^\\s*\\d+\\.\\s+|\\s*(\\*|\\+|\\-){1}\\s+" ) );
+				static const QRegularExpression ir(
+					QStringLiteral( "^\\s*\\d+\\.\\s+|\\s*(\\*|\\+|\\-){1}\\s+" ) );
 
-				if( ir.indexIn( str ) != -1 )
-					*indent = ir.matchedLength();
+				const auto irMatch = ir.match( str );
+
+				if( irMatch.hasMatch() )
+					*indent = irMatch.capturedLength( 0 );
 			}
 
 			return BlockType::List;
@@ -218,7 +226,9 @@ Parser::whatIsTheLine( QString & str, bool inList, int * indent, bool calcIndent
 		else if( s.startsWith( QLatin1String( "```" ) ) ||
 			s.startsWith( QLatin1String( "~~~" ) ) )
 		{
-			if( startOfCode.exactMatch( s ) )
+			const auto startOfCodeMatch = startOfCode.match( s );
+
+			if( startOfCodeMatch.hasMatch() )
 				return BlockType::Code;
 			else
 				return BlockType::Text;
@@ -286,14 +296,22 @@ Parser::parseText( QStringList & fr, QSharedPointer< Block > parent,
 	QSharedPointer< Document > doc, QStringList & linksToParse,
 	const QString & workingPath, const QString & fileName )
 {
-	static const QRegExp fnr( QLatin1String( "\\s*\\[\\^[^\\s]*\\]:.*" ) );
-	static const QRegExp thr( QLatin1String( "\\s*\\|\\s*" ) );
-	static const QRegExp tcr( QLatin1String(
+	static const QRegularExpression fnr( QStringLiteral( "^\\s*\\[\\^[^\\s]*\\]:.*" ) );
+	static const QRegularExpression thr( QStringLiteral( "\\s*\\|\\s*" ) );
+	static const QRegularExpression tcr( QStringLiteral(
 		"^\\s*\\|?(\\s*:?-{3,}:?\\s*\\|)*\\s*:?-{3,}:?\\s*\\|?\\s*$" ) );
 
-	if( fnr.exactMatch( fr.first() ) )
+	const auto fnrMatch = fnr.match( fr.first() );
+	const auto thrMatch = thr.match( fr.first() );
+
+	QRegularExpressionMatch tcrMatch;
+
+	if( fr.size() > 1 )
+		tcrMatch = tcr.match( fr.at( 1 ) );
+
+	if( fnrMatch.hasMatch() )
 		parseFootnote( fr, parent, doc, linksToParse, workingPath, fileName );
-	else if( thr.indexIn( fr.first() ) > -1 && fr.size() > 1 && tcr.exactMatch( fr.at( 1 ) ) )
+	else if( thrMatch.hasMatch() && fr.size() > 1 && tcrMatch.hasMatch() )
 		parseTable( fr, parent, doc, linksToParse, workingPath, fileName );
 	else
 		parseParagraph( fr, parent, doc, linksToParse, workingPath, fileName );
@@ -380,17 +398,19 @@ Parser::parseHeading( QStringList & fr, QSharedPointer< Block > parent,
 
 		fr.first() = line.mid( pos );
 
-		static const QRegExp labelRegExp( QLatin1String( "(\\{#.*\\})" ) );
+		static const QRegularExpression labelRegExp( QLatin1String( "(\\{#.*\\})" ) );
 
 		QString label;
 
-		pos = labelRegExp.indexIn( fr.first() );
+		const auto labelRegExpMatch = labelRegExp.match( fr.first() );
 
-		if( pos > -1 )
+		if( labelRegExpMatch.hasMatch() )
 		{
-			label = fr.first().mid( pos, labelRegExp.matchedLength() );
+			pos = labelRegExpMatch.capturedStart( 0 );
 
-			fr.first().remove( pos, labelRegExp.matchedLength() );
+			label = fr.first().mid( pos, labelRegExpMatch.capturedLength( 0 ) );
+
+			fr.first().remove( pos, labelRegExpMatch.capturedLength( 0 ) );
 		}
 
 		QSharedPointer< Heading > h( new Heading() );
@@ -592,8 +612,8 @@ Parser::parseParagraph( QStringList & fr, QSharedPointer< Block > parent,
 	QSharedPointer< Document > doc, QStringList & linksToParse,
 	const QString & workingPath, const QString & fileName )
 {
-	static const QRegExp h1r( QLatin1String( "^\\s*===*\\s*$" ) );
-	static const QRegExp h2r( QLatin1String( "^\\s*---*\\s*$" ) );
+	static const QRegularExpression h1r( QLatin1String( "^\\s*===*\\s*$" ) );
+	static const QRegularExpression h2r( QLatin1String( "^\\s*---*\\s*$" ) );
 
 	auto ph = [&]( const QString & label )
 	{
@@ -611,13 +631,16 @@ Parser::parseParagraph( QStringList & fr, QSharedPointer< Block > parent,
 	// Check for alternative syntax of H1 and H2 headings.
 	if( fr.size() >= 2 )
 	{
-		if( h1r.exactMatch( fr.at( 1 ) ) )
+		const auto h1rMatch = h1r.match( fr.at( 1 ) );
+		const auto h2rMatch = h2r.match( fr.at( 1 ) );
+
+		if( h1rMatch.hasMatch() )
 		{
 			ph( QLatin1String( "# " ) );
 
 			return;
 		}
-		else if( h2r.exactMatch( fr.at( 1 ) ) )
+		else if( h2rMatch.hasMatch() )
 		{
 			ph( QLatin1String( "## " ) );
 
@@ -831,7 +854,7 @@ Parser::parseFormattedTextLinksImages( QStringList & fr, QSharedPointer< Block >
 
 				if( !ok )
 				{
-					text.append( line.midRef( startPos, i - startPos ) );
+					text.append( line.mid( startPos, i - startPos ) );
 
 					return i;
 				}
@@ -845,7 +868,7 @@ Parser::parseFormattedTextLinksImages( QStringList & fr, QSharedPointer< Block >
 						++i;
 					else
 					{
-						text.append( line.midRef( startPos, i - startPos ) );
+						text.append( line.mid( startPos, i - startPos ) );
 
 						return i;
 					}
@@ -869,7 +892,7 @@ Parser::parseFormattedTextLinksImages( QStringList & fr, QSharedPointer< Block >
 						}
 						else
 						{
-							text.append( line.midRef( startPos, i - startPos + 2 ) );
+							text.append( line.mid( startPos, i - startPos + 2 ) );
 
 							return i + 2;
 						}
@@ -883,7 +906,7 @@ Parser::parseFormattedTextLinksImages( QStringList & fr, QSharedPointer< Block >
 				}
 				else
 				{
-					text.append( line.midRef( startPos, i - startPos ) );
+					text.append( line.mid( startPos, i - startPos ) );
 
 					return i;
 				}
@@ -923,7 +946,7 @@ Parser::parseFormattedTextLinksImages( QStringList & fr, QSharedPointer< Block >
 				}
 				else
 				{
-					text.append( line.midRef( startPos, i - startPos ) );
+					text.append( line.mid( startPos, i - startPos ) );
 
 					return i;
 				}
@@ -954,7 +977,7 @@ Parser::parseFormattedTextLinksImages( QStringList & fr, QSharedPointer< Block >
 							}
 							else
 							{
-								text.append( line.midRef( startPos, i - startPos ) );
+								text.append( line.mid( startPos, i - startPos ) );
 
 								return i;
 							}
@@ -965,7 +988,7 @@ Parser::parseFormattedTextLinksImages( QStringList & fr, QSharedPointer< Block >
 				}
 				else
 				{
-					text.append( line.midRef( startPos, i - startPos ) );
+					text.append( line.mid( startPos, i - startPos ) );
 
 					return i;
 				}
@@ -989,7 +1012,7 @@ Parser::parseFormattedTextLinksImages( QStringList & fr, QSharedPointer< Block >
 					}
 					else
 					{
-						text.append( line.midRef( startPos, i - startPos ) );
+						text.append( line.mid( startPos, i - startPos ) );
 
 						return i;
 					}
@@ -997,14 +1020,14 @@ Parser::parseFormattedTextLinksImages( QStringList & fr, QSharedPointer< Block >
 			}
 			else
 			{
-				text.append( line.midRef( startPos, i - startPos + 1 ) );
+				text.append( line.mid( startPos, i - startPos + 1 ) );
 
 				return i + 1;
 			}
 		}
 		else
 		{
-			text.append( line.midRef( startPos, i - startPos ) );
+			text.append( line.mid( startPos, i - startPos ) );
 
 			if( withImage )
 				data.img.removeLast();
@@ -1160,7 +1183,7 @@ Parser::parseFormattedTextLinksImages( QStringList & fr, QSharedPointer< Block >
 			data.lexems.append( Lex::Link );
 		}
 		else
-			text.append( line.midRef( start, i - start ) );
+			text.append( line.mid( start, i - start ) );
 
 		return i;
 	}; // parseUrl
@@ -1180,17 +1203,21 @@ Parser::parseFormattedTextLinksImages( QStringList & fr, QSharedPointer< Block >
 				return prev;
 		}
 
-		static const QRegExp nonSpace( QLatin1String( "[^\\s]" ) );
+		static const QRegularExpression nonSpace( QStringLiteral( "[^\\s]" ) );
 
-		const int ns = nonSpace.indexIn( line );
+		const auto nonSpaceMatch = nonSpace.match( line );
+
+		const int ns = ( nonSpaceMatch.hasMatch() ? nonSpaceMatch.capturedStart( 0 ) : 0 );
 
 		if( ns > 0 )
 			line = line.right( line.length() - ns );
 
-		static const QRegExp horRule( QLatin1String( "^(\\*{3,}|\\-{3,}|_{3,})$" ) );
+		static const QRegularExpression horRule( QStringLiteral( "^(\\*{3,}|\\-{3,}|_{3,})$" ) );
+
+		const auto horRuleMatch = horRule.match( line );
 
 		// Will skip horizontal rules, for now at least...
-		if( !horRule.exactMatch( line ) )
+		if( !horRuleMatch.hasMatch() )
 		{
 			QString text;
 
@@ -1216,7 +1243,7 @@ Parser::parseFormattedTextLinksImages( QStringList & fr, QSharedPointer< Block >
 					i = parseImg( i, line, &ok );
 
 					if( !ok )
-						text.append( line.midRef( startPos, i - startPos ) );
+						text.append( line.mid( startPos, i - startPos ) );
 				}
 				else if( line[ i ] == QLatin1Char( '[' ) )
 				{
@@ -1487,10 +1514,12 @@ Parser::parseList( QStringList & fr, QSharedPointer< Block > parent,
 	for( auto it = fr.begin(), last  = fr.end(); it != last; ++it )
 		it->replace( QLatin1Char( '\t' ), QLatin1String( "    " ) );
 
-	static const QRegExp space( QLatin1String( "[^\\s]+" ) );
-	static const QRegExp item( QLatin1String( "^(\\*|\\-|\\+|(\\d+)\\.)\\s" ) );
+	static const QRegularExpression space( QStringLiteral( "[^\\s]+" ) );
+	static const QRegularExpression item( QStringLiteral( "^(\\*|\\-|\\+|(\\d+)\\.)\\s" ) );
 
-	const int indent = space.indexIn( fr.first() );
+	const auto spaceMatch = space.match( fr.first() );
+
+	const int indent = ( spaceMatch.hasMatch() ? spaceMatch.capturedStart( 0 ) : -1 );
 
 	if( indent > -1 )
 	{
@@ -1507,12 +1536,15 @@ Parser::parseList( QStringList & fr, QSharedPointer< Block > parent,
 
 		for( auto last = fr.end(); it != last; ++it )
 		{
-			int s = space.indexIn( *it );
+			const auto sm = space.match( *it );
+
+			int s = ( sm.hasMatch() ? sm.capturedStart( 0 ) : 0 );
 			s = ( s > indent ? indent : ( s >= 0 ? s : 0 ) );
 
 			*it = it->right( it->length() - s );
 
-			const int i = item.indexIn( *it );
+			const auto im = item.match( *it );
+			const int i = ( im.hasMatch() ? im.capturedStart( 0 ) : - 1 );
 
 			if( i == 0 )
 			{
@@ -1536,13 +1568,15 @@ Parser::parseListItem( QStringList & fr, QSharedPointer< Block > parent,
 	QSharedPointer< Document > doc, QStringList & linksToParse,
 	const QString & workingPath, const QString & fileName )
 {
-	static const QRegExp unorderedRegExp( QLatin1String( "^[\\*|\\-|\\+]\\s+.*" ) );
-	static const QRegExp orderedRegExp( QLatin1String( "^(\\d+)\\.\\s+.*" ) );
-	static const QRegExp itemRegExp( QLatin1String( "^\\s*(\\*|\\-|\\+|(\\d+)\\.)\\s+" ) );
+	static const QRegularExpression unorderedRegExp( QStringLiteral( "^[\\*|\\-|\\+]\\s+.*" ) );
+	static const QRegularExpression orderedRegExp( QStringLiteral( "^(\\d+)\\.\\s+.*" ) );
+	static const QRegularExpression itemRegExp( QStringLiteral( "^\\s*(\\*|\\-|\\+|(\\d+)\\.)\\s+" ) );
 
 	QSharedPointer< ListItem > item( new ListItem() );
 
-	if( unorderedRegExp.exactMatch( fr.first() ) )
+	const auto unorderedRegExpMatch = unorderedRegExp.match( fr.first() );
+
+	if( unorderedRegExpMatch.hasMatch() )
 		item->setListType( ListItem::Unordered );
 	else
 		item->setListType( ListItem::Ordered );
@@ -1551,8 +1585,10 @@ Parser::parseListItem( QStringList & fr, QSharedPointer< Block > parent,
 
 	if( item->listType() == ListItem::Ordered )
 	{
-		if( orderedRegExp.indexIn( fr.first() ) > -1 )
-			i = orderedRegExp.cap( 1 ).toInt();
+		const auto orderedRegExpMatch = orderedRegExp.match( fr.first() );
+
+		if( orderedRegExpMatch.hasMatch() )
+			i = orderedRegExpMatch.captured( 1 ).toInt();
 
 		item->setOrderedListPreState( i == 1 ? ListItem::Start : ListItem::Continue );
 	}
@@ -1564,15 +1600,17 @@ Parser::parseListItem( QStringList & fr, QSharedPointer< Block > parent,
 
 	int pos = 1;
 
-	itemRegExp.indexIn( fr.first() );
+	const auto itemRegExpMatch = itemRegExp.match( fr.first() );
 
-	const int indent = itemRegExp.matchedLength();
+	const int indent = ( itemRegExpMatch.hasMatch() ? itemRegExpMatch.capturedLength( 0 ) : 0 );
 
 	data.append( fr.first().right( fr.first().length() - indent ) );
 
 	for( auto last = fr.end(); it != last; ++it, ++pos )
 	{
-		const int i = itemRegExp.indexIn( *it );
+		const auto irm = itemRegExp.match( *it );
+
+		const int i = ( irm.hasMatch() ? irm.capturedStart( 0 ) : -1 );
 
 		if( i > -1 )
 		{
@@ -1611,9 +1649,11 @@ Parser::parseListItem( QStringList & fr, QSharedPointer< Block > parent,
 void
 Parser::parseCode( QStringList & fr, QSharedPointer< Block > parent, int indent )
 {
-	static const QRegExp nonSpace( QLatin1String( "[^\\s]" ) );
+	static const QRegularExpression nonSpace( QStringLiteral( "[^\\s]" ) );
 
-	const int i = nonSpace.indexIn( fr.first() );
+	const auto nsm = nonSpace.match( fr.first() );
+
+	const int i = ( nsm.hasMatch() ? nsm.capturedStart( 0 ) : -1 );
 
 	if( i > -1 )
 		indent += i;
@@ -1622,12 +1662,14 @@ Parser::parseCode( QStringList & fr, QSharedPointer< Block > parent, int indent 
 		throw ParserException( QString(
 			"We found code block started with \"%1\" that doesn't finished." ).arg( fr.first() ) );
 
-	static const QRegExp startOfCode( QStringLiteral( "^\\s*(```|~~~)\\s*(.+)$" ) );
+	static const QRegularExpression startOfCode( QStringLiteral( "^\\s*(```|~~~)\\s*(.+)$" ) );
 
 	QString syntax;
 
-	if( startOfCode.exactMatch( fr.constFirst() ) )
-		syntax = startOfCode.cap( 2 );
+	const auto socm = startOfCode.match( fr.constFirst() );
+
+	if( socm.hasMatch() )
+		syntax = socm.captured( 2 );
 
 	fr.removeFirst();
 	fr.removeLast();
