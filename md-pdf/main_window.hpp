@@ -31,21 +31,22 @@
 #include <QWidget>
 #include <QScopedPointer>
 #include <QThread>
+#include <QMainWindow>
 
 
 //
-// MainWindow
+// MainWidget
 //
 
 //! Main window.
-class MainWindow final
+class MainWidget final
 	:	public QWidget
 {
 	Q_OBJECT
 
 public:
-	MainWindow();
-	~MainWindow() override;
+	explicit MainWidget( QWidget * parent );
+	~MainWidget() override;
 
 private slots:
 	void changeLinkColor();
@@ -66,7 +67,30 @@ private:
 	QScopedPointer< Ui::MainWindow > m_ui;
 	QThread * m_thread;
 
-	Q_DISABLE_COPY( MainWindow )
+	Q_DISABLE_COPY( MainWidget )
+}; // class MainWindow
+
+
+//
+// MainWindow
+//
+
+class MainWindow
+	:	public QMainWindow
+{
+	Q_OBJECT
+
+public:
+	MainWindow();
+	~MainWindow() override = default;
+
+private slots:
+	//! About.
+	void about();
+	//! About Qt.
+	void aboutQt();
+	//! Licenses.
+	void licenses();
 }; // class MainWindow
 
 #endif // MD_PDF_MAIN_WINDOW_HPP_INCLUDED

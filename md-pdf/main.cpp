@@ -37,6 +37,15 @@ int main( int argc, char ** argv )
 
 	QApplication app( argc, argv );
 
+	QIcon appIcon( QStringLiteral( ":/img/icon_256x256.png" ) );
+	appIcon.addFile( QStringLiteral( ":/img/icon_128x128.png" ) );
+	appIcon.addFile( QStringLiteral( ":/img/icon_64x64.png" ) );
+	appIcon.addFile( QStringLiteral( ":/img/icon_48x48.png" ) );
+	appIcon.addFile( QStringLiteral( ":/img/icon_32x32.png" ) );
+	appIcon.addFile( QStringLiteral( ":/img/icon_24x24.png" ) );
+	appIcon.addFile( QStringLiteral( ":/img/icon_16x16.png" ) );
+	app.setWindowIcon( appIcon );
+
 	MainWindow w;
 	w.show();
 

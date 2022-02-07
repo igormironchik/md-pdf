@@ -34,7 +34,16 @@ set( GUI_SRC main.cpp
 	progress.hpp
 	progress.cpp
 	progress.ui
-	const.hpp )
+	const.hpp
+	license_dialog.cpp
+	license_dialog.hpp
+	license_dialog.ui )
+	
+qt6_add_resources( GUI_SRC resources.qrc )
+
+if( WIN32 )
+	list( APPEND GUI_SRC md-pdf.rc )
+endif()
 
 set( LIB_SYNTAX_SRC syntax.cpp
 	syntax.hpp )
@@ -55,7 +64,7 @@ target_link_libraries( md-parser Qt6::Core )
 
 target_link_libraries( syntax Qt6::Core )
 
-add_executable( md-pdf-gui ${GUI_SRC} )
+add_executable( md-pdf-gui WIN32 ${GUI_SRC} )
 
 target_link_libraries( md-pdf-gui md-parser syntax ${PODOFO_LIB} ${ImageMagick_LIBRARIES}
 	Qt6::Widgets Qt6::Network Qt6::Core )
