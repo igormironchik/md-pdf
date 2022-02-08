@@ -1,5 +1,6 @@
 <RCC>
     <qresource prefix="/">
+        <file>img/application-exit.png</file>
         <file>img/icon_16x16.png</file>
         <file>img/icon_24x24.png</file>
         <file>img/icon_32x32.png</file>

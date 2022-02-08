@@ -38,6 +38,7 @@
 #include <QMessageBox>
 #include <QMenu>
 #include <QMenuBar>
+#include <QApplication>
 
 // podofo include.
 #include <podofo/podofo.h>
@@ -321,6 +322,10 @@ MainWidget::codeFontChanged( const QFont & f )
 MainWindow::MainWindow()
 {
 	setWindowTitle( tr( "MD-PDF Converter" ) );
+
+	auto file = menuBar()->addMenu( tr( "&File" ) );
+	file->addAction( QIcon( QStringLiteral( ":/img/application-exit.png" ) ), tr( "&Quit" ),
+		this, &MainWindow::quit );
 
 	auto help = menuBar()->addMenu( tr( "&Help" ) );
 	help->addAction( QIcon( QStringLiteral( ":/img/icon_24x24.png" ) ), tr( "About" ),
@@ -838,4 +843,10 @@ MainWindow::licenses()
 		"That's all there is to it!" ) );
 
 	msg.exec();
+}
+
+void
+MainWindow::quit()
+{
+	QApplication::quit();
 }

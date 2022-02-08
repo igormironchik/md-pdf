@@ -91,6 +91,8 @@ private slots:
 	void aboutQt();
 	//! Licenses.
 	void licenses();
+	//! Quit.
+	void quit();
 }; // class MainWindow
 
 #endif // MD_PDF_MAIN_WINDOW_HPP_INCLUDED
