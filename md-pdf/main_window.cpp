@@ -724,7 +724,7 @@ MainWindow::licenses()
 		"license would not permit royalty-free redistribution of the Library by "
 		"all those who receive copies directly or indirectly through you, then "
 		"the only way you could satisfy both it and this License would be to "
-		"refrain entirely from distribution of the Library.\n:"
+		"refrain entirely from distribution of the Library.\n"
 		"\n"
 		"If any portion of this section is held invalid or unenforceable under any "
 		"particular circumstance, the balance of the section is intended to apply, "
