@@ -44,6 +44,8 @@ On UNIX you also need
 
 * fontconfig
 
+Also ImageMagick6 is required.
+
 With these dependencies installed just open CMakeLists.txt in QtCreator and run build.
 
 # Fonts
