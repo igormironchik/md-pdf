@@ -432,36 +432,30 @@ private:
 
 		QString readLine()
 		{
+			static const QChar c_n = QLatin1Char( '\n' );
+			static const QChar c_r = QLatin1Char( '\r' );
+
 			QString line;
 			bool rFound = false;
 
-			QChar c = m_tmp;
-			m_tmp = QChar();
-
-			if( !c.isNull() && c != QLatin1Char( '\r' ) )
-				line.append( c );
-
-			if( c == QLatin1Char( '\r' ) )
-				rFound = true;
-
 			while( !atEnd() )
 			{
-				c = getChar();
+				const auto c = getChar();
 
-				if( rFound && c != QLatin1Char( '\n' ) )
+				if( rFound && c != c_n )
 				{
-					m_tmp = c;
+					--m_pos;
 
 					return line;
 				}
 
-				if( c == QLatin1Char( '\r' ) )
+				if( c == c_r )
 				{
 					rFound = true;
 
 					continue;
 				}
-				else if( c == QLatin1Char( '\n' ) )
+				else if( c == c_n )
 					return line;
 
 				if( !c.isNull() )
@@ -498,7 +492,6 @@ private:
 
 	private:
 		QTextStream & m_stream;
-		QChar m_tmp;
 		QString m_buf;
 		bool m_lastBuf;
 		qsizetype m_pos;
