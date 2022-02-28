@@ -423,17 +423,20 @@ private:
 	public:
 		TextStream( QTextStream & stream )
 			:	m_stream( stream )
+			,	m_lastBuf( false )
+			,	m_pos( 0 )
 		{
 		}
 
-		bool atEnd() const { return ( m_stream.atEnd() ); }
+		bool atEnd() const { return ( m_lastBuf && m_pos == m_buf.size() ); }
+
 		QString readLine()
 		{
 			QString line;
 			bool rFound = false;
 
-			QChar c = m_buf;
-			m_buf = QChar();
+			QChar c = m_tmp;
+			m_tmp = QChar();
 
 			if( !c.isNull() && c != QLatin1Char( '\r' ) )
 				line.append( c );
@@ -441,13 +444,13 @@ private:
 			if( c == QLatin1Char( '\r' ) )
 				rFound = true;
 
-			while( !m_stream.atEnd() )
+			while( !atEnd() )
 			{
-				m_stream >> c;
+				c = getChar();
 
 				if( rFound && c != QLatin1Char( '\n' ) )
 				{
-					m_buf = c;
+					m_tmp = c;
 
 					return line;
 				}
@@ -469,9 +472,37 @@ private:
 		}
 
 	private:
+		void fillBuf()
+		{
+			m_buf = m_stream.read( 512 );
+
+			if( m_stream.atEnd() )
+				m_lastBuf = true;
+
+			m_pos = 0;
+		}
+
+		QChar getChar()
+		{
+			if( m_pos < m_buf.size() )
+				return m_buf.at( m_pos++ );
+			else if( !atEnd() )
+			{
+				fillBuf();
+
+				return getChar();
+			}
+			else
+				return QChar();
+		}
+
+	private:
 		QTextStream & m_stream;
-		QChar m_buf;
-	}; // class QTextStream
+		QChar m_tmp;
+		QString m_buf;
+		bool m_lastBuf;
+		qsizetype m_pos;
+	}; // class TextStream
 
 private:
 	QStringList m_parsedFiles;
