@@ -343,12 +343,12 @@ private:
 		{
 			auto line = rl();
 
-			auto simplified = line.simplified();
+			const auto ns = posOfFirstNonSpace( line );
 
 			BlockType lineType = whatIsTheLine( line, emptyLineInList, &indent, true );
 
 			// First line of the fragment.
-			if( !simplified.isEmpty() && type == BlockType::Unknown )
+			if( ns != -1 && type == BlockType::Unknown )
 			{
 				type = lineType;
 
@@ -359,11 +359,11 @@ private:
 
 				continue;
 			}
-			else if( simplified.isEmpty() && type == BlockType::Unknown )
+			else if( ns == -1 && type == BlockType::Unknown )
 				continue;
 
 			// Got new empty line.
-			if( simplified.isEmpty() )
+			if( ns == -1 )
 			{
 				switch( type )
 				{
