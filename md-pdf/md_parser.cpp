@@ -1836,14 +1836,54 @@ Parser::parseList( QStringList & fr, QSharedPointer< Block > parent,
 	}
 }
 
+inline std::pair< qsizetype, qsizetype >
+calculateIndent( const QString & s, qsizetype p )
+{
+	for( ; p < s.size(); ++p )
+	{
+		if( !s[ p ].isSpace() )
+			break;
+	}
+
+	return { 0, p };
+}
+
+inline std::pair< qsizetype, qsizetype >
+listItemData( const QString & s )
+{
+	qsizetype p = 0;
+
+	for( ; p < s.size(); ++p )
+	{
+		if( !s[ p ].isSpace() )
+			break;
+	}
+
+	if( p + 1 >= s.size() )
+		return { -1, 0 };
+
+	if( s[ p ] == QLatin1Char( '*' ) && s[ p + 1 ].isSpace() )
+		return calculateIndent( s, p + 2 );
+	else if( s[ p ] == QLatin1Char( '-' ) && s[ p + 1 ].isSpace() )
+		return calculateIndent( s, p + 2 );
+	else if( s[ p ] == QLatin1Char( '+' ) && s[ p + 1 ].isSpace() )
+		return calculateIndent( s, p + 2 );
+	else
+	{
+		int d = 0;
+
+		if( isOrderedList( s, &d ) )
+			return calculateIndent( s, p + QString::number( d ).size() + 2 );
+		else
+			return { -1, 0 };
+	}
+}
+
 void
 Parser::parseListItem( QStringList & fr, QSharedPointer< Block > parent,
 	QSharedPointer< Document > doc, QStringList & linksToParse,
 	const QString & workingPath, const QString & fileName )
 {
-	static const QRegularExpression itemRegExp(
-		QStringLiteral( "^\\s*(\\*|\\-|\\+|(\\d+)(\\.|\\)))\\s+" ) );
-
 	QSharedPointer< ListItem > item( new ListItem() );
 
 	int i = 0;
@@ -1863,17 +1903,14 @@ Parser::parseListItem( QStringList & fr, QSharedPointer< Block > parent,
 
 	int pos = 1;
 
-	const auto itemRegExpMatch = itemRegExp.match( fr.first() );
-
-	const int indent = ( itemRegExpMatch.hasMatch() ? itemRegExpMatch.capturedLength( 0 ) : 0 );
+	auto indent = listItemData( fr.first() ).second;
+	if( indent < 0 ) indent = 0;
 
 	data.append( fr.first().right( fr.first().length() - indent ) );
 
 	for( auto last = fr.end(); it != last; ++it, ++pos )
 	{
-		const auto irm = itemRegExp.match( *it );
-
-		const int i = ( irm.hasMatch() ? irm.capturedStart( 0 ) : -1 );
+		const auto i = listItemData( *it ).first;
 
 		if( i > -1 )
 		{
