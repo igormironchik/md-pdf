@@ -146,22 +146,53 @@ Parser::parseFile( const QString & fileName, bool recursive, QSharedPointer< Doc
 	}
 }
 
+inline bool
+isOrderedList( const QString & s, int * num = nullptr )
+{
+	qsizetype p = 0;
+
+	for( ; p < s.size(); ++p )
+	{
+		if( !s[ p ].isSpace() )
+			break;
+	}
+
+	qsizetype dp = p;
+
+	for( ; p < s.size(); ++p )
+	{
+		if( !s[ p ].isDigit() )
+			break;
+	}
+
+	if( dp != p && p < s.size() )
+	{
+		if( num )
+			*num = s.mid( dp, p - dp ).toInt();
+
+		if( s[ p ] == QLatin1Char( '.' ) || s[ p ] == QLatin1Char( ')' ) )
+		{
+			if( ++p < s.size() && s[ p ].isSpace() )
+				return true;
+		}
+	}
+
+	return false;
+}
+
 Parser::BlockType
 Parser::whatIsTheLine( QString & str, bool inList, int * indent, bool calcIndent ) const
 {
-	const auto s = str.simplified();
+	const auto s = str.trimmed();
 	str.replace( QLatin1Char( '\t' ), QString( 4, QLatin1Char( ' ' ) ) );
-	static const QRegularExpression olr( QStringLiteral( "^\\d+\\.\\s+.*" ) );
 	static const QRegularExpression startOfCode( QStringLiteral( "^(```|~~~)\\s*\\S*$" ) );
 
 	if( inList )
 	{
-		const auto olrMatch = olr.match( s );
-
 		if( ( ( s.startsWith( QLatin1Char( '-' ) ) ||
 			s.startsWith( QLatin1Char( '+' ) ) ||
 			s.startsWith( QLatin1Char( '*' ) ) ) && s.length() > 1 && s[ 1 ].isSpace() ) ||
-				olrMatch.hasMatch() )
+				isOrderedList( str ) )
 		{
 			return BlockType::List;
 		}
@@ -196,12 +227,10 @@ Parser::whatIsTheLine( QString & str, bool inList, int * indent, bool calcIndent
 	}
 	else
 	{
-		const auto olrMatch = olr.match( s );
-
 		if( ( ( s.startsWith( QLatin1Char( '-' ) ) ||
 			s.startsWith( QLatin1Char( '+' ) ) ||
 			s.startsWith( QLatin1Char( '*' ) ) ) && s.length() > 1 && s[ 1 ].isSpace() ) ||
-				olrMatch.hasMatch() )
+				isOrderedList( str ) )
 		{
 			if( calcIndent && indent )
 			{
@@ -1568,30 +1597,20 @@ Parser::parseListItem( QStringList & fr, QSharedPointer< Block > parent,
 	QSharedPointer< Document > doc, QStringList & linksToParse,
 	const QString & workingPath, const QString & fileName )
 {
-	static const QRegularExpression unorderedRegExp( QStringLiteral( "^[\\*|\\-|\\+]\\s+.*" ) );
-	static const QRegularExpression orderedRegExp( QStringLiteral( "^(\\d+)\\.\\s+.*" ) );
-	static const QRegularExpression itemRegExp( QStringLiteral( "^\\s*(\\*|\\-|\\+|(\\d+)\\.)\\s+" ) );
+	static const QRegularExpression itemRegExp(
+		QStringLiteral( "^\\s*(\\*|\\-|\\+|(\\d+)(\\.|\\)))\\s+" ) );
 
 	QSharedPointer< ListItem > item( new ListItem() );
 
-	const auto unorderedRegExpMatch = unorderedRegExp.match( fr.first() );
-
-	if( unorderedRegExpMatch.hasMatch() )
-		item->setListType( ListItem::Unordered );
-	else
-		item->setListType( ListItem::Ordered );
-
 	int i = 0;
 
+	if( isOrderedList( fr.first(), &i ) )
+		item->setListType( ListItem::Ordered );
+	else
+		item->setListType( ListItem::Unordered );
+
 	if( item->listType() == ListItem::Ordered )
-	{
-		const auto orderedRegExpMatch = orderedRegExp.match( fr.first() );
-
-		if( orderedRegExpMatch.hasMatch() )
-			i = orderedRegExpMatch.captured( 1 ).toInt();
-
 		item->setOrderedListPreState( i == 1 ? ListItem::Start : ListItem::Continue );
-	}
 
 	QStringList data;
 
