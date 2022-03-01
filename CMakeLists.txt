@@ -5,6 +5,8 @@ include( ExternalProject )
 
 set( CMAKE_MODULE_PATH ${CMAKE_SOURCE_DIR}/3rdparty/podofo-trunk/cmake/modules )
 
+option( BUILD_BENCHMARK "Build benchmark? Default OFF." OFF )
+
 if( NOT CMAKE_BUILD_TYPE )
 	set( CMAKE_BUILD_TYPE "Release"
 		CACHE STRING "Choose the type of build."
