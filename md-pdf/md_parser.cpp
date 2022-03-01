@@ -1762,6 +1762,33 @@ Parser::parseBlockquote( QStringList & fr, QSharedPointer< Block > parent,
 		parent->appendItem( bq );
 }
 
+inline bool
+isListItemAndNotNested( const QString & s )
+{
+	qsizetype p = 0;
+
+	for( ; p < s.size(); ++p )
+	{
+		if( !s[ p ].isSpace() )
+			break;
+	}
+
+	if( p > 0 )
+		return false;
+
+	if( p + 1 >= s.size() )
+		return false;
+
+	if( s[ p ] == QLatin1Char( '*' ) && s[ p + 1 ].isSpace() )
+		return true;
+	else if( s[ p ] == QLatin1Char( '-' ) && s[ p + 1 ].isSpace() )
+		return true;
+	else if( s[ p ] == QLatin1Char( '+' ) && s[ p + 1 ].isSpace() )
+		return true;
+	else
+		return isOrderedList( s );
+}
+
 void
 Parser::parseList( QStringList & fr, QSharedPointer< Block > parent,
 	QSharedPointer< Document > doc, QStringList & linksToParse,
@@ -1769,8 +1796,6 @@ Parser::parseList( QStringList & fr, QSharedPointer< Block > parent,
 {
 	for( auto it = fr.begin(), last  = fr.end(); it != last; ++it )
 		it->replace( QLatin1Char( '\t' ), QLatin1String( "    " ) );
-
-	static const QRegularExpression item( QStringLiteral( "^(\\*|\\-|\\+|(\\d+)\\.)\\s" ) );
 
 	const auto indent = posOfFirstNonSpace( fr.first() );
 
@@ -1794,10 +1819,7 @@ Parser::parseList( QStringList & fr, QSharedPointer< Block > parent,
 
 			*it = it->right( it->length() - s );
 
-			const auto im = item.match( *it );
-			const int i = ( im.hasMatch() ? im.capturedStart( 0 ) : - 1 );
-
-			if( i == 0 )
+			if( isListItemAndNotNested( *it ) )
 			{
 				parseListItem( listItem, list, doc, linksToParse, workingPath, fileName );
 				listItem.clear();
