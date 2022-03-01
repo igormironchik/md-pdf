@@ -2654,7 +2654,7 @@ TEST_CASE( "links in parent scope" )
 	REQUIRE( doc->items().at( 7 )->type() == MD::ItemType::Paragraph );
 }
 
-TEST_CASE( "wrong formatting" )
+TEST_CASE( "strange code block" )
 {
 	MD::Parser parser;
 
@@ -2664,26 +2664,13 @@ TEST_CASE( "wrong formatting" )
 	REQUIRE( doc->items().size() == 2 );
 
 	{
-		REQUIRE( doc->items().at( 1 )->type() == MD::ItemType::Paragraph );
+		REQUIRE( doc->items().at( 1 )->type() == MD::ItemType::Code );
 
-		auto dp = static_cast< MD::Paragraph* > ( doc->items().at( 1 ).data() );
+		auto c = static_cast< MD::Code* > ( doc->items().at( 1 ).data() );
 
-		REQUIRE( dp->items().size() == 3 );
-
-		REQUIRE( dp->items().at( 0 )->type() == MD::ItemType::Code );
-		auto c = static_cast< MD::Code* > ( dp->items().at( 0 ).data() );
-		REQUIRE( c->inlined() );
-		REQUIRE( c->text() == QStringLiteral( "`code *bold _italic _``" ) );
-
-		REQUIRE( dp->items().at( 1 )->type() == MD::ItemType::Text );
-		auto t1 = static_cast< MD::Text* > ( dp->items().at( 1 ).data() );
-		REQUIRE( t1->opts() == MD::TextOption::ItalicText );
-		REQUIRE( t1->text() == QStringLiteral( "bold" ) );
-
-		REQUIRE( dp->items().at( 2 )->type() == MD::ItemType::Text );
-		auto t2 = static_cast< MD::Text* > ( dp->items().at( 2 ).data() );
-		REQUIRE( t2->opts() == MD::TextOption::TextWithoutFormat );
-		REQUIRE( t2->text() == QStringLiteral( "italic" ) );
+		REQUIRE( c->inlined() == false );
+		REQUIRE( c->text() == QStringLiteral( "_```` *bold* _italic" ) );
+		REQUIRE( c->syntax() == QStringLiteral( "code *bold _italic" ) );
 	}
 }
 

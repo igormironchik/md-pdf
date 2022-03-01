@@ -80,7 +80,7 @@ private:
 		Heading
 	}; // enum BlockType
 
-	BlockType whatIsTheLine( QString & str, bool inList = false, int * indent = nullptr,
+	BlockType whatIsTheLine( QString & str, bool inList = false, qsizetype * indent = nullptr,
 		bool calcIndent = false ) const;
 	void parseFragment( QStringList & fr, QSharedPointer< Block > parent,
 		QSharedPointer< Document > doc,
@@ -265,7 +265,7 @@ private:
 
 		static const QRegularExpression footnoteRegExp( QLatin1String( "\\s*\\[\\^[^\\s]*\\]:.*" ) );
 
-		int indent = 0;
+		qsizetype indent = 0;
 
 		while( !stream.atEnd() )
 		{

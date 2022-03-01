@@ -180,12 +180,96 @@ isOrderedList( const QString & s, int * num = nullptr )
 	return false;
 }
 
-Parser::BlockType
-Parser::whatIsTheLine( QString & str, bool inList, int * indent, bool calcIndent ) const
+inline qsizetype
+posOfFirstNonSpace( const QString & s )
 {
-	const auto s = str.trimmed();
+	for( qsizetype p = 0; p < s.size(); ++p )
+	{
+		if( !s[ p ].isSpace() )
+			return p;
+	}
+
+	return -1;
+}
+
+inline bool
+isStartOfCode( const QStringView & str )
+{
+	if( str.size() < 3 )
+		return false;
+
+	static const auto c96c = QLatin1Char( '`' );
+	static const auto c126c = QLatin1Char( '~' );
+
+	const bool c96 = str[ 0 ] == c96c;
+	const bool c126 = str[ 0 ] == c126c;
+
+	if( c96 || c126 )
+	{
+		qsizetype p = 1;
+
+		for( ; p < 3; ++p )
+			if( str[ p ] != ( c96 ? c96c : c126c ) )
+				return false;
+
+		return true;
+	}
+
+	return false;
+}
+
+inline qsizetype
+posOfListItem( const QString & s, bool ordered )
+{
+	qsizetype p = 0;
+
+	for( ; p < s.size(); ++p )
+	{
+		if( !s[ p ].isSpace() )
+			break;
+	}
+
+	if( ordered )
+	{
+		for( ; p < s.size(); ++p )
+		{
+			if( !s[ p ].isDigit() )
+				break;
+		}
+	}
+	else
+		++p;
+
+	for( ; p < s.size(); ++p )
+	{
+		if( !s[ p ].isSpace() )
+			break;
+	}
+
+	return p;
+}
+
+Parser::BlockType
+Parser::whatIsTheLine( QString & str, bool inList, qsizetype * indent, bool calcIndent ) const
+{
 	str.replace( QLatin1Char( '\t' ), QString( 4, QLatin1Char( ' ' ) ) );
-	static const QRegularExpression startOfCode( QStringLiteral( "^(```|~~~)\\s*\\S*$" ) );
+
+	auto first = posOfFirstNonSpace( str );
+	if( first < 0 ) first = 0;
+
+	auto s = QStringView( str ).sliced( first );
+
+	if( s.startsWith( QLatin1Char( '>' ) ) )
+		return BlockType::Blockquote;
+	else if( s.startsWith( QLatin1String( "```" ) ) ||
+		s.startsWith( QLatin1String( "~~~" ) ) )
+	{
+		return BlockType::Code;
+	}
+	else if( s.isEmpty() )
+		return BlockType::Unknown;
+	else if( s.startsWith( QLatin1Char( '#' ) ) )
+		return BlockType::Heading;
 
 	if( inList )
 	{
@@ -203,45 +287,19 @@ Parser::whatIsTheLine( QString & str, bool inList, int * indent, bool calcIndent
 			{
 				return BlockType::CodeIndentedBySpaces;
 			}
-			else if( s.startsWith( QLatin1Char( '>' ) ) )
-				return BlockType::Blockquote;
-			else if( s.startsWith( QLatin1String( "```" ) ) ||
-				s.startsWith( QLatin1String( "~~~" ) ) )
-			{
-				const auto startOfCodeMatch = startOfCode.match( s );
-
-				if( startOfCodeMatch.hasMatch() )
-					return BlockType::Code;
-				else
-					return BlockType::Text;
-			}
-			else if( s.isEmpty() )
-				return BlockType::Unknown;
-			else if( s.startsWith( QLatin1Char( '#' ) ) )
-				return BlockType::Heading;
-			else
-				return BlockType::Text;
 		}
-		else
-			return BlockType::Text;
 	}
 	else
 	{
+		const auto orderedList = isOrderedList( str );
+
 		if( ( ( s.startsWith( QLatin1Char( '-' ) ) ||
 			s.startsWith( QLatin1Char( '+' ) ) ||
 			s.startsWith( QLatin1Char( '*' ) ) ) && s.length() > 1 && s[ 1 ].isSpace() ) ||
-				isOrderedList( str ) )
+				orderedList )
 		{
-			if( calcIndent && indent )
-			{
-				static const QRegularExpression ir(
-					QStringLiteral( "^\\s*\\d+\\.\\s+|\\s*(\\*|\\+|\\-){1}\\s+" ) );
-
-				const auto irMatch = ir.match( str );
-
-				if( irMatch.hasMatch() )
-					*indent = irMatch.capturedLength( 0 );
-			}
+			if( calcIndent && indent )				
+				*indent = posOfListItem( str, orderedList );
 
 			return BlockType::List;
 		}
@@ -250,25 +308,9 @@ Parser::whatIsTheLine( QString & str, bool inList, int * indent, bool calcIndent
 		{
 			return BlockType::CodeIndentedBySpaces;
 		}
-		else if( s.startsWith( QLatin1Char( '>' ) ) )
-			return BlockType::Blockquote;
-		else if( s.startsWith( QLatin1String( "```" ) ) ||
-			s.startsWith( QLatin1String( "~~~" ) ) )
-		{
-			const auto startOfCodeMatch = startOfCode.match( s );
-
-			if( startOfCodeMatch.hasMatch() )
-				return BlockType::Code;
-			else
-				return BlockType::Text;
-		}
-		else if( s.isEmpty() )
-			return BlockType::Unknown;
-		else if( s.startsWith( QLatin1Char( '#' ) ) )
-			return BlockType::Heading;
-		else
-			return BlockType::Text;
 	}
+
+	return BlockType::Text;
 }
 
 void
