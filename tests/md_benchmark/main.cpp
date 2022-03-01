@@ -281,27 +281,6 @@ int text( MD_TEXTTYPE type, const MD_CHAR * data, MD_SIZE size, void * doc )
 
 int main( int argc, char ** argv )
 {
-	// md-pdf
-	{
-		const auto start = std::chrono::high_resolution_clock::now();
-
-		try {
-			MD::Parser parser;
-
-			const auto doc = parser.parse( QStringLiteral( "complex.md" ), false );
-		}
-		catch( const MD::ParserException & x )
-		{
-			std::cout << "md-pdf parsing failed: " << x.reason().toStdString() << std::endl;
-		}
-
-		const auto end = std::chrono::high_resolution_clock::now();
-
-		const auto d = std::chrono::duration_cast< std::chrono::microseconds > ( end - start );
-
-		std::cout << "md-pdf parsing: " << d.count() << " us" << std::endl;
-	}
-
 	//md4c
 	{
 		const auto start = std::chrono::high_resolution_clock::now();
@@ -343,6 +322,27 @@ int main( int argc, char ** argv )
 		const auto d = std::chrono::duration_cast< std::chrono::microseconds > ( end - start );
 
 		std::cout << "md4c parsing: " << d.count() << " us" << std::endl;
+	}
+
+	// md-pdf
+	{
+		const auto start = std::chrono::high_resolution_clock::now();
+
+		try {
+			MD::Parser parser;
+
+			const auto doc = parser.parse( QStringLiteral( "complex.md" ), false );
+		}
+		catch( const MD::ParserException & x )
+		{
+			std::cout << "md-pdf parsing failed: " << x.reason().toStdString() << std::endl;
+		}
+
+		const auto end = std::chrono::high_resolution_clock::now();
+
+		const auto d = std::chrono::duration_cast< std::chrono::microseconds > ( end - start );
+
+		std::cout << "md-pdf parsing: " << d.count() << " us" << std::endl;
 	}
 
 	return 0;
