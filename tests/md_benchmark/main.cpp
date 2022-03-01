@@ -171,13 +171,56 @@ int enter_span( MD_SPANTYPE type, void * data, void * doc )
 		{
 			QSharedPointer< MD::Item > item( new MD::Code( QStringLiteral( "" ), true ) );
 
-			(*d->doc)->appendItem( item );
+			if( d->elems.empty() )
+				(*d->doc)->appendItem( item );
+			else
+			{
+				switch( d->elems.back()->type() )
+				{
+					case MD::ItemType::Paragraph :
+					case MD::ItemType::Blockquote :
+					case MD::ItemType::ListItem :
+					case MD::ItemType::List :
+					{
+						auto * b = static_cast< MD::Block* > ( d->elems.back() );
 
-			d->elems.push_back( item.data() );
+						b->appendItem( item );
+					}
+						break;
+
+					default :
+						break;
+				}
+			}
 		}
 			break;
 
 		default :
+		{
+			QSharedPointer< MD::Item > item( new MD::Text );
+
+			if( d->elems.empty() )
+				(*d->doc)->appendItem( item );
+			else
+			{
+				switch( d->elems.back()->type() )
+				{
+					case MD::ItemType::Paragraph :
+					case MD::ItemType::Blockquote :
+					case MD::ItemType::ListItem :
+					case MD::ItemType::List :
+					{
+						auto * b = static_cast< MD::Block* > ( d->elems.back() );
+
+						b->appendItem( item );
+					}
+						break;
+
+					default :
+						break;
+				}
+			}
+		}
 			break;
 	}
 
@@ -190,10 +233,6 @@ int leave_span( MD_SPANTYPE type, void * data, void * doc )
 
 	switch( type )
 	{
-		case MD_SPAN_CODE :
-			d->elems.pop_back();
-			break;
-
 		default :
 			break;
 	}

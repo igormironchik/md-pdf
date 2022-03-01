@@ -539,6 +539,32 @@ QString readLinkText( int & i, const QString & line )
 		return QString();
 }; // readLinkText
 
+inline QString
+findAndRemoveHeaderLabel( QString & s )
+{
+	const auto start = s.indexOf( QStringLiteral( "{#" ) );
+
+	if( start >= 0 )
+	{
+		qsizetype p = start + 2;
+
+		for( ; p < s.size(); ++p )
+		{
+			if( s[ p ] == QLatin1Char( '}' ) )
+				break;
+		}
+
+		if( p < s.size() && s[ p ] == QLatin1Char( '}' ) )
+		{
+			const auto label = s.mid( start, p - start + 1 );
+			s.remove( start, p - start + 1 );
+			return label;
+		}
+	}
+
+	return QString();
+}
+
 } /* namespace anonymous */
 
 void
@@ -568,20 +594,7 @@ Parser::parseHeading( QStringList & fr, QSharedPointer< Block > parent,
 
 		fr.first() = line.mid( pos );
 
-		static const QRegularExpression labelRegExp( QLatin1String( "(\\{#.*\\})" ) );
-
-		QString label;
-
-		const auto labelRegExpMatch = labelRegExp.match( fr.first() );
-
-		if( labelRegExpMatch.hasMatch() )
-		{
-			pos = labelRegExpMatch.capturedStart( 0 );
-
-			label = fr.first().mid( pos, labelRegExpMatch.capturedLength( 0 ) );
-
-			fr.first().remove( pos, labelRegExpMatch.capturedLength( 0 ) );
-		}
+		const auto label = findAndRemoveHeaderLabel( fr.first() );
 
 		QSharedPointer< Heading > h( new Heading() );
 		h->setLevel( lvl );
@@ -777,14 +790,54 @@ Parser::parseTable( QStringList & fr, QSharedPointer< Block > parent,
 	}
 }
 
+inline bool
+isH( const QString & s, const QChar & c )
+{
+	qsizetype p = 0;
+
+	for( ; p < s.size(); ++p )
+	{
+		if( !s[ p ].isSpace() )
+			break;
+	}
+
+	const auto start = p;
+
+	for( ; p < s.size(); ++p )
+	{
+		if( s[ p ] != c )
+			break;
+	}
+
+	if( p - start < 3 )
+		return false;
+
+	for( ; p < s.size(); ++p )
+	{
+		if( !s[ p ].isSpace() )
+			return false;
+	}
+
+	return true;
+}
+
+inline bool
+isH1( const QString & s )
+{
+	return isH( s, QLatin1Char( '=' ) );
+}
+
+inline bool
+isH2( const QString & s )
+{
+	return isH( s, QLatin1Char( '-' ) );
+}
+
 void
 Parser::parseParagraph( QStringList & fr, QSharedPointer< Block > parent,
 	QSharedPointer< Document > doc, QStringList & linksToParse,
 	const QString & workingPath, const QString & fileName )
 {
-	static const QRegularExpression h1r( QLatin1String( "^\\s*===*\\s*$" ) );
-	static const QRegularExpression h2r( QLatin1String( "^\\s*---*\\s*$" ) );
-
 	auto ph = [&]( const QString & label )
 	{
 		QStringList tmp = fr.mid( 0, 1 );
@@ -801,16 +854,13 @@ Parser::parseParagraph( QStringList & fr, QSharedPointer< Block > parent,
 	// Check for alternative syntax of H1 and H2 headings.
 	if( fr.size() >= 2 )
 	{
-		const auto h1rMatch = h1r.match( fr.at( 1 ) );
-		const auto h2rMatch = h2r.match( fr.at( 1 ) );
-
-		if( h1rMatch.hasMatch() )
+		if( isH1( fr[ 1 ] ) )
 		{
 			ph( QLatin1String( "# " ) );
 
 			return;
 		}
-		else if( h2rMatch.hasMatch() )
+		else if( isH2( fr[ 1 ] ) )
 		{
 			ph( QLatin1String( "## " ) );
 
@@ -824,6 +874,50 @@ Parser::parseParagraph( QStringList & fr, QSharedPointer< Block > parent,
 
 	if( !p->isEmpty() )
 		parent->appendItem( p );
+}
+
+inline bool
+isHorizontalLine( const QString & s )
+{
+	static const auto c1 = QLatin1Char( '*' );
+	static const auto c2 = QLatin1Char( '-' );
+	static const auto c3 = QLatin1Char( '_' );
+
+	if( s.size() < 3 )
+		return false;
+
+	QChar c;
+
+	if( s[ 0 ] == c1 )
+		c = c1;
+	else if( s[ 0 ] == c2 )
+		c = c2;
+	else if( s[ 0 ] == c3 )
+		c = c3;
+	else
+		return false;
+
+	qsizetype p = 1;
+
+	for( ; p < s.size(); ++p )
+	{
+		if( s[ p ] != c )
+			break;
+	}
+
+	if( p < 3 )
+		return false;
+
+	if( p == s.size() )
+		return true;
+
+	for( ; p < s.size(); ++p )
+	{
+		if( !s[ p ].isSpace() )
+			return false;
+	}
+
+	return true;
 }
 
 void
@@ -1373,21 +1467,13 @@ Parser::parseFormattedTextLinksImages( QStringList & fr, QSharedPointer< Block >
 				return prev;
 		}
 
-		static const QRegularExpression nonSpace( QStringLiteral( "[^\\s]" ) );
-
-		const auto nonSpaceMatch = nonSpace.match( line );
-
-		const int ns = ( nonSpaceMatch.hasMatch() ? nonSpaceMatch.capturedStart( 0 ) : 0 );
+		const auto ns = posOfFirstNonSpace( line );
 
 		if( ns > 0 )
 			line = line.right( line.length() - ns );
 
-		static const QRegularExpression horRule( QStringLiteral( "^(\\*{3,}|\\-{3,}|_{3,})$" ) );
-
-		const auto horRuleMatch = horRule.match( line );
-
 		// Will skip horizontal rules, for now at least...
-		if( !horRuleMatch.hasMatch() )
+		if( !isHorizontalLine( line ) )
 		{
 			QString text;
 
@@ -1684,12 +1770,9 @@ Parser::parseList( QStringList & fr, QSharedPointer< Block > parent,
 	for( auto it = fr.begin(), last  = fr.end(); it != last; ++it )
 		it->replace( QLatin1Char( '\t' ), QLatin1String( "    " ) );
 
-	static const QRegularExpression space( QStringLiteral( "[^\\s]+" ) );
 	static const QRegularExpression item( QStringLiteral( "^(\\*|\\-|\\+|(\\d+)\\.)\\s" ) );
 
-	const auto spaceMatch = space.match( fr.first() );
-
-	const int indent = ( spaceMatch.hasMatch() ? spaceMatch.capturedStart( 0 ) : -1 );
+	const auto indent = posOfFirstNonSpace( fr.first() );
 
 	if( indent > -1 )
 	{
@@ -1706,9 +1789,7 @@ Parser::parseList( QStringList & fr, QSharedPointer< Block > parent,
 
 		for( auto last = fr.end(); it != last; ++it )
 		{
-			const auto sm = space.match( *it );
-
-			int s = ( sm.hasMatch() ? sm.capturedStart( 0 ) : 0 );
+			auto s = posOfFirstNonSpace( *it );
 			s = ( s > indent ? indent : ( s >= 0 ? s : 0 ) );
 
 			*it = it->right( it->length() - s );
