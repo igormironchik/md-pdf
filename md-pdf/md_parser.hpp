@@ -28,7 +28,6 @@
 
 // Qt include.
 #include <QTextStream>
-#include <QRegularExpression>
 
 // C++ include.
 #include <stdexcept>
@@ -78,6 +77,58 @@ static const QChar c_33 = QLatin1Char( '!' );
 static const QChar c_60 = QLatin1Char( '<' );
 static const QChar c_10 = QLatin1Char( '\n' );
 static const QChar c_13 = QLatin1Char( '\r' );
+
+
+inline qsizetype
+posOfFirstNonSpace( const QString & s )
+{
+	for( qsizetype p = 0; p < s.size(); ++p )
+	{
+		if( !s[ p ].isSpace() )
+			return p;
+	}
+
+	return -1;
+}
+
+inline bool
+isFootnote( const QString & s )
+{
+	qsizetype p = 0;
+
+	for( ; p < s.size(); ++p )
+	{
+		if( !s[ p ].isSpace() )
+			break;
+	}
+
+	if( s.size() - p < 5 )
+		return false;
+
+	if( s[ p++ ] != c_91 )
+		return false;
+
+	if( s[ p++ ] != c_94 )
+		return false;
+
+	if( s[ p ] == c_93 || s[ p ].isSpace() )
+		return false;
+
+	for( ; p < s.size(); ++p )
+	{
+		if( s[ p ] == c_93 )
+			break;
+		else if( s[ p ].isSpace() )
+			return false;
+	}
+
+	++p;
+
+	if( p < s.size() && s[ p ] == c_58 )
+		return true;
+	else
+		return false;
+}
 
 
 //
@@ -224,7 +275,7 @@ private:
 		BlockType type = BlockType::Unknown;
 		bool emptyLineInList = false;
 		bool firstLine = true;
-		int spaces = 0;
+		qsizetype spaces = 0;
 
 		// Parse fragment and clear internal cache.
 		auto pf = [&]()
@@ -246,14 +297,9 @@ private:
 				line.replace( c_9, QLatin1String( "    " ) );
 
 				if( firstLine )
-				{
-					static const QRegularExpression s( QStringLiteral( "[^\\s]" ) );
-
-					const auto match = s.match( line, 0,
-						QRegularExpression::PartialPreferFirstMatch );
-
-					if( match.hasPartialMatch() )
-						spaces = match.capturedStart( 0 );
+				{				
+					spaces = posOfFirstNonSpace( line );
+					if( spaces < 0 ) spaces = 0;
 
 					firstLine = false;
 				}
@@ -291,8 +337,6 @@ private:
 					pf();
 			};
 
-		static const QRegularExpression footnoteRegExp( QLatin1String( "\\s*\\[\\^[^\\s]*\\]:.*" ) );
-
 		qsizetype indent = 0;
 
 		while( !stream.atEnd() )
@@ -325,9 +369,7 @@ private:
 				{
 					case BlockType::Text :
 					{
-						const auto match = footnoteRegExp.match( fragment.first() );
-
-						if( match.hasMatch() )
+						if( isFootnote( fragment.first() ) )
 						{
 							fragment.append( QString() );
 

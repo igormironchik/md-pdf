@@ -179,18 +179,6 @@ isOrderedList( const QString & s, int * num = nullptr )
 	return false;
 }
 
-inline qsizetype
-posOfFirstNonSpace( const QString & s )
-{
-	for( qsizetype p = 0; p < s.size(); ++p )
-	{
-		if( !s[ p ].isSpace() )
-			return p;
-	}
-
-	return -1;
-}
-
 inline bool
 isStartOfCode( QStringView str, QString * syntax = nullptr )
 {
@@ -368,45 +356,6 @@ void
 Parser::clearCache()
 {
 	m_parsedFiles.clear();
-}
-
-inline bool
-isFootnote( const QString & s )
-{
-	qsizetype p = 0;
-
-	for( ; p < s.size(); ++p )
-	{
-		if( !s[ p ].isSpace() )
-			break;
-	}
-
-	if( s.size() - p < 5 )
-		return false;
-
-	if( s[ p++ ] != c_91 )
-		return false;
-
-	if( s[ p++ ] != c_94 )
-		return false;
-
-	if( s[ p ] == c_93 || s[ p ].isSpace() )
-		return false;
-
-	for( ; p < s.size(); ++p )
-	{
-		if( s[ p ] == c_93 )
-			break;
-		else if( s[ p ].isSpace() )
-			return false;
-	}
-
-	++p;
-
-	if( p < s.size() && s[ p ] == c_58 )
-		return true;
-	else
-		return false;
 }
 
 inline bool
