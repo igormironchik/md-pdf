@@ -52,6 +52,34 @@ private:
 	QString m_what;
 }; // class ParserException
 
+static const QChar c_35 = QLatin1Char( '#' );
+static const QChar c_46 = QLatin1Char( '.' );
+static const QChar c_41 = QLatin1Char( ')' );
+static const QChar c_96 = QLatin1Char( '`' );
+static const QChar c_126 = QLatin1Char( '~' );
+static const QChar c_9 = QLatin1Char( '\t' );
+static const QChar c_32 = QLatin1Char( ' ' );
+static const QChar c_62 = QLatin1Char( '>' );
+static const QChar c_45 = QLatin1Char( '-' );
+static const QChar c_43 = QLatin1Char( '+' );
+static const QChar c_42 = QLatin1Char( '*' );
+static const QChar c_91 = QLatin1Char( '[' );
+static const QChar c_94 = QLatin1Char( '^' );
+static const QChar c_93 = QLatin1Char( ']' );
+static const QChar c_58 = QLatin1Char( ':' );
+static const QChar c_124 = QLatin1Char( '|' );
+static const QChar c_92 = QLatin1Char( '\\' );
+static const QChar c_125 = QLatin1Char( '}' );
+static const QChar c_61 = QLatin1Char( '=' );
+static const QChar c_95 = QLatin1Char( '_' );
+static const QChar c_34 = QLatin1Char( '"' );
+static const QChar c_40 = QLatin1Char( '(' );
+static const QChar c_33 = QLatin1Char( '!' );
+static const QChar c_60 = QLatin1Char( '<' );
+static const QChar c_10 = QLatin1Char( '\n' );
+static const QChar c_13 = QLatin1Char( '\r' );
+
+
 //
 // Parser
 //
@@ -215,7 +243,7 @@ private:
 
 			if( skipSpacesAtStartOfLine )
 			{
-				line.replace( QLatin1Char( '\t' ), QLatin1String( "    " ) );
+				line.replace( c_9, QLatin1String( "    " ) );
 
 				if( firstLine )
 				{
@@ -244,7 +272,7 @@ private:
 					auto line = rl();
 
 					if( line.isEmpty() || line.startsWith( QLatin1String( "    " ) ) ||
-						line.startsWith( QLatin1Char( '\t' ) ) )
+						line.startsWith( c_9 ) )
 					{
 						fragment.append( line );
 					}
@@ -321,7 +349,7 @@ private:
 					case BlockType::CodeIndentedBySpaces :
 					{
 						if( line.startsWith( QLatin1String( "    " ) ) ||
-							line.startsWith( QLatin1Char( '\t' ) ) )
+							line.startsWith( c_9 ) )
 						{
 							fragment.append( line );
 						}
@@ -352,7 +380,7 @@ private:
 			//! Empty new line in list.
 			else if( emptyLineInList )
 			{
-				if( ( indent > 0 && line.startsWith( QString( indent, QLatin1Char( ' ' ) ) ) ) ||
+				if( ( indent > 0 && line.startsWith( QString( indent, c_32 ) ) ) ||
 					lineType == BlockType::List )
 				{
 					fragment.append( QString() );
@@ -432,9 +460,6 @@ private:
 
 		QString readLine()
 		{
-			static const QChar c_n = QLatin1Char( '\n' );
-			static const QChar c_r = QLatin1Char( '\r' );
-
 			QString line;
 			bool rFound = false;
 
@@ -442,20 +467,20 @@ private:
 			{
 				const auto c = getChar();
 
-				if( rFound && c != c_n )
+				if( rFound && c != c_10 )
 				{
 					--m_pos;
 
 					return line;
 				}
 
-				if( c == c_r )
+				if( c == c_13 )
 				{
 					rFound = true;
 
 					continue;
 				}
-				else if( c == c_n )
+				else if( c == c_10 )
 					return line;
 
 				if( !c.isNull() )

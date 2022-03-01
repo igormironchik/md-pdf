@@ -27,7 +27,6 @@
 #include <QFileInfo>
 #include <QFile>
 #include <QDir>
-#include <QRegularExpression>
 
 
 namespace MD {
@@ -98,7 +97,7 @@ Parser::parseFile( const QString & fileName, bool recursive, QSharedPointer< Doc
 			{
 				auto nextFileName = *it;
 
-				if( nextFileName.startsWith( QLatin1Char( '#' ) ) )
+				if( nextFileName.startsWith( c_35 ) )
 				{
 					if( doc->labeledLinks().contains( nextFileName ) )
 						nextFileName = doc->labeledLinks()[ nextFileName ]->url();
@@ -127,7 +126,7 @@ Parser::parseFile( const QString & fileName, bool recursive, QSharedPointer< Doc
 							continue;
 					}
 
-					if( nextFileName.startsWith( QLatin1Char( '#' ) ) )
+					if( nextFileName.startsWith( c_35 ) )
 						continue;
 
 					if( !m_parsedFiles.contains( nextFileName ) )
@@ -170,7 +169,7 @@ isOrderedList( const QString & s, int * num = nullptr )
 		if( num )
 			*num = s.mid( dp, p - dp ).toInt();
 
-		if( s[ p ] == QLatin1Char( '.' ) || s[ p ] == QLatin1Char( ')' ) )
+		if( s[ p ] == c_46 || s[ p ] == c_41 )
 		{
 			if( ++p < s.size() && s[ p ].isSpace() )
 				return true;
@@ -193,24 +192,33 @@ posOfFirstNonSpace( const QString & s )
 }
 
 inline bool
-isStartOfCode( const QStringView & str )
+isStartOfCode( QStringView str, QString * syntax = nullptr )
 {
 	if( str.size() < 3 )
 		return false;
 
-	static const auto c96c = QLatin1Char( '`' );
-	static const auto c126c = QLatin1Char( '~' );
-
-	const bool c96 = str[ 0 ] == c96c;
-	const bool c126 = str[ 0 ] == c126c;
+	const bool c96 = str[ 0 ] == c_96;
+	const bool c126 = str[ 0 ] == c_126;
 
 	if( c96 || c126 )
 	{
 		qsizetype p = 1;
 
 		for( ; p < 3; ++p )
-			if( str[ p ] != ( c96 ? c96c : c126c ) )
+			if( str[ p ] != ( c96 ? c_96 : c_126 ) )
 				return false;
+
+		if( syntax )
+		{
+			for( ; p < str.size(); ++p )
+			{
+				if( !str[ p ].isSpace() )
+					break;
+			}
+
+			if( p < str.size() )
+				*syntax = str.mid( p ).toString();
+		}
 
 		return true;
 	}
@@ -252,14 +260,14 @@ posOfListItem( const QString & s, bool ordered )
 Parser::BlockType
 Parser::whatIsTheLine( QString & str, bool inList, qsizetype * indent, bool calcIndent ) const
 {
-	str.replace( QLatin1Char( '\t' ), QString( 4, QLatin1Char( ' ' ) ) );
+	str.replace( c_9, QString( 4, c_32 ) );
 
 	auto first = posOfFirstNonSpace( str );
 	if( first < 0 ) first = 0;
 
 	auto s = QStringView( str ).sliced( first );
 
-	if( s.startsWith( QLatin1Char( '>' ) ) )
+	if( s.startsWith( c_62 ) )
 		return BlockType::Blockquote;
 	else if( s.startsWith( QLatin1String( "```" ) ) ||
 		s.startsWith( QLatin1String( "~~~" ) ) )
@@ -268,21 +276,21 @@ Parser::whatIsTheLine( QString & str, bool inList, qsizetype * indent, bool calc
 	}
 	else if( s.isEmpty() )
 		return BlockType::Unknown;
-	else if( s.startsWith( QLatin1Char( '#' ) ) )
+	else if( s.startsWith( c_35 ) )
 		return BlockType::Heading;
 
 	if( inList )
 	{
-		if( ( ( s.startsWith( QLatin1Char( '-' ) ) ||
-			s.startsWith( QLatin1Char( '+' ) ) ||
-			s.startsWith( QLatin1Char( '*' ) ) ) && s.length() > 1 && s[ 1 ].isSpace() ) ||
+		if( ( ( s.startsWith( c_45 ) ||
+			s.startsWith( c_43 ) ||
+			s.startsWith( c_42 ) ) && s.length() > 1 && s[ 1 ].isSpace() ) ||
 				isOrderedList( str ) )
 		{
 			return BlockType::List;
 		}
-		else if( str.startsWith( QString( ( indent ? *indent : 4 ), QLatin1Char( ' ' ) ) ) )
+		else if( str.startsWith( QString( ( indent ? *indent : 4 ), c_32 ) ) )
 		{
-			if( str.startsWith( QString( ( indent ? *indent : 4 ), QLatin1Char( ' ' ) ) +
+			if( str.startsWith( QString( ( indent ? *indent : 4 ), c_32 ) +
 				QLatin1String( "    " ) ) )
 			{
 				return BlockType::CodeIndentedBySpaces;
@@ -293,9 +301,9 @@ Parser::whatIsTheLine( QString & str, bool inList, qsizetype * indent, bool calc
 	{
 		const auto orderedList = isOrderedList( str );
 
-		if( ( ( s.startsWith( QLatin1Char( '-' ) ) ||
-			s.startsWith( QLatin1Char( '+' ) ) ||
-			s.startsWith( QLatin1Char( '*' ) ) ) && s.length() > 1 && s[ 1 ].isSpace() ) ||
+		if( ( ( s.startsWith( c_45 ) ||
+			s.startsWith( c_43 ) ||
+			s.startsWith( c_42 ) ) && s.length() > 1 && s[ 1 ].isSpace() ) ||
 				orderedList )
 		{
 			if( calcIndent && indent )				
@@ -304,7 +312,7 @@ Parser::whatIsTheLine( QString & str, bool inList, qsizetype * indent, bool calc
 			return BlockType::List;
 		}
 		else if( str.startsWith( QLatin1String( "    " ) ) ||
-			str.startsWith( QLatin1Char( '\t' ) ) )
+			str.startsWith( c_9 ) )
 		{
 			return BlockType::CodeIndentedBySpaces;
 		}
@@ -376,18 +384,18 @@ isFootnote( const QString & s )
 	if( s.size() - p < 5 )
 		return false;
 
-	if( s[ p++ ] != QLatin1Char( '[' ) )
+	if( s[ p++ ] != c_91 )
 		return false;
 
-	if( s[ p++ ] != QLatin1Char( '^' ) )
+	if( s[ p++ ] != c_94 )
 		return false;
 
-	if( s[ p ] == QLatin1Char( ']' ) || s[ p ].isSpace() )
+	if( s[ p ] == c_93 || s[ p ].isSpace() )
 		return false;
 
 	for( ; p < s.size(); ++p )
 	{
-		if( s[ p ] == QLatin1Char( ']' ) )
+		if( s[ p ] == c_93 )
 			break;
 		else if( s[ p ].isSpace() )
 			return false;
@@ -395,7 +403,7 @@ isFootnote( const QString & s )
 
 	++p;
 
-	if( p < s.size() && s[ p ] == QLatin1Char( ':' ) )
+	if( p < s.size() && s[ p ] == c_58 )
 		return true;
 	else
 		return false;
@@ -404,7 +412,7 @@ isFootnote( const QString & s )
 inline bool
 isTableHeader( const QString & s )
 {
-	if( s.contains( QLatin1Char( '|' ) ) )
+	if( s.contains( c_124 ) )
 		return true;
 	else
 		return false;
@@ -429,14 +437,14 @@ isColumnAlignment( const QString & s )
 	if( !c_legitime.contains( s[ p ] ) )
 		return false;
 
-	if( s[ p ] == QLatin1Char( ':' ) )
+	if( s[ p ] == c_58 )
 		++p;
 
 	const auto a = p;
 
 	for( ; p < s.size(); ++p )
 	{
-		if( s[ p ] != QLatin1Char( '-' ) )
+		if( s[ p ] != c_45 )
 			break;
 	}
 
@@ -446,7 +454,7 @@ isColumnAlignment( const QString & s )
 	if( p == s.size() )
 		return true;
 
-	if( s[ p ] != QLatin1Char( ':' ) && !s[ p ].isSpace() )
+	if( s[ p ] != c_58 && !s[ p ].isSpace() )
 		return false;
 
 	++p;
@@ -463,7 +471,7 @@ isColumnAlignment( const QString & s )
 inline bool
 isTableAlignment( const QString & s )
 {
-	const auto columns = s.split( QLatin1Char( '|' ), Qt::SkipEmptyParts );
+	const auto columns = s.split( c_124, Qt::SkipEmptyParts );
 
 	for( const auto & c : columns )
 	{
@@ -511,7 +519,7 @@ QString readLinkText( int & i, const QString & line )
 
 	while( i < length )
 	{
-		if( !first && !skipped && line[ i - 1 ] == QLatin1Char( '\\' ) )
+		if( !first && !skipped && line[ i - 1 ] == c_92 )
 		{
 			t.append( line[ i ] );
 
@@ -521,9 +529,9 @@ QString readLinkText( int & i, const QString & line )
 
 			continue;
 		}
-		else if( line[ i ] != QLatin1Char( ']' ) && line[ i ] != QLatin1Char( '\\' ) )
+		else if( line[ i ] != c_93 && line[ i ] != c_92 )
 			t.append( line[ i ] );
-		else if( line[ i ] == QLatin1Char( ']' ) )
+		else if( line[ i ] == c_93 )
 			break;
 
 		first = false;
@@ -533,7 +541,7 @@ QString readLinkText( int & i, const QString & line )
 
 	++i;
 
-	if( i - 1 < length && line[ i - 1 ] == QLatin1Char( ']' ) )
+	if( i - 1 < length && line[ i - 1 ] == c_93 )
 		return t;
 	else
 		return QString();
@@ -550,11 +558,11 @@ findAndRemoveHeaderLabel( QString & s )
 
 		for( ; p < s.size(); ++p )
 		{
-			if( s[ p ] == QLatin1Char( '}' ) )
+			if( s[ p ] == c_125 )
 				break;
 		}
 
-		if( p < s.size() && s[ p ] == QLatin1Char( '}' ) )
+		if( p < s.size() && s[ p ] == c_125 )
 		{
 			const auto label = s.mid( start, p - start + 1 );
 			s.remove( start, p - start + 1 );
@@ -584,7 +592,7 @@ Parser::parseHeading( QStringList & fr, QSharedPointer< Block > parent,
 		pos = 0;
 		int lvl = 0;
 
-		while( pos < line.length() && line[ pos ] == QLatin1Char( '#' ) )
+		while( pos < line.length() && line[ pos ] == c_35 )
 		{
 			++lvl;
 			++pos;
@@ -622,7 +630,7 @@ Parser::parseHeading( QStringList & fr, QSharedPointer< Block > parent,
 				{
 					auto t = static_cast< Text* > ( it->data() );
 
-					text.append( t->text() + QLatin1Char( ' ' ) );
+					text.append( t->text() + c_32 );
 				}
 			}
 
@@ -682,7 +690,7 @@ Parser::parseFootnote( QStringList & fr, QSharedPointer< Block >,
 
 			QString id = readLinkText( pos, line );
 
-			if( !id.isEmpty() && line[ pos ] == QLatin1Char( ':' ) )
+			if( !id.isEmpty() && line[ pos ] == c_58 )
 			{
 				++pos;
 
@@ -692,7 +700,7 @@ Parser::parseFootnote( QStringList & fr, QSharedPointer< Block >,
 				{
 					if( it->startsWith( QLatin1String( "    " ) ) )
 						*it = it->mid( 4 );
-					else if( it->startsWith( QLatin1Char( '\t' ) ) )
+					else if( it->startsWith( c_9 ) )
 						*it = it->mid( 1 );
 				}
 
@@ -770,9 +778,9 @@ Parser::parseTable( QStringList & fr, QSharedPointer< Block > parent,
 				{
 					Table::Alignment a = Table::AlignLeft;
 
-					if( it->endsWith( QLatin1Char( ':' ) ) && it->startsWith( QLatin1Char( ':' ) ) )
+					if( it->endsWith( c_58 ) && it->startsWith( c_58 ) )
 						a = Table::AlignCenter;
-					else if( it->endsWith( QLatin1Char( ':' ) ) )
+					else if( it->endsWith( c_58 ) )
 						a = Table::AlignRight;
 
 					table->setColumnAlignment( table->columnsCount(), a );
@@ -824,13 +832,13 @@ isH( const QString & s, const QChar & c )
 inline bool
 isH1( const QString & s )
 {
-	return isH( s, QLatin1Char( '=' ) );
+	return isH( s, c_61 );
 }
 
 inline bool
 isH2( const QString & s )
 {
-	return isH( s, QLatin1Char( '-' ) );
+	return isH( s, c_45 );
 }
 
 void
@@ -879,21 +887,18 @@ Parser::parseParagraph( QStringList & fr, QSharedPointer< Block > parent,
 inline bool
 isHorizontalLine( const QString & s )
 {
-	static const auto c1 = QLatin1Char( '*' );
-	static const auto c2 = QLatin1Char( '-' );
-	static const auto c3 = QLatin1Char( '_' );
 
 	if( s.size() < 3 )
 		return false;
 
 	QChar c;
 
-	if( s[ 0 ] == c1 )
-		c = c1;
-	else if( s[ 0 ] == c2 )
-		c = c2;
-	else if( s[ 0 ] == c3 )
-		c = c3;
+	if( s[ 0 ] == c_42 )
+		c = c_42;
+	else if( s[ 0 ] == c_45 )
+		c = c_45;
+	else if( s[ 0 ] == c_95 )
+		c = c_95;
 	else
 		return false;
 
@@ -971,8 +976,8 @@ Parser::parseFormattedTextLinksImages( QStringList & fr, QSharedPointer< Block >
 			QString lnk;
 
 			while( i < length && !line[ i ].isSpace() &&
-				( line[ i ] != QLatin1Char( ')' ) && line[ i - 1 ] != QLatin1Char( '\\' ) )
-				&& line[ i ] != QLatin1Char( ']' ) )
+				( line[ i ] != c_41 && line[ i - 1 ] != c_92 )
+				&& line[ i ] != c_93 )
 			{
 				lnk.append( line[ i ] );
 				++i;
@@ -989,7 +994,7 @@ Parser::parseFormattedTextLinksImages( QStringList & fr, QSharedPointer< Block >
 	{
 		bool quoted = false;
 
-		if( line[ i ] == QLatin1Char( '"') )
+		if( line[ i ] == c_34 )
 		{
 			quoted = true;
 			++i;
@@ -999,8 +1004,8 @@ Parser::parseFormattedTextLinksImages( QStringList & fr, QSharedPointer< Block >
 
 		while( i < length &&
 			( quoted ?
-				( line[ i ] != QLatin1Char( '"' ) && line[ i - 1 ] != QLatin1Char( '\\' ) ) :
-				( line[ i ] != QLatin1Char( ')' ) ) ) )
+				( line[ i ] != c_34 && line[ i - 1 ] != c_92 ) :
+				( line[ i ] != c_41 ) ) )
 		{
 			++i;
 		}
@@ -1015,7 +1020,7 @@ Parser::parseFormattedTextLinksImages( QStringList & fr, QSharedPointer< Block >
 
 				if( i < length )
 				{
-					if( line[ i ] == QLatin1Char( ')' ) )
+					if( line[ i ] == c_41 )
 					{
 						++i;
 
@@ -1025,7 +1030,7 @@ Parser::parseFormattedTextLinksImages( QStringList & fr, QSharedPointer< Block >
 				else
 					return false;
 			}
-			else if( line[ i ] == QLatin1Char( ')' ) )
+			else if( line[ i ] == c_41 )
 				return true;
 		}
 
@@ -1054,7 +1059,7 @@ Parser::parseFormattedTextLinksImages( QStringList & fr, QSharedPointer< Block >
 
 		i = skipSpaces( i, line );
 
-		if( i < length && line[ i ] == QLatin1Char( '(' ) )
+		if( i < length && line[ i ] == c_40 )
 		{
 			QString lnk = readLnk( i, line );
 
@@ -1109,8 +1114,8 @@ Parser::parseFormattedTextLinksImages( QStringList & fr, QSharedPointer< Block >
 
 		if( i < length )
 		{
-			if( i + 1 < length && line[ i ] == QLatin1Char( '!' ) &&
-				line[ i + 1 ] == QLatin1Char( '[' ) )
+			if( i + 1 < length && line[ i ] == c_33 &&
+				line[ i + 1 ] == c_91 )
 			{
 				bool ok = false;
 
@@ -1128,7 +1133,7 @@ Parser::parseFormattedTextLinksImages( QStringList & fr, QSharedPointer< Block >
 
 					i = skipSpaces( i, line );
 
-					if( i < length && line[ i ] == QLatin1Char( ']' ) )
+					if( i < length && line[ i ] == c_93 )
 						++i;
 					else
 					{
@@ -1138,17 +1143,17 @@ Parser::parseFormattedTextLinksImages( QStringList & fr, QSharedPointer< Block >
 					}
 				}
 			}
-			else if( line[ i ] == QLatin1Char( '^' ) )
+			else if( line[ i ] == c_94 )
 			{
 				auto lnk = readLnk( i, line );
 
 				i = skipSpaces( i, line );
 
-				if( i < length && line[ i ] == QLatin1Char( ']' ) )
+				if( i < length && line[ i ] == c_93 )
 				{
 					if( i + 1 < length )
 					{
-						if( line[ i + 1 ] != QLatin1Char( ':' ) )
+						if( line[ i + 1 ] != c_58 )
 						{
 							addFootnoteRef( lnk );
 
@@ -1183,7 +1188,7 @@ Parser::parseFormattedTextLinksImages( QStringList & fr, QSharedPointer< Block >
 
 		if( i < length )
 		{
-			if( line[ i ] == QLatin1Char( ':' ) )
+			if( line[ i ] == c_58 )
 			{
 				url = readLnk( i, line );
 
@@ -1215,13 +1220,13 @@ Parser::parseFormattedTextLinksImages( QStringList & fr, QSharedPointer< Block >
 					return i;
 				}
 			}
-			else if( line[ i ] == QLatin1Char( '(' ) )
+			else if( line[ i ] == c_40 )
 			{
 				url = readLnk( i, line );
 
 				if( !url.isEmpty() && i < length )
 				{
-					if( !url.startsWith( QLatin1Char( '#' ) ) )
+					if( !url.startsWith( c_35 ) )
 					{
 						i = skipSpaces( i, line );
 
@@ -1257,7 +1262,7 @@ Parser::parseFormattedTextLinksImages( QStringList & fr, QSharedPointer< Block >
 					return i;
 				}
 			}
-			else if( line[ i ] == QLatin1Char( '[' ) )
+			else if( line[ i ] == c_91 )
 			{
 				url = readLnk( i, line );
 
@@ -1265,7 +1270,7 @@ Parser::parseFormattedTextLinksImages( QStringList & fr, QSharedPointer< Block >
 				{
 					i = skipSpaces( i, line );
 
-					if( i < length && line[ i ] == QLatin1Char( ']' ) )
+					if( i < length && line[ i ] == c_93 )
 					{
 						url = QString::fromLatin1( "#" ) + url +
 							QStringLiteral( "/" ) + workingPath + fileName;
@@ -1342,7 +1347,7 @@ Parser::parseFormattedTextLinksImages( QStringList & fr, QSharedPointer< Block >
 			quoted = ( prevAndNext == LineParsingState::UnfinishedQuotedCode );
 		else
 		{
-			if( i + 1 < length && line[ i + 1 ] == QLatin1Char( '`' ) )
+			if( i + 1 < length && line[ i + 1 ] == c_96 )
 			{
 				quoted = true;
 
@@ -1363,7 +1368,7 @@ Parser::parseFormattedTextLinksImages( QStringList & fr, QSharedPointer< Block >
 
 		while( i < length )
 		{
-			if( line[ i ] == QLatin1Char( '`' ) )
+			if( line[ i ] == c_96 )
 			{
 				if( !quoted )
 				{
@@ -1373,9 +1378,9 @@ Parser::parseFormattedTextLinksImages( QStringList & fr, QSharedPointer< Block >
 
 					break;
 				}
-				else if( i + 1 < length && line[ i + 1 ] == QLatin1Char( '`' ) )
+				else if( i + 1 < length && line[ i + 1 ] == c_96 )
 				{
-					if( i + 2 < length && line[ i + 2 ] == QLatin1Char( '`' ) )
+					if( i + 2 < length && line[ i + 2 ] == c_96 )
 					{
 						code.append( line[ i ] );
 
@@ -1427,7 +1432,7 @@ Parser::parseFormattedTextLinksImages( QStringList & fr, QSharedPointer< Block >
 
 		while( i < length )
 		{
-			if( line[ i ] != QLatin1Char( '>' ) )
+			if( line[ i ] != c_62 )
 				url.append( line[ i ] );
 			else
 			{
@@ -1479,15 +1484,15 @@ Parser::parseFormattedTextLinksImages( QStringList & fr, QSharedPointer< Block >
 
 			for( int i = pos, length = line.length(); i < length; ++i )
 			{
-				if( line[ i ] == QLatin1Char( '\\' ) && i + 1 < length &&
+				if( line[ i ] == c_92 && i + 1 < length &&
 					specialChars.contains( line[ i + 1 ] ) )
 				{
 					++i;
 
 					text.append( line[ i ] );
 				}
-				else if( line[ i ] == QLatin1Char( '!' ) && i + 1 < length &&
-					line[ i + 1 ] == QLatin1Char( '[' ) )
+				else if( line[ i ] == c_33 && i + 1 < length &&
+					line[ i + 1 ] == c_91 )
 				{
 					createTextObj( text.simplified() );
 					text.clear();
@@ -1501,13 +1506,13 @@ Parser::parseFormattedTextLinksImages( QStringList & fr, QSharedPointer< Block >
 					if( !ok )
 						text.append( line.mid( startPos, i - startPos ) );
 				}
-				else if( line[ i ] == QLatin1Char( '[' ) )
+				else if( line[ i ] == c_91 )
 				{
 					createTextObj( text.simplified() );
 					text.clear();
 					i = parseLnk( i, line, text );
 				}
-				else if( line[ i ] == QLatin1Char( '`' ) )
+				else if( line[ i ] == c_96 )
 				{
 					createTextObj( text.simplified() );
 					text.clear();
@@ -1516,18 +1521,18 @@ Parser::parseFormattedTextLinksImages( QStringList & fr, QSharedPointer< Block >
 					if( prev != LineParsingState::Finished )
 						return prev;
 				}
-				else if( line[ i ] == QLatin1Char( '<' ) )
+				else if( line[ i ] == c_60 )
 				{
 					createTextObj( text.simplified() );
 					text.clear();
 					i = parseUrl( i, line, text ) - 1;
 				}
-				else if( line[ i ] == QLatin1Char( '*' ) || line[ i ] == QLatin1Char( '_' ) )
+				else if( line[ i ] == c_42 || line[ i ] == c_95 )
 				{
 					QString style;
 
 					while( i < length &&
-						( line[ i ] == QLatin1Char( '*' ) || line[ i ] == QLatin1Char( '_' ) ) )
+						( line[ i ] == c_42 || line[ i ] == c_95 ) )
 					{
 						style.append( line[ i ] );
 						++i;
@@ -1559,8 +1564,8 @@ Parser::parseFormattedTextLinksImages( QStringList & fr, QSharedPointer< Block >
 					else
 						text.append( style );
 				}
-				else if( line[ i ] == QLatin1Char( '~' ) && i + 1 < length &&
-					line[ i + 1 ] == QLatin1Char( '~' ) )
+				else if( line[ i ] == c_126 && i + 1 < length &&
+					line[ i + 1 ] == c_126 )
 				{
 					++i;
 					createTextObj( text.simplified() );
@@ -1673,12 +1678,12 @@ Parser::parseFormattedTextLinksImages( QStringList & fr, QSharedPointer< Block >
 					for( ; it != end; ++it )
 					{
 						c->setText( c->text() + data.txt[ data.processedText ]->text() +
-							QLatin1Char( ' ' ) );
+							c_32 );
 
 						++data.processedText;
 					}
 
-					if( c->text().endsWith( QLatin1Char( ' ' ) ) )
+					if( c->text().endsWith( c_32 ) )
 						c->setText( c->text().left( c->text().length() - 1 ) );
 
 					parent->appendItem( c );
@@ -1746,14 +1751,14 @@ Parser::parseBlockquote( QStringList & fr, QSharedPointer< Block > parent,
 {
 	QSharedPointer< Blockquote > bq( new Blockquote() );
 
-	const int pos = fr.first().indexOf( QLatin1Char( '>' ) );
+	const int pos = fr.first().indexOf( c_62 );
 
 	StringListStream stream( fr );
 
 	if( pos > -1 )
 	{
 		for( auto it = fr.begin(), last = fr.end(); it != last; ++it )
-			*it = it->mid( it->indexOf( QLatin1Char( '>' ) ) + 1 );
+			*it = it->mid( it->indexOf( c_62 ) + 1 );
 
 		parse( stream, bq, doc, linksToParse, workingPath, fileName );
 	}
@@ -1779,11 +1784,11 @@ isListItemAndNotNested( const QString & s )
 	if( p + 1 >= s.size() )
 		return false;
 
-	if( s[ p ] == QLatin1Char( '*' ) && s[ p + 1 ].isSpace() )
+	if( s[ p ] == c_42 && s[ p + 1 ].isSpace() )
 		return true;
-	else if( s[ p ] == QLatin1Char( '-' ) && s[ p + 1 ].isSpace() )
+	else if( s[ p ] == c_45 && s[ p + 1 ].isSpace() )
 		return true;
-	else if( s[ p ] == QLatin1Char( '+' ) && s[ p + 1 ].isSpace() )
+	else if( s[ p ] == c_43 && s[ p + 1 ].isSpace() )
 		return true;
 	else
 		return isOrderedList( s );
@@ -1795,7 +1800,7 @@ Parser::parseList( QStringList & fr, QSharedPointer< Block > parent,
 	const QString & workingPath, const QString & fileName )
 {
 	for( auto it = fr.begin(), last  = fr.end(); it != last; ++it )
-		it->replace( QLatin1Char( '\t' ), QLatin1String( "    " ) );
+		it->replace( c_9, QLatin1String( "    " ) );
 
 	const auto indent = posOfFirstNonSpace( fr.first() );
 
@@ -1862,11 +1867,11 @@ listItemData( const QString & s )
 	if( p + 1 >= s.size() )
 		return { -1, 0 };
 
-	if( s[ p ] == QLatin1Char( '*' ) && s[ p + 1 ].isSpace() )
+	if( s[ p ] == c_42 && s[ p + 1 ].isSpace() )
 		return calculateIndent( s, p + 2 );
-	else if( s[ p ] == QLatin1Char( '-' ) && s[ p + 1 ].isSpace() )
+	else if( s[ p ] == c_45 && s[ p + 1 ].isSpace() )
 		return calculateIndent( s, p + 2 );
-	else if( s[ p ] == QLatin1Char( '+' ) && s[ p + 1 ].isSpace() )
+	else if( s[ p ] == c_43 && s[ p + 1 ].isSpace() )
 		return calculateIndent( s, p + 2 );
 	else
 	{
@@ -1928,7 +1933,7 @@ Parser::parseListItem( QStringList & fr, QSharedPointer< Block > parent,
 		}
 		else
 		{
-			if( it->startsWith( QString( indent, QLatin1Char( ' ' ) ) ) )
+			if( it->startsWith( QString( indent, c_32 ) ) )
 				*it = it->right( it->length() - indent );
 
 			data.append( *it );
@@ -1949,11 +1954,7 @@ Parser::parseListItem( QStringList & fr, QSharedPointer< Block > parent,
 void
 Parser::parseCode( QStringList & fr, QSharedPointer< Block > parent, int indent )
 {
-	static const QRegularExpression nonSpace( QStringLiteral( "[^\\s]" ) );
-
-	const auto nsm = nonSpace.match( fr.first() );
-
-	const int i = ( nsm.hasMatch() ? nsm.capturedStart( 0 ) : -1 );
+	const auto i = posOfFirstNonSpace( fr.first() );
 
 	if( i > -1 )
 		indent += i;
@@ -1962,14 +1963,8 @@ Parser::parseCode( QStringList & fr, QSharedPointer< Block > parent, int indent 
 		throw ParserException( QString(
 			"We found code block started with \"%1\" that doesn't finished." ).arg( fr.first() ) );
 
-	static const QRegularExpression startOfCode( QStringLiteral( "^\\s*(```|~~~)\\s*(.+)$" ) );
-
 	QString syntax;
-
-	const auto socm = startOfCode.match( fr.constFirst() );
-
-	if( socm.hasMatch() )
-		syntax = socm.captured( 2 );
+	isStartOfCode( fr.constFirst(), &syntax );
 
 	fr.removeFirst();
 	fr.removeLast();
@@ -1984,8 +1979,8 @@ Parser::parseCodeIndentedBySpaces( QStringList & fr, QSharedPointer< Block > par
 	QString code;
 
 	for( const auto & l : qAsConst( fr ) )
-		code.append( ( indent > 0 ? l.right( l.length() - indent ) + QLatin1Char( '\n' ) :
-			l + QLatin1Char( '\n' ) ) );
+		code.append( ( indent > 0 ? l.right( l.length() - indent ) + c_10 :
+			l + c_10 ) );
 
 	if( !code.isEmpty() )
 	{
