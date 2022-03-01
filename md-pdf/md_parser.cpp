@@ -362,27 +362,126 @@ Parser::clearCache()
 	m_parsedFiles.clear();
 }
 
+inline bool
+isFootnote( const QString & s )
+{
+	qsizetype p = 0;
+
+	for( ; p < s.size(); ++p )
+	{
+		if( !s[ p ].isSpace() )
+			break;
+	}
+
+	if( s.size() - p < 5 )
+		return false;
+
+	if( s[ p++ ] != QLatin1Char( '[' ) )
+		return false;
+
+	if( s[ p++ ] != QLatin1Char( '^' ) )
+		return false;
+
+	if( s[ p ] == QLatin1Char( ']' ) || s[ p ].isSpace() )
+		return false;
+
+	for( ; p < s.size(); ++p )
+	{
+		if( s[ p ] == QLatin1Char( ']' ) )
+			break;
+		else if( s[ p ].isSpace() )
+			return false;
+	}
+
+	++p;
+
+	if( p < s.size() && s[ p ] == QLatin1Char( ':' ) )
+		return true;
+	else
+		return false;
+}
+
+inline bool
+isTableHeader( const QString & s )
+{
+	if( s.contains( QLatin1Char( '|' ) ) )
+		return true;
+	else
+		return false;
+}
+
+inline bool
+isColumnAlignment( const QString & s )
+{
+	qsizetype p = 0;
+
+	for( ; p < s.size(); ++p )
+	{
+		if( !s[ p ].isSpace() )
+			break;
+	}
+
+	if( p == s.size() )
+		return true;
+
+	static const auto c_legitime = QStringLiteral( ":-" );
+
+	if( !c_legitime.contains( s[ p ] ) )
+		return false;
+
+	if( s[ p ] == QLatin1Char( ':' ) )
+		++p;
+
+	const auto a = p;
+
+	for( ; p < s.size(); ++p )
+	{
+		if( s[ p ] != QLatin1Char( '-' ) )
+			break;
+	}
+
+	if( a != p && p - a < 3 )
+		return false;
+
+	if( p == s.size() )
+		return true;
+
+	if( s[ p ] != QLatin1Char( ':' ) && !s[ p ].isSpace() )
+		return false;
+
+	++p;
+
+	for( ; p < s.size(); ++p )
+	{
+		if( !s[ p ].isSpace() )
+			return false;
+	}
+
+	return true;
+}
+
+inline bool
+isTableAlignment( const QString & s )
+{
+	const auto columns = s.split( QLatin1Char( '|' ), Qt::SkipEmptyParts );
+
+	for( const auto & c : columns )
+	{
+		if( !isColumnAlignment( c ) )
+			return false;
+	}
+
+	return true;
+}
+
 void
 Parser::parseText( QStringList & fr, QSharedPointer< Block > parent,
 	QSharedPointer< Document > doc, QStringList & linksToParse,
 	const QString & workingPath, const QString & fileName )
 {
-	static const QRegularExpression fnr( QStringLiteral( "^\\s*\\[\\^[^\\s]*\\]:.*" ) );
-	static const QRegularExpression thr( QStringLiteral( "\\s*\\|\\s*" ) );
-	static const QRegularExpression tcr( QStringLiteral(
-		"^\\s*\\|?(\\s*:?-{3,}:?\\s*\\|)*\\s*:?-{3,}:?\\s*\\|?\\s*$" ) );
-
-	const auto fnrMatch = fnr.match( fr.first() );
-	const auto thrMatch = thr.match( fr.first() );
-
-	QRegularExpressionMatch tcrMatch;
-
-	if( fr.size() > 1 )
-		tcrMatch = tcr.match( fr.at( 1 ) );
-
-	if( fnrMatch.hasMatch() )
+	if( isFootnote( fr.first() ) )
 		parseFootnote( fr, parent, doc, linksToParse, workingPath, fileName );
-	else if( thrMatch.hasMatch() && fr.size() > 1 && tcrMatch.hasMatch() )
+	else if( isTableHeader( fr.first() ) && fr.size() > 1 && isTableAlignment( fr[ 1 ] ) )
 		parseTable( fr, parent, doc, linksToParse, workingPath, fileName );
 	else
 		parseParagraph( fr, parent, doc, linksToParse, workingPath, fileName );
