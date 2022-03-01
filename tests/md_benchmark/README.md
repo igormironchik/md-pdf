@@ -31,7 +31,7 @@ bool isOrderedList( const QString & s )
         if( s[ p ].isDigit() )
             ++p;
         else
-        break;
+            break;
     }
 
     if( dp != p && p < s.size() )
@@ -48,7 +48,7 @@ bool isOrderedList( const QString & s )
 ```
 
 I can refuse from using regular expressions and my parser will be competitive with `md4c`.
-But is it needed in `md-pdf` converter application, most of the time is used by rendering
+But is it needed in `md-pdf` converter application? Most of the time is used by rendering
 to PDF. So let Markdown parsing will be a little slow.
 
 # Why don't I use `md4c` for Markdown parsing?
