@@ -94,6 +94,43 @@ std::string: 4039 ns
 char*: 317 ns
 ```
 
+## And Java for fun :)
+
+```java
+public class JavaProgram {
+
+   public static void main(String []args) {
+      long start = System.nanoTime();
+      
+      String s = "abcdabcdabcdabcdabcdabcdabcdabcdabcdabcdabcdabcdabcdabcdabcdabcdabcdabcd";
+      String t = "";
+      
+      for(int i = 0; i < s.length(); ++i)
+      {
+         if(s.charAt(i) == 'a')
+            t += s.charAt(i);
+      }
+      
+      long end = System.nanoTime();
+            
+      System.out.println("Java: " + (end - start) + " ns.");
+   }
+}
+```
+
+### Result
+
+```
+$ java JavaProgram 
+Java: 108094986 ns.
+$ java JavaProgram 
+Java: 74303385 ns.
+$ java JavaProgram 
+Java: 85103451 ns.
+$ java JavaProgram 
+Java: 96809767 ns.
+```
+
 # Why don't I use `md4c` for Markdown parsing?
 
 `md4c` doesn't support footnotes, that `md-pdf` renders. Ok, I don't support tasks lists,
