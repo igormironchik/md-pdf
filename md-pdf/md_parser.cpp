@@ -888,6 +888,737 @@ isHorizontalLine( const QString & s )
 	return true;
 }
 
+enum class Lex {
+	Bold,
+	Italic,
+	BoldAndItalic,
+	Strikethrough,
+	Text,
+	Link,
+	Image,
+	ImageInLink,
+	StartOfCode,
+	StartOfQuotedCode,
+	FootnoteRef,
+	BreakLine
+}; // enum class Lex
+
+struct PreparsedData {
+	QVector< Lex > lexems;
+
+	QVector< QSharedPointer< Text > > txt;
+	QVector< QSharedPointer< Link > > lnk;
+	QVector< QSharedPointer< FootnoteRef > > fnref;
+	QVector< QSharedPointer< Image > > img;
+
+	int processedText = 0;
+	int processedLnk = 0;
+	int processedFnRef = 0;
+	int processedImg = 0;
+}; // struct PreparsedData
+
+
+// Read URL.
+inline QString
+readLnk( int & i, const QString & line )
+{
+	++i;
+	i = skipSpaces( i, line );
+	const int length = line.length();
+
+	if( i < length )
+	{
+		QString lnk;
+
+		while( i < length && !line[ i ].isSpace() &&
+			( line[ i ] != c_41 && line[ i - 1 ] != c_92 )
+			&& line[ i ] != c_93 )
+		{
+			lnk.append( line[ i ] );
+			++i;
+		}
+
+		return lnk;
+	}
+	else
+		return QString();
+}; // readLnk
+
+
+// Skip link's caption.
+inline bool
+skipLnkCaption( int & i, const QString & line )
+{
+	bool quoted = false;
+
+	if( line[ i ] == c_34 )
+	{
+		quoted = true;
+		++i;
+	}
+
+	const int length = line.length();
+
+	while( i < length &&
+		( quoted ?
+			( line[ i ] != c_34 && line[ i - 1 ] != c_92 ) :
+			( line[ i ] != c_41 ) ) )
+	{
+		++i;
+	}
+
+	if( i < length )
+	{
+		if( quoted )
+		{
+			++i;
+
+			i = skipSpaces( i, line );
+
+			if( i < length )
+			{
+				if( line[ i ] == c_41 )
+				{
+					++i;
+
+					return true;
+				}
+			}
+			else
+				return false;
+		}
+		else if( line[ i ] == c_41 )
+			return true;
+	}
+
+	return false;
+}; // skipLnkCaption
+
+
+// Add footnote ref.
+inline void
+addFootnoteRef( const QString & lnk, PreparsedData & data, const QString & workingPath,
+	const QString & fileName )
+{
+	QSharedPointer< FootnoteRef > fnr(
+		new FootnoteRef( QStringLiteral( "#" ) + lnk +
+			QStringLiteral( "/" ) + workingPath + fileName ) );
+
+	data.fnref.append( fnr );
+	data.lexems.append( Lex::FootnoteRef );
+}; // addFootnoteRef
+
+
+// Read image.
+inline int parseImg( int i, const QString & line, bool & ok,
+	bool addLex, PreparsedData & data, const QString & workingPath )
+{
+	i += 2;
+	const int length = line.length();
+
+	QString t = readLinkText( i, line );
+
+	i = skipSpaces( i, line );
+
+	if( i < length && line[ i ] == c_40 )
+	{
+		QString lnk = readLnk( i, line );
+
+		if( !lnk.isEmpty() && i < length )
+		{
+			i = skipSpaces( i, line );
+
+			if( i < length )
+			{
+				if( skipLnkCaption( i, line ) )
+				{
+					QSharedPointer< Image > img( new Image() );
+					img->setText( t.simplified() );
+
+					if( !QUrl( lnk ).isRelative() )
+						img->setUrl( lnk );
+					else
+						img->setUrl( fileExists( lnk, workingPath ) ? workingPath + lnk : lnk );
+
+					data.img.append( img );
+
+					if( addLex )
+						data.lexems.append( Lex::Image );
+
+					ok = true;
+
+					return i;
+				}
+			}
+		}
+	}
+
+	ok = false;
+
+	return i;
+}; // parseImg
+
+// Read link.
+inline int
+parseLnk( int i, const QString & line, QString & text, PreparsedData & data,
+	const QString & workingPath, const QString & fileName, QStringList & linksToParse,
+	QSharedPointer< Document > doc )
+{
+	const int startPos = i;
+	bool withImage = false;
+
+	++i;
+
+	i = skipSpaces( i, line );
+
+	const int length = line.length();
+	QString lnkText, url;
+
+	if( i < length )
+	{
+		if( i + 1 < length && line[ i ] == c_33 &&
+			line[ i + 1 ] == c_91 )
+		{
+			bool ok = false;
+
+			i = parseImg( i, line, ok, false, data, workingPath ) + 1;
+
+			if( !ok )
+			{
+				text.append( line.mid( startPos, i - startPos ) );
+
+				return i;
+			}
+			else
+			{
+				withImage = true;
+
+				i = skipSpaces( i, line );
+
+				if( i < length && line[ i ] == c_93 )
+					++i;
+				else
+				{
+					text.append( line.mid( startPos, i - startPos ) );
+
+					return i;
+				}
+			}
+		}
+		else if( line[ i ] == c_94 )
+		{
+			auto lnk = readLnk( i, line );
+
+			i = skipSpaces( i, line );
+
+			if( i < length && line[ i ] == c_93 )
+			{
+				if( i + 1 < length )
+				{
+					if( line[ i + 1 ] != c_58 )
+					{
+						addFootnoteRef( lnk, data, workingPath, fileName );
+
+						return i + 1;
+					}
+					else
+					{
+						text.append( line.mid( startPos, i - startPos + 2 ) );
+
+						return i + 2;
+					}
+				}
+				else
+				{
+					addFootnoteRef( lnk, data, workingPath, fileName );
+
+					return i + 1;
+				}
+			}
+			else
+			{
+				text.append( line.mid( startPos, i - startPos ) );
+
+				return i;
+			}
+		}
+		else
+			lnkText = readLinkText( i, line ).simplified();
+	}
+
+	i = skipSpaces( i, line );
+
+	if( i < length )
+	{
+		if( line[ i ] == c_58 )
+		{
+			url = readLnk( i, line );
+
+			if( !url.isEmpty() )
+			{
+				if( QUrl( url ).isRelative() )
+				{
+					if( fileExists( url, workingPath ) )
+					{
+						url = QFileInfo( workingPath + url ).absoluteFilePath();
+
+						linksToParse.append( url );
+					}
+				}
+
+				QSharedPointer< Link > lnk( new Link() );
+				lnk->setUrl( url );
+
+				doc->insertLabeledLink(
+					QString::fromLatin1( "#" ) + lnkText +
+					QStringLiteral( "/" ) + workingPath + fileName, lnk );
+
+				return length;
+			}
+			else
+			{
+				text.append( line.mid( startPos, i - startPos ) );
+
+				return i;
+			}
+		}
+		else if( line[ i ] == c_40 )
+		{
+			url = readLnk( i, line );
+
+			if( !url.isEmpty() && i < length )
+			{
+				if( !url.startsWith( c_35 ) )
+				{
+					i = skipSpaces( i, line );
+
+					if( i < length )
+					{
+						if( skipLnkCaption( i, line ) )
+						{
+							if( QUrl( url ).isRelative() )
+							{
+								if( fileExists( url, workingPath ) )
+								{
+									url = QFileInfo( workingPath + url ).absoluteFilePath();
+
+									linksToParse.append( url );
+								}
+							}
+						}
+						else
+						{
+							text.append( line.mid( startPos, i - startPos ) );
+
+							return i;
+						}
+					}
+				}
+				else
+					url = url + QStringLiteral( "/" ) + workingPath + fileName;
+			}
+			else
+			{
+				text.append( line.mid( startPos, i - startPos ) );
+
+				return i;
+			}
+		}
+		else if( line[ i ] == c_91 )
+		{
+			url = readLnk( i, line );
+
+			if( !url.isEmpty() )
+			{
+				i = skipSpaces( i, line );
+
+				if( i < length && line[ i ] == c_93 )
+				{
+					url = QString::fromLatin1( "#" ) + url +
+						QStringLiteral( "/" ) + workingPath + fileName;
+
+					linksToParse.append( url );
+
+					++i;
+				}
+				else
+				{
+					text.append( line.mid( startPos, i - startPos ) );
+
+					return i;
+				}
+			}
+		}
+		else
+		{
+			text.append( line.mid( startPos, i - startPos + 1 ) );
+
+			return i + 1;
+		}
+	}
+	else
+	{
+		text.append( line.mid( startPos, i - startPos ) );
+
+		if( withImage )
+			data.img.removeLast();
+
+		return i;
+	}
+
+	QSharedPointer< Link > lnk( new Link() );
+	lnk->setUrl( url );
+	lnk->setText( lnkText );
+	data.lnk.append( lnk );
+
+	if( withImage )
+		data.lexems.append( Lex::ImageInLink );
+	else
+		data.lexems.append( Lex::Link );
+
+	return i;
+}; // parseLnk
+
+// Create text object.
+inline void
+createTextObj( const QString & text, PreparsedData & data )
+{
+	if( !text.isEmpty() )
+	{
+		QSharedPointer< Text > t( new Text() );
+		t->setText( text );
+		t->setOpts( TextWithoutFormat );
+		data.txt.append( t );
+		data.lexems.append( Lex::Text );
+	}
+}; // createTextObject
+
+
+enum class LineParsingState {
+	Finished,
+	UnfinishedCode,
+	UnfinishedQuotedCode
+}; // enum class LineParsingState
+
+
+// Read code.
+inline int
+parseCodeLine( int i, const QString & line, LineParsingState & prevAndNext,
+	PreparsedData & data )
+{
+	const int length = line.length();
+
+	bool quoted = false;
+
+	if( prevAndNext != LineParsingState::Finished )
+		quoted = ( prevAndNext == LineParsingState::UnfinishedQuotedCode );
+	else
+	{
+		if( i + 1 < length && line[ i + 1 ] == c_96 )
+		{
+			quoted = true;
+
+			data.lexems.append( Lex::StartOfQuotedCode );
+
+			i += 2;
+		}
+		else
+		{
+			data.lexems.append( Lex::StartOfCode );
+
+			++i;
+		}
+	}
+
+	QString code;
+	bool finished = false;
+
+	while( i < length )
+	{
+		if( line[ i ] == c_96 )
+		{
+			if( !quoted )
+			{
+				finished = true;
+
+				++i;
+
+				break;
+			}
+			else if( i + 1 < length && line[ i + 1 ] == c_96 )
+			{
+				if( i + 2 < length && line[ i + 2 ] == c_96 )
+				{
+					code.append( line[ i ] );
+
+					++i;
+
+					continue;
+				}
+				else
+				{
+					finished = true;
+
+					i += 2;
+
+					break;
+				}
+			}
+		}
+
+		code.append( line[ i ] );
+
+		++i;
+	}
+
+	createTextObj( code, data );
+
+	if( finished )
+	{
+		data.lexems.append( quoted ? Lex::StartOfQuotedCode : Lex::StartOfCode );
+		prevAndNext = LineParsingState::Finished;
+	}
+	else
+		prevAndNext = ( quoted ? LineParsingState::UnfinishedQuotedCode :
+			LineParsingState::UnfinishedCode );
+
+	return i;
+}; // parseCode
+
+// Read URL in <...>
+inline int
+parseUrl( int i, const QString & line, QString & text, PreparsedData & data )
+{
+	const int start = i;
+
+	++i;
+
+	const int length = line.length();
+
+	bool done = false;
+	QString url;
+
+	while( i < length )
+	{
+		if( line[ i ] != c_62 )
+			url.append( line[ i ] );
+		else
+		{
+			done = true;
+			++i;
+			break;
+		}
+
+		++i;
+	}
+
+	if( done )
+	{
+		QSharedPointer< Link > lnk( new Link() );
+		lnk->setUrl( url.simplified() );
+		data.lnk.append( lnk );
+		data.lexems.append( Lex::Link );
+	}
+	else
+		text.append( line.mid( start, i - start ) );
+
+	return i;
+}; // parseUrl
+
+
+// Parse one line in paragraph.
+inline LineParsingState
+parseLine( QString & line, LineParsingState prev, PreparsedData & data,
+	const QString & workingPath, const QString & fileName, QStringList & linksToParse,
+	QSharedPointer< Document > doc )
+{
+	static const QString specialChars( QLatin1String( "\\`*_{}[]()#+-.!|~<>" ) );
+
+	bool hasBreakLine = line.endsWith( QLatin1String( "  " ) );
+
+	int pos = 0;
+
+	if( prev != LineParsingState::Finished )
+	{
+		pos = parseCodeLine( 0, line, prev, data );
+
+		if( prev != LineParsingState::Finished )
+			return prev;
+	}
+
+	const auto ns = posOfFirstNonSpace( line );
+
+	if( ns > 0 )
+		line = line.right( line.length() - ns );
+
+	// Will skip horizontal rules, for now at least...
+	if( !isHorizontalLine( line ) )
+	{
+		QString text;
+
+		for( int i = pos, length = line.length(); i < length; ++i )
+		{
+			if( line[ i ] == c_92 && i + 1 < length &&
+				specialChars.contains( line[ i + 1 ] ) )
+			{
+				++i;
+
+				text.append( line[ i ] );
+			}
+			else if( line[ i ] == c_33 && i + 1 < length &&
+				line[ i + 1 ] == c_91 )
+			{
+				createTextObj( text.simplified(), data );
+				text.clear();
+
+				bool ok = false;
+
+				const int startPos = i;
+
+				i = parseImg( i, line, ok, true, data, workingPath );
+
+				if( !ok )
+					text.append( line.mid( startPos, i - startPos ) );
+			}
+			else if( line[ i ] == c_91 )
+			{
+				createTextObj( text.simplified(), data );
+				text.clear();
+				i = parseLnk( i, line, text, data, workingPath, fileName, linksToParse, doc );
+			}
+			else if( line[ i ] == c_96 )
+			{
+				createTextObj( text.simplified(), data );
+				text.clear();
+				i = parseCodeLine( i, line, prev, data ) - 1;
+
+				if( prev != LineParsingState::Finished )
+					return prev;
+			}
+			else if( line[ i ] == c_60 )
+			{
+				createTextObj( text.simplified(), data );
+				text.clear();
+				i = parseUrl( i, line, text, data ) - 1;
+			}
+			else if( line[ i ] == c_42 || line[ i ] == c_95 )
+			{
+				QString style;
+
+				while( i < length &&
+					( line[ i ] == c_42 || line[ i ] == c_95 ) )
+				{
+					style.append( line[ i ] );
+					++i;
+				}
+
+				if( !style.isEmpty() )
+					--i;
+
+				if( style == QLatin1String( "*" ) || style == QLatin1String( "_" ) )
+				{
+					createTextObj( text.simplified(), data );
+					text.clear();
+					data.lexems.append( Lex::Italic );
+				}
+				else if( style == QLatin1String( "**" ) || style == QLatin1String( "__" ) )
+				{
+					createTextObj( text.simplified(), data );
+					text.clear();
+					data.lexems.append( Lex::Bold );
+				}
+				else if( style == QLatin1String( "***" ) || style == QLatin1String( "___" ) ||
+					style == QLatin1String( "_**" ) || style == QLatin1String( "**_" ) ||
+					style == QLatin1String( "*__" ) || style == QLatin1String( "__*" ) )
+				{
+					createTextObj( text.simplified(), data );
+					text.clear();
+					data.lexems.append( Lex::BoldAndItalic );
+				}
+				else
+					text.append( style );
+			}
+			else if( line[ i ] == c_126 && i + 1 < length &&
+				line[ i + 1 ] == c_126 )
+			{
+				++i;
+				createTextObj( text.simplified(), data );
+				text.clear();
+				data.lexems.append( Lex::Strikethrough );
+			}
+			else
+				text.append( line[ i ] );
+		}
+
+		createTextObj( text.simplified(), data );
+		text.clear();
+
+		if( hasBreakLine )
+			data.lexems.append( Lex::BreakLine );
+	}
+
+	return LineParsingState::Finished;
+}; // parseLine
+
+// Set flags for all nested items.
+inline void
+setFlags( Lex lex, QVector< Lex >::iterator it, PreparsedData & data )
+{
+	static const auto lexToFormat = []( Lex lex ) -> TextOptions
+	{
+		switch( lex )
+		{
+			case Lex::Bold :
+				return BoldText;
+
+			case Lex::Italic :
+				return ItalicText;
+
+			case Lex::BoldAndItalic :
+				return ( BoldText | ItalicText );
+
+			case Lex::Strikethrough :
+				return StrikethroughText;
+
+			default :
+				return TextWithoutFormat;
+		}
+	};
+
+	auto close = std::find( it + 1, data.lexems.end(), lex );
+
+	if( close != data.lexems.end() )
+	{
+		int processedText = data.processedText;
+		int processedLnk = data.processedLnk;
+
+		for( auto i = it + 1; i != close; ++i )
+		{
+			switch( *i )
+			{
+				case Lex::Text :
+				{
+					data.txt[ processedText ]->setOpts( data.txt[ processedText ]->opts() |
+						lexToFormat( lex ) );
+					++processedText;
+				}
+					break;
+
+				case Lex::Link :
+				{
+					data.lnk[ processedLnk ]->setTextOptions( data.lnk[ processedLnk ]->textOptions() |
+						lexToFormat( lex ) );
+					++processedLnk;
+				}
+					break;
+
+				default :
+					break;
+			}
+		}
+	}
+}; // setFlags
+
 } /* namespace anonymous */
 
 void
@@ -896,724 +1627,13 @@ Parser::parseFormattedTextLinksImages( QStringList & fr, QSharedPointer< Block >
 	const QString & fileName )
 
 {
-	static const QString specialChars( QLatin1String( "\\`*_{}[]()#+-.!|~<>" ) );
-
-	enum class Lex {
-		Bold,
-		Italic,
-		BoldAndItalic,
-		Strikethrough,
-		Text,
-		Link,
-		Image,
-		ImageInLink,
-		StartOfCode,
-		StartOfQuotedCode,
-		FootnoteRef,
-		BreakLine
-	}; // enum class Lex
-
-	struct PreparsedData {
-		QVector< Lex > lexems;
-
-		QVector< QSharedPointer< Text > > txt;
-		QVector< QSharedPointer< Link > > lnk;
-		QVector< QSharedPointer< FootnoteRef > > fnref;
-		QVector< QSharedPointer< Image > > img;
-
-		int processedText = 0;
-		int processedLnk = 0;
-		int processedFnRef = 0;
-		int processedImg = 0;
-	}; // struct PreparsedData
-
 	PreparsedData data;
-
-	// Read URL.
-	auto readLnk = [&]( int & i, const QString & line ) -> QString
-	{
-		++i;
-		i = skipSpaces( i, line );
-		const int length = line.length();
-
-		if( i < length )
-		{
-			QString lnk;
-
-			while( i < length && !line[ i ].isSpace() &&
-				( line[ i ] != c_41 && line[ i - 1 ] != c_92 )
-				&& line[ i ] != c_93 )
-			{
-				lnk.append( line[ i ] );
-				++i;
-			}
-
-			return lnk;
-		}
-		else
-			return QString();
-	}; // readLnk
-
-	// Skip link's caption.
-	auto skipLnkCaption = [&]( int & i, const QString & line ) -> bool
-	{
-		bool quoted = false;
-
-		if( line[ i ] == c_34 )
-		{
-			quoted = true;
-			++i;
-		}
-
-		const int length = line.length();
-
-		while( i < length &&
-			( quoted ?
-				( line[ i ] != c_34 && line[ i - 1 ] != c_92 ) :
-				( line[ i ] != c_41 ) ) )
-		{
-			++i;
-		}
-
-		if( i < length )
-		{
-			if( quoted )
-			{
-				++i;
-
-				i = skipSpaces( i, line );
-
-				if( i < length )
-				{
-					if( line[ i ] == c_41 )
-					{
-						++i;
-
-						return true;
-					}
-				}
-				else
-					return false;
-			}
-			else if( line[ i ] == c_41 )
-				return true;
-		}
-
-		return false;
-	}; // skipLnkCaption
-
-	// Add footnote ref.
-	auto addFootnoteRef = [&]( const QString & lnk )
-	{
-		QSharedPointer< FootnoteRef > fnr(
-			new FootnoteRef( QStringLiteral( "#" ) + lnk +
-				QStringLiteral( "/" ) + workingPath + fileName ) );
-
-		data.fnref.append( fnr );
-		data.lexems.append( Lex::FootnoteRef );
-	}; // addFootnoteRef
-
-	// Read image.
-	auto parseImg = [&]( int i, const QString & line, bool * ok = nullptr,
-		bool addLex = true ) -> int
-	{
-		i += 2;
-		const int length = line.length();
-
-		QString t = readLinkText( i, line );
-
-		i = skipSpaces( i, line );
-
-		if( i < length && line[ i ] == c_40 )
-		{
-			QString lnk = readLnk( i, line );
-
-			if( !lnk.isEmpty() && i < length )
-			{
-				i = skipSpaces( i, line );
-
-				if( i < length )
-				{
-					if( skipLnkCaption( i, line ) )
-					{
-						QSharedPointer< Image > img( new Image() );
-						img->setText( t.simplified() );
-
-						if( !QUrl( lnk ).isRelative() )
-							img->setUrl( lnk );
-						else
-							img->setUrl( fileExists( lnk, workingPath ) ? workingPath + lnk : lnk );
-
-						data.img.append( img );
-
-						if( addLex )
-							data.lexems.append( Lex::Image );
-
-						if( ok )
-							*ok = true;
-
-						return i;
-					}
-				}
-			}
-		}
-
-		if( ok )
-			*ok = false;
-
-		return i;
-	}; // parseImg
-
-	// Read link.
-	auto parseLnk = [&]( int i, const QString & line, QString & text ) -> int
-	{
-		const int startPos = i;
-		bool withImage = false;
-
-		++i;
-
-		i = skipSpaces( i, line );
-
-		const int length = line.length();
-		QString lnkText, url;
-
-		if( i < length )
-		{
-			if( i + 1 < length && line[ i ] == c_33 &&
-				line[ i + 1 ] == c_91 )
-			{
-				bool ok = false;
-
-				i = parseImg( i, line, &ok, false ) + 1;
-
-				if( !ok )
-				{
-					text.append( line.mid( startPos, i - startPos ) );
-
-					return i;
-				}
-				else
-				{
-					withImage = true;
-
-					i = skipSpaces( i, line );
-
-					if( i < length && line[ i ] == c_93 )
-						++i;
-					else
-					{
-						text.append( line.mid( startPos, i - startPos ) );
-
-						return i;
-					}
-				}
-			}
-			else if( line[ i ] == c_94 )
-			{
-				auto lnk = readLnk( i, line );
-
-				i = skipSpaces( i, line );
-
-				if( i < length && line[ i ] == c_93 )
-				{
-					if( i + 1 < length )
-					{
-						if( line[ i + 1 ] != c_58 )
-						{
-							addFootnoteRef( lnk );
-
-							return i + 1;
-						}
-						else
-						{
-							text.append( line.mid( startPos, i - startPos + 2 ) );
-
-							return i + 2;
-						}
-					}
-					else
-					{
-						addFootnoteRef( lnk );
-
-						return i + 1;
-					}
-				}
-				else
-				{
-					text.append( line.mid( startPos, i - startPos ) );
-
-					return i;
-				}
-			}
-			else
-				lnkText = readLinkText( i, line ).simplified();
-		}
-
-		i = skipSpaces( i, line );
-
-		if( i < length )
-		{
-			if( line[ i ] == c_58 )
-			{
-				url = readLnk( i, line );
-
-				if( !url.isEmpty() )
-				{
-					if( QUrl( url ).isRelative() )
-					{
-						if( fileExists( url, workingPath ) )
-						{
-							url = QFileInfo( workingPath + url ).absoluteFilePath();
-
-							linksToParse.append( url );
-						}
-					}
-
-					QSharedPointer< Link > lnk( new Link() );
-					lnk->setUrl( url );
-
-					doc->insertLabeledLink(
-						QString::fromLatin1( "#" ) + lnkText +
-						QStringLiteral( "/" ) + workingPath + fileName, lnk );
-
-					return length;
-				}
-				else
-				{
-					text.append( line.mid( startPos, i - startPos ) );
-
-					return i;
-				}
-			}
-			else if( line[ i ] == c_40 )
-			{
-				url = readLnk( i, line );
-
-				if( !url.isEmpty() && i < length )
-				{
-					if( !url.startsWith( c_35 ) )
-					{
-						i = skipSpaces( i, line );
-
-						if( i < length )
-						{
-							if( skipLnkCaption( i, line ) )
-							{
-								if( QUrl( url ).isRelative() )
-								{
-									if( fileExists( url, workingPath ) )
-									{
-										url = QFileInfo( workingPath + url ).absoluteFilePath();
-
-										linksToParse.append( url );
-									}
-								}
-							}
-							else
-							{
-								text.append( line.mid( startPos, i - startPos ) );
-
-								return i;
-							}
-						}
-					}
-					else
-						url = url + QStringLiteral( "/" ) + workingPath + fileName;
-				}
-				else
-				{
-					text.append( line.mid( startPos, i - startPos ) );
-
-					return i;
-				}
-			}
-			else if( line[ i ] == c_91 )
-			{
-				url = readLnk( i, line );
-
-				if( !url.isEmpty() )
-				{
-					i = skipSpaces( i, line );
-
-					if( i < length && line[ i ] == c_93 )
-					{
-						url = QString::fromLatin1( "#" ) + url +
-							QStringLiteral( "/" ) + workingPath + fileName;
-
-						linksToParse.append( url );
-
-						++i;
-					}
-					else
-					{
-						text.append( line.mid( startPos, i - startPos ) );
-
-						return i;
-					}
-				}
-			}
-			else
-			{
-				text.append( line.mid( startPos, i - startPos + 1 ) );
-
-				return i + 1;
-			}
-		}
-		else
-		{
-			text.append( line.mid( startPos, i - startPos ) );
-
-			if( withImage )
-				data.img.removeLast();
-
-			return i;
-		}
-
-		QSharedPointer< Link > lnk( new Link() );
-		lnk->setUrl( url );
-		lnk->setText( lnkText );
-		data.lnk.append( lnk );
-
-		if( withImage )
-			data.lexems.append( Lex::ImageInLink );
-		else
-			data.lexems.append( Lex::Link );
-
-		return i;
-	}; // parseLnk
-
-	enum class LineParsingState {
-		Finished,
-		UnfinishedCode,
-		UnfinishedQuotedCode
-	}; // enum class LineParsingState
-
-	// Create text object.
-	auto createTextObj = [&]( const QString & text )
-	{
-		if( !text.isEmpty() )
-		{
-			QSharedPointer< Text > t( new Text() );
-			t->setText( text );
-			t->setOpts( TextWithoutFormat );
-			data.txt.append( t );
-			data.lexems.append( Lex::Text );
-		}
-	}; // createTextObject
-
-	// Read code.
-	auto parseCode = [&]( int i, const QString & line, LineParsingState & prevAndNext ) -> int
-	{
-		const int length = line.length();
-
-		bool quoted = false;
-
-		if( prevAndNext != LineParsingState::Finished )
-			quoted = ( prevAndNext == LineParsingState::UnfinishedQuotedCode );
-		else
-		{
-			if( i + 1 < length && line[ i + 1 ] == c_96 )
-			{
-				quoted = true;
-
-				data.lexems.append( Lex::StartOfQuotedCode );
-
-				i += 2;
-			}
-			else
-			{
-				data.lexems.append( Lex::StartOfCode );
-
-				++i;
-			}
-		}
-
-		QString code;
-		bool finished = false;
-
-		while( i < length )
-		{
-			if( line[ i ] == c_96 )
-			{
-				if( !quoted )
-				{
-					finished = true;
-
-					++i;
-
-					break;
-				}
-				else if( i + 1 < length && line[ i + 1 ] == c_96 )
-				{
-					if( i + 2 < length && line[ i + 2 ] == c_96 )
-					{
-						code.append( line[ i ] );
-
-						++i;
-
-						continue;
-					}
-					else
-					{
-						finished = true;
-
-						i += 2;
-
-						break;
-					}
-				}
-			}
-
-			code.append( line[ i ] );
-
-			++i;
-		}
-
-		createTextObj( code );
-
-		if( finished )
-		{
-			data.lexems.append( quoted ? Lex::StartOfQuotedCode : Lex::StartOfCode );
-			prevAndNext = LineParsingState::Finished;
-		}
-		else
-			prevAndNext = ( quoted ? LineParsingState::UnfinishedQuotedCode :
-				LineParsingState::UnfinishedCode );
-
-		return i;
-	}; // parseCode
-
-	// Read URL in <...>
-	auto parseUrl = [&]( int i, const QString & line, QString & text ) -> int
-	{
-		const int start = i;
-
-		++i;
-
-		const int length = line.length();
-
-		bool done = false;
-		QString url;
-
-		while( i < length )
-		{
-			if( line[ i ] != c_62 )
-				url.append( line[ i ] );
-			else
-			{
-				done = true;
-				++i;
-				break;
-			}
-
-			++i;
-		}
-
-		if( done )
-		{
-			QSharedPointer< Link > lnk( new Link() );
-			lnk->setUrl( url.simplified() );
-			data.lnk.append( lnk );
-			data.lexems.append( Lex::Link );
-		}
-		else
-			text.append( line.mid( start, i - start ) );
-
-		return i;
-	}; // parseUrl
-
-	// Parse one line in paragraph.
-	auto parseLine = [&]( QString & line, LineParsingState prev ) -> LineParsingState
-	{
-		bool hasBreakLine = line.endsWith( QLatin1String( "  " ) );
-
-		int pos = 0;
-
-		if( prev != LineParsingState::Finished )
-		{
-			pos = parseCode( 0, line, prev );
-
-			if( prev != LineParsingState::Finished )
-				return prev;
-		}
-
-		const auto ns = posOfFirstNonSpace( line );
-
-		if( ns > 0 )
-			line = line.right( line.length() - ns );
-
-		// Will skip horizontal rules, for now at least...
-		if( !isHorizontalLine( line ) )
-		{
-			QString text;
-
-			for( int i = pos, length = line.length(); i < length; ++i )
-			{
-				if( line[ i ] == c_92 && i + 1 < length &&
-					specialChars.contains( line[ i + 1 ] ) )
-				{
-					++i;
-
-					text.append( line[ i ] );
-				}
-				else if( line[ i ] == c_33 && i + 1 < length &&
-					line[ i + 1 ] == c_91 )
-				{
-					createTextObj( text.simplified() );
-					text.clear();
-
-					bool ok = false;
-
-					const int startPos = i;
-
-					i = parseImg( i, line, &ok );
-
-					if( !ok )
-						text.append( line.mid( startPos, i - startPos ) );
-				}
-				else if( line[ i ] == c_91 )
-				{
-					createTextObj( text.simplified() );
-					text.clear();
-					i = parseLnk( i, line, text );
-				}
-				else if( line[ i ] == c_96 )
-				{
-					createTextObj( text.simplified() );
-					text.clear();
-					i = parseCode( i, line, prev ) - 1;
-
-					if( prev != LineParsingState::Finished )
-						return prev;
-				}
-				else if( line[ i ] == c_60 )
-				{
-					createTextObj( text.simplified() );
-					text.clear();
-					i = parseUrl( i, line, text ) - 1;
-				}
-				else if( line[ i ] == c_42 || line[ i ] == c_95 )
-				{
-					QString style;
-
-					while( i < length &&
-						( line[ i ] == c_42 || line[ i ] == c_95 ) )
-					{
-						style.append( line[ i ] );
-						++i;
-					}
-
-					if( !style.isEmpty() )
-						--i;
-
-					if( style == QLatin1String( "*" ) || style == QLatin1String( "_" ) )
-					{
-						createTextObj( text.simplified() );
-						text.clear();
-						data.lexems.append( Lex::Italic );
-					}
-					else if( style == QLatin1String( "**" ) || style == QLatin1String( "__" ) )
-					{
-						createTextObj( text.simplified() );
-						text.clear();
-						data.lexems.append( Lex::Bold );
-					}
-					else if( style == QLatin1String( "***" ) || style == QLatin1String( "___" ) ||
-						style == QLatin1String( "_**" ) || style == QLatin1String( "**_" ) ||
-						style == QLatin1String( "*__" ) || style == QLatin1String( "__*" ) )
-					{
-						createTextObj( text.simplified() );
-						text.clear();
-						data.lexems.append( Lex::BoldAndItalic );
-					}
-					else
-						text.append( style );
-				}
-				else if( line[ i ] == c_126 && i + 1 < length &&
-					line[ i + 1 ] == c_126 )
-				{
-					++i;
-					createTextObj( text.simplified() );
-					text.clear();
-					data.lexems.append( Lex::Strikethrough );
-				}
-				else
-					text.append( line[ i ] );
-			}
-
-			createTextObj( text.simplified() );
-			text.clear();
-
-			if( hasBreakLine )
-				data.lexems.append( Lex::BreakLine );
-		}
-
-		return LineParsingState::Finished;
-	}; // parseLine
 
 	LineParsingState state = LineParsingState::Finished;
 
 	// Real parsing.
 	for( auto it = fr.begin(), last = fr.end(); it != last; ++it )
-		state = parseLine( *it, state );
-
-	// Set flags for all nested items.
-	auto setFlags = [&]( Lex lex, QVector< Lex >::iterator it )
-	{
-		static const auto lexToFormat = []( Lex lex ) -> TextOptions
-		{
-			switch( lex )
-			{
-				case Lex::Bold :
-					return BoldText;
-
-				case Lex::Italic :
-					return ItalicText;
-
-				case Lex::BoldAndItalic :
-					return ( BoldText | ItalicText );
-
-				case Lex::Strikethrough :
-					return StrikethroughText;
-
-				default :
-					return TextWithoutFormat;
-			}
-		};
-
-		auto close = std::find( it + 1, data.lexems.end(), lex );
-
-		if( close != data.lexems.end() )
-		{
-			int processedText = data.processedText;
-			int processedLnk = data.processedLnk;
-
-			for( auto i = it + 1; i != close; ++i )
-			{
-				switch( *i )
-				{
-					case Lex::Text :
-					{
-						data.txt[ processedText ]->setOpts( data.txt[ processedText ]->opts() |
-							lexToFormat( lex ) );
-						++processedText;
-					}
-						break;
-
-					case Lex::Link :
-					{
-						data.lnk[ processedLnk ]->setTextOptions( data.lnk[ processedLnk ]->textOptions() |
-							lexToFormat( lex ) );
-						++processedLnk;
-					}
-						break;
-
-					default :
-						break;
-				}
-			}
-		}
-	}; // setFlags
+		state = parseLine( *it, state, data, workingPath, fileName, linksToParse, doc );
 
 	// Add real items to paragraph  after pre-parsing. Handle code.
 	for( auto it = data.lexems.begin(), last = data.lexems.end(); it != last; ++it )
@@ -1625,7 +1645,7 @@ Parser::parseFormattedTextLinksImages( QStringList & fr, QSharedPointer< Block >
 			case Lex::BoldAndItalic :
 			case Lex::Strikethrough :
 			{
-				setFlags( *it, it );
+				setFlags( *it, it, data );
 			}
 				break;
 
@@ -1965,7 +1985,7 @@ Parser::parseCodeIndentedBySpaces( QStringList & fr, QSharedPointer< Block > par
 }
 
 bool
-Parser::fileExists( const QString & fileName, const QString & workingPath ) const
+fileExists( const QString & fileName, const QString & workingPath )
 {
 	return QFileInfo::exists( workingPath + fileName );
 }

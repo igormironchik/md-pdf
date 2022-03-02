@@ -130,6 +130,8 @@ isFootnote( const QString & s )
 		return false;
 }
 
+bool fileExists( const QString & fileName, const QString & workingPath );
+
 
 //
 // Parser
@@ -204,7 +206,6 @@ private:
 		QSharedPointer< Document > doc,
 		QStringList & linksToParse, const QString & workingPath,
 		const QString & fileName );
-	bool fileExists( const QString & fileName, const QString & workingPath ) const;
 
 	// Read line from stream.
 	template< typename STREAM >
