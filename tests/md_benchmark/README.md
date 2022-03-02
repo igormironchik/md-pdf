@@ -1,6 +1,6 @@
 # Conclusion
 
-Guys, this is a fight of `QString` and `char*` :)
+Guys, this is a fight of `QString` and `char *` :)
 
 ```cpp
 #include <chrono>
@@ -11,80 +11,78 @@ Guys, this is a fight of `QString` and `char*` :)
 
 int main( int argc, char ** argv )
 {
-	{
-		const auto start = std::chrono::high_resolution_clock::now();
+    {
+        const auto start = std::chrono::high_resolution_clock::now();
 
-		{
-			const QString s = QStringLiteral( "abcdabcdabcdabcdabcdabcdabcdabcdabcdabcdabcdabcdabcdabcdabcdabcdabcdabcd" );
-			QString t;
+        {
+            const QString s = QStringLiteral(
+                "abcdabcdabcdabcdabcdabcdabcdabcdabcdabcdabcdabcdabcdabcdabcdabcdabcdabcd" );
+            QString t;
 
-			for( auto i = 0; i < s.size(); ++i )
-			{
-				if( s[ i ] == QLatin1Char( 'a' ) )
-					t.append( s[ i ] );
-			}
-		}
+            for( auto i = 0; i < s.size(); ++i )
+            {
+                if( s[ i ] == QLatin1Char( 'a' ) )
+                    t.append( s[ i ] );
+            }
+        }
 
-		const auto end = std::chrono::high_resolution_clock::now();
+        const auto end = std::chrono::high_resolution_clock::now();
 
-		const auto d = std::chrono::duration_cast< std::chrono::nanoseconds > ( end - start );
+        const auto d = std::chrono::duration_cast< std::chrono::nanoseconds > ( end - start );
 
-		std::cout << "QString: " << d.count() << " ns" << std::endl;
-	}
+        std::cout << "QString: " << d.count() << " ns" << std::endl;
+    }
 
-	{
-		const auto start = std::chrono::high_resolution_clock::now();
+    {
+        const auto start = std::chrono::high_resolution_clock::now();
 
-		{
-			const std::string s( "abcdabcdabcdabcdabcdabcdabcdabcdabcdabcdabcdabcdabcdabcdabcdabcdabcdabcd" );
-			std::string t;
+        {
+            const std::string s( "abcdabcdabcdabcdabcdabcdabcdabcdabcdabcdabcdabcdabcdabcdabcdabcdabcdabcd" );
+            std::string t;
 
-			for( auto i = 0; i < s.size(); ++i )
-			{
-				if( s[ i ] == 'a' )
-					t.push_back( s[ i ] );
-			}
-		}
+            for( auto i = 0; i < s.size(); ++i )
+            {
+                if( s[ i ] == 'a' )
+                    t.push_back( s[ i ] );
+            }
+        }
 
-		const auto end = std::chrono::high_resolution_clock::now();
+        const auto end = std::chrono::high_resolution_clock::now();
 
-		const auto d = std::chrono::duration_cast< std::chrono::nanoseconds > ( end - start );
+        const auto d = std::chrono::duration_cast< std::chrono::nanoseconds > ( end - start );
 
-		std::cout << "std::string: " << d.count() << " ns" << std::endl;
-	}
+        std::cout << "std::string: " << d.count() << " ns" << std::endl;
+    }
 
-	{
-		const auto start = std::chrono::high_resolution_clock::now();
+    {
+        const auto start = std::chrono::high_resolution_clock::now();
 
-		{
-			const char * s = "abcdabcdabcdabcdabcdabcdabcdabcdabcdabcdabcdabcdabcdabcdabcdabcdabcdabcd";
-			const auto len = strlen( s );
-			char * t = (char*) malloc( len / 4 + 1 );
+        {
+            const char * s = "abcdabcdabcdabcdabcdabcdabcdabcdabcdabcdabcdabcdabcdabcdabcdabcdabcdabcd";
+            const auto len = strlen( s );
+            char * t = (char*) malloc( len / 4 + 1 );
 
-			auto j = 0;
+            auto j = 0;
 
-			for( auto i = 0; i < len; ++i )
-			{
-				if( s[ i ] == 'a' )
-				{
-					t[ j ] = s[ i ];
-					++j;
-				}
-			}
+            for( auto i = 0; i < len; ++i )
+            {
+                if( s[ i ] == 'a' )
+                    t[ j++ ] = s[ i ];
+            }
 
-			t[ j ] = '\0';
+            t[ j ] = '\0';
 
-			free( t );
-		}
+            free( t );
+        }
 
-		const auto end = std::chrono::high_resolution_clock::now();
+        const auto end = std::chrono::high_resolution_clock::now();
 
-		const auto d = std::chrono::duration_cast< std::chrono::nanoseconds > ( end - start );
+        const auto d = std::chrono::duration_cast< std::chrono::nanoseconds > ( end - start );
 
-		std::cout << "char*: " << d.count() << " ns" << std::endl;
-	}
+        std::cout << "char*: " << d.count() << " ns" << std::endl;
+    }
 
-	return 0;
+    return 0;
 }
 ```
 
