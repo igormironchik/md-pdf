@@ -145,6 +145,8 @@ Parser::parseFile( const QString & fileName, bool recursive, QSharedPointer< Doc
 	}
 }
 
+namespace /* anonymous */ {
+
 inline bool
 isOrderedList( const QString & s, int * num = nullptr )
 {
@@ -244,6 +246,8 @@ posOfListItem( const QString & s, bool ordered )
 
 	return p;
 }
+
+} /* namespace anonymous */
 
 Parser::BlockType
 Parser::whatIsTheLine( QString & str, bool inList, qsizetype * indent, bool calcIndent ) const
@@ -358,6 +362,8 @@ Parser::clearCache()
 	m_parsedFiles.clear();
 }
 
+namespace /* anonymous */ {
+
 inline bool
 isTableHeader( const QString & s )
 {
@@ -430,6 +436,8 @@ isTableAlignment( const QString & s )
 
 	return true;
 }
+
+} /* namespace anonymous */
 
 void
 Parser::parseText( QStringList & fr, QSharedPointer< Block > parent,
@@ -747,6 +755,8 @@ Parser::parseTable( QStringList & fr, QSharedPointer< Block > parent,
 	}
 }
 
+namespace /* anonymous */ {
+
 inline bool
 isH( const QString & s, const QChar & c )
 {
@@ -789,6 +799,8 @@ isH2( const QString & s )
 {
 	return isH( s, c_45 );
 }
+
+} /* namespace anonymous */
 
 void
 Parser::parseParagraph( QStringList & fr, QSharedPointer< Block > parent,
@@ -833,6 +845,8 @@ Parser::parseParagraph( QStringList & fr, QSharedPointer< Block > parent,
 		parent->appendItem( p );
 }
 
+namespace /* anoymous*/ {
+
 inline bool
 isHorizontalLine( const QString & s )
 {
@@ -873,6 +887,8 @@ isHorizontalLine( const QString & s )
 
 	return true;
 }
+
+} /* namespace anonymous */
 
 void
 Parser::parseFormattedTextLinksImages( QStringList & fr, QSharedPointer< Block > parent,
@@ -1716,6 +1732,8 @@ Parser::parseBlockquote( QStringList & fr, QSharedPointer< Block > parent,
 		parent->appendItem( bq );
 }
 
+namespace /* anonymous */ {
+
 inline bool
 isListItemAndNotNested( const QString & s )
 {
@@ -1742,6 +1760,8 @@ isListItemAndNotNested( const QString & s )
 	else
 		return isOrderedList( s );
 }
+
+} /* namespace anonymous */
 
 void
 Parser::parseList( QStringList & fr, QSharedPointer< Block > parent,
@@ -1790,6 +1810,8 @@ Parser::parseList( QStringList & fr, QSharedPointer< Block > parent,
 	}
 }
 
+namespace /* anonymous */ {
+
 inline std::pair< qsizetype, qsizetype >
 calculateIndent( const QString & s, qsizetype p )
 {
@@ -1832,6 +1854,8 @@ listItemData( const QString & s )
 			return { -1, 0 };
 	}
 }
+
+} /* namespace anonymous */
 
 void
 Parser::parseListItem( QStringList & fr, QSharedPointer< Block > parent,
