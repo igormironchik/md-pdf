@@ -72,5 +72,5 @@ Good example of work of this application is
    
  * I don't support right-to-left languages. I don't know theirs rules too.
  
- If you are one from these groups of people - you are welcom to make PRs to adapt
+ If you are one from these groups of people - you are welcome to make PRs to adapt
  this application to your language.
