@@ -367,3 +367,26 @@ TEST_CASE( "014" ) // Not strict to CommonMark.
 	REQUIRE( t9->opts() == MD::TextWithoutFormat );
 	REQUIRE( t9->text() == QStringLiteral( "\\&ouml; not a character entity" ) );
 }
+
+TEST_CASE( "015" )
+{
+	const auto doc = load_test( 15 );
+
+	REQUIRE( doc->isEmpty() == false );
+	REQUIRE( doc->items().size() == 2 );
+	REQUIRE( doc->items().at( 1 )->type() == MD::ItemType::Paragraph );
+
+	auto p = static_cast< MD::Paragraph* > ( doc->items().at( 1 ).data() );
+
+	REQUIRE( p->items().size() == 2 );
+
+	REQUIRE( p->items().at( 0 )->type() == MD::ItemType::Text );
+	auto t1 = static_cast< MD::Text* > ( p->items().at( 0 ).data() );
+	REQUIRE( t1->opts() == MD::TextWithoutFormat );
+	REQUIRE( t1->text() == QStringLiteral( "\\" ) );
+
+	REQUIRE( p->items().at( 1 )->type() == MD::ItemType::Text );
+	auto t2 = static_cast< MD::Text* > ( p->items().at( 1 ).data() );
+	REQUIRE( t2->opts() == MD::ItalicText );
+	REQUIRE( t2->text() == QStringLiteral( "emphasis" ) );
+}
