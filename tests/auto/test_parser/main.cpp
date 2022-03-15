@@ -30,19 +30,19 @@
 #include <QDir>
 
 
-TEST_CASE( "empty" )
+TEST_CASE( "001" )
 {
 	MD::Parser p;
-	auto doc = p.parse( QStringLiteral( "./test1.md" ) );
+	auto doc = p.parse( QStringLiteral( "data/001.md" ) );
 	REQUIRE( doc->isEmpty() == false );
 	REQUIRE( doc->items().size() == 1 );
 	REQUIRE( doc->items().at( 0 )->type() == MD::ItemType::Anchor );
 }
 
-TEST_CASE( "only text" )
+TEST_CASE( "002" )
 {
 	MD::Parser p;
-	auto doc = p.parse( QStringLiteral( "./test2.md" ) );
+	auto doc = p.parse( QStringLiteral( "data/002.md" ) );
 
 	REQUIRE( doc->isEmpty() == false );
 	REQUIRE( doc->items().size() == 2 );
@@ -59,11 +59,11 @@ TEST_CASE( "only text" )
 	REQUIRE( dt->text() == QStringLiteral( "This is just a text!" ) );
 }
 
-TEST_CASE( "two paragraphs" )
+TEST_CASE( "003" )
 {
 	MD::Parser parser;
 
-	auto doc = parser.parse( QStringLiteral( "./test3.md" ) );
+	auto doc = parser.parse( QStringLiteral( "data/003.md" ) );
 
 	REQUIRE( doc->isEmpty() == false );
 	REQUIRE( doc->items().size() == 3 );
@@ -97,11 +97,11 @@ TEST_CASE( "two paragraphs" )
 	}
 }
 
-TEST_CASE( "three lines" )
+TEST_CASE( "004" )
 {
 	MD::Parser parser;
 
-	auto doc = parser.parse( QStringLiteral( "./test4.md" ) );
+	auto doc = parser.parse( QStringLiteral( "data/004.md" ) );
 
 	REQUIRE( doc->isEmpty() == false );
 	REQUIRE( doc->items().size() == 2 );
@@ -140,11 +140,11 @@ TEST_CASE( "three lines" )
 	}
 }
 
-TEST_CASE( "with linebreak" )
+TEST_CASE( "005" )
 {
 	MD::Parser parser;
 
-	auto doc = parser.parse( QStringLiteral( "./test5.md" ) );
+	auto doc = parser.parse( QStringLiteral( "data/005.md" ) );
 
 	REQUIRE( doc->isEmpty() == false );
 	REQUIRE( doc->items().size() == 2 );
@@ -185,11 +185,11 @@ TEST_CASE( "with linebreak" )
 	}
 }
 
-TEST_CASE( "text formatting" )
+TEST_CASE( "006" )
 {
 	MD::Parser parser;
 
-	auto doc = parser.parse( QStringLiteral( "./test6.md" ) );
+	auto doc = parser.parse( QStringLiteral( "data/006.md" ) );
 
 	REQUIRE( doc->isEmpty() == false );
 	REQUIRE( doc->items().size() == 2 );
@@ -228,11 +228,11 @@ TEST_CASE( "text formatting" )
 	}
 }
 
-TEST_CASE( "multiline formatting" )
+TEST_CASE( "007" )
 {
 	MD::Parser parser;
 
-	auto doc = parser.parse( QStringLiteral( "./test7.md" ) );
+	auto doc = parser.parse( QStringLiteral( "data/007.md" ) );
 
 	REQUIRE( doc->isEmpty() == false );
 	REQUIRE( doc->items().size() == 2 );
@@ -271,11 +271,11 @@ TEST_CASE( "multiline formatting" )
 	}
 }
 
-TEST_CASE( "multiline multiformatting" )
+TEST_CASE( "008" )
 {
 	MD::Parser parser;
 
-	auto doc = parser.parse( QStringLiteral( "./test8.md" ) );
+	auto doc = parser.parse( QStringLiteral( "data/008.md" ) );
 
 	REQUIRE( doc->isEmpty() == false );
 	REQUIRE( doc->items().size() == 2 );
@@ -317,11 +317,11 @@ TEST_CASE( "multiline multiformatting" )
 	}
 }
 
-TEST_CASE( "multiline multiformatting not continues" )
+TEST_CASE( "009" )
 {
 	MD::Parser parser;
 
-	auto doc = parser.parse( QStringLiteral( "./test9.md" ) );
+	auto doc = parser.parse( QStringLiteral( "data/009.md" ) );
 
 	REQUIRE( doc->isEmpty() == false );
 	REQUIRE( doc->items().size() == 2 );
@@ -362,11 +362,11 @@ TEST_CASE( "multiline multiformatting not continues" )
 	}
 }
 
-TEST_CASE( "it's not a formatting" )
+TEST_CASE( "010" )
 {
 	MD::Parser parser;
 
-	auto doc = parser.parse( QStringLiteral( "./test10.md" ) );
+	auto doc = parser.parse( QStringLiteral( "data/010.md" ) );
 
 	REQUIRE( doc->isEmpty() == false );
 	REQUIRE( doc->items().size() == 2 );
@@ -405,11 +405,11 @@ TEST_CASE( "it's not a formatting" )
 	}
 }
 
-TEST_CASE( "code" )
+TEST_CASE( "011" )
 {
 	MD::Parser parser;
 
-	auto doc = parser.parse( QStringLiteral( "./test11.md" ) );
+	auto doc = parser.parse( QStringLiteral( "data/011.md" ) );
 
 	REQUIRE( doc->isEmpty() == false );
 	REQUIRE( doc->items().size() == 2 );
@@ -428,11 +428,11 @@ TEST_CASE( "code" )
 	REQUIRE( c->text() == QStringLiteral( "code" ) );
 }
 
-TEST_CASE( "code in text" )
+TEST_CASE( "012" )
 {
 	MD::Parser parser;
 
-	auto doc = parser.parse( QStringLiteral( "./test12.md" ) );
+	auto doc = parser.parse( QStringLiteral( "data/012.md" ) );
 
 	REQUIRE( doc->isEmpty() == false );
 	REQUIRE( doc->items().size() == 2 );
@@ -463,11 +463,11 @@ TEST_CASE( "code in text" )
 	REQUIRE( t2->text() == QStringLiteral( "." ) );
 }
 
-TEST_CASE( "multilined inline code" )
+TEST_CASE( "013" )
 {
 	MD::Parser parser;
 
-	auto doc = parser.parse( QStringLiteral( "./test13.md" ) );
+	auto doc = parser.parse( QStringLiteral( "data/013.md" ) );
 
 	REQUIRE( doc->isEmpty() == false );
 	REQUIRE( doc->items().size() == 2 );
@@ -486,18 +486,18 @@ TEST_CASE( "multilined inline code" )
 	REQUIRE( c->text() == QStringLiteral( "Use this `code` in the code" ) );
 }
 
-TEST_CASE( "three lines with \\r" )
+TEST_CASE( "014" )
 {
 	MD::Parser parser;
 
-	QFile f( "./test14.md" );
+	QFile f( "data/014.md" );
 
 	if( f.open( QIODevice::WriteOnly | QIODevice::Truncate ) )
 	{
 		f.write( "Line 1...\rLine 2...\r\nLine 3...\n" );
 		f.close();
 
-		auto doc = parser.parse( QStringLiteral( "./test14.md" ) );
+		auto doc = parser.parse( QStringLiteral( "data/014.md" ) );
 
 		REQUIRE( doc->isEmpty() == false );
 		REQUIRE( doc->items().size() == 2 );
@@ -539,18 +539,18 @@ TEST_CASE( "three lines with \\r" )
 		REQUIRE( true == false );
 }
 
-TEST_CASE( "three paragraphs with \\r" )
+TEST_CASE( "015" )
 {
 	MD::Parser parser;
 
-	QFile f( "./test15.md" );
+	QFile f( "data/015.md" );
 
 	if( f.open( QIODevice::WriteOnly | QIODevice::Truncate ) )
 	{
 		f.write( "Line 1...\r\rLine 2...\r\rLine 3...\r" );
 		f.close();
 
-		auto doc = parser.parse( QStringLiteral( "./test15.md" ) );
+		auto doc = parser.parse( QStringLiteral( "data/015.md" ) );
 
 		REQUIRE( doc->isEmpty() == false );
 		REQUIRE( doc->items().size() == 4 );
@@ -604,18 +604,18 @@ TEST_CASE( "three paragraphs with \\r" )
 		REQUIRE( true == false );
 }
 
-TEST_CASE( "and this is one paragraph" )
+TEST_CASE( "016" )
 {
 	MD::Parser parser;
 
-	QFile f( "./test16.md" );
+	QFile f( "data/016.md" );
 
 	if( f.open( QIODevice::WriteOnly | QIODevice::Truncate ) )
 	{
 		f.write( "Line 1...\r\nLine 2...\r\nLine 3...\r\n" );
 		f.close();
 
-		auto doc = parser.parse( QStringLiteral( "./test16.md" ) );
+		auto doc = parser.parse( QStringLiteral( "data/016.md" ) );
 
 		REQUIRE( doc->isEmpty() == false );
 		REQUIRE( doc->items().size() == 2 );
@@ -657,11 +657,11 @@ TEST_CASE( "and this is one paragraph" )
 		REQUIRE( true == false );
 }
 
-TEST_CASE( "quote" )
+TEST_CASE( "017" )
 {
 	MD::Parser parser;
 
-	auto doc = parser.parse( QStringLiteral( "./test17.md" ) );
+	auto doc = parser.parse( QStringLiteral( "data/017.md" ) );
 
 	REQUIRE( doc->isEmpty() == false );
 	REQUIRE( doc->items().size() == 2 );
@@ -727,11 +727,11 @@ TEST_CASE( "quote" )
 	REQUIRE( t->text() == QStringLiteral( "Nested quote" ) );
 }
 
-TEST_CASE( "quote with spaces" )
+TEST_CASE( "018" )
 {
 	MD::Parser parser;
 
-	auto doc = parser.parse( QStringLiteral( "./test18.md" ) );
+	auto doc = parser.parse( QStringLiteral( "data/018.md" ) );
 
 	REQUIRE( doc->isEmpty() == false );
 	REQUIRE( doc->items().size() == 2 );
@@ -797,11 +797,11 @@ TEST_CASE( "quote with spaces" )
 	REQUIRE( t->text() == QStringLiteral( "Nested quote" ) );
 }
 
-TEST_CASE( "two quotes" )
+TEST_CASE( "019" )
 {
 	MD::Parser parser;
 
-	auto doc = parser.parse( QStringLiteral( "./test19.md" ) );
+	auto doc = parser.parse( QStringLiteral( "data/019.md" ) );
 
 	REQUIRE( doc->isEmpty() == false );
 	REQUIRE( doc->items().size() == 3 );
@@ -870,11 +870,11 @@ TEST_CASE( "two quotes" )
 	}
 }
 
-TEST_CASE( "code" )
+TEST_CASE( "020" )
 {
 	MD::Parser parser;
 
-	auto doc = parser.parse( QStringLiteral( "./test20.md" ) );
+	auto doc = parser.parse( QStringLiteral( "data/020.md" ) );
 
 	REQUIRE( doc->isEmpty() == false );
 	REQUIRE( doc->items().size() == 2 );
@@ -889,11 +889,11 @@ TEST_CASE( "code" )
 	REQUIRE( c->syntax() == QStringLiteral( "cpp" ) );
 }
 
-TEST_CASE( "indented code" )
+TEST_CASE( "021" )
 {
 	MD::Parser parser;
 
-	auto doc = parser.parse( QStringLiteral( "./test21.md" ) );
+	auto doc = parser.parse( QStringLiteral( "data/021.md" ) );
 
 	REQUIRE( doc->isEmpty() == false );
 	REQUIRE( doc->items().size() == 2 );
@@ -907,11 +907,11 @@ TEST_CASE( "indented code" )
 		QStringLiteral( "if( a > b )\n  do_something();\nelse\n  dont_do_anything();" ) );
 }
 
-TEST_CASE( "indented by tabs code" )
+TEST_CASE( "022" )
 {
 	MD::Parser parser;
 
-	auto doc = parser.parse( QStringLiteral( "./test22.md" ) );
+	auto doc = parser.parse( QStringLiteral( "data/022.md" ) );
 
 	REQUIRE( doc->isEmpty() == false );
 	REQUIRE( doc->items().size() == 2 );
@@ -925,11 +925,11 @@ TEST_CASE( "indented by tabs code" )
 		QStringLiteral( "if( a > b )\n  do_something();\nelse\n  dont_do_anything();" ) );
 }
 
-TEST_CASE( "simple unordered list" )
+TEST_CASE( "023" )
 {
 	MD::Parser parser;
 
-	auto doc = parser.parse( QStringLiteral( "./test23.md" ) );
+	auto doc = parser.parse( QStringLiteral( "data/023.md" ) );
 
 	REQUIRE( doc->isEmpty() == false );
 	REQUIRE( doc->items().size() == 2 );
@@ -965,7 +965,7 @@ TEST_CASE( "simple unordered list" )
 	}
 }
 
-TEST_CASE( "nested unordered list" )
+TEST_CASE( "024" )
 {
 	auto checkItem = [] ( MD::ListItem * item, int i )
 	{
@@ -985,7 +985,7 @@ TEST_CASE( "nested unordered list" )
 
 	MD::Parser parser;
 
-	auto doc = parser.parse( QStringLiteral( "./test24.md" ) );
+	auto doc = parser.parse( QStringLiteral( "data/024.md" ) );
 
 	REQUIRE( doc->isEmpty() == false );
 	REQUIRE( doc->items().size() == 2 );
@@ -1025,11 +1025,11 @@ TEST_CASE( "nested unordered list" )
 	}
 }
 
-TEST_CASE( "unordered list with paragraph" )
+TEST_CASE( "025" )
 {
 	MD::Parser parser;
 
-	auto doc = parser.parse( QStringLiteral( "./test25.md" ) );
+	auto doc = parser.parse( QStringLiteral( "data/025.md" ) );
 
 	REQUIRE( doc->isEmpty() == false );
 	REQUIRE( doc->items().size() == 2 );
@@ -1082,11 +1082,11 @@ TEST_CASE( "unordered list with paragraph" )
 	}
 }
 
-TEST_CASE( "nested unordered list with paragraph" )
+TEST_CASE( "026" )
 {
 	MD::Parser parser;
 
-	auto doc = parser.parse( QStringLiteral( "./test26.md" ) );
+	auto doc = parser.parse( QStringLiteral( "data/026.md" ) );
 
 	REQUIRE( doc->isEmpty() == false );
 	REQUIRE( doc->items().size() == 2 );
@@ -1183,11 +1183,11 @@ TEST_CASE( "nested unordered list with paragraph" )
 	}
 }
 
-TEST_CASE( "unordered list with code" )
+TEST_CASE( "027" )
 {
 	MD::Parser parser;
 
-	auto doc = parser.parse( QStringLiteral( "./test27.md" ) );
+	auto doc = parser.parse( QStringLiteral( "data/027.md" ) );
 
 	REQUIRE( doc->isEmpty() == false );
 	REQUIRE( doc->items().size() == 2 );
@@ -1234,11 +1234,11 @@ TEST_CASE( "unordered list with code" )
 	}
 }
 
-TEST_CASE( "unordered list with code 2" )
+TEST_CASE( "028" )
 {
 	MD::Parser parser;
 
-	auto doc = parser.parse( QStringLiteral( "./test28.md" ) );
+	auto doc = parser.parse( QStringLiteral( "data/028.md" ) );
 
 	REQUIRE( doc->isEmpty() == false );
 	REQUIRE( doc->items().size() == 2 );
@@ -1285,11 +1285,11 @@ TEST_CASE( "unordered list with code 2" )
 	}
 }
 
-TEST_CASE( "nested unordered list with paragraph and standalone paragraph" )
+TEST_CASE( "029" )
 {
 	MD::Parser parser;
 
-	auto doc = parser.parse( QStringLiteral( "./test29.md" ) );
+	auto doc = parser.parse( QStringLiteral( "data/029.md" ) );
 
 	REQUIRE( doc->isEmpty() == false );
 	REQUIRE( doc->items().size() == 3 );
@@ -1399,11 +1399,11 @@ TEST_CASE( "nested unordered list with paragraph and standalone paragraph" )
 	REQUIRE( t->text() == QStringLiteral( "Standalone paragraph" ) );
 }
 
-TEST_CASE( "three images" )
+TEST_CASE( "030" )
 {
 	MD::Parser parser;
 
-	auto doc = parser.parse( QStringLiteral( "./test30.md" ) );
+	auto doc = parser.parse( QStringLiteral( "data/030.md" ) );
 
 	REQUIRE( doc->isEmpty() == false );
 	REQUIRE( doc->items().size() == 2 );
@@ -1424,7 +1424,7 @@ TEST_CASE( "three images" )
 
 	auto i1 = static_cast< MD::Image* > ( p->items().at( 1 ).data() );
 
-	const QString wd = QDir().absolutePath() + QStringLiteral( "/" );
+	const QString wd = QDir().absolutePath() + QStringLiteral( "/data/" );
 
 	REQUIRE( i1->text() == QStringLiteral( "Image 1" ) );
 	REQUIRE( i1->url() == wd + QStringLiteral( "a.jpg" ) );
@@ -1456,13 +1456,13 @@ TEST_CASE( "three images" )
 	REQUIRE( i3->url() == QStringLiteral( "http://www.where.com/c.jpeg" ) );
 }
 
-TEST_CASE( "links" )
+TEST_CASE( "031" )
 {
 	MD::Parser parser;
 
-	auto doc = parser.parse( QStringLiteral( "./test31.md" ) );
+	auto doc = parser.parse( QStringLiteral( "data/031.md" ) );
 
-	const QString wd = QDir().absolutePath();
+	const QString wd = QDir().absolutePath() + QStringLiteral( "/data" );
 
 	REQUIRE( doc->isEmpty() == false );
 	REQUIRE( doc->items().size() == 9 );
@@ -1480,7 +1480,7 @@ TEST_CASE( "links" )
 	REQUIRE( l0->text() == QStringLiteral( "link 0" ) );
 
 	const QString wrong = QString::fromLatin1( "#wrong-label" ) + QStringLiteral( "/" ) +
-		wd + QStringLiteral( "/" ) + QStringLiteral( "test31.md" );
+		wd + QStringLiteral( "/" ) + QStringLiteral( "031.md" );
 
 	REQUIRE( l0->url() == wrong );
 
@@ -1511,7 +1511,7 @@ TEST_CASE( "links" )
 	REQUIRE( l3->text() == QStringLiteral( "link 3" ) );
 
 	const QString label = QString::fromLatin1( "#label" ) + QStringLiteral( "/" ) +
-		wd + QStringLiteral( "/" ) + QStringLiteral( "test31.md" );
+		wd + QStringLiteral( "/" ) + QStringLiteral( "031.md" );
 
 	REQUIRE( l3->url() == label );
 
@@ -1521,7 +1521,7 @@ TEST_CASE( "links" )
 
 	REQUIRE( f1->id() ==
 		QString::fromLatin1( "#ref" ) + QStringLiteral( "/" ) + wd +
-		QStringLiteral( "/" ) + QStringLiteral( "test31.md" ) );
+		QStringLiteral( "/" ) + QStringLiteral( "031.md" ) );
 
 	REQUIRE( !doc->labeledLinks().isEmpty() );
 	REQUIRE( doc->labeledLinks().contains( label ) );
@@ -1541,7 +1541,7 @@ TEST_CASE( "links" )
 
 		REQUIRE( f1->id() ==
 			QString::fromLatin1( "#ref" ) + QStringLiteral( "/" ) + wd +
-			QStringLiteral( "/" ) + QStringLiteral( "test31.md" ) );
+			QStringLiteral( "/" ) + QStringLiteral( "031.md" ) );
 
 		auto t = static_cast< MD::Text* > ( p->items().at( 1 ).data() );
 
@@ -1551,7 +1551,7 @@ TEST_CASE( "links" )
 
 		REQUIRE( doc->labeledLinks()[ QString::fromLatin1( "#1" ) +
 			QStringLiteral( "/" ) + wd + QStringLiteral( "/" ) +
-			QStringLiteral( "test31.md" ) ]->url() == wd + QStringLiteral( "/a.md" ) );
+			QStringLiteral( "031.md" ) ]->url() == wd + QStringLiteral( "/a.md" ) );
 	}
 
 	{
@@ -1567,17 +1567,17 @@ TEST_CASE( "links" )
 
 		REQUIRE( l->url() == QString::fromLatin1( "#label" ) +
 			QStringLiteral( "/" ) + wd + QStringLiteral( "/" ) +
-			QStringLiteral( "test31.md" ) );
+			QStringLiteral( "031.md" ) );
 	}
 
 	REQUIRE( doc->items().at( 4 )->type() == MD::ItemType::PageBreak );
 }
 
-TEST_CASE( "code in blockquote" )
+TEST_CASE( "032" )
 {
 	MD::Parser parser;
 
-	auto doc = parser.parse( QStringLiteral( "./test32.md" ) );
+	auto doc = parser.parse( QStringLiteral( "data/032.md" ) );
 
 	REQUIRE( doc->isEmpty() == false );
 	REQUIRE( doc->items().size() == 2 );
@@ -1596,11 +1596,11 @@ TEST_CASE( "code in blockquote" )
 	REQUIRE( c->text() == QStringLiteral( "if( a < b )\n  do_something();" ) );
 }
 
-TEST_CASE( "simple link" )
+TEST_CASE( "033" )
 {
 	MD::Parser parser;
 
-	auto doc = parser.parse( QStringLiteral( "./test33.md" ) );
+	auto doc = parser.parse( QStringLiteral( "data/033.md" ) );
 
 	REQUIRE( doc->isEmpty() == false );
 	REQUIRE( doc->items().size() == 2 );
@@ -1619,11 +1619,11 @@ TEST_CASE( "simple link" )
 	REQUIRE( l->text().isEmpty() );
 }
 
-TEST_CASE( "styled link" )
+TEST_CASE( "034" )
 {
 	MD::Parser parser;
 
-	auto doc = parser.parse( QStringLiteral( "./test34.md" ) );
+	auto doc = parser.parse( QStringLiteral( "data/034.md" ) );
 
 	REQUIRE( doc->isEmpty() == false );
 	REQUIRE( doc->items().size() == 2 );
@@ -1643,11 +1643,11 @@ TEST_CASE( "styled link" )
 	REQUIRE( l->textOptions() == MD::TextOption::BoldText );
 }
 
-TEST_CASE( "ordered list" )
+TEST_CASE( "035" )
 {
 	MD::Parser parser;
 
-	auto doc = parser.parse( QStringLiteral( "./test35.md" ) );
+	auto doc = parser.parse( QStringLiteral( "data/035.md" ) );
 
 	REQUIRE( doc->isEmpty() == false );
 	REQUIRE( doc->items().size() == 2 );
@@ -1752,11 +1752,11 @@ TEST_CASE( "ordered list" )
 	}
 }
 
-TEST_CASE( "link with caption" )
+TEST_CASE( "036" )
 {
 	MD::Parser parser;
 
-	auto doc = parser.parse( QStringLiteral( "./test36.md" ) );
+	auto doc = parser.parse( QStringLiteral( "data/036.md" ) );
 
 	REQUIRE( doc->isEmpty() == false );
 	REQUIRE( doc->items().size() == 2 );
@@ -1775,11 +1775,11 @@ TEST_CASE( "link with caption" )
 	REQUIRE( l->text() == QStringLiteral( "Google" ) );
 }
 
-TEST_CASE( "wrong links" )
+TEST_CASE( "037" )
 {
 	MD::Parser parser;
 
-	auto doc = parser.parse( QStringLiteral( "./test37.md" ) );
+	auto doc = parser.parse( QStringLiteral( "data/037.md" ) );
 
 	REQUIRE( doc->isEmpty() == false );
 	REQUIRE( doc->items().size() == 17 );
@@ -2015,11 +2015,11 @@ TEST_CASE( "wrong links" )
 	}
 }
 
-TEST_CASE( "ordered list with tabs" )
+TEST_CASE( "038" )
 {
 	MD::Parser parser;
 
-	auto doc = parser.parse( QStringLiteral( "./test38.md" ) );
+	auto doc = parser.parse( QStringLiteral( "data/038.md" ) );
 
 	REQUIRE( doc->isEmpty() == false );
 	REQUIRE( doc->items().size() == 2 );
@@ -2124,11 +2124,11 @@ TEST_CASE( "ordered list with tabs" )
 	}
 }
 
-TEST_CASE( "wrong style" )
+TEST_CASE( "039" )
 {
 	MD::Parser parser;
 
-	auto doc = parser.parse( QStringLiteral( "./test39.md" ) );
+	auto doc = parser.parse( QStringLiteral( "data/039.md" ) );
 
 	REQUIRE( doc->isEmpty() == false );
 	REQUIRE( doc->items().size() == 2 );
@@ -2146,11 +2146,11 @@ TEST_CASE( "wrong style" )
 	REQUIRE( t->text() == QStringLiteral( "****text****" ) );
 }
 
-TEST_CASE( "unfinished code" )
+TEST_CASE( "040" )
 {
 	MD::Parser parser;
 
-	auto doc = parser.parse( QStringLiteral( "./test40.md" ) );
+	auto doc = parser.parse( QStringLiteral( "data/040.md" ) );
 
 	REQUIRE( doc->isEmpty() == false );
 	REQUIRE( doc->items().size() == 2 );
@@ -2174,11 +2174,11 @@ TEST_CASE( "unfinished code" )
 	REQUIRE( t->text() == QStringLiteral( "in the code" ) );
 }
 
-TEST_CASE( "unordered list with paragraph with tabs" )
+TEST_CASE( "041" )
 {
 	MD::Parser parser;
 
-	auto doc = parser.parse( QStringLiteral( "./test41.md" ) );
+	auto doc = parser.parse( QStringLiteral( "data/041.md" ) );
 
 	REQUIRE( doc->isEmpty() == false );
 	REQUIRE( doc->items().size() == 2 );
@@ -2231,11 +2231,11 @@ TEST_CASE( "unordered list with paragraph with tabs" )
 	}
 }
 
-TEST_CASE( "linked md" )
+TEST_CASE( "042" )
 {
 	MD::Parser parser;
 
-	auto doc = parser.parse( QStringLiteral( "./test42.md" ) );
+	auto doc = parser.parse( QStringLiteral( "data/042.md" ) );
 
 	REQUIRE( doc->isEmpty() == false );
 	REQUIRE( doc->items().size() == 5 );
@@ -2246,7 +2246,7 @@ TEST_CASE( "linked md" )
 
 	REQUIRE( l->items().size() == 2 );
 
-	const QString wd = QDir().absolutePath();
+	const QString wd = QDir().absolutePath() + QStringLiteral( "/data" );
 
 	for( int i = 0; i < 2; ++i )
 	{
@@ -2265,7 +2265,7 @@ TEST_CASE( "linked md" )
 		auto lnk = static_cast< MD::Link* > ( p->items().at( 0 ).data() );
 
 		REQUIRE( lnk->text() == QStringLiteral( "Chapter 1" ) );
-		REQUIRE( lnk->url() == wd + QStringLiteral( "/test42-1.md" ) );
+		REQUIRE( lnk->url() == wd + QStringLiteral( "/042-1.md" ) );
 	}
 
 	REQUIRE( doc->items().at( 2 )->type() == MD::ItemType::PageBreak );
@@ -2273,7 +2273,7 @@ TEST_CASE( "linked md" )
 	REQUIRE( doc->items().at( 3 )->type() == MD::ItemType::Anchor );
 
 	REQUIRE( static_cast< MD::Anchor* > ( doc->items().at( 3 ).data() )->label() ==
-		wd + QStringLiteral( "/test42-1.md" ) );
+		wd + QStringLiteral( "/042-1.md" ) );
 
 	REQUIRE( doc->items().at( 4 )->type() == MD::ItemType::Paragraph );
 
@@ -2287,11 +2287,11 @@ TEST_CASE( "linked md" )
 	REQUIRE( t->text() == QStringLiteral( "Paragraph 1" ) );
 }
 
-TEST_CASE( "linked md (not recursive)" )
+TEST_CASE( "042-1" )
 {
 	MD::Parser parser;
 
-	auto doc = parser.parse( QStringLiteral( "./test42.md" ), false );
+	auto doc = parser.parse( QStringLiteral( "data/042.md" ), false );
 
 	REQUIRE( doc->isEmpty() == false );
 	REQUIRE( doc->items().size() == 2 );
@@ -2302,7 +2302,7 @@ TEST_CASE( "linked md (not recursive)" )
 
 	REQUIRE( l->items().size() == 2 );
 
-	const QString wd = QDir().absolutePath();
+	const QString wd = QDir().absolutePath() + QStringLiteral( "/data" );
 
 	for( int i = 0; i < 2; ++i )
 	{
@@ -2321,15 +2321,15 @@ TEST_CASE( "linked md (not recursive)" )
 		auto lnk = static_cast< MD::Link* > ( p->items().at( 0 ).data() );
 
 		REQUIRE( lnk->text() == QStringLiteral( "Chapter 1" ) );
-		REQUIRE( lnk->url() == wd + QStringLiteral( "/test42-1.md" ) );
+		REQUIRE( lnk->url() == wd + QStringLiteral( "/042-1.md" ) );
 	}
 }
 
-TEST_CASE( "blockquote in list" )
+TEST_CASE( "044" )
 {
 	MD::Parser parser;
 
-	auto doc = parser.parse( QStringLiteral( "./test44.md" ), false );
+	auto doc = parser.parse( QStringLiteral( "data/044.md" ), false );
 
 	REQUIRE( doc->isEmpty() == false );
 	REQUIRE( doc->items().size() == 2 );
@@ -2374,11 +2374,11 @@ TEST_CASE( "blockquote in list" )
 	REQUIRE( t->text() == QStringLiteral( "Quote" ) );
 }
 
-TEST_CASE( "footnote" )
+TEST_CASE( "045" )
 {
 	MD::Parser parser;
 
-	auto doc = parser.parse( QStringLiteral( "./test45.md" ), false );
+	auto doc = parser.parse( QStringLiteral( "data/045.md" ), false );
 
 	REQUIRE( !doc->isEmpty() );
 	REQUIRE( doc->items().size() == 1 );
@@ -2386,10 +2386,10 @@ TEST_CASE( "footnote" )
 
 	REQUIRE( doc->footnotesMap().size() == 1 );
 
-	const QString wd = QDir().absolutePath() + QStringLiteral( "/" );
+	const QString wd = QDir().absolutePath() + QStringLiteral( "/data/" );
 
 	const QString label = QString::fromLatin1( "#footnote" ) + QStringLiteral( "/" ) + wd +
-		QStringLiteral( "test45.md" );
+		QStringLiteral( "045.md" );
 
 	REQUIRE( doc->footnotesMap().contains( label ) );
 
@@ -2413,11 +2413,11 @@ TEST_CASE( "footnote" )
 	}
 }
 
-TEST_CASE( "headings" )
+TEST_CASE( "046" )
 {
 	MD::Parser parser;
 
-	auto doc = parser.parse( QStringLiteral( "./test46.md" ) );
+	auto doc = parser.parse( QStringLiteral( "data/046.md" ) );
 
 	REQUIRE( !doc->isEmpty() );
 	REQUIRE( doc->items().size() == 14 );
@@ -2458,9 +2458,9 @@ TEST_CASE( "headings" )
 	REQUIRE( h->text() == QStringLiteral( "Heading 3" ) );
 	REQUIRE( h->isLabeled() );
 
-	const QString wd = QDir().absolutePath() + QStringLiteral( "/" );
+	const QString wd = QDir().absolutePath() + QStringLiteral( "/data/" );
 	const QString label = QString::fromLatin1( "#heading-3" ) + QStringLiteral( "/" ) +
-		wd + QStringLiteral( "test46.md" );
+		wd + QStringLiteral( "046.md" );
 
 	REQUIRE( h->label() == label );
 
@@ -2469,11 +2469,11 @@ TEST_CASE( "headings" )
 	REQUIRE( doc->labeledHeadings()[ label ].data() == h );
 }
 
-TEST_CASE( "tables" )
+TEST_CASE( "047" )
 {
 	MD::Parser parser;
 
-	auto doc = parser.parse( QStringLiteral( "./test47.md" ) );
+	auto doc = parser.parse( QStringLiteral( "data/047.md" ) );
 
 	REQUIRE( !doc->isEmpty() );
 	REQUIRE( doc->items().size() == 3 );
@@ -2551,10 +2551,10 @@ TEST_CASE( "tables" )
 	REQUIRE( table->columnAlignment( 1 ) == MD::Table::AlignRight );
 }
 
-TEST_CASE( "without spaces" )
+TEST_CASE( "048" )
 {
 	MD::Parser parser;
-	auto doc = parser.parse( QStringLiteral( "./test48.md" ) );
+	auto doc = parser.parse( QStringLiteral( "data/048.md" ) );
 	REQUIRE( doc->isEmpty() == false );
 	REQUIRE( doc->items().size() == 4 );
 	REQUIRE( doc->items().at( 0 )->type() == MD::ItemType::Anchor );
@@ -2575,10 +2575,10 @@ TEST_CASE( "without spaces" )
 		QStringLiteral( "Heading" ) );
 }
 
-TEST_CASE( "comments" )
+TEST_CASE( "049" )
 {
 	MD::Parser parser;
-	auto doc = parser.parse( QStringLiteral( "./test49.md" ) );
+	auto doc = parser.parse( QStringLiteral( "data/049.md" ) );
 	REQUIRE( doc->isEmpty() == false );
 	REQUIRE( doc->items().size() == 5 );
 	REQUIRE( doc->items().at( 0 )->type() == MD::ItemType::Anchor );
@@ -2599,10 +2599,10 @@ TEST_CASE( "comments" )
 	REQUIRE( t->text() == QStringLiteral( "--> # Heading 1" ) );
 }
 
-TEST_CASE( "links with slashes" )
+TEST_CASE( "050" )
 {
 	MD::Parser parser;
-	auto doc = parser.parse( QStringLiteral( "./test50.md" ) );
+	auto doc = parser.parse( QStringLiteral( "data/050.md" ) );
 	REQUIRE( doc->isEmpty() == false );
 	REQUIRE( doc->items().size() == 2 );
 	REQUIRE( doc->items().at( 1 )->type() == MD::ItemType::Paragraph );
@@ -2627,38 +2627,38 @@ TEST_CASE( "links with slashes" )
 	REQUIRE( l3->text() == QStringLiteral( "\\" ) );
 }
 
-TEST_CASE( "links in parent scope" )
+TEST_CASE( "051" )
 {
 	MD::Parser parser;
-	auto doc = parser.parse( QStringLiteral( "./test51.md" ) );
+	auto doc = parser.parse( QStringLiteral( "data/051.md" ) );
 
-	const QString wd = QDir().absolutePath();
+	const QString wd = QDir().absolutePath() + QStringLiteral( "/data" );
 
 	REQUIRE( doc->items().size() == 8 );
 
 	REQUIRE( static_cast< MD::Anchor* > ( doc->items().at( 0 ).data() )->label() ==
-		wd + QStringLiteral( "/test51.md" ) );
+		wd + QStringLiteral( "/051.md" ) );
 
 	REQUIRE( doc->items().at( 1 )->type() == MD::ItemType::Paragraph );
 	REQUIRE( doc->items().at( 2 )->type() == MD::ItemType::PageBreak );
 
 	REQUIRE( static_cast< MD::Anchor* > ( doc->items().at( 3 ).data() )->label() ==
-		wd + QStringLiteral( "/test51-1.md" ) );
+		wd + QStringLiteral( "/051-1.md" ) );
 
 	REQUIRE( doc->items().at( 4 )->type() == MD::ItemType::Paragraph );
 	REQUIRE( doc->items().at( 5 )->type() == MD::ItemType::PageBreak );
 
 	REQUIRE( static_cast< MD::Anchor* > ( doc->items().at( 6 ).data() )->label() ==
-		wd + QStringLiteral( "/test51-2.md" ) );
+		wd + QStringLiteral( "/051-2.md" ) );
 
 	REQUIRE( doc->items().at( 7 )->type() == MD::ItemType::Paragraph );
 }
 
-TEST_CASE( "strange code block" )
+TEST_CASE( "052" )
 {
 	MD::Parser parser;
 
-	auto doc = parser.parse( QStringLiteral( "./test52.md" ) );
+	auto doc = parser.parse( QStringLiteral( "data/052.md" ) );
 
 	REQUIRE( doc->isEmpty() == false );
 	REQUIRE( doc->items().size() == 2 );
@@ -2674,22 +2674,22 @@ TEST_CASE( "strange code block" )
 	}
 }
 
-TEST_CASE( "empty code" )
+TEST_CASE( "053" )
 {
 	MD::Parser parser;
 
-	auto doc = parser.parse( QStringLiteral( "./test53.md" ) );
+	auto doc = parser.parse( QStringLiteral( "data/053.md" ) );
 
 	REQUIRE( doc->isEmpty() == false );
 	REQUIRE( doc->items().size() == 1 );
 }
 
-TEST_CASE( "not finished code" )
+TEST_CASE( "054" )
 {
 	MD::Parser parser;
 
 	try {
-		parser.parse( QStringLiteral( "./test54.md" ) );
+		parser.parse( QStringLiteral( "data/054.md" ) );
 	}
 	catch ( const MD::ParserException & x )
 	{
@@ -2702,11 +2702,11 @@ TEST_CASE( "not finished code" )
 	REQUIRE( false );
 }
 
-TEST_CASE( "footnote and paragraph" )
+TEST_CASE( "055" )
 {
 	MD::Parser parser;
 
-	auto doc = parser.parse( QStringLiteral( "./test55.md" ), false );
+	auto doc = parser.parse( QStringLiteral( "data/055.md" ), false );
 
 	REQUIRE( !doc->isEmpty() );
 	REQUIRE( doc->items().size() == 2 );
@@ -2714,10 +2714,10 @@ TEST_CASE( "footnote and paragraph" )
 
 	REQUIRE( doc->footnotesMap().size() == 1 );
 
-	const QString wd = QDir().absolutePath() + QStringLiteral( "/" );
+	const QString wd = QDir().absolutePath() + QStringLiteral( "/data/" );
 
 	const QString label = QString::fromLatin1( "#footnote" ) + QStringLiteral( "/" ) + wd +
-		QStringLiteral( "test55.md" );
+		QStringLiteral( "055.md" );
 
 	REQUIRE( doc->footnotesMap().contains( label ) );
 
@@ -2753,11 +2753,11 @@ TEST_CASE( "footnote and paragraph" )
 	REQUIRE( t->text() == QStringLiteral( "Text" ) );
 }
 
-TEST_CASE( "indented code" )
+TEST_CASE( "056" )
 {
 	MD::Parser parser;
 
-	auto doc = parser.parse( QStringLiteral( "./test56.md" ) );
+	auto doc = parser.parse( QStringLiteral( "data/056.md" ) );
 
 	REQUIRE( doc->isEmpty() == false );
 	REQUIRE( doc->items().size() == 2 );
@@ -2771,11 +2771,11 @@ TEST_CASE( "indented code" )
 		QStringLiteral( "if( a > b )\n\n  do_something();\n\nelse\n\n  dont_do_anything();" ) );
 }
 
-TEST_CASE( "code with empty lines" )
+TEST_CASE( "057" )
 {
 	MD::Parser parser;
 
-	auto doc = parser.parse( QStringLiteral( "./test57.md" ) );
+	auto doc = parser.parse( QStringLiteral( "data/057.md" ) );
 
 	REQUIRE( doc->isEmpty() == false );
 	REQUIRE( doc->items().size() == 2 );
@@ -2788,11 +2788,11 @@ TEST_CASE( "code with empty lines" )
 	REQUIRE( c->text() == QStringLiteral( "code\n\ncode" ) );
 }
 
-TEST_CASE( "58" )
+TEST_CASE( "058" )
 {
 	MD::Parser parser;
 
-	auto doc = parser.parse( QStringLiteral( "./test58.md" ) );
+	auto doc = parser.parse( QStringLiteral( "data/058.md" ) );
 
 	REQUIRE( doc->isEmpty() == false );
 	REQUIRE( doc->items().size() == 2 );
@@ -2813,11 +2813,11 @@ TEST_CASE( "58" )
 	REQUIRE( li->items().at( 1 )->type() == MD::ItemType::Paragraph );
 }
 
-TEST_CASE( "59" )
+TEST_CASE( "059" )
 {
 	MD::Parser parser;
 
-	auto doc = parser.parse( QStringLiteral( "./test59.md" ) );
+	auto doc = parser.parse( QStringLiteral( "data/059.md" ) );
 
 	REQUIRE( doc->isEmpty() == false );
 	REQUIRE( doc->items().size() == 2 );
@@ -2834,11 +2834,11 @@ TEST_CASE( "59" )
 	REQUIRE( b->items().at( 3 )->type() == MD::ItemType::Code );
 }
 
-TEST_CASE( "60" )
+TEST_CASE( "060" )
 {
 	MD::Parser parser;
 
-	auto doc = parser.parse( QStringLiteral( "./test60.md" ) );
+	auto doc = parser.parse( QStringLiteral( "data/060.md" ) );
 
 	REQUIRE( doc->isEmpty() == false );
 	REQUIRE( doc->items().size() == 2 );
@@ -2859,11 +2859,11 @@ TEST_CASE( "60" )
 	REQUIRE( li->items().at( 1 )->type() == MD::ItemType::List );
 }
 
-TEST_CASE( "61" )
+TEST_CASE( "061" )
 {
 	MD::Parser parser;
 
-	auto doc = parser.parse( QStringLiteral( "./test61.md" ) );
+	auto doc = parser.parse( QStringLiteral( "data/061.md" ) );
 
 	REQUIRE( doc->isEmpty() == false );
 	REQUIRE( doc->items().size() == 2 );
