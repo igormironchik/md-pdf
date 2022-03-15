@@ -866,14 +866,17 @@ isHorizontalLine( const QString & s )
 		return false;
 
 	qsizetype p = 1;
+	qsizetype count = 1;
 
 	for( ; p < s.size(); ++p )
 	{
-		if( s[ p ] != c )
+		if( s[ p ] != c && !s[ p ].isSpace() )
 			break;
+		else if( s[ p ] == c )
+			++count;
 	}
 
-	if( p < 3 )
+	if( count < 3 )
 		return false;
 
 	if( p == s.size() )
@@ -1432,7 +1435,7 @@ parseLine( QString & line, LineParsingState prev, PreparsedData & data,
 	const QString & workingPath, const QString & fileName, QStringList & linksToParse,
 	QSharedPointer< Document > doc )
 {
-	static const QString specialChars( QLatin1String( "\\`*_{}[]()#+-.!|~<>" ) );
+	static const QString specialChars( QLatin1String( "!\"#$%&'()*+,-.\\/:;<=>?@[]^_`{|}~" ) );
 
 	bool hasBreakLine = line.endsWith( QLatin1String( "  " ) );
 
