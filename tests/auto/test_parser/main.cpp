@@ -2165,7 +2165,7 @@ TEST_CASE( "040" )
 
 	auto t = static_cast< MD::Text* > ( dp->items().at( 0 ).data() );
 
-	REQUIRE( t->text() == QStringLiteral( "``Use this `code`" ) );
+	REQUIRE( t->text() == QStringLiteral( "Use this `code`" ) );
 
 	REQUIRE( dp->items().at( 1 )->type() == MD::ItemType::Text );
 

@@ -1676,13 +1676,6 @@ Parser::parseFormattedTextLinksImages( QStringList & fr, QSharedPointer< Block >
 
 					parent->appendItem( c );
 				}
-				else
-				{
-					auto text = data.txt[ data.processedText ]->text();
-					text.prepend( *it == Lex::StartOfCode ?
-						QLatin1String( "`" ) : QLatin1String( "``" ) );
-					data.txt[ data.processedText ]->setText( text );
-				}
 			}
 				break;
 
