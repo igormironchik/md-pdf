@@ -199,3 +199,53 @@ TEST_CASE( "008" )
 	REQUIRE( c->syntax().isEmpty() );
 	REQUIRE( c->text() == QStringLiteral( "foo\nbar" ) );
 }
+
+TEST_CASE( "009" )
+{
+	const auto doc = load_test( 9 );
+
+	REQUIRE( doc->isEmpty() == false );
+	REQUIRE( doc->items().size() == 2 );
+	REQUIRE( doc->items().at( 1 )->type() == MD::ItemType::List );
+
+	auto l1 = static_cast< MD::List* > ( doc->items().at( 1 ).data() );
+	REQUIRE( l1->items().size() == 1 );
+	REQUIRE( l1->items().at( 0 )->type() == MD::ItemType::ListItem );
+	auto li1 = static_cast< MD::ListItem* > ( l1->items().at( 0 ).data() );
+	REQUIRE( li1->items().size() == 2 );
+	REQUIRE( li1->items().at( 0 )->type() == MD::ItemType::Paragraph );
+	auto p1 = static_cast< MD::Paragraph* > ( li1->items().at( 0 ).data() );
+	REQUIRE( p1->items().size() == 1 );
+	REQUIRE( p1->items().at( 0 )->type() == MD::ItemType::Text );
+	auto t1 = static_cast< MD::Text* > ( p1->items().at( 0 ).data() );
+	REQUIRE( t1->opts() == MD::TextWithoutFormat );
+	REQUIRE( t1->text() == QStringLiteral( "foo" ) );
+
+	REQUIRE( li1->items().at( 1 )->type() == MD::ItemType::List );
+	auto l2 = static_cast< MD::List* > ( li1->items().at( 1 ).data() );
+	REQUIRE( l2->items().size() == 1 );
+	REQUIRE( l2->items().at( 0 )->type() == MD::ItemType::ListItem );
+	auto li2 = static_cast< MD::ListItem* > ( l2->items().at( 0 ).data() );
+	REQUIRE( li2->items().size() == 2 );
+	REQUIRE( li2->items().at( 0 )->type() == MD::ItemType::Paragraph );
+	auto p2 = static_cast< MD::Paragraph* > ( li2->items().at( 0 ).data() );
+	REQUIRE( p2->items().size() == 1 );
+	REQUIRE( p2->items().at( 0 )->type() == MD::ItemType::Text );
+	auto t2 = static_cast< MD::Text* > ( p2->items().at( 0 ).data() );
+	REQUIRE( t2->opts() == MD::TextWithoutFormat );
+	REQUIRE( t2->text() == QStringLiteral( "bar" ) );
+
+	REQUIRE( li2->items().at( 1 )->type() == MD::ItemType::List );
+	auto l3 = static_cast< MD::List* > ( li2->items().at( 1 ).data() );
+	REQUIRE( l3->items().size() == 1 );
+	REQUIRE( l3->items().at( 0 )->type() == MD::ItemType::ListItem );
+	auto li3 = static_cast< MD::ListItem* > ( l3->items().at( 0 ).data() );
+	REQUIRE( li3->items().size() == 1 );
+	REQUIRE( li3->items().at( 0 )->type() == MD::ItemType::Paragraph );
+	auto p3 = static_cast< MD::Paragraph* > ( li3->items().at( 0 ).data() );
+	REQUIRE( p3->items().size() == 1 );
+	REQUIRE( p3->items().at( 0 )->type() == MD::ItemType::Text );
+	auto t3 = static_cast< MD::Text* > ( p3->items().at( 0 ).data() );
+	REQUIRE( t3->opts() == MD::TextWithoutFormat );
+	REQUIRE( t3->text() == QStringLiteral( "baz" ) );
+}
