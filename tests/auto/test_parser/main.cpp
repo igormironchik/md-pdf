@@ -2858,3 +2858,39 @@ TEST_CASE( "60" )
 	REQUIRE( li->items().at( 0 )->type() == MD::ItemType::Paragraph );
 	REQUIRE( li->items().at( 1 )->type() == MD::ItemType::List );
 }
+
+TEST_CASE( "61" )
+{
+	MD::Parser parser;
+
+	auto doc = parser.parse( QStringLiteral( "./test61.md" ) );
+
+	REQUIRE( doc->isEmpty() == false );
+	REQUIRE( doc->items().size() == 2 );
+
+	REQUIRE( doc->items().at( 1 )->type() == MD::ItemType::List );
+
+	auto l = static_cast< MD::List* > ( doc->items().at( 1 ).data() );
+
+	REQUIRE( l->items().size() == 1 );
+
+	REQUIRE( l->items().at( 0 )->type() == MD::ItemType::ListItem );
+
+	auto li = static_cast< MD::ListItem* > ( l->items().at( 0 ).data() );
+
+	REQUIRE( li->items().size() == 2 );
+
+	REQUIRE( li->items().at( 0 )->type() == MD::ItemType::Paragraph );
+	auto p = static_cast< MD::Paragraph* > ( li->items().at( 0 ).data() );
+	REQUIRE( p->items().size() == 1 );
+	REQUIRE( p->items().at( 0 )->type() == MD::ItemType::Text );
+	auto t = static_cast< MD::Text* > ( p->items().at( 0 ).data() );
+	REQUIRE( t->opts() == MD::TextWithoutFormat );
+	REQUIRE( t->text() == QStringLiteral( "A list item with a code block:" ) );
+
+	REQUIRE( li->items().at( 1 )->type() == MD::ItemType::Code );
+	auto c = static_cast< MD::Code* > ( li->items().at( 1 ).data() );
+	REQUIRE( c->inlined() == false );
+	REQUIRE( c->syntax().isEmpty() );
+	REQUIRE( c->text() == QStringLiteral( "<code goes here>" ) );
+}

@@ -56,7 +56,7 @@ TEST_CASE( "001" )
 	REQUIRE( c->text() == QStringLiteral( "foo    baz        bim" ) );
 }
 
-TEST_CASE( "002" )
+TEST_CASE( "002" ) // Not strict to CommonMark
 {
 	const auto doc = load_test( 2 );
 
@@ -144,4 +144,44 @@ TEST_CASE( "005" )
 	REQUIRE( c2->inlined() == false );
 	REQUIRE( c2->syntax().isEmpty() );
 	REQUIRE( c2->text() == QStringLiteral( "  bar" ) );
+}
+
+TEST_CASE( "006" ) // Not strict to CommonMark
+{
+	const auto doc = load_test( 6 );
+
+	REQUIRE( doc->isEmpty() == false );
+	REQUIRE( doc->items().size() == 2 );
+	REQUIRE( doc->items().at( 1 )->type() == MD::ItemType::Blockquote );
+
+	auto q = static_cast< MD::Blockquote* > ( doc->items().at( 1 ).data() );
+	REQUIRE( q->items().size() == 1 );
+
+	REQUIRE( q->items().at( 0 )->type() == MD::ItemType::Code );
+	auto c = static_cast< MD::Code* > ( q->items().at( 0 ).data() );
+	REQUIRE( c->inlined() == false );
+	REQUIRE( c->syntax().isEmpty() );
+	REQUIRE( c->text() == QStringLiteral( "    foo" ) );
+}
+
+TEST_CASE( "007" ) // Not strict to CommonMark.
+{
+	const auto doc = load_test( 7 );
+
+	REQUIRE( doc->isEmpty() == false );
+	REQUIRE( doc->items().size() == 2 );
+	REQUIRE( doc->items().at( 1 )->type() == MD::ItemType::List );
+
+	auto l = static_cast< MD::List* > ( doc->items().at( 1 ).data() );
+	REQUIRE( l->items().size() == 1 );
+
+	auto li = static_cast< MD::ListItem* > ( l->items().at( 0 ).data() );
+	REQUIRE( li->listType() == MD::ListItem::Unordered );
+	REQUIRE( li->items().size() == 1 );
+
+	REQUIRE( li->items().at( 0 )->type() == MD::ItemType::Code );
+	auto c = static_cast< MD::Code* > ( li->items().at( 0 ).data() );
+	REQUIRE( c->inlined() == false );
+	REQUIRE( c->syntax().isEmpty() );
+	REQUIRE( c->text() == QStringLiteral( "   foo" ) );
 }

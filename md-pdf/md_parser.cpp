@@ -1859,17 +1859,17 @@ listItemData( const QString & s )
 		return { -1, 0 };
 
 	if( s[ p ] == c_42 && s[ p + 1 ].isSpace() )
-		return calculateIndent( s, p + 2 );
+		return { 0, p + 2 };
 	else if( s[ p ] == c_45 && s[ p + 1 ].isSpace() )
-		return calculateIndent( s, p + 2 );
+		return { 0, p + 2 };
 	else if( s[ p ] == c_43 && s[ p + 1 ].isSpace() )
-		return calculateIndent( s, p + 2 );
+		return { 0, p + 2 };
 	else
 	{
 		int d = 0;
 
 		if( isOrderedList( s, &d ) )
-			return calculateIndent( s, p + QString::number( d ).size() + 2 );
+			return { 0, p + QString::number( d ).size() + 2 };
 		else
 			return { -1, 0 };
 	}
@@ -1903,6 +1903,8 @@ Parser::parseListItem( QStringList & fr, QSharedPointer< Block > parent,
 
 	auto indent = listItemData( fr.first() ).second;
 	if( indent < 0 ) indent = 0;
+	const auto firstNonSpacePos = calculateIndent( fr.first(), indent ).second;
+	if( firstNonSpacePos - indent < 4 ) indent = firstNonSpacePos;
 
 	data.append( fr.first().right( fr.first().length() - indent ) );
 
@@ -1914,7 +1916,7 @@ Parser::parseListItem( QStringList & fr, QSharedPointer< Block > parent,
 		{
 			StringListStream stream( data );
 
-			parse( stream, item, doc, linksToParse, workingPath, fileName, true );
+			parse( stream, item, doc, linksToParse, workingPath, fileName );
 
 			data.clear();
 
@@ -1937,7 +1939,7 @@ Parser::parseListItem( QStringList & fr, QSharedPointer< Block > parent,
 	{
 		StringListStream stream( data );
 
-		parse( stream, item, doc, linksToParse, workingPath, fileName, true );
+		parse( stream, item, doc, linksToParse, workingPath, fileName );
 	}
 
 	if( !item->isEmpty() )
