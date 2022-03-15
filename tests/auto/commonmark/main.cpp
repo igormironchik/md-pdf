@@ -26,6 +26,8 @@
 // doctest include.
 #include <doctest/doctest.h>
 
+#include <QDir>
+
 
 QSharedPointer< MD::Document > load_test( int n )
 {
@@ -248,4 +250,20 @@ TEST_CASE( "009" )
 	auto t3 = static_cast< MD::Text* > ( p3->items().at( 0 ).data() );
 	REQUIRE( t3->opts() == MD::TextWithoutFormat );
 	REQUIRE( t3->text() == QStringLiteral( "baz" ) );
+}
+
+TEST_CASE( "010" )
+{
+	const auto doc = load_test( 10 );
+
+	REQUIRE( doc->isEmpty() == false );
+	REQUIRE( doc->items().size() == 2 );
+	REQUIRE( doc->items().at( 1 )->type() == MD::ItemType::Heading );
+
+	auto h = static_cast< MD::Heading* > ( doc->items().at( 1 ).data() );
+	REQUIRE( h->isLabeled() );
+	const QString fn = QStringLiteral( "/" ) + QDir().absolutePath() + QStringLiteral( "/0.30/010.md" );
+	REQUIRE( h->label() == QStringLiteral( "#" ) + h->text().toLower() + fn );
+	REQUIRE( h->level() == 1 );
+	REQUIRE( h->text() == QStringLiteral( "Foo" ) );
 }
