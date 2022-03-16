@@ -1284,13 +1284,17 @@ parseLnk( int i, const QString & line, QString & text, PreparsedData & data,
 
 // Create text object.
 inline void
-createTextObj( const QString & text, PreparsedData & data )
+createTextObj( const QString & text, PreparsedData & data, bool setSimplified = true )
 {
-	if( !text.isEmpty() )
+	const auto simplified = text.simplified();
+
+	if( !simplified.isEmpty() )
 	{
 		QSharedPointer< Text > t( new Text() );
-		t->setText( text );
+		t->setText( setSimplified ? simplified : text );
 		t->setOpts( TextWithoutFormat );
+		t->setSpaceBefore( text[ 0 ].isSpace() );
+		t->setSpaceAfter( text.size() > 1 && text[ text.size() - 1 ].isSpace() );
 		data.txt.append( t );
 		data.lexems.append( Lex::Text );
 	}
@@ -1489,7 +1493,7 @@ parseCodeLine( int i, const QString & line, LineParsingState & prevAndNext,
 		++i;
 	}
 
-	createTextObj( code, data );
+	createTextObj( code, data, false );
 
 	if( finished )
 	{
@@ -1586,7 +1590,7 @@ parseLine( QStringList::iterator line, LineParsingState prev, PreparsedData & da
 			else if( (*line)[ i ] == c_33 && i + 1 < length &&
 				(*line)[ i + 1 ] == c_91 )
 			{
-				createTextObj( text.simplified(), data );
+				createTextObj( text, data );
 				text.clear();
 
 				bool ok = false;
@@ -1600,7 +1604,7 @@ parseLine( QStringList::iterator line, LineParsingState prev, PreparsedData & da
 			}
 			else if( (*line)[ i ] == c_91 )
 			{
-				createTextObj( text.simplified(), data );
+				createTextObj( text, data );
 				text.clear();
 				i = parseLnk( i, *line, text, data, workingPath, fileName, linksToParse, doc );
 			}
@@ -1608,7 +1612,7 @@ parseLine( QStringList::iterator line, LineParsingState prev, PreparsedData & da
 			{
 				if( isInlineCodeClosed( i, line, fr ) )
 				{
-					createTextObj( text.simplified(), data );
+					createTextObj( text, data );
 					text.clear();
 					i = parseCodeLine( i, *line, prev, data ) - 1;
 
@@ -1620,7 +1624,7 @@ parseLine( QStringList::iterator line, LineParsingState prev, PreparsedData & da
 			}
 			else if( (*line)[ i ] == c_60 )
 			{
-				createTextObj( text.simplified(), data );
+				createTextObj( text, data );
 				text.clear();
 				i = parseUrl( i, *line, text, data ) - 1;
 			}
@@ -1642,7 +1646,7 @@ parseLine( QStringList::iterator line, LineParsingState prev, PreparsedData & da
 					if( isStyleLexOdd( data.lexems, Lex::Italic ) ||
 						isStyleClosed( i, style, Lex::Italic, line, fr ) )
 					{
-						createTextObj( text.simplified(), data );
+						createTextObj( text, data );
 						text.clear();
 						data.lexems.append( Lex::Italic );
 					}
@@ -1654,7 +1658,7 @@ parseLine( QStringList::iterator line, LineParsingState prev, PreparsedData & da
 					if( isStyleLexOdd( data.lexems, Lex::Bold ) ||
 						isStyleClosed( i, style, Lex::Bold, line, fr ) )
 					{
-						createTextObj( text.simplified(), data );
+						createTextObj( text, data );
 						text.clear();
 						data.lexems.append( Lex::Bold );
 					}
@@ -1668,7 +1672,7 @@ parseLine( QStringList::iterator line, LineParsingState prev, PreparsedData & da
 					if( isStyleLexOdd( data.lexems, Lex::BoldAndItalic ) ||
 						isStyleClosed( i, style, Lex::BoldAndItalic, line, fr ) )
 					{
-						createTextObj( text.simplified(), data );
+						createTextObj( text, data );
 						text.clear();
 						data.lexems.append( Lex::BoldAndItalic );
 					}
@@ -1682,7 +1686,7 @@ parseLine( QStringList::iterator line, LineParsingState prev, PreparsedData & da
 				(*line)[ i + 1 ] == c_126 )
 			{
 				++i;
-				createTextObj( text.simplified(), data );
+				createTextObj( text, data );
 				text.clear();
 				data.lexems.append( Lex::Strikethrough );
 			}
@@ -1690,7 +1694,7 @@ parseLine( QStringList::iterator line, LineParsingState prev, PreparsedData & da
 				text.append( (*line)[ i ] );
 		}
 
-		createTextObj( text.simplified(), data );
+		createTextObj( text, data );
 		text.clear();
 
 		if( hasBreakLine )

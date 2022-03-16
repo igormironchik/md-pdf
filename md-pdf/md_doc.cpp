@@ -127,6 +127,12 @@ Heading::setLabel( const QString & l )
 // Text
 //
 
+Text::Text()
+	:	m_isSpaceBefore( false )
+	,	m_isSpaceAfter( false )
+{
+}
+
 ItemType
 Text::type() const
 {
@@ -155,6 +161,30 @@ void
 Text::setOpts( const TextOptions & o )
 {
 	m_opts = o;
+}
+
+bool
+Text::isSpaceBefore() const
+{
+	return m_isSpaceBefore;
+}
+
+void
+Text::setSpaceBefore( bool on )
+{
+	m_isSpaceBefore = on;
+}
+
+bool
+Text::isSpaceAfter() const
+{
+	return m_isSpaceAfter;
+}
+
+void
+Text::setSpaceAfter( bool on )
+{
+	m_isSpaceAfter = on;
 }
 
 

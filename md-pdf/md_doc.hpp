@@ -202,7 +202,7 @@ class Text final
 	:	public Item
 {
 public:
-	Text() = default;
+	Text();
 	~Text() override = default;
 
 	ItemType type() const override;
@@ -213,9 +213,17 @@ public:
 	const TextOptions & opts() const;
 	void setOpts( const TextOptions & o );
 
+	bool isSpaceBefore() const;
+	void setSpaceBefore( bool on = true );
+
+	bool isSpaceAfter() const;
+	void setSpaceAfter( bool on = true );
+
 private:
 	QString m_text;
 	TextOptions m_opts;
+	bool m_isSpaceBefore;
+	bool m_isSpaceAfter;
 
 	Q_DISABLE_COPY( Text )
 }; // class Text
