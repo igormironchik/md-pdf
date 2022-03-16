@@ -2159,19 +2159,31 @@ TEST_CASE( "040" )
 
 	auto dp = static_cast< MD::Paragraph* > ( doc->items().at( 1 ).data() );
 
-	REQUIRE( dp->items().size() == 2 );
+	REQUIRE( dp->items().size() == 4 );
 
 	REQUIRE( dp->items().at( 0 )->type() == MD::ItemType::Text );
 
-	auto t = static_cast< MD::Text* > ( dp->items().at( 0 ).data() );
+	auto t1 = static_cast< MD::Text* > ( dp->items().at( 0 ).data() );
 
-	REQUIRE( t->text() == QStringLiteral( "Use this `code`" ) );
+	REQUIRE( t1->text() == QStringLiteral( "`" ) );
 
-	REQUIRE( dp->items().at( 1 )->type() == MD::ItemType::Text );
+	REQUIRE( dp->items().at( 1 )->type() == MD::ItemType::Code );
 
-	t = static_cast< MD::Text* > ( dp->items().at( 1 ).data() );
+	auto c1 = static_cast< MD::Code* > ( dp->items().at( 1 ).data() );
 
-	REQUIRE( t->text() == QStringLiteral( "in the code" ) );
+	REQUIRE( c1->text() == QStringLiteral( "Use this " ) );
+
+	REQUIRE( dp->items().at( 2 )->type() == MD::ItemType::Text );
+
+	auto t2 = static_cast< MD::Text* > ( dp->items().at( 2 ).data() );
+
+	REQUIRE( t2->text() == QStringLiteral( "code`" ) );
+
+	REQUIRE( dp->items().at( 3 )->type() == MD::ItemType::Text );
+
+	auto t3 = static_cast< MD::Text* > ( dp->items().at( 3 ).data() );
+
+	REQUIRE( t3->text() == QStringLiteral( "in the code" ) );
 }
 
 TEST_CASE( "041" )

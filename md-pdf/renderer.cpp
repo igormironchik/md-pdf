@@ -1331,11 +1331,6 @@ PdfRenderer::drawString( PdfAuxData & pdfData, const RenderOpts & renderOpts,
 	// Draw words.
 	for( auto it = words.begin(), last = words.end(); it != last; ++it )
 	{
-		if( *it == QStringLiteral( "including" ) )
-		{
-			int i = 0;
-			++i;
-		}
 		{
 			QMutexLocker lock( &m_mutex );
 

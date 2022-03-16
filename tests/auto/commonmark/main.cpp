@@ -310,7 +310,7 @@ TEST_CASE( "013" )
 	REQUIRE( t->text() == QStringLiteral( "\\ \\A\\a\\ \\3\\φ\\«" ) );
 }
 
-TEST_CASE( "014" ) // Not strict to CommonMark.
+TEST_CASE( "014" )
 {
 	const auto doc = load_test( 14 );
 
@@ -325,7 +325,7 @@ TEST_CASE( "014" ) // Not strict to CommonMark.
 	REQUIRE( p->items().at( 0 )->type() == MD::ItemType::Text );
 	auto t1 = static_cast< MD::Text* > ( p->items().at( 0 ).data() );
 	REQUIRE( t1->opts() == MD::TextWithoutFormat );
-	REQUIRE( t1->text() == QStringLiteral( "*not emphasized" ) );
+	REQUIRE( t1->text() == QStringLiteral( "*not emphasized*" ) );
 
 	REQUIRE( p->items().at( 1 )->type() == MD::ItemType::Text );
 	auto t2 = static_cast< MD::Text* > ( p->items().at( 1 ).data() );
@@ -340,32 +340,32 @@ TEST_CASE( "014" ) // Not strict to CommonMark.
 	REQUIRE( p->items().at( 3 )->type() == MD::ItemType::Text );
 	auto t4 = static_cast< MD::Text* > ( p->items().at( 3 ).data() );
 	REQUIRE( t4->opts() == MD::TextWithoutFormat );
-	REQUIRE( t4->text() == QStringLiteral( "`not code" ) );
+	REQUIRE( t4->text() == QStringLiteral( "`not code`" ) );
 
 	REQUIRE( p->items().at( 4 )->type() == MD::ItemType::Text );
 	auto t5 = static_cast< MD::Text* > ( p->items().at( 4 ).data() );
 	REQUIRE( t5->opts() == MD::TextWithoutFormat );
-	REQUIRE( t5->text() == QStringLiteral( "1\\. not a list" ) );
+	REQUIRE( t5->text() == QStringLiteral( "1. not a list" ) );
 
 	REQUIRE( p->items().at( 5 )->type() == MD::ItemType::Text );
 	auto t6 = static_cast< MD::Text* > ( p->items().at( 5 ).data() );
 	REQUIRE( t6->opts() == MD::TextWithoutFormat );
-	REQUIRE( t6->text() == QStringLiteral( "\\* not a list" ) );
+	REQUIRE( t6->text() == QStringLiteral( "* not a list" ) );
 
 	REQUIRE( p->items().at( 6 )->type() == MD::ItemType::Text );
 	auto t7 = static_cast< MD::Text* > ( p->items().at( 6 ).data() );
 	REQUIRE( t7->opts() == MD::TextWithoutFormat );
-	REQUIRE( t7->text() == QStringLiteral( "\\# not a heading" ) );
+	REQUIRE( t7->text() == QStringLiteral( "# not a heading" ) );
 
 	REQUIRE( p->items().at( 7 )->type() == MD::ItemType::Text );
 	auto t8 = static_cast< MD::Text* > ( p->items().at( 7 ).data() );
 	REQUIRE( t8->opts() == MD::TextWithoutFormat );
-	REQUIRE( t8->text() == QStringLiteral( "\\[foo]: /url \"not a reference\"" ) );
+	REQUIRE( t8->text() == QStringLiteral( "[foo]: /url \"not a reference\"" ) );
 
 	REQUIRE( p->items().at( 8 )->type() == MD::ItemType::Text );
 	auto t9 = static_cast< MD::Text* > ( p->items().at( 8 ).data() );
 	REQUIRE( t9->opts() == MD::TextWithoutFormat );
-	REQUIRE( t9->text() == QStringLiteral( "\\&ouml; not a character entity" ) );
+	REQUIRE( t9->text() == QStringLiteral( "&ouml; not a character entity" ) );
 }
 
 TEST_CASE( "015" )

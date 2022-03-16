@@ -1303,6 +1303,121 @@ enum class LineParsingState {
 	UnfinishedQuotedCode
 }; // enum class LineParsingState
 
+inline bool
+isQuotedCode( int i, QStringList::iterator it )
+{
+	return ( i + 1 < it->length() && (*it)[ i ] == c_96 && (*it)[ i + 1 ] == c_96 );
+}
+
+// Check if inlined code closed.
+inline bool
+isInlineCodeClosed( int i, QStringList::iterator it, QStringList & fr )
+{
+	bool quoted = isQuotedCode( i, it );
+	auto sit = it;
+	i += ( quoted ? 2 : 1 );
+	auto spos = i;
+
+	for( auto last = fr.end(); it != last; ++it )
+	{
+		for( ; i < it->length(); ++i )
+		{
+			if( quoted )
+			{
+				if( isQuotedCode( i, it ) && ( i > spos || it != sit ) )
+					return true;
+			}
+			else
+			{
+				if( (*it)[ i ] == c_96 && ( i > spos || it != sit ) )
+					return true;
+			}
+		}
+
+		i = 0;
+	}
+
+	return false;
+}
+
+inline bool
+isStyleChar( const QChar & c )
+{
+	if( c == c_42 || c == c_95 )
+		return true;
+	else
+		return false;
+}
+
+// Check if style closed.
+inline bool
+isStyleClosed( int i, const QString & style, Lex lexStyle, QStringList::iterator it, QStringList & fr )
+{
+	++i;
+	QString s;
+
+	for( auto last = fr.end(); it != last; ++it )
+	{
+		for( ; i < it->length(); ++i )
+		{
+			s.clear();
+
+			if( i + style.length() <= it->length() )
+			{
+				for( auto p = i; p < i + style.length(); ++p )
+				{
+					bool backslash = ( p > 0 && (*it)[ p - 1 ] == c_92 );
+
+					if( !backslash && isStyleChar( (*it)[ p ] ) )
+						s.append( (*it)[ p ] );
+				}
+			}
+
+			if( s.length() == style.length() )
+			{
+				switch( lexStyle )
+				{
+					case Lex::Italic :
+					{
+						if(	s == QLatin1String( "*" ) || s == QLatin1String( "_" ) )
+							return true;
+					}
+						break;
+
+					case Lex::Bold :
+					{
+						if( s == QLatin1String( "**" ) || s == QLatin1String( "__" ) )
+							return true;
+					}
+						break;
+
+					case Lex::BoldAndItalic :
+					{
+						if( s == QLatin1String( "***" ) || s == QLatin1String( "___" ) ||
+							s == QLatin1String( "_**" ) || s == QLatin1String( "**_" ) ||
+							s == QLatin1String( "*__" ) || s == QLatin1String( "__*" ) )
+								return true;
+					}
+						break;
+
+					default :
+						break;
+				}
+			}
+		}
+
+		i = 0;
+	}
+
+	return false;
+}
+
+inline bool
+isStyleLexOdd( const QVector< Lex > lexems, Lex lex )
+{
+	return ( lexems.count( lex ) % 2 != 0 );
+}
+
 
 // Read code.
 inline int
@@ -1431,45 +1546,45 @@ parseUrl( int i, const QString & line, QString & text, PreparsedData & data )
 
 // Parse one line in paragraph.
 inline LineParsingState
-parseLine( QString & line, LineParsingState prev, PreparsedData & data,
+parseLine( QStringList::iterator line, LineParsingState prev, PreparsedData & data,
 	const QString & workingPath, const QString & fileName, QStringList & linksToParse,
-	QSharedPointer< Document > doc )
+	QSharedPointer< Document > doc, QStringList & fr )
 {
 	static const QString specialChars( QLatin1String( "!\"#$%&'()*+,-.\\/:;<=>?@[]^_`{|}~" ) );
 
-	bool hasBreakLine = line.endsWith( QLatin1String( "  " ) );
+	bool hasBreakLine = line->endsWith( QLatin1String( "  " ) );
 
 	int pos = 0;
 
 	if( prev != LineParsingState::Finished )
 	{
-		pos = parseCodeLine( 0, line, prev, data );
+		pos = parseCodeLine( 0, *line, prev, data );
 
 		if( prev != LineParsingState::Finished )
 			return prev;
 	}
 
-	const auto ns = posOfFirstNonSpace( line );
+	const auto ns = posOfFirstNonSpace( *line );
 
 	if( ns > 0 )
-		line = line.right( line.length() - ns );
+		*line = line->right( line->length() - ns );
 
 	// Will skip horizontal rules, for now at least...
-	if( !isHorizontalLine( line ) )
+	if( !isHorizontalLine( *line ) )
 	{
 		QString text;
 
-		for( int i = pos, length = line.length(); i < length; ++i )
+		for( int i = pos, length = line->length(); i < length; ++i )
 		{
-			if( line[ i ] == c_92 && i + 1 < length &&
-				specialChars.contains( line[ i + 1 ] ) )
+			if( (*line)[ i ] == c_92 && i + 1 < length &&
+				specialChars.contains( (*line)[ i + 1 ] ) )
 			{
 				++i;
 
-				text.append( line[ i ] );
+				text.append( (*line)[ i ] );
 			}
-			else if( line[ i ] == c_33 && i + 1 < length &&
-				line[ i + 1 ] == c_91 )
+			else if( (*line)[ i ] == c_33 && i + 1 < length &&
+				(*line)[ i + 1 ] == c_91 )
 			{
 				createTextObj( text.simplified(), data );
 				text.clear();
@@ -1478,40 +1593,44 @@ parseLine( QString & line, LineParsingState prev, PreparsedData & data,
 
 				const int startPos = i;
 
-				i = parseImg( i, line, ok, true, data, workingPath );
+				i = parseImg( i, *line, ok, true, data, workingPath );
 
 				if( !ok )
-					text.append( line.mid( startPos, i - startPos ) );
+					text.append( line->mid( startPos, i - startPos ) );
 			}
-			else if( line[ i ] == c_91 )
+			else if( (*line)[ i ] == c_91 )
 			{
 				createTextObj( text.simplified(), data );
 				text.clear();
-				i = parseLnk( i, line, text, data, workingPath, fileName, linksToParse, doc );
+				i = parseLnk( i, *line, text, data, workingPath, fileName, linksToParse, doc );
 			}
-			else if( line[ i ] == c_96 )
+			else if( (*line)[ i ] == c_96 )
 			{
-				createTextObj( text.simplified(), data );
-				text.clear();
-				i = parseCodeLine( i, line, prev, data ) - 1;
+				if( isInlineCodeClosed( i, line, fr ) )
+				{
+					createTextObj( text.simplified(), data );
+					text.clear();
+					i = parseCodeLine( i, *line, prev, data ) - 1;
 
-				if( prev != LineParsingState::Finished )
-					return prev;
+					if( prev != LineParsingState::Finished )
+						return prev;
+				}
+				else
+					text.append( (*line)[ i ] );
 			}
-			else if( line[ i ] == c_60 )
+			else if( (*line)[ i ] == c_60 )
 			{
 				createTextObj( text.simplified(), data );
 				text.clear();
-				i = parseUrl( i, line, text, data ) - 1;
+				i = parseUrl( i, *line, text, data ) - 1;
 			}
-			else if( line[ i ] == c_42 || line[ i ] == c_95 )
+			else if( (*line)[ i ] == c_42 || (*line)[ i ] == c_95 )
 			{
 				QString style;
 
-				while( i < length &&
-					( line[ i ] == c_42 || line[ i ] == c_95 ) )
+				while( i < length && isStyleChar( (*line)[ i ] ) )
 				{
-					style.append( line[ i ] );
+					style.append( (*line)[ i ] );
 					++i;
 				}
 
@@ -1520,29 +1639,47 @@ parseLine( QString & line, LineParsingState prev, PreparsedData & data,
 
 				if( style == QLatin1String( "*" ) || style == QLatin1String( "_" ) )
 				{
-					createTextObj( text.simplified(), data );
-					text.clear();
-					data.lexems.append( Lex::Italic );
+					if( isStyleLexOdd( data.lexems, Lex::Italic ) ||
+						isStyleClosed( i, style, Lex::Italic, line, fr ) )
+					{
+						createTextObj( text.simplified(), data );
+						text.clear();
+						data.lexems.append( Lex::Italic );
+					}
+					else
+						text.append( style );
 				}
 				else if( style == QLatin1String( "**" ) || style == QLatin1String( "__" ) )
 				{
-					createTextObj( text.simplified(), data );
-					text.clear();
-					data.lexems.append( Lex::Bold );
+					if( isStyleLexOdd( data.lexems, Lex::Bold ) ||
+						isStyleClosed( i, style, Lex::Bold, line, fr ) )
+					{
+						createTextObj( text.simplified(), data );
+						text.clear();
+						data.lexems.append( Lex::Bold );
+					}
+					else
+						text.append( style );
 				}
 				else if( style == QLatin1String( "***" ) || style == QLatin1String( "___" ) ||
 					style == QLatin1String( "_**" ) || style == QLatin1String( "**_" ) ||
 					style == QLatin1String( "*__" ) || style == QLatin1String( "__*" ) )
 				{
-					createTextObj( text.simplified(), data );
-					text.clear();
-					data.lexems.append( Lex::BoldAndItalic );
+					if( isStyleLexOdd( data.lexems, Lex::BoldAndItalic ) ||
+						isStyleClosed( i, style, Lex::BoldAndItalic, line, fr ) )
+					{
+						createTextObj( text.simplified(), data );
+						text.clear();
+						data.lexems.append( Lex::BoldAndItalic );
+					}
+					else
+						text.append( style );
 				}
 				else
 					text.append( style );
 			}
-			else if( line[ i ] == c_126 && i + 1 < length &&
-				line[ i + 1 ] == c_126 )
+			else if( (*line)[ i ] == c_126 && i + 1 < length &&
+				(*line)[ i + 1 ] == c_126 )
 			{
 				++i;
 				createTextObj( text.simplified(), data );
@@ -1550,7 +1687,7 @@ parseLine( QString & line, LineParsingState prev, PreparsedData & data,
 				data.lexems.append( Lex::Strikethrough );
 			}
 			else
-				text.append( line[ i ] );
+				text.append( (*line)[ i ] );
 		}
 
 		createTextObj( text.simplified(), data );
@@ -1636,7 +1773,7 @@ Parser::parseFormattedTextLinksImages( QStringList & fr, QSharedPointer< Block >
 
 	// Real parsing.
 	for( auto it = fr.begin(), last = fr.end(); it != last; ++it )
-		state = parseLine( *it, state, data, workingPath, fileName, linksToParse, doc );
+		state = parseLine( it, state, data, workingPath, fileName, linksToParse, doc, fr );
 
 	// Add real items to paragraph  after pre-parsing. Handle code.
 	for( auto it = data.lexems.begin(), last = data.lexems.end(); it != last; ++it )
