@@ -1288,7 +1288,7 @@ createTextObj( const QString & text, PreparsedData & data, bool setSimplified = 
 {
 	const auto simplified = text.simplified();
 
-	if( !simplified.isEmpty() )
+	if( ( setSimplified ? !simplified.isEmpty() : !text.isEmpty() ) )
 	{
 		QSharedPointer< Text > t( new Text() );
 		t->setText( setSimplified ? simplified : text );
