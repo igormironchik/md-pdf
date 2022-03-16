@@ -1284,7 +1284,8 @@ parseLnk( int i, const QString & line, QString & text, PreparsedData & data,
 
 // Create text object.
 inline void
-createTextObj( const QString & text, PreparsedData & data, bool setSimplified = true )
+createTextObj( const QString & text, PreparsedData & data,
+	bool addExtraSpaceAfter = false, bool setSimplified = true )
 {
 	const auto simplified = text.simplified();
 
@@ -1294,7 +1295,8 @@ createTextObj( const QString & text, PreparsedData & data, bool setSimplified = 
 		t->setText( setSimplified ? simplified : text );
 		t->setOpts( TextWithoutFormat );
 		t->setSpaceBefore( text[ 0 ].isSpace() );
-		t->setSpaceAfter( text.size() > 1 && text[ text.size() - 1 ].isSpace() );
+		t->setSpaceAfter( addExtraSpaceAfter ||
+			( text.size() > 1 && text[ text.size() - 1 ].isSpace() ) );
 		data.txt.append( t );
 		data.lexems.append( Lex::Text );
 	}
@@ -1417,6 +1419,31 @@ isStyleClosed( int i, const QString & style, Lex lexStyle, QStringList::iterator
 }
 
 inline bool
+isStrikethroughClosed( int i, QStringList::iterator it, QStringList & fr )
+{
+	i += 2;
+
+	for( auto last = fr.end(); it != last; ++it )
+	{
+		for( ; i < it->length(); ++i )
+		{
+			if( i + 1 < it->length() )
+			{
+				bool backslash = ( i > 0 && (*it)[ i - 1 ] == c_92 );
+
+				if( !backslash && (*it)[ i ] == c_126 && (*it)[ i + 1 ] == c_126 )
+					return true;
+			}
+		}
+
+		i = 0;
+	}
+
+	return false;
+}
+
+
+inline bool
 isStyleLexOdd( const QVector< Lex > & lexems, Lex lex )
 {
 	return ( lexems.count( lex ) % 2 != 0 );
@@ -1493,7 +1520,7 @@ parseCodeLine( int i, const QString & line, LineParsingState & prevAndNext,
 		++i;
 	}
 
-	createTextObj( code, data, false );
+	createTextObj( code, data, false, false );
 
 	if( finished )
 	{
@@ -1685,16 +1712,25 @@ parseLine( QStringList::iterator line, LineParsingState prev, PreparsedData & da
 			else if( (*line)[ i ] == c_126 && i + 1 < length &&
 				(*line)[ i + 1 ] == c_126 )
 			{
-				++i;
-				createTextObj( text, data );
-				text.clear();
-				data.lexems.append( Lex::Strikethrough );
+				if( isStyleLexOdd( data.lexems, Lex::Strikethrough ) ||
+					isStrikethroughClosed( i, line, fr ) )
+				{
+					++i;
+					createTextObj( text, data );
+					text.clear();
+					data.lexems.append( Lex::Strikethrough );
+				}
+				else
+				{
+					text.append( QString( 2, c_126 ) );
+					++i;
+				}
 			}
 			else
 				text.append( (*line)[ i ] );
 		}
 
-		createTextObj( text, data );
+		createTextObj( text, data, true );
 		text.clear();
 
 		if( hasBreakLine )
@@ -1779,6 +1815,9 @@ Parser::parseFormattedTextLinksImages( QStringList & fr, QSharedPointer< Block >
 	for( auto it = fr.begin(), last = fr.end(); it != last; ++it )
 		state = parseLine( it, state, data, workingPath, fileName, linksToParse, doc, fr );
 
+	bool addExtraSpace = false;
+	auto tPos = data.txt.size();
+
 	// Add real items to paragraph  after pre-parsing. Handle code.
 	for( auto it = data.lexems.begin(), last = data.lexems.end(); it != last; ++it )
 	{
@@ -1800,6 +1839,9 @@ Parser::parseFormattedTextLinksImages( QStringList & fr, QSharedPointer< Block >
 
 				if( end != data.lexems.end() )
 				{
+					if( tPos != data.txt.size() )
+						data.txt[ tPos ]->setSpaceAfter( true );
+
 					++it;
 
 					QSharedPointer< Code > c( new Code( QString(), true ) );
@@ -1816,6 +1858,8 @@ Parser::parseFormattedTextLinksImages( QStringList & fr, QSharedPointer< Block >
 						c->setText( c->text().left( c->text().length() - 1 ) );
 
 					parent->appendItem( c );
+
+					addExtraSpace = true;
 				}
 			}
 				break;
@@ -1823,6 +1867,14 @@ Parser::parseFormattedTextLinksImages( QStringList & fr, QSharedPointer< Block >
 			case Lex::Text :
 			{
 				parent->appendItem( data.txt[ data.processedText ] );
+
+				if( addExtraSpace )
+					data.txt[ data.processedText ]->setSpaceBefore( true );
+
+				addExtraSpace = false;
+
+				tPos = data.processedText;
+
 				++data.processedText;
 			}
 				break;
