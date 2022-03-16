@@ -1417,7 +1417,7 @@ isStyleClosed( int i, const QString & style, Lex lexStyle, QStringList::iterator
 }
 
 inline bool
-isStyleLexOdd( const QVector< Lex > lexems, Lex lex )
+isStyleLexOdd( const QVector< Lex > & lexems, Lex lex )
 {
 	return ( lexems.count( lex ) % 2 != 0 );
 }
