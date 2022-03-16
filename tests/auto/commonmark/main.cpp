@@ -69,6 +69,7 @@ TEST_CASE( "002" ) // Not strict to CommonMark.
 	auto c = static_cast< MD::Code* > ( doc->items().at( 1 ).data() );
 	REQUIRE( c->inlined() == false );
 	REQUIRE( c->syntax().isEmpty() );
+	// Extra spaces.
 	REQUIRE( c->text() == QStringLiteral( "  foo    baz        bim" ) );
 }
 
@@ -163,6 +164,7 @@ TEST_CASE( "006" ) // Not strict to CommonMark.
 	auto c = static_cast< MD::Code* > ( q->items().at( 0 ).data() );
 	REQUIRE( c->inlined() == false );
 	REQUIRE( c->syntax().isEmpty() );
+	// Extra spaces.
 	REQUIRE( c->text() == QStringLiteral( "    foo" ) );
 }
 
@@ -185,6 +187,7 @@ TEST_CASE( "007" ) // Not strict to CommonMark.
 	auto c = static_cast< MD::Code* > ( li->items().at( 0 ).data() );
 	REQUIRE( c->inlined() == false );
 	REQUIRE( c->syntax().isEmpty() );
+	// Extra spaces.
 	REQUIRE( c->text() == QStringLiteral( "   foo" ) );
 }
 
