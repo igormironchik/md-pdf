@@ -1810,6 +1810,12 @@ parseLine( QStringList::iterator line, LineParsingState prev, PreparsedData & da
 
 	bool hasBreakLine = line->endsWith( QLatin1String( "  " ) );
 
+	if( line->endsWith( c_92 ) )
+	{
+		hasBreakLine = true;
+		line->remove( line->length() - 1, 1 );
+	}
+
 	int pos = 0;
 
 	if( prev != LineParsingState::Finished )
