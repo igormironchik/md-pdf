@@ -1355,12 +1355,194 @@ isStyleChar( const QChar & c )
 		return false;
 }
 
+struct InlineCodeMark {
+	qsizetype m_line;
+	qsizetype m_pos;
+	bool m_backslashed;
+};
+
+inline bool
+isQuoted( QVector< InlineCodeMark >::const_iterator first,
+	QVector< InlineCodeMark >::const_iterator next,
+	QVector< InlineCodeMark >::const_iterator last )
+{
+	if( next != last )
+	{
+		if( first->m_line == next->m_line && first->m_pos + 1 == next->m_pos )
+			return true;
+	}
+
+	return false;
+}
+
+inline bool
+hasNextQuoted( QVector< InlineCodeMark >::const_iterator first,
+   QVector< InlineCodeMark >::const_iterator last )
+{
+	for( ; first != last; ++first )
+	{
+		if( isQuoted( first, std::next( first ), last ) )
+			return true;
+	}
+
+	return false;
+}
+
+inline bool
+isBetween( QVector< InlineCodeMark >::const_iterator first,
+	QVector< InlineCodeMark >::const_iterator last,
+	qsizetype line, qsizetype pos )
+{
+	const auto next = std::next( first );
+
+	if( next == last )
+	{
+		if( first->m_line < line )
+			return false;
+		else if( first->m_line == line )
+			return ( first->m_pos > pos );
+		else
+			return true;
+	}
+	else
+	{
+		if( first->m_line <= line && next->m_line >= line )
+		{
+			if( first->m_line == line )
+			{
+				if( next->m_line == line )
+					return ( first->m_pos > pos || next->m_pos < pos );
+				else
+					return ( first->m_pos > pos );
+			}
+			else
+			{
+				if( next->m_line == line )
+					return ( pos > next->m_pos );
+				else
+					return false;
+			}
+		}
+		else if( first->m_line > line )
+			return true;
+		else
+			return false;
+	}
+}
+
+inline bool
+isInCode( const QVector< InlineCodeMark > & inlineCodeMarks, qsizetype line, qsizetype pos )
+{
+	bool first = true;
+	bool quoted = false;
+
+	for( auto it = inlineCodeMarks.cbegin(), last = inlineCodeMarks.cend(); it != last; ++it )
+	{
+		if( first )
+		{
+			if( it->m_line > line )
+				return false;
+			else if( it->m_line == line && it->m_pos > pos )
+				return false;
+		}
+
+		if( first && it->m_backslashed )
+			continue;
+
+		if( first )
+		{
+			const auto n = std::next( it );
+			quoted = isQuoted( it, n, last );
+
+			if( quoted && hasNextQuoted( std::next( n ), last ) )
+				it = n;
+			else if( quoted )
+			{
+				quoted = false;
+				it = n;
+			}
+
+			first = false;
+		}
+		else
+		{
+			const auto n = std::next( it );
+
+			if( n != last )
+			{
+				bool q = isQuoted( it, n, last );
+
+				if( quoted && q )
+				{
+					first = true;
+					quoted = false;
+
+					if( isBetween( n, last, line, pos ) )
+						return true;
+				}
+				else if( !quoted )
+				{
+					first = true;
+
+					if( isBetween( it, last, line, pos ) )
+						return true;
+				}
+			}
+			else if( isBetween( it, last, line, pos ) )
+				return true;
+		}
+	}
+
+	return false;
+}
+
+inline QVector< InlineCodeMark >
+collectCodeMarks( int i, QStringList::iterator it, QStringList & fr )
+{
+	QVector< InlineCodeMark > inlineCodeMarks;
+
+	bool backslash = false;
+
+	qsizetype line = 0;
+
+	for( auto last = fr.end(), iit = it; iit != last; ++iit )
+	{
+		for( ; i < iit->length(); ++i )
+		{
+			bool now = false;
+
+			if( (*iit)[ i ] == c_92 )
+			{
+				backslash = true;
+				now = true;
+			}
+			else if( (*iit)[ i ] == c_96 )
+				inlineCodeMarks.push_back( { line, i, backslash } );
+
+			if( !now )
+				backslash = false;
+		}
+
+		i = 0;
+		++line;
+	}
+
+	return inlineCodeMarks;
+}
+
 // Check if style closed.
 inline bool
 isStyleClosed( int i, const QString & style, Lex lexStyle, QStringList::iterator it, QStringList & fr )
 {
 	++i;
+
 	QString s;
+
+	bool backslash = false;
+
+	QVector< InlineCodeMark > inlineCodeMarks = collectCodeMarks( i, it, fr );
+
+	qsizetype line = 0;
 
 	for( auto last = fr.end(); it != last; ++it )
 	{
@@ -1368,16 +1550,25 @@ isStyleClosed( int i, const QString & style, Lex lexStyle, QStringList::iterator
 		{
 			s.clear();
 
+			bool now = false;
+
+			if( (*it)[ i ] == c_92 )
+			{
+				backslash = !backslash;
+				now = backslash;
+			}
+
 			if( i + style.length() <= it->length() )
 			{
 				for( auto p = i; p < i + style.length(); ++p )
 				{
-					bool backslash = ( p > 0 && (*it)[ p - 1 ] == c_92 );
-
 					if( !backslash && isStyleChar( (*it)[ p ] ) )
 						s.append( (*it)[ p ] );
 				}
 			}
+
+			if( !now )
+				backslash = false;
 
 			if( s.length() == style.length() )
 			{
@@ -1386,14 +1577,20 @@ isStyleClosed( int i, const QString & style, Lex lexStyle, QStringList::iterator
 					case Lex::Italic :
 					{
 						if(	s == QLatin1String( "*" ) || s == QLatin1String( "_" ) )
-							return true;
+						{
+							if( !isInCode( inlineCodeMarks, line, i ) )
+								return true;
+						}
 					}
 						break;
 
 					case Lex::Bold :
 					{
 						if( s == QLatin1String( "**" ) || s == QLatin1String( "__" ) )
-							return true;
+						{
+							if( !isInCode( inlineCodeMarks, line, i ) )
+								return true;
+						}
 					}
 						break;
 
@@ -1402,7 +1599,10 @@ isStyleClosed( int i, const QString & style, Lex lexStyle, QStringList::iterator
 						if( s == QLatin1String( "***" ) || s == QLatin1String( "___" ) ||
 							s == QLatin1String( "_**" ) || s == QLatin1String( "**_" ) ||
 							s == QLatin1String( "*__" ) || s == QLatin1String( "__*" ) )
+						{
+							if( !isInCode( inlineCodeMarks, line, i ) )
 								return true;
+						}
 					}
 						break;
 
@@ -1413,6 +1613,8 @@ isStyleClosed( int i, const QString & style, Lex lexStyle, QStringList::iterator
 		}
 
 		i = 0;
+		++line;
+		backslash = false;
 	}
 
 	return false;
@@ -1423,20 +1625,40 @@ isStrikethroughClosed( int i, QStringList::iterator it, QStringList & fr )
 {
 	i += 2;
 
+	bool backslash = false;
+
+	QVector< InlineCodeMark > inlineCodeMarks = collectCodeMarks( i, it, fr );
+
+	qsizetype line = 0;
+
 	for( auto last = fr.end(); it != last; ++it )
 	{
 		for( ; i < it->length(); ++i )
 		{
+			bool now = false;
+
+			if( (*it)[ i ] == c_92 )
+			{
+				backslash = !backslash;
+				now = backslash;
+			}
+
 			if( i + 1 < it->length() )
 			{
-				bool backslash = ( i > 0 && (*it)[ i - 1 ] == c_92 );
-
 				if( !backslash && (*it)[ i ] == c_126 && (*it)[ i + 1 ] == c_126 )
-					return true;
+				{
+					if( !isInCode( inlineCodeMarks, line, i ) )
+						return true;
+				}
 			}
+
+			if( !now )
+				backslash = false;
 		}
 
 		i = 0;
+		++line;
+		backslash = false;
 	}
 
 	return false;
