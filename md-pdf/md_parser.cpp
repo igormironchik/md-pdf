@@ -1389,11 +1389,14 @@ hasNextQuoted( QVector< InlineCodeMark >::const_iterator first,
 }
 
 inline bool
-isBetween( QVector< InlineCodeMark >::const_iterator first,
+isBeforeFirstOrAfterNext( QVector< InlineCodeMark >::const_iterator first,
 	QVector< InlineCodeMark >::const_iterator last,
 	qsizetype line, qsizetype pos )
 {
-	const auto next = std::next( first );
+	auto next = std::next( first );
+
+	while( next != last && next->m_backslashed )
+		next = std::next( next );
 
 	if( next == last )
 	{
@@ -1477,18 +1480,18 @@ isInCode( const QVector< InlineCodeMark > & inlineCodeMarks, qsizetype line, qsi
 					first = true;
 					quoted = false;
 
-					if( isBetween( n, last, line, pos ) )
+					if( isBeforeFirstOrAfterNext( n, last, line, pos ) )
 						return true;
 				}
 				else if( !quoted )
 				{
 					first = true;
 
-					if( isBetween( it, last, line, pos ) )
+					if( isBeforeFirstOrAfterNext( it, last, line, pos ) )
 						return true;
 				}
 			}
-			else if( isBetween( it, last, line, pos ) )
+			else if( isBeforeFirstOrAfterNext( it, last, line, pos ) )
 				return true;
 		}
 	}
