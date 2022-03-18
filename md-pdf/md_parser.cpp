@@ -1359,6 +1359,8 @@ struct InlineCodeMark {
 	qsizetype m_line;
 	qsizetype m_pos;
 	bool m_backslashed;
+	bool m_spaceBefore;
+	bool m_spaceAfter;
 };
 
 inline bool
@@ -1520,7 +1522,9 @@ collectCodeMarks( int i, QStringList::iterator it, QStringList & fr )
 				now = true;
 			}
 			else if( (*iit)[ i ] == c_96 )
-				inlineCodeMarks.push_back( { line, i, backslash } );
+				inlineCodeMarks.push_back( { line, i, backslash,
+					( i > 0 && (*iit)[ i - 1 ].isSpace() ),
+					( i + 1 < iit->length() && (*iit)[ i + 1 ].isSpace() )} );
 
 			if( !now )
 				backslash = false;
