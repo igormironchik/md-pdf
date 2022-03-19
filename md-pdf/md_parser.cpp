@@ -1602,7 +1602,20 @@ parseInlineCode( qsizetype pos, QStringList::iterator & it, QVector< InlineCodeM
 	}
 
 	data.lexems.append( Lex::StartOfCode );
+
+	const auto ns = posOfFirstNonSpace( code );
+
+	if( ns != -1 )
+	{
+		if( code.length() > 2 && code.front().isSpace() && code.back().isSpace() )
+		{
+			code.remove( 0, 1 );
+			code.remove( code.length() - 1, 1 );
+		}
+	}
+
 	createTextObj( code, data, false, false );
+
 	data.lexems.append( Lex::StartOfCode );
 }; // parseCode
 
