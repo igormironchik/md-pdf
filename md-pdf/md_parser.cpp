@@ -27,6 +27,7 @@
 #include <QFileInfo>
 #include <QFile>
 #include <QDir>
+#include <QRegularExpression>
 
 
 namespace MD {
@@ -1644,6 +1645,30 @@ parseUrl( int i, const QString & line, QString & text, PreparsedData & data )
 		}
 
 		++i;
+	}
+
+	const auto it = std::find_if( url.cbegin(), url.cend(),
+		[] ( const auto & c ) { return c.isSpace(); } );
+
+	if( it != url.cend() )
+		done = false;
+	else
+	{
+		static const QRegularExpression er(
+			"^[a-zA-Z0-9.!#$%&'*+/=?^_`{|}~-]+@[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?"
+			"(?:\\.[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?)*$" );
+
+		QRegularExpressionMatch erm;
+
+		if( url.startsWith( QStringLiteral( "mailto:" ), Qt::CaseInsensitive ) )
+			erm = er.match( url.right( url.length() - 7 ) );
+		else
+			erm = er.match( url );
+
+		const QUrl u( url );
+
+		if( ( !u.isValid() || u.isRelative() ) && !erm.hasMatch() )
+			done = false;
 	}
 
 	if( done )

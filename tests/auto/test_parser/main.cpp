@@ -1615,7 +1615,7 @@ TEST_CASE( "033" )
 
 	auto l = static_cast< MD::Link* > ( p->items().at( 0 ).data() );
 
-	REQUIRE( l->url() == QStringLiteral( "www.google.com" ) );
+	REQUIRE( l->url() == QStringLiteral( "http://www.google.com" ) );
 	REQUIRE( l->text().isEmpty() );
 }
 
