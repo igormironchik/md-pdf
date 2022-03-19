@@ -1310,43 +1310,6 @@ enum class LineParsingState {
 }; // enum class LineParsingState
 
 inline bool
-isQuotedCode( int i, QStringList::iterator it )
-{
-	return ( i + 1 < it->length() && (*it)[ i ] == c_96 && (*it)[ i + 1 ] == c_96 );
-}
-
-// Check if inlined code closed.
-inline bool
-isInlineCodeClosed( int i, QStringList::iterator it, QStringList & fr )
-{
-	bool quoted = isQuotedCode( i, it );
-	auto sit = it;
-	i += ( quoted ? 2 : 1 );
-	auto spos = i;
-
-	for( auto last = fr.end(); it != last; ++it )
-	{
-		for( ; i < it->length(); ++i )
-		{
-			if( quoted )
-			{
-				if( isQuotedCode( i, it ) && ( i > spos || it != sit ) )
-					return true;
-			}
-			else
-			{
-				if( (*it)[ i ] == c_96 && ( i > spos || it != sit ) )
-					return true;
-			}
-		}
-
-		i = 0;
-	}
-
-	return false;
-}
-
-inline bool
 isStyleChar( const QChar & c )
 {
 	if( c == c_42 || c == c_95 )
@@ -1358,81 +1321,38 @@ isStyleChar( const QChar & c )
 struct InlineCodeMark {
 	qsizetype m_line;
 	qsizetype m_pos;
+	qsizetype m_length;
 	bool m_backslashed;
 	bool m_spaceBefore;
 	bool m_spaceAfter;
 };
 
 inline bool
-isQuoted( QVector< InlineCodeMark >::const_iterator first,
-	QVector< InlineCodeMark >::const_iterator next,
-	QVector< InlineCodeMark >::const_iterator last )
-{
-	if( next != last )
-	{
-		if( first->m_line == next->m_line && first->m_pos + 1 == next->m_pos )
-			return true;
-	}
-
-	return false;
-}
-
-inline bool
-hasNextQuoted( QVector< InlineCodeMark >::const_iterator first,
-   QVector< InlineCodeMark >::const_iterator last )
-{
-	for( ; first != last; ++first )
-	{
-		if( isQuoted( first, std::next( first ), last ) )
-			return true;
-	}
-
-	return false;
-}
-
-inline bool
-isBeforeFirstOrAfterNext( QVector< InlineCodeMark >::const_iterator first,
-	QVector< InlineCodeMark >::const_iterator last,
+isBeforeEndOfCode( QVector< InlineCodeMark >::const_iterator end,
 	qsizetype line, qsizetype pos )
 {
-	auto next = std::next( first );
-
-	while( next != last && next->m_backslashed )
-		next = std::next( next );
-
-	if( next == last )
-	{
-		if( first->m_line < line )
-			return false;
-		else if( first->m_line == line )
-			return ( first->m_pos > pos );
-		else
-			return true;
-	}
+	if( end->m_line < line )
+		return false;
+	else if( end->m_line == line )
+		return ( end->m_pos > pos );
 	else
+		return true;
+}
+
+inline QVector< InlineCodeMark >::const_iterator
+endOfInlineCode( QVector< InlineCodeMark >::const_iterator it,
+	QVector< InlineCodeMark >::const_iterator last )
+{
+	qsizetype length = 0;
+
+	while( !length && it != last )
 	{
-		if( first->m_line <= line && next->m_line >= line )
-		{
-			if( first->m_line == line )
-			{
-				if( next->m_line == line )
-					return ( first->m_pos > pos || next->m_pos < pos );
-				else
-					return ( first->m_pos > pos );
-			}
-			else
-			{
-				if( next->m_line == line )
-					return ( pos > next->m_pos );
-				else
-					return false;
-			}
-		}
-		else if( first->m_line > line )
-			return true;
-		else
-			return false;
+		length = it->m_length - ( it->m_backslashed ? 1 : 0 );
+		++it;
 	}
+
+	return std::find_if( it, last,
+		[length] ( const auto & bt ) { return ( bt.m_length == length ); } );
 }
 
 inline bool
@@ -1443,58 +1363,19 @@ isInCode( const QVector< InlineCodeMark > & inlineCodeMarks, qsizetype line, qsi
 
 	for( auto it = inlineCodeMarks.cbegin(), last = inlineCodeMarks.cend(); it != last; ++it )
 	{
-		if( first )
+		if( it->m_line > line )
+			return false;
+		else if( it->m_line == line && it->m_pos > pos )
+			return false;
+
+		const auto eit = endOfInlineCode( it, last );
+
+		if( eit != last )
 		{
-			if( it->m_line > line )
-				return false;
-			else if( it->m_line == line && it->m_pos > pos )
-				return false;
-		}
-
-		if( first && it->m_backslashed )
-			continue;
-
-		if( first )
-		{
-			const auto n = std::next( it );
-			quoted = isQuoted( it, n, last );
-
-			if( quoted && hasNextQuoted( std::next( n ), last ) )
-				it = n;
-			else if( quoted )
-			{
-				quoted = false;
-				it = n;
-			}
-
-			first = false;
-		}
-		else
-		{
-			const auto n = std::next( it );
-
-			if( n != last )
-			{
-				bool q = isQuoted( it, n, last );
-
-				if( quoted && q )
-				{
-					first = true;
-					quoted = false;
-
-					if( isBeforeFirstOrAfterNext( n, last, line, pos ) )
-						return true;
-				}
-				else if( !quoted )
-				{
-					first = true;
-
-					if( isBeforeFirstOrAfterNext( it, last, line, pos ) )
-						return true;
-				}
-			}
-			else if( isBeforeFirstOrAfterNext( it, last, line, pos ) )
+			if( isBeforeEndOfCode( eit, line, pos ) )
 				return true;
+
+			it = eit;
 		}
 	}
 
@@ -1502,15 +1383,20 @@ isInCode( const QVector< InlineCodeMark > & inlineCodeMarks, qsizetype line, qsi
 }
 
 inline QVector< InlineCodeMark >
-collectCodeMarks( int i, QStringList::iterator it, QStringList & fr )
+collectCodeMarks( int i, QStringList::const_iterator it, const QStringList & fr )
 {
 	QVector< InlineCodeMark > inlineCodeMarks;
 
 	bool backslash = false;
 
 	qsizetype line = 0;
+	qsizetype pos = 0;
+	qsizetype length = 0;
+	bool spaceBefore = false;
+	bool spaceAfter = false;
+	bool firstBacktrick = true;
 
-	for( auto last = fr.end(), iit = it; iit != last; ++iit )
+	for( auto last = fr.cend(), iit = it; iit != last; ++iit )
 	{
 		for( ; i < iit->length(); ++i )
 		{
@@ -1522,9 +1408,24 @@ collectCodeMarks( int i, QStringList::iterator it, QStringList & fr )
 				now = true;
 			}
 			else if( (*iit)[ i ] == c_96 )
-				inlineCodeMarks.push_back( { line, i, backslash,
-					( i > 0 && (*iit)[ i - 1 ].isSpace() ),
-					( i + 1 < iit->length() && (*iit)[ i + 1 ].isSpace() )} );
+			{
+				pos = i;
+				length = 0;
+				spaceBefore = ( i > 0 && (*iit)[ i - 1 ].isSpace() );
+
+				while( i < iit->length() && (*iit)[ i ] == c_96 )
+				{
+					++length;
+					++i;
+				}
+
+				spaceAfter = ( i < iit->length() && (*iit)[ i ].isSpace() );
+
+				inlineCodeMarks.push_back( { line, pos, length, backslash,
+					spaceBefore, spaceAfter } );
+
+				--i;
+			}
 
 			if( !now )
 				backslash = false;
@@ -1539,7 +1440,8 @@ collectCodeMarks( int i, QStringList::iterator it, QStringList & fr )
 
 // Check if style closed.
 inline bool
-isStyleClosed( int i, const QString & style, Lex lexStyle, QStringList::iterator it, QStringList & fr )
+isStyleClosed( int i, const QString & style, Lex lexStyle, QStringList::const_iterator it,
+	const QStringList & fr )
 {
 	++i;
 
@@ -1628,7 +1530,7 @@ isStyleClosed( int i, const QString & style, Lex lexStyle, QStringList::iterator
 }
 
 inline bool
-isStrikethroughClosed( int i, QStringList::iterator it, QStringList & fr )
+isStrikethroughClosed( int i, QStringList::iterator it, const QStringList & fr )
 {
 	i += 2;
 
@@ -1680,87 +1582,37 @@ isStyleLexOdd( const QVector< Lex > & lexems, Lex lex )
 
 
 // Read code.
-inline int
-parseCodeLine( int i, const QString & line, LineParsingState & prevAndNext,
+inline void
+parseInlineCode( qsizetype pos, QStringList::iterator & it, QVector< InlineCodeMark >::const_iterator end,
 	PreparsedData & data )
 {
-	const int length = line.length();
+	QString code;
 
-	bool quoted = false;
-
-	if( prevAndNext != LineParsingState::Finished )
-		quoted = ( prevAndNext == LineParsingState::UnfinishedQuotedCode );
-	else
+	for( auto l = 0; l <= end->m_line; ++l )
 	{
-		if( i + 1 < length && line[ i + 1 ] == c_96 )
+		if( l < end->m_line )
 		{
-			quoted = true;
+			const auto length = it->length();
 
-			data.lexems.append( Lex::StartOfQuotedCode );
+			for( qsizetype i = pos; i < length; ++i )
+				code.append( (*it)[ i ] );
 
-			i += 2;
+			code.append( c_32 );
+
+			++it;
 		}
 		else
 		{
-			data.lexems.append( Lex::StartOfCode );
-
-			++i;
-		}
-	}
-
-	QString code;
-	bool finished = false;
-
-	while( i < length )
-	{
-		if( line[ i ] == c_96 )
-		{
-			if( !quoted )
-			{
-				finished = true;
-
-				++i;
-
-				break;
-			}
-			else if( i + 1 < length && line[ i + 1 ] == c_96 )
-			{
-				if( i + 2 < length && line[ i + 2 ] == c_96 )
-				{
-					code.append( line[ i ] );
-
-					++i;
-
-					continue;
-				}
-				else
-				{
-					finished = true;
-
-					i += 2;
-
-					break;
-				}
-			}
+			for( qsizetype i = pos; i < end->m_pos; ++i )
+				code.append( (*it)[ i ] );
 		}
 
-		code.append( line[ i ] );
-
-		++i;
+		pos = 0;
 	}
 
+	data.lexems.append( Lex::StartOfCode );
 	createTextObj( code, data, false, false );
-
-	if( finished )
-	{
-		data.lexems.append( quoted ? Lex::StartOfQuotedCode : Lex::StartOfCode );
-		prevAndNext = LineParsingState::Finished;
-	}
-	else
-		prevAndNext = ( quoted ? LineParsingState::UnfinishedQuotedCode :
-			LineParsingState::UnfinishedCode );
-
-	return i;
+	data.lexems.append( Lex::StartOfCode );
 }; // parseCode
 
 // Read URL in <...>
@@ -1805,52 +1657,44 @@ parseUrl( int i, const QString & line, QString & text, PreparsedData & data )
 
 
 // Parse one line in paragraph.
-inline LineParsingState
-parseLine( QStringList::iterator line, LineParsingState prev, PreparsedData & data,
+inline QStringList::iterator
+parseLine( QStringList::iterator it, qsizetype & line, qsizetype pos, PreparsedData & data,
 	const QString & workingPath, const QString & fileName, QStringList & linksToParse,
-	QSharedPointer< Document > doc, QStringList & fr )
+	QSharedPointer< Document > doc, const QStringList & fr )
 {
 	static const QString specialChars( QLatin1String( "!\"#$%&'()*+,-.\\/:;<=>?@[]^_`{|}~" ) );
 
-	bool hasBreakLine = line->endsWith( QLatin1String( "  " ) );
+	bool hasBreakLine = it->endsWith( QLatin1String( "  " ) );
 
-	if( line->endsWith( c_92 ) )
+	if( it->endsWith( c_92 ) )
 	{
 		hasBreakLine = true;
-		line->remove( line->length() - 1, 1 );
+		it->remove( it->length() - 1, 1 );
 	}
 
-	int pos = 0;
-
-	if( prev != LineParsingState::Finished )
-	{
-		pos = parseCodeLine( 0, *line, prev, data );
-
-		if( prev != LineParsingState::Finished )
-			return prev;
-	}
-
-	const auto ns = posOfFirstNonSpace( *line );
+	const auto ns = posOfFirstNonSpace( *it );
 
 	if( ns > 0 )
-		*line = line->right( line->length() - ns );
+		*it = it->right( it->length() - ns );
 
 	// Will skip horizontal rules, for now at least...
-	if( !isHorizontalLine( *line ) )
+	if( !isHorizontalLine( *it ) )
 	{
 		QString text;
 
-		for( int i = pos, length = line->length(); i < length; ++i )
+		for( int i = pos; i < it->length(); ++i )
 		{
-			if( (*line)[ i ] == c_92 && i + 1 < length &&
-				specialChars.contains( (*line)[ i + 1 ] ) )
+			const auto length = it->length();
+
+			if( (*it)[ i ] == c_92 && i + 1 < length &&
+				specialChars.contains( (*it)[ i + 1 ] ) )
 			{
 				++i;
 
-				text.append( (*line)[ i ] );
+				text.append( (*it)[ i ] );
 			}
-			else if( (*line)[ i ] == c_33 && i + 1 < length &&
-				(*line)[ i + 1 ] == c_91 )
+			else if( (*it)[ i ] == c_33 && i + 1 < length &&
+				(*it)[ i + 1 ] == c_91 )
 			{
 				createTextObj( text, data );
 				text.clear();
@@ -1859,44 +1703,48 @@ parseLine( QStringList::iterator line, LineParsingState prev, PreparsedData & da
 
 				const int startPos = i;
 
-				i = parseImg( i, *line, ok, true, data, workingPath );
+				i = parseImg( i, *it, ok, true, data, workingPath );
 
 				if( !ok )
-					text.append( line->mid( startPos, i - startPos ) );
+					text.append( it->mid( startPos, i - startPos ) );
 			}
-			else if( (*line)[ i ] == c_91 )
+			else if( (*it)[ i ] == c_91 )
 			{
 				createTextObj( text, data );
 				text.clear();
-				i = parseLnk( i, *line, text, data, workingPath, fileName, linksToParse, doc );
+				i = parseLnk( i, *it, text, data, workingPath, fileName, linksToParse, doc );
 			}
-			else if( (*line)[ i ] == c_96 )
+			else if( (*it)[ i ] == c_96 )
 			{
-				if( isInlineCodeClosed( i, line, fr ) )
+				const auto backtricks = collectCodeMarks( i, it, fr );
+				const auto ceit = endOfInlineCode( backtricks.cbegin(), backtricks.cend() );
+
+				if( ceit != backtricks.cend() )
 				{
 					createTextObj( text, data );
 					text.clear();
-					i = parseCodeLine( i, *line, prev, data ) - 1;
 
-					if( prev != LineParsingState::Finished )
-						return prev;
+					parseInlineCode( backtricks.cbegin()->m_pos + backtricks.cbegin()->m_length,
+						it, ceit, data );
+					i = ceit->m_pos + ceit->m_length - 1;
+					line += ceit->m_line;
 				}
 				else
-					text.append( (*line)[ i ] );
+					text.append( (*it)[ i ] );
 			}
-			else if( (*line)[ i ] == c_60 )
+			else if( (*it)[ i ] == c_60 )
 			{
 				createTextObj( text, data );
 				text.clear();
-				i = parseUrl( i, *line, text, data ) - 1;
+				i = parseUrl( i, *it, text, data ) - 1;
 			}
-			else if( (*line)[ i ] == c_42 || (*line)[ i ] == c_95 )
+			else if( (*it)[ i ] == c_42 || (*it)[ i ] == c_95 )
 			{
 				QString style;
 
-				while( i < length && isStyleChar( (*line)[ i ] ) )
+				while( i < length && isStyleChar( (*it)[ i ] ) )
 				{
-					style.append( (*line)[ i ] );
+					style.append( (*it)[ i ] );
 					++i;
 				}
 
@@ -1906,7 +1754,7 @@ parseLine( QStringList::iterator line, LineParsingState prev, PreparsedData & da
 				if( style == QLatin1String( "*" ) || style == QLatin1String( "_" ) )
 				{
 					if( isStyleLexOdd( data.lexems, Lex::Italic ) ||
-						isStyleClosed( i, style, Lex::Italic, line, fr ) )
+						isStyleClosed( i, style, Lex::Italic, it, fr ) )
 					{
 						createTextObj( text, data );
 						text.clear();
@@ -1918,7 +1766,7 @@ parseLine( QStringList::iterator line, LineParsingState prev, PreparsedData & da
 				else if( style == QLatin1String( "**" ) || style == QLatin1String( "__" ) )
 				{
 					if( isStyleLexOdd( data.lexems, Lex::Bold ) ||
-						isStyleClosed( i, style, Lex::Bold, line, fr ) )
+						isStyleClosed( i, style, Lex::Bold, it, fr ) )
 					{
 						createTextObj( text, data );
 						text.clear();
@@ -1932,7 +1780,7 @@ parseLine( QStringList::iterator line, LineParsingState prev, PreparsedData & da
 					style == QLatin1String( "*__" ) || style == QLatin1String( "__*" ) )
 				{
 					if( isStyleLexOdd( data.lexems, Lex::BoldAndItalic ) ||
-						isStyleClosed( i, style, Lex::BoldAndItalic, line, fr ) )
+						isStyleClosed( i, style, Lex::BoldAndItalic, it, fr ) )
 					{
 						createTextObj( text, data );
 						text.clear();
@@ -1944,11 +1792,11 @@ parseLine( QStringList::iterator line, LineParsingState prev, PreparsedData & da
 				else
 					text.append( style );
 			}
-			else if( (*line)[ i ] == c_126 && i + 1 < length &&
-				(*line)[ i + 1 ] == c_126 )
+			else if( (*it)[ i ] == c_126 && i + 1 < length &&
+				(*it)[ i + 1 ] == c_126 )
 			{
 				if( isStyleLexOdd( data.lexems, Lex::Strikethrough ) ||
-					isStrikethroughClosed( i, line, fr ) )
+					isStrikethroughClosed( i, it, fr ) )
 				{
 					++i;
 					createTextObj( text, data );
@@ -1962,7 +1810,7 @@ parseLine( QStringList::iterator line, LineParsingState prev, PreparsedData & da
 				}
 			}
 			else
-				text.append( (*line)[ i ] );
+				text.append( (*it)[ i ] );
 		}
 
 		createTextObj( text, data, true );
@@ -1972,8 +1820,8 @@ parseLine( QStringList::iterator line, LineParsingState prev, PreparsedData & da
 			data.lexems.append( Lex::BreakLine );
 	}
 
-	return LineParsingState::Finished;
-}; // parseLine
+	return ++it;
+}; // parseit
 
 // Set flags for all nested items.
 inline void
@@ -2044,11 +1892,12 @@ Parser::parseFormattedTextLinksImages( QStringList & fr, QSharedPointer< Block >
 {
 	PreparsedData data;
 
-	LineParsingState state = LineParsingState::Finished;
+	qsizetype pos = 0;
+	qsizetype line = 0;
 
 	// Real parsing.
-	for( auto it = fr.begin(), last = fr.end(); it != last; ++it )
-		state = parseLine( it, state, data, workingPath, fileName, linksToParse, doc, fr );
+	for( auto it = fr.begin(), last = fr.end(); it != last; )
+		it = parseLine( it, line, pos, data, workingPath, fileName, linksToParse, doc, fr );
 
 	bool addExtraSpace = false;
 	auto tPos = data.txt.size();

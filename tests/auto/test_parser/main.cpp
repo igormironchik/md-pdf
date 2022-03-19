@@ -2943,7 +2943,7 @@ TEST_CASE( "062" )
 		REQUIRE( p->items().size() == 3 );
 		REQUIRE( p->items().at( 0 )->type() == MD::ItemType::Text );
 		auto t1 = static_cast< MD::Text* > ( p->items().at( 0 ).data() );
-		REQUIRE( t1->text() == QStringLiteral( "**`" ) );
+		REQUIRE( t1->text() == QStringLiteral( "**" ) );
 
 		REQUIRE( p->items().at( 1 )->type() == MD::ItemType::Code );
 		auto c1 = static_cast< MD::Code* > ( p->items().at( 1 ).data() );
