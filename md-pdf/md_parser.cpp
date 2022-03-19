@@ -901,7 +901,6 @@ enum class Lex {
 	Image,
 	ImageInLink,
 	StartOfCode,
-	StartOfQuotedCode,
 	FootnoteRef,
 	BreakLine
 }; // enum class Lex
@@ -1323,8 +1322,6 @@ struct InlineCodeMark {
 	qsizetype m_pos;
 	qsizetype m_length;
 	bool m_backslashed;
-	bool m_spaceBefore;
-	bool m_spaceAfter;
 };
 
 inline bool
@@ -1392,8 +1389,6 @@ collectCodeMarks( int i, QStringList::const_iterator it, const QStringList & fr 
 	qsizetype line = 0;
 	qsizetype pos = 0;
 	qsizetype length = 0;
-	bool spaceBefore = false;
-	bool spaceAfter = false;
 	bool firstBacktrick = true;
 
 	for( auto last = fr.cend(), iit = it; iit != last; ++iit )
@@ -1411,7 +1406,6 @@ collectCodeMarks( int i, QStringList::const_iterator it, const QStringList & fr 
 			{
 				pos = i;
 				length = 0;
-				spaceBefore = ( i > 0 && (*iit)[ i - 1 ].isSpace() );
 
 				while( i < iit->length() && (*iit)[ i ] == c_96 )
 				{
@@ -1419,10 +1413,7 @@ collectCodeMarks( int i, QStringList::const_iterator it, const QStringList & fr 
 					++i;
 				}
 
-				spaceAfter = ( i < iit->length() && (*iit)[ i ].isSpace() );
-
-				inlineCodeMarks.push_back( { line, pos, length, backslash,
-					spaceBefore, spaceAfter } );
+				inlineCodeMarks.push_back( { line, pos, length, backslash } );
 
 				--i;
 			}
@@ -1917,7 +1908,6 @@ Parser::parseFormattedTextLinksImages( QStringList & fr, QSharedPointer< Block >
 				break;
 
 			case Lex::StartOfCode :
-			case Lex::StartOfQuotedCode :
 			{
 				auto end = std::find( it + 1, data.lexems.end(), *it );
 
