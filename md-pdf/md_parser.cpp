@@ -923,7 +923,7 @@ struct PreparsedData {
 
 // Read URL.
 inline QString
-readLnk( int & i, const QString & line )
+readLnk( int & i, const QString & line, bool inSquare = false )
 {
 	++i;
 	i = skipSpaces( i, line );
@@ -933,12 +933,86 @@ readLnk( int & i, const QString & line )
 	{
 		QString lnk;
 
-		while( i < length && !line[ i ].isSpace() &&
-			( line[ i ] != c_41 && line[ i - 1 ] != c_92 )
-			&& line[ i ] != c_93 )
+		bool backslash = false;
+
+		if( !inSquare )
 		{
-			lnk.append( line[ i ] );
-			++i;
+			if( line[ i ] == c_60 )
+			{
+				++i;
+
+				while( i < length )
+				{
+					if( line[ i ] == c_92 && !backslash )
+						backslash = true;
+					else if( line[ i ] == c_62 && !backslash  )
+						return lnk;
+					else
+					{
+						lnk.append( line[ i ] );
+						backslash = false;
+					}
+
+					++i;
+				}
+			}
+			else
+			{
+				qsizetype c = 0;
+
+				while( i < length )
+				{
+					if( line[ i ].isSpace() )
+					{
+						if( !c )
+							return lnk;
+						else
+							return QString();
+					}
+					else if( line[ i ] == c_92 && !backslash )
+						backslash = true;
+					else if( line[ i ] == c_40 && !backslash )
+					{
+						++c;
+						lnk.append( line[ i ] );
+						backslash = false;
+					}
+					else if( line[ i ] == c_41 && !backslash && c > 0 )
+					{
+						--c;
+						lnk.append( line[ i ] );
+						backslash = false;
+					}
+					else if( line[ i ] == c_41 && !backslash && c == 0 )
+						return lnk;
+					else
+					{
+						lnk.append( line[ i ] );
+						backslash = false;
+					}
+
+					++i;
+				}
+			}
+		}
+		else
+		{
+			while( i < length )
+			{
+				if( line[ i ] == c_92 && !backslash )
+					backslash = true;
+				else if( line[ i ] == c_93 && !backslash  )
+					return lnk;
+				else if( line[ i ] == c_91 && !backslash )
+					return QString();
+				else
+				{
+					lnk.append( line[ i ] );
+					backslash = false;
+				}
+
+				++i;
+			}
 		}
 
 		return lnk;
@@ -962,11 +1036,25 @@ skipLnkCaption( int & i, const QString & line )
 
 	const int length = line.length();
 
-	while( i < length &&
-		( quoted ?
-			( line[ i ] != c_34 && line[ i - 1 ] != c_92 ) :
-			( line[ i ] != c_41 ) ) )
+	bool backslash = false;
+
+	while( i < length )
 	{
+		if( quoted )
+		{
+			if( line[ i ] == c_92 && !backslash )
+				backslash = true;
+			if( line[ i ] == c_34 && !backslash )
+				break;
+			else
+				backslash = false;
+		}
+		else
+		{
+			if( line[ i ] == c_41 )
+				break;
+		}
+
 		++i;
 	}
 
@@ -1110,7 +1198,7 @@ parseLnk( int i, const QString & line, QString & text, PreparsedData & data,
 		}
 		else if( line[ i ] == c_94 )
 		{
-			auto lnk = readLnk( i, line );
+			auto lnk = readLnk( i, line, true );
 
 			i = skipSpaces( i, line );
 
@@ -1229,7 +1317,7 @@ parseLnk( int i, const QString & line, QString & text, PreparsedData & data,
 		}
 		else if( line[ i ] == c_91 )
 		{
-			url = readLnk( i, line );
+			url = readLnk( i, line, true );
 
 			if( !url.isEmpty() )
 			{
