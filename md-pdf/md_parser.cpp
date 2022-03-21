@@ -1167,6 +1167,7 @@ parseLnk( int i, const QString & line, QString & text, PreparsedData & data,
 
 	if( i < length )
 	{
+		// Image in link.
 		if( i + 1 < length && line[ i ] == c_33 &&
 			line[ i + 1 ] == c_91 )
 		{
@@ -1196,6 +1197,7 @@ parseLnk( int i, const QString & line, QString & text, PreparsedData & data,
 				}
 			}
 		}
+		// Footnote ref.
 		else if( line[ i ] == c_94 )
 		{
 			auto lnk = readLnk( i, line, true );
@@ -1241,6 +1243,7 @@ parseLnk( int i, const QString & line, QString & text, PreparsedData & data,
 
 	if( i < length )
 	{
+		// Labeled link.
 		if( line[ i ] == c_58 )
 		{
 			url = readLnk( i, line );
@@ -1273,6 +1276,7 @@ parseLnk( int i, const QString & line, QString & text, PreparsedData & data,
 				return i;
 			}
 		}
+		// Regular link.
 		else if( line[ i ] == c_40 )
 		{
 			url = readLnk( i, line );
@@ -1287,6 +1291,8 @@ parseLnk( int i, const QString & line, QString & text, PreparsedData & data,
 					{
 						if( skipLnkCaption( i, line ) )
 						{
+							++i;
+
 							if( QUrl( url ).isRelative() )
 							{
 								if( fileExists( url, workingPath ) )
@@ -1306,7 +1312,11 @@ parseLnk( int i, const QString & line, QString & text, PreparsedData & data,
 					}
 				}
 				else
+				{
+					++i;
+
 					url = url + QStringLiteral( "/" ) + workingPath + fileName;
+				}
 			}
 			else
 			{
@@ -1315,6 +1325,7 @@ parseLnk( int i, const QString & line, QString & text, PreparsedData & data,
 				return i;
 			}
 		}
+		// Referenced link.
 		else if( line[ i ] == c_91 )
 		{
 			url = readLnk( i, line, true );
@@ -1340,12 +1351,26 @@ parseLnk( int i, const QString & line, QString & text, PreparsedData & data,
 				}
 			}
 		}
+		else if( !withImage && !lnkText.isEmpty() )
+		{
+			url = QString::fromLatin1( "#" ) + lnkText.toLower() +
+				QStringLiteral( "/" ) + workingPath + fileName;
+
+			linksToParse.append( url );
+		}
 		else
 		{
 			text.append( line.mid( startPos, i - startPos + 1 ) );
 
 			return i + 1;
 		}
+	}
+	else if( !withImage && !lnkText.isEmpty() )
+	{
+		url = QString::fromLatin1( "#" ) + lnkText.toLower() +
+			QStringLiteral( "/" ) + workingPath + fileName;
+
+		linksToParse.append( url );
 	}
 	else
 	{
@@ -1367,7 +1392,7 @@ parseLnk( int i, const QString & line, QString & text, PreparsedData & data,
 	else
 		data.lexems.append( Lex::Link );
 
-	return i;
+	return i - 1;
 }; // parseLnk
 
 // Create text object.
