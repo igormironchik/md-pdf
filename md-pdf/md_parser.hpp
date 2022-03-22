@@ -448,12 +448,17 @@ private:
 			if( type != lineType && type != BlockType::Code && type != BlockType::List &&
 				type != BlockType::Blockquote )
 			{
-				pf();
-
-				type = lineType;
-
-				if( !line.isEmpty() )
+				if( type == BlockType::Text && lineType == BlockType::CodeIndentedBySpaces )
 					fragment.append( line );
+				else
+				{
+					pf();
+
+					type = lineType;
+
+					if( !line.isEmpty() )
+						fragment.append( line );
+				}
 			}
 			// End of code block.
 			else if( type == BlockType::Code && type == lineType )

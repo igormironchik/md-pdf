@@ -1855,7 +1855,7 @@ parseLine( QStringList::iterator it, qsizetype & line, qsizetype pos, PreparsedD
 		*it = it->right( it->length() - ns );
 
 	// Will skip horizontal rules, for now at least...
-	if( !isHorizontalLine( *it ) )
+	if( ns > 3 || !isHorizontalLine( *it ) )
 	{
 		QString text;
 
