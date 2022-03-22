@@ -2681,7 +2681,7 @@ TEST_CASE( "052" )
 
 		REQUIRE( c->inlined() == false );
 		REQUIRE( c->text() == QStringLiteral( "_```` *bold* _italic" ) );
-		REQUIRE( c->syntax() == QStringLiteral( "code *bold _italic" ) );
+		REQUIRE( c->syntax() == QStringLiteral( "code" ) );
 	}
 }
 

@@ -182,6 +182,48 @@ isOrderedList( const QString & s, int * num = nullptr )
 	return false;
 }
 
+// Skip spaces in line from pos \a i.
+inline qsizetype
+skipSpaces( qsizetype i, QStringView line )
+{
+	const auto length = line.length();
+
+	while( i < length && line[ i ].isSpace() )
+		++i;
+
+	return i;
+}; // skipSpaces
+
+inline QString
+readEscapedSequence( qsizetype i, QStringView & str )
+{
+	QString ret;
+	bool backslash = false;
+
+	while( i < str.length() )
+	{
+		bool now = false;
+
+		if( str[ i ] == c_92 && !backslash )
+		{
+			backslash = true;
+			now = true;
+		}
+		else if( str[ i ].isSpace() )
+			break;
+		else
+			ret.append( str[ i ] );
+
+		if( !now )
+			backslash = false;
+
+		++i;
+	}
+
+	return ret;
+}
+
+
 inline bool
 isStartOfCode( QStringView str, QString * syntax = nullptr )
 {
@@ -201,14 +243,10 @@ isStartOfCode( QStringView str, QString * syntax = nullptr )
 
 		if( syntax )
 		{
-			for( ; p < str.size(); ++p )
-			{
-				if( !str[ p ].isSpace() )
-					break;
-			}
+			p = skipSpaces( p, str );
 
 			if( p < str.size() )
-				*syntax = str.mid( p ).toString();
+				*syntax = readEscapedSequence( p, str );
 		}
 
 		return true;
@@ -454,18 +492,6 @@ Parser::parseText( QStringList & fr, QSharedPointer< Block > parent,
 }
 
 namespace /* anonymous */ {
-
-// Skip spaces in line from pos \a i.
-int
-skipSpaces( int i, const QString & line )
-{
-	const int length = line.length();
-
-	while( i < length && line[ i ].isSpace() )
-		++i;
-
-	return i;
-}; // skipSpaces
 
 // Read text of the link. I.e. in [...]
 QString readLinkText( int & i, const QString & line )

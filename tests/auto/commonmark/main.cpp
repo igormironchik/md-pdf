@@ -541,3 +541,19 @@ TEST_CASE( "023" )
 	REQUIRE( doc->labeledLinks().size() == 1 );
 	REQUIRE( doc->labeledLinks()[ l->url() ]->url() == QStringLiteral( "/bar*" ) );
 }
+
+TEST_CASE( "024" )
+{
+	const auto doc = load_test( 24 );
+
+	REQUIRE( doc->isEmpty() == false );
+	REQUIRE( doc->items().size() == 2 );
+
+	REQUIRE( doc->items().at( 1 )->type() == MD::ItemType::Code );
+
+	auto c = static_cast< MD::Code* > ( doc->items().at( 1 ).data() );
+
+	REQUIRE( c->inlined() == false );
+	REQUIRE( c->syntax() == QStringLiteral( "foo+bar" ) );
+	REQUIRE( c->text() == QStringLiteral( "foo" ) );
+}
