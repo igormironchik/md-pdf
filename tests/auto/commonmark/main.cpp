@@ -670,3 +670,19 @@ TEST_CASE( "046" )
 		REQUIRE( t->text() == QStringLiteral( "__" ) );
 	}
 }
+
+TEST_CASE( "048" )
+{
+	const auto doc = load_test( 48 );
+
+	REQUIRE( doc->isEmpty() == false );
+	REQUIRE( doc->items().size() == 2 );
+
+	REQUIRE( doc->items().at( 1 )->type() == MD::ItemType::Code );
+
+	auto c = static_cast< MD::Code* > ( doc->items().at( 1 ).data() );
+
+	REQUIRE( c->inlined() == false );
+	REQUIRE( c->syntax().isEmpty() );
+	REQUIRE( c->text() == QStringLiteral( "***" ) );
+}
