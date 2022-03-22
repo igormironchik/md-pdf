@@ -1616,7 +1616,7 @@ isStyleClosed( int i, const QString & style, Lex lexStyle, QStringList::const_it
 				{
 					case Lex::Italic :
 					{
-						if(	s == QLatin1String( "*" ) || s == QLatin1String( "_" ) )
+						if(	s == style )
 						{
 							if( !isInCode( inlineCodeMarks, line, i ) )
 								return true;
@@ -1626,7 +1626,7 @@ isStyleClosed( int i, const QString & style, Lex lexStyle, QStringList::const_it
 
 					case Lex::Bold :
 					{
-						if( s == QLatin1String( "**" ) || s == QLatin1String( "__" ) )
+						if( s == style )
 						{
 							if( !isInCode( inlineCodeMarks, line, i ) )
 								return true;
@@ -1636,9 +1636,18 @@ isStyleClosed( int i, const QString & style, Lex lexStyle, QStringList::const_it
 
 					case Lex::BoldAndItalic :
 					{
-						if( s == QLatin1String( "***" ) || s == QLatin1String( "___" ) ||
-							s == QLatin1String( "_**" ) || s == QLatin1String( "**_" ) ||
-							s == QLatin1String( "*__" ) || s == QLatin1String( "__*" ) )
+						if( ( style == QLatin1String( "***" ) || style == QLatin1String( "___" ) )
+							&& style == s )
+						{
+							if( !isInCode( inlineCodeMarks, line, i ) )
+								return true;
+						}
+						else if( style == QLatin1String( "_**" ) && s == QLatin1String( "**_" ) )
+						{
+							if( !isInCode( inlineCodeMarks, line, i ) )
+								return true;
+						}
+						else if( style == QLatin1String( "__*" ) && s == QLatin1String( "*__" ) )
 						{
 							if( !isInCode( inlineCodeMarks, line, i ) )
 								return true;
