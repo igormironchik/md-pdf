@@ -286,6 +286,50 @@ posOfListItem( const QString & s, bool ordered )
 	return p;
 }
 
+inline bool
+isHorizontalLine( QStringView s )
+{
+
+	if( s.size() < 3 )
+		return false;
+
+	QChar c;
+
+	if( s[ 0 ] == c_42 )
+		c = c_42;
+	else if( s[ 0 ] == c_45 )
+		c = c_45;
+	else if( s[ 0 ] == c_95 )
+		c = c_95;
+	else
+		return false;
+
+	qsizetype p = 1;
+	qsizetype count = 1;
+
+	for( ; p < s.size(); ++p )
+	{
+		if( s[ p ] != c && !s[ p ].isSpace() )
+			break;
+		else if( s[ p ] == c )
+			++count;
+	}
+
+	if( count < 3 )
+		return false;
+
+	if( p == s.size() )
+		return true;
+
+	for( ; p < s.size(); ++p )
+	{
+		if( !s[ p ].isSpace() )
+			return false;
+	}
+
+	return true;
+}
+
 } /* namespace anonymous */
 
 Parser::BlockType
@@ -309,6 +353,9 @@ Parser::whatIsTheLine( QString & str, bool inList, qsizetype * indent, bool calc
 		return BlockType::Unknown;
 	else if( s.startsWith( c_35 ) )
 		return BlockType::Heading;
+
+	if( first < 4 && isHorizontalLine( s ) )
+		return BlockType::Text;
 
 	if( inList )
 	{
@@ -881,50 +928,6 @@ Parser::parseParagraph( QStringList & fr, QSharedPointer< Block > parent,
 }
 
 namespace /* anoymous*/ {
-
-inline bool
-isHorizontalLine( const QString & s )
-{
-
-	if( s.size() < 3 )
-		return false;
-
-	QChar c;
-
-	if( s[ 0 ] == c_42 )
-		c = c_42;
-	else if( s[ 0 ] == c_45 )
-		c = c_45;
-	else if( s[ 0 ] == c_95 )
-		c = c_95;
-	else
-		return false;
-
-	qsizetype p = 1;
-	qsizetype count = 1;
-
-	for( ; p < s.size(); ++p )
-	{
-		if( s[ p ] != c && !s[ p ].isSpace() )
-			break;
-		else if( s[ p ] == c )
-			++count;
-	}
-
-	if( count < 3 )
-		return false;
-
-	if( p == s.size() )
-		return true;
-
-	for( ; p < s.size(); ++p )
-	{
-		if( !s[ p ].isSpace() )
-			return false;
-	}
-
-	return true;
-}
 
 enum class Lex {
 	Bold,
