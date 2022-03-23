@@ -2203,7 +2203,7 @@ Parser::parseFormattedTextLinksImages( QStringList & fr, QSharedPointer< Block >
 		{
 			addItemsToParent( data, parent );
 
-			fr.erase( fr.begin(), ( it == last ? it : std::next( it ) ) );
+			fr.erase( fr.begin(), it );
 
 			return false;
 		}
