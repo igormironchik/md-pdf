@@ -202,7 +202,7 @@ private:
 		QSharedPointer< Document > doc,
 		QStringList & linksToParse, const QString & workingPath,
 		const QString & fileName );
-	void parseFormattedTextLinksImages( QStringList & fr, QSharedPointer< Block > parent,
+	bool parseFormattedTextLinksImages( QStringList & fr, QSharedPointer< Block > parent,
 		QSharedPointer< Document > doc,
 		QStringList & linksToParse, const QString & workingPath,
 		const QString & fileName );

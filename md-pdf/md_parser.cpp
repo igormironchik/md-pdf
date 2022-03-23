@@ -864,9 +864,17 @@ Parser::parseParagraph( QStringList & fr, QSharedPointer< Block > parent,
 		}
 	}
 
-	QSharedPointer< Paragraph > p( new Paragraph() );
+	QSharedPointer< Paragraph > p( new Paragraph );
 
-	parseFormattedTextLinksImages( fr, p, doc, linksToParse, workingPath, fileName );
+	while( !parseFormattedTextLinksImages( fr, p, doc, linksToParse, workingPath, fileName ) )
+	{
+		if( !p->isEmpty() )
+		{
+			parent->appendItem( p );
+
+			p.reset( new Paragraph );
+		}
+	}
 
 	if( !p->isEmpty() )
 		parent->appendItem( p );
@@ -1834,7 +1842,7 @@ parseUrl( int i, const QString & line, QString & text, PreparsedData & data )
 
 
 // Parse one line in paragraph.
-inline QStringList::iterator
+inline QPair< QStringList::iterator, bool >
 parseLine( QStringList::iterator it, qsizetype & line, qsizetype pos, PreparsedData & data,
 	const QString & workingPath, const QString & fileName, QStringList & linksToParse,
 	QSharedPointer< Document > doc, const QStringList & fr )
@@ -1854,8 +1862,10 @@ parseLine( QStringList::iterator it, qsizetype & line, qsizetype pos, PreparsedD
 	if( ns > 0 )
 		*it = it->right( it->length() - ns );
 
+	const auto isHorLine = isHorizontalLine( *it );
+
 	// Will skip horizontal rules, for now at least...
-	if( ns > 3 || !isHorizontalLine( *it ) )
+	if( ns > 3 || !isHorLine )
 	{
 		QString text;
 
@@ -1996,8 +2006,10 @@ parseLine( QStringList::iterator it, qsizetype & line, qsizetype pos, PreparsedD
 		if( hasBreakLine )
 			data.lexems.append( Lex::BreakLine );
 	}
+	else if( isHorLine )
+		return { ++it, true };
 
-	return ++it;
+	return { ++it, false };
 }; // parseit
 
 // Set flags for all nested items.
@@ -2059,23 +2071,9 @@ setFlags( Lex lex, QVector< Lex >::iterator it, PreparsedData & data )
 	}
 }; // setFlags
 
-} /* namespace anonymous */
-
-void
-Parser::parseFormattedTextLinksImages( QStringList & fr, QSharedPointer< Block > parent,
-	QSharedPointer< Document > doc, QStringList & linksToParse, const QString & workingPath,
-	const QString & fileName )
-
+inline void
+addItemsToParent( PreparsedData & data, QSharedPointer< Block > parent )
 {
-	PreparsedData data;
-
-	qsizetype pos = 0;
-	qsizetype line = 0;
-
-	// Real parsing.
-	for( auto it = fr.begin(), last = fr.end(); it != last; )
-		it = parseLine( it, line, pos, data, workingPath, fileName, linksToParse, doc, fr );
-
 	bool addExtraSpace = false;
 	auto tPos = data.txt.size();
 
@@ -2178,6 +2176,44 @@ Parser::parseFormattedTextLinksImages( QStringList & fr, QSharedPointer< Block >
 	}
 }
 
+} /* namespace anonymous */
+
+bool
+Parser::parseFormattedTextLinksImages( QStringList & fr, QSharedPointer< Block > parent,
+	QSharedPointer< Document > doc, QStringList & linksToParse, const QString & workingPath,
+	const QString & fileName )
+
+{
+	if( fr.isEmpty() )
+		return true;
+
+	PreparsedData data;
+
+	qsizetype pos = 0;
+	qsizetype line = 0;
+	bool breakParagraph = false;
+
+	// Real parsing.
+	for( auto it = fr.begin(), last = fr.end(); it != last; )
+	{
+		std::tie( it, breakParagraph ) =
+			parseLine( it, line, pos, data, workingPath, fileName, linksToParse, doc, fr );
+
+		if( breakParagraph )
+		{
+			addItemsToParent( data, parent );
+
+			fr.erase( fr.begin(), ( it == last ? it : std::next( it ) ) );
+
+			return false;
+		}
+	}
+
+	addItemsToParent( data, parent );
+
+	return true;
+}
+
 void
 Parser::parseBlockquote( QStringList & fr, QSharedPointer< Block > parent,
 	QSharedPointer< Document > doc, QStringList & linksToParse,
@@ -2206,13 +2242,7 @@ namespace /* anonymous */ {
 inline bool
 isListItemAndNotNested( const QString & s )
 {
-	qsizetype p = 0;
-
-	for( ; p < s.size(); ++p )
-	{
-		if( !s[ p ].isSpace() )
-			break;
-	}
+	qsizetype p = skipSpaces( 0, s );
 
 	if( p > 0 )
 		return false;
@@ -2244,7 +2274,7 @@ Parser::parseList( QStringList & fr, QSharedPointer< Block > parent,
 
 	if( indent > -1 )
 	{
-		QSharedPointer< List > list( new List() );
+		QSharedPointer< List > list( new List );
 
 		QStringList listItem;
 		auto it = fr.begin();
@@ -2262,13 +2292,24 @@ Parser::parseList( QStringList & fr, QSharedPointer< Block > parent,
 
 			*it = it->right( it->length() - s );
 
-			if( isListItemAndNotNested( *it ) )
+			if( isListItemAndNotNested( *it ) && !listItem.isEmpty() )
 			{
 				parseListItem( listItem, list, doc, linksToParse, workingPath, fileName );
 				listItem.clear();
 			}
 
-			listItem.append( *it );
+			if( isHorizontalLine( *it ) && !listItem.isEmpty() )
+			{
+				parseListItem( listItem, list, doc, linksToParse, workingPath, fileName );
+				listItem.clear();
+
+				if( !list->isEmpty() )
+					parent->appendItem( list );
+
+				list.reset( new List );
+			}
+			else
+				listItem.append( *it );
 		}
 
 		if( !listItem.isEmpty() )
