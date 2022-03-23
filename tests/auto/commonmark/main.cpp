@@ -905,7 +905,7 @@ TEST_CASE( "060" )
 	}
 }
 
-TEST_CASE( "061" )
+TEST_CASE( "061" ) // Not strict to CommonMark as I don't add horizontal lines to the document.
 {
 	const auto doc = load_test( 61 );
 
