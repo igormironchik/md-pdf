@@ -2292,12 +2292,6 @@ Parser::parseList( QStringList & fr, QSharedPointer< Block > parent,
 
 			*it = it->right( it->length() - s );
 
-			if( isListItemAndNotNested( *it ) && !listItem.isEmpty() )
-			{
-				parseListItem( listItem, list, doc, linksToParse, workingPath, fileName );
-				listItem.clear();
-			}
-
 			if( isHorizontalLine( *it ) && !listItem.isEmpty() )
 			{
 				parseListItem( listItem, list, doc, linksToParse, workingPath, fileName );
@@ -2307,9 +2301,16 @@ Parser::parseList( QStringList & fr, QSharedPointer< Block > parent,
 					parent->appendItem( list );
 
 				list.reset( new List );
+
+				continue;
 			}
-			else
-				listItem.append( *it );
+			else if( isListItemAndNotNested( *it ) && !listItem.isEmpty() )
+			{
+				parseListItem( listItem, list, doc, linksToParse, workingPath, fileName );
+				listItem.clear();
+			}
+
+			listItem.append( *it );
 		}
 
 		if( !listItem.isEmpty() )
