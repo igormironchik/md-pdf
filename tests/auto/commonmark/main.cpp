@@ -1172,3 +1172,24 @@ TEST_CASE( "067" ) // Not strict to CommonMark as I add line break too...
 		REQUIRE( p->items().at( 1 )->type() == MD::ItemType::LineBreak );
 	}
 }
+
+TEST_CASE( "068" )
+{
+	const auto doc = load_test( 68 );
+
+	REQUIRE( doc->isEmpty() == false );
+	REQUIRE( doc->items().size() == 4 );
+
+	for( qsizetype i = 1; i < 4; ++i )
+	{
+		REQUIRE( doc->items().at( i )->type() == MD::ItemType::Heading );
+		auto h = static_cast< MD::Heading* > ( doc->items().at( i ).data() );
+		REQUIRE( h->level() == 4 - i );
+		REQUIRE( !h->text().isNull() );
+		auto p = h->text().data();
+		REQUIRE( p->items().size() == 1 );
+		REQUIRE( p->items().at( 0 )->type() == MD::ItemType::Text );
+		auto t = static_cast< MD::Text* > ( p->items().at( 0 ).data() );
+		REQUIRE( t->text() == QStringLiteral( "foo" ) );
+	}
+}
