@@ -85,62 +85,56 @@ private slots:
 	void testComplex2();
 }; // class TestRender
 
-namespace /* anonymous */ {
-
 //! Prepare test data or do actual test?
 static const bool c_printData = false;
 
-void
-testRendering( const QString & fileName, const QString & suffix,
-	const QVector< DrawPrimitive > & data, double textFontSize, double codeFontSize )
-{
-	try {
-		MD::Parser parser;
-
-		auto doc = parser.parse( c_folder + QStringLiteral( "/../../manual/" ) + fileName, true );
-
-		RenderOpts opts;
-		opts.m_borderColor = QColor( 81, 81, 81 );
-		opts.m_bottom = 50.0;
-		opts.m_codeBackground = QColor( 222, 222, 222 );
-		opts.m_codeColor = QColor( 0, 0, 0 );
-		opts.m_codeFont = QStringLiteral( "Courier New" );
-		opts.m_codeFontSize = codeFontSize;
-		opts.m_commentColor = QColor( 0, 128, 0 );
-		opts.m_keywordColor = QColor( 128, 128, 0 );
-		opts.m_left = 50.0;
-		opts.m_linkColor = QColor( 33, 122, 255 );
-		opts.m_right = 50.0;
-		opts.m_textFont = QStringLiteral( "Droid Serif" );
-		opts.m_textFontSize = textFontSize;
-		opts.m_top = 50.0;
-		opts.m_dpi = 150;
-
-		opts.testData = data;
-		opts.printDrawings = c_printData;
-		opts.testDataFileName = c_folder + QStringLiteral( "/" ) + fileName + suffix +
-			QStringLiteral( ".data" );
-
-		auto * render = new PdfRenderer;
-
-		QSignalSpy spy( render, &PdfRenderer::done );
-
-		render->render( QStringLiteral( "./" ) + fileName + suffix + QStringLiteral( ".pdf" ),
-			doc, opts );
-
-		int i = 0;
-
-		while( !spy.count() && i++ < 150 )
-			QTest::qWait( 250 );
-
-		if( !spy.count() )
-			QFAIL( "Render didn't send done() signal. Test aborted." );
-	}
-	catch( const MD::ParserException & )
+struct TestRendering {
+	static void
+	testRendering( const QString & fileName, const QString & suffix,
+		const QVector< DrawPrimitive > & data, double textFontSize, double codeFontSize )
 	{
-		QFAIL( "Parsing of Markdown failed. Test aborted." );
+		try {
+			MD::Parser parser;
+
+			auto doc = parser.parse( c_folder + QStringLiteral( "/../../manual/" ) + fileName, true );
+
+			RenderOpts opts;
+			opts.m_borderColor = QColor( 81, 81, 81 );
+			opts.m_bottom = 50.0;
+			opts.m_codeBackground = QColor( 222, 222, 222 );
+			opts.m_codeColor = QColor( 0, 0, 0 );
+			opts.m_codeFont = QStringLiteral( "Courier New" );
+			opts.m_codeFontSize = codeFontSize;
+			opts.m_commentColor = QColor( 0, 128, 0 );
+			opts.m_keywordColor = QColor( 128, 128, 0 );
+			opts.m_left = 50.0;
+			opts.m_linkColor = QColor( 33, 122, 255 );
+			opts.m_right = 50.0;
+			opts.m_textFont = QStringLiteral( "Droid Serif" );
+			opts.m_textFontSize = textFontSize;
+			opts.m_top = 50.0;
+			opts.m_dpi = 150;
+
+			opts.testData = data;
+			opts.printDrawings = c_printData;
+			opts.testDataFileName = c_folder + QStringLiteral( "/" ) + fileName + suffix +
+				QStringLiteral( ".data" );
+
+			PdfRenderer render;
+
+			render.render( QStringLiteral( "./" ) + fileName + suffix + QStringLiteral( ".pdf" ),
+				doc, opts );
+			render.renderImpl();
+
+			if( render.isError() )
+				QFAIL( "Rendering of Markdown failed. Test aborted." );
+		}
+		catch( const MD::ParserException & )
+		{
+			QFAIL( "Parsing of Markdown failed. Test aborted." );
+		}
 	}
-}
+};
 
 DrawPrimitive::Type
 toType( const QString & t )
@@ -241,10 +235,8 @@ doTest( const QString & fileName, const QString & suffix,
 			QFAIL( "Failed to load test data." );
 	}
 
-	testRendering( fileName, suffix, data, textFontSize, codeFontSize );
+	TestRendering::testRendering( fileName, suffix, data, textFontSize, codeFontSize );
 }
-
-} /* namespace anonymous */
 
 void
 TestRender::testFootnotes()

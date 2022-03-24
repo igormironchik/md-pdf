@@ -144,7 +144,7 @@ public:
 	~Renderer() override = default;
 
 	virtual void render( const QString & fileName, QSharedPointer< MD::Document > doc,
-		const RenderOpts & opts ) = 0;
+		const RenderOpts & opts, bool testing = false ) = 0;
 	virtual void clean() = 0;
 }; // class Renderer
 
@@ -287,12 +287,16 @@ public:
 	//! Convert PdfString to QString.
 	static QString createQString( const PdfString & str );
 
+#ifdef MD_PDF_TESTING
+	bool isError() const;
+#endif
+
 public slots:
 	//! Render document. \note Document can be changed during rendering.
 	//! Don't reuse the same document twice.
 	//! Renderer will delete himself on job finish.
 	void render( const QString & fileName, QSharedPointer< MD::Document > doc,
-		const RenderOpts & opts ) override;
+		const RenderOpts & opts, bool testing = false ) override;
 	//! Terminate rendering.
 	void terminate();
 
@@ -305,6 +309,9 @@ private slots:
 protected:
 	friend struct CellItem;
 	friend struct CellData;
+#ifdef MD_PDF_TESTING
+	friend struct TestRendering;
+#endif
 
 	//! Create font.
 	PdfFont * createFont( const QString & name, bool bold, bool italic, float size,
@@ -582,6 +589,9 @@ private:
 	int m_footnoteNum;
 	//! Footnotes to draw.
 	QVector< QSharedPointer< MD::Footnote > > m_footnotes;
+#ifdef MD_PDF_TESTING
+	bool m_isError;
+#endif
 }; // class Renderer
 
 

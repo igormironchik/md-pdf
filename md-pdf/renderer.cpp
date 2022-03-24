@@ -520,6 +520,9 @@ PdfRenderer::CellData::heightToWidth( double lineHeight, double spaceWidth, floa
 PdfRenderer::PdfRenderer()
 	:	m_terminate( false )
 	,	m_footnoteNum( 1 )
+#ifdef MD_PDF_TESTING
+	,	m_isError( false )
+#endif
 {
 	connect( this, &PdfRenderer::start, this, &PdfRenderer::renderImpl,
 		Qt::QueuedConnection );
@@ -527,13 +530,14 @@ PdfRenderer::PdfRenderer()
 
 void
 PdfRenderer::render( const QString & fileName, QSharedPointer< MD::Document > doc,
-	const RenderOpts & opts )
+	const RenderOpts & opts, bool testing )
 {
 	m_fileName = fileName;
 	m_doc = doc;
 	m_opts = opts;
 
-	emit start();
+	if( !testing )
+		emit start();
 }
 
 void
@@ -547,6 +551,14 @@ PdfRenderer::terminate()
 	QFAIL( "Test terminated." );
 #endif
 }
+
+#ifdef MD_PDF_TESTING
+bool
+PdfRenderer::isError() const
+{
+	return m_isError;
+}
+#endif
 
 void
 PdfRenderer::renderImpl()
@@ -721,6 +733,9 @@ PdfRenderer::renderImpl()
 			{
 			}
 
+#ifdef MD_PDF_TESTING
+			m_isError = true;
+#endif
 			emit error( QString::fromLatin1( PdfError::ErrorMessage( e.GetError() ) ) );
 		}
 		catch( const PdfRendererError & e )
@@ -732,6 +747,10 @@ PdfRenderer::renderImpl()
 			catch( ... )
 			{
 			}
+
+#ifdef MD_PDF_TESTING
+			m_isError = true;
+#endif
 
 			emit error( e.what() );
 		}
@@ -747,6 +766,9 @@ PdfRenderer::renderImpl()
 	}
 	catch( const PdfError & e )
 	{
+#ifdef MD_PDF_TESTING
+		m_isError = true;
+#endif
 		emit error( QString::fromLatin1( PdfError::ErrorMessage( e.GetError() ) ) );
 	}
 
@@ -951,10 +973,24 @@ PdfRenderer::drawHeading( PdfAuxData & pdfData, const RenderOpts & renderOpts,
 	double nextItemMinHeight, CalcHeightOpt heightCalcOpt, float scale )
 {
 	if( item && !item->text().isNull() )
-		return drawParagraph( pdfData, renderOpts, item->text().data(), doc,
+	{
+		const auto rects = drawParagraph( pdfData, renderOpts, item->text().data(), doc,
 			offset, true, heightCalcOpt,
 			scale * ( 1.0 + ( 7 - item->level() ) * 0.25 ),
 			pdfData.drawFootnotes );
+
+		if( heightCalcOpt == CalcHeightOpt::Unknown && !item->label().isEmpty() &&
+				!rects.isEmpty() )
+		{
+			m_dests.insert( item->label(),
+				PdfDestination( pdfData.doc->GetPage( rects.front().pageIdx ),
+					PdfRect( pdfData.coords.margins.left + offset, rects.front().y,
+						 pdfData.coords.pageWidth - pdfData.coords.margins.left -
+						 pdfData.coords.margins.right - offset, rects.front().height ) ) );
+		}
+
+		return rects;
+	}
 	else
 		return {};
 }
