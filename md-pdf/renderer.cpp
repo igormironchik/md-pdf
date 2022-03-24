@@ -758,6 +758,9 @@ PdfRenderer::renderImpl()
 #ifdef MD_PDF_TESTING
 		if( m_opts.printDrawings )
 			pdfData.drawingsFile->close();
+
+		if( pdfData.testPos != pdfData.testData.size() )
+			m_isError = true;
 #endif // MD_PDF_TESTING
 	}
 
