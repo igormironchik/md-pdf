@@ -897,17 +897,22 @@ Parser::parseParagraph( QStringList & fr, QSharedPointer< Block > parent,
 	// Check for alternative syntax of H1 and H2 headings.
 	if( fr.size() >= 2 )
 	{
-		if( isH1( fr[ 1 ] ) )
-		{
-			ph( QLatin1String( "# " ) );
+		const auto ns = posOfFirstNonSpace( fr[ 0 ] );
 
-			return;
-		}
-		else if( isH2( fr[ 1 ] ) )
+		if( ns > 3 || !isHorizontalLine( QStringView( fr[ 0 ] ).sliced( ( ns > -1 ? ns : 0 ) ) ) )
 		{
-			ph( QLatin1String( "## " ) );
+			if( isH1( fr[ 1 ] ) )
+			{
+				ph( QLatin1String( "# " ) );
 
-			return;
+				return;
+			}
+			else if( isH2( fr[ 1 ] ) )
+			{
+				ph( QLatin1String( "## " ) );
+
+				return;
+			}
 		}
 	}
 

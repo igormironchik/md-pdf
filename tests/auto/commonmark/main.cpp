@@ -602,6 +602,18 @@ TEST_CASE( "042" )
 	}
 }
 
+TEST_CASE( "043" )
+{
+	const auto doc = load_test( 43 );
+
+	REQUIRE( doc->isEmpty() == false );
+	REQUIRE( doc->items().size() == 4 );
+
+	REQUIRE( doc->items().at( 1 )->type() == MD::ItemType::HorizontalLine );
+	REQUIRE( doc->items().at( 2 )->type() == MD::ItemType::HorizontalLine );
+	REQUIRE( doc->items().at( 3 )->type() == MD::ItemType::HorizontalLine );
+}
+
 TEST_CASE( "044" )
 {
 	const auto doc = load_test( 44 );
@@ -673,6 +685,18 @@ TEST_CASE( "046" )
 	}
 }
 
+TEST_CASE( "047" )
+{
+	const auto doc = load_test( 47 );
+
+	REQUIRE( doc->isEmpty() == false );
+	REQUIRE( doc->items().size() == 4 );
+
+	REQUIRE( doc->items().at( 1 )->type() == MD::ItemType::HorizontalLine );
+	REQUIRE( doc->items().at( 2 )->type() == MD::ItemType::HorizontalLine );
+	REQUIRE( doc->items().at( 3 )->type() == MD::ItemType::HorizontalLine );
+}
+
 TEST_CASE( "048" )
 {
 	const auto doc = load_test( 48 );
@@ -715,6 +739,56 @@ TEST_CASE( "049" )
 		REQUIRE( t->opts() == MD::TextWithoutFormat );
 		REQUIRE( t->text() == QStringLiteral( "***" ) );
 	}
+}
+
+TEST_CASE( "050" )
+{
+	const auto doc = load_test( 50 );
+
+	REQUIRE( doc->isEmpty() == false );
+	REQUIRE( doc->items().size() == 2 );
+
+	REQUIRE( doc->items().at( 1 )->type() == MD::ItemType::HorizontalLine );
+}
+
+TEST_CASE( "051" )
+{
+	const auto doc = load_test( 51 );
+
+	REQUIRE( doc->isEmpty() == false );
+	REQUIRE( doc->items().size() == 2 );
+
+	REQUIRE( doc->items().at( 1 )->type() == MD::ItemType::HorizontalLine );
+}
+
+TEST_CASE( "052" )
+{
+	const auto doc = load_test( 52 );
+
+	REQUIRE( doc->isEmpty() == false );
+	REQUIRE( doc->items().size() == 2 );
+
+	REQUIRE( doc->items().at( 1 )->type() == MD::ItemType::HorizontalLine );
+}
+
+TEST_CASE( "053" )
+{
+	const auto doc = load_test( 53 );
+
+	REQUIRE( doc->isEmpty() == false );
+	REQUIRE( doc->items().size() == 2 );
+
+	REQUIRE( doc->items().at( 1 )->type() == MD::ItemType::HorizontalLine );
+}
+
+TEST_CASE( "054" )
+{
+	const auto doc = load_test( 54 );
+
+	REQUIRE( doc->isEmpty() == false );
+	REQUIRE( doc->items().size() == 2 );
+
+	REQUIRE( doc->items().at( 1 )->type() == MD::ItemType::HorizontalLine );
 }
 
 TEST_CASE( "055" ) // Not strict to CommonMark.
