@@ -268,7 +268,11 @@ int text( MD_TEXTTYPE type, const MD_CHAR * data, MD_SIZE size, void * doc )
 		case MD::ItemType::Heading :
 		{
 			auto * h = static_cast< MD::Heading* > ( d->elems.back() );
-			h->setText( txt );
+			QSharedPointer< MD::Paragraph > p( new MD::Paragraph );
+			QSharedPointer< MD::Text > t( new MD::Text );
+			t->setText( txt );
+			p->appendItem( t );
+			h->setText( p );
 		}
 			break;
 
