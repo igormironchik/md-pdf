@@ -351,7 +351,7 @@ Parser::whatIsTheLine( QString & str, bool inList, qsizetype * indent, bool calc
 	}
 	else if( s.isEmpty() )
 		return BlockType::Unknown;
-	else if( s.startsWith( c_35 ) )
+	else if( s.startsWith( c_35 ) && first < 4 )
 	{
 		qsizetype c = 0;
 
