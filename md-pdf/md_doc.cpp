@@ -92,14 +92,14 @@ Heading::type() const
 	return ItemType::Heading;
 }
 
-const QString &
+QSharedPointer< Paragraph >
 Heading::text() const
 {
 	return m_text;
 }
 
 void
-Heading::setText( const QString & t )
+Heading::setText( QSharedPointer< Paragraph > t )
 {
 	m_text = t;
 }

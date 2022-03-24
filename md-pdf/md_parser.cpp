@@ -614,6 +614,36 @@ findAndRemoveHeaderLabel( QString & s )
 	return QString();
 }
 
+inline QString
+paragraphToLabel( Paragraph * p )
+{
+	QString l;
+
+	if( !p )
+		return l;
+
+	for( auto it = p->items().cbegin(), last = p->items().cend(); it != last; ++it )
+	{
+		if( (*it)->type() == ItemType::Text )
+		{
+			if( !l.isEmpty() )
+				l.append( QStringLiteral( "-" ) );
+
+			auto t = static_cast< Text* > ( it->data() );
+
+			for( const auto & c : t->text().simplified() )
+			{
+				if( c.isLetter() || c.isDigit() )
+					l.append( c.toLower() );
+				else if( c.isSpace() )
+					l.append( QStringLiteral( "-" ) );
+			}
+		}
+	}
+
+	return l;
+}
+
 } /* namespace anonymous */
 
 void
@@ -663,47 +693,22 @@ Parser::parseHeading( QStringList & fr, QSharedPointer< Block > parent,
 
 		if( !p->isEmpty() )
 		{
-			QString text;
+			h->setText( p );
 
-			for( auto it = p->items().cbegin(), last = p->items().cend(); it != last; ++it )
+			if( h->isLabeled() )
+				doc->insertLabeledHeading( h->label(), h );
+			else
 			{
-				if( (*it)->type() == ItemType::Text )
-				{
-					auto t = static_cast< Text* > ( it->data() );
+				QString label = QStringLiteral( "#" ) + paragraphToLabel( p.data() );
 
-					text.append( t->text() + c_32 );
-				}
+				label += QStringLiteral( "/" ) + workingPath + fileName;
+
+				h->setLabel( label );
+
+				doc->insertLabeledHeading( label, h );
 			}
 
-			text = text.simplified();
-
-			if( !text.isEmpty() )
-			{
-				h->setText( text );
-
-				if( h->isLabeled() )
-					doc->insertLabeledHeading( h->label(), h );
-				else
-				{
-					QString label = QStringLiteral( "#" );
-
-					for( const auto & c : qAsConst( text ) )
-					{
-						if( c.isLetter() || c.isDigit() )
-							label.append( c.toLower() );
-						else if( c.isSpace() )
-							label.append( QStringLiteral( "-" ) );
-					}
-
-					label += QStringLiteral( "/" ) + workingPath + fileName;
-
-					h->setLabel( label );
-
-					doc->insertLabeledHeading( label, h );
-				}
-
-				parent->appendItem( h );
-			}
+			parent->appendItem( h );
 		}
 	}
 }

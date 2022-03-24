@@ -2443,8 +2443,15 @@ TEST_CASE( "046" )
 
 			auto h = static_cast< MD::Heading* > ( doc->items().at( idx ).data() );
 
-			REQUIRE( h->level() == j );
-			REQUIRE( h->text() == QString::fromLatin1( "Heading " ) + QString::number( j ) );
+			{
+				REQUIRE( h->level() == j );
+				REQUIRE( !h->text().isNull() );
+				auto p = h->text().data();
+				REQUIRE( p->items().size() == 1 );
+				REQUIRE( p->items().at( 0 )->type() == MD::ItemType::Text );
+				auto t = static_cast< MD::Text* > ( p->items().at( 0 ).data() );
+				REQUIRE( t->text() == QString::fromLatin1( "Heading " ) + QString::number( j ) );
+			}
 
 			++idx;
 
@@ -2466,7 +2473,12 @@ TEST_CASE( "046" )
 	auto h = static_cast< MD::Heading* > ( doc->items().at( idx ).data() );
 
 	REQUIRE( h->level() == 3 );
-	REQUIRE( h->text() == QStringLiteral( "Heading 3" ) );
+	REQUIRE( !h->text().isNull() );
+	auto p = h->text().data();
+	REQUIRE( p->items().size() == 1 );
+	REQUIRE( p->items().at( 0 )->type() == MD::ItemType::Text );
+	auto t = static_cast< MD::Text* > ( p->items().at( 0 ).data() );
+	REQUIRE( t->text() == QStringLiteral( "Heading 3" ) );
 	REQUIRE( h->isLabeled() );
 
 	const QString wd = QDir().absolutePath() + QStringLiteral( "/data/" );
@@ -2570,20 +2582,34 @@ TEST_CASE( "048" )
 	REQUIRE( doc->items().size() == 4 );
 	REQUIRE( doc->items().at( 0 )->type() == MD::ItemType::Anchor );
 
-	REQUIRE( doc->items().at( 1 )->type() == MD::ItemType::Heading );
-	REQUIRE( static_cast< MD::Heading* > ( doc->items().at( 1 ).data() )->text() ==
-		QStringLiteral( "Heading" ) );
+	{
+		REQUIRE( doc->items().at( 1 )->type() == MD::ItemType::Heading );
+		auto h = static_cast< MD::Heading* > ( doc->items().at( 1 ).data() );
+		REQUIRE( !h->text().isNull() );
+		auto p = h->text().data();
+		REQUIRE( p->items().size() == 1 );
+		REQUIRE( p->items().at( 0 )->type() == MD::ItemType::Text );
+		auto t = static_cast< MD::Text* > ( p->items().at( 0 ).data() );
+		REQUIRE( t->text() == QStringLiteral( "Heading" ) );
+	}
 
-	REQUIRE( doc->items().at( 2 )->type() == MD::ItemType::Paragraph );
-	auto * p = static_cast< MD::Paragraph* > ( doc->items().at( 2 ).data() );
-	REQUIRE( p->items().size() == 1 );
-	REQUIRE( p->items().at( 0 )->type() == MD::ItemType::Text );
-	REQUIRE( static_cast< MD::Text* > ( p->items().at( 0 ).data() )->text() ==
-		QStringLiteral( "Paragraph" ) );
+	{
+		REQUIRE( doc->items().at( 2 )->type() == MD::ItemType::Paragraph );
+		auto * p = static_cast< MD::Paragraph* > ( doc->items().at( 2 ).data() );
+		REQUIRE( p->items().size() == 1 );
+		REQUIRE( p->items().at( 0 )->type() == MD::ItemType::Text );
+		REQUIRE( static_cast< MD::Text* > ( p->items().at( 0 ).data() )->text() ==
+			QStringLiteral( "Paragraph" ) );
+	}
 
 	REQUIRE( doc->items().at( 3 )->type() == MD::ItemType::Heading );
-	REQUIRE( static_cast< MD::Heading* > ( doc->items().at( 3 ).data() )->text() ==
-		QStringLiteral( "Heading" ) );
+	auto h = static_cast< MD::Heading* > ( doc->items().at( 1 ).data() );
+	REQUIRE( !h->text().isNull() );
+	auto p = h->text().data();
+	REQUIRE( p->items().size() == 1 );
+	REQUIRE( p->items().at( 0 )->type() == MD::ItemType::Text );
+	auto t = static_cast< MD::Text* > ( p->items().at( 0 ).data() );
+	REQUIRE( t->text() == QStringLiteral( "Heading" ) );
 }
 
 TEST_CASE( "049" )
@@ -2598,7 +2624,12 @@ TEST_CASE( "049" )
 	{
 		REQUIRE( doc->items().at( i )->type() == MD::ItemType::Heading );
 		auto * h = static_cast< MD::Heading* > ( doc->items().at( i ).data() );
-		REQUIRE( h->text() == QStringLiteral( "Heading 1" ) );
+		REQUIRE( !h->text().isNull() );
+		auto p = h->text().data();
+		REQUIRE( p->items().size() == 1 );
+		REQUIRE( p->items().at( 0 )->type() == MD::ItemType::Text );
+		auto t = static_cast< MD::Text* > ( p->items().at( 0 ).data() );
+		REQUIRE( t->text() == QStringLiteral( "Heading 1" ) );
 		REQUIRE( h->level() == 1 );
 	}
 

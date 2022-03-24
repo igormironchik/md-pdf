@@ -165,39 +165,6 @@ private:
 }; // class Anchor
 
 
-//
-// Heading
-//
-
-//! Heading.
-class Heading final
-	:	public Item
-{
-public:
-	Heading() = default;
-	~Heading() override = default;
-
-	ItemType type() const override;
-
-	const QString & text() const;
-	void setText( const QString & t );
-
-	int level() const;
-	void setLevel( int l );
-
-	bool isLabeled() const;
-	const QString & label() const;
-	void setLabel( const QString & l );
-
-private:
-	QString m_text;
-	int m_level;
-	QString m_label;
-
-	Q_DISABLE_COPY( Heading )
-}; // class Heading
-
-
 //! Text option.
 enum TextOption {
 	//! No format.
@@ -315,6 +282,39 @@ public:
 private:
 	Q_DISABLE_COPY( Paragraph )
 }; // class Paragraph
+
+
+//
+// Heading
+//
+
+//! Heading.
+class Heading final
+	:	public Item
+{
+public:
+	Heading() = default;
+	~Heading() override = default;
+
+	ItemType type() const override;
+
+	QSharedPointer< Paragraph > text() const;
+	void setText( QSharedPointer< Paragraph > t );
+
+	int level() const;
+	void setLevel( int l );
+
+	bool isLabeled() const;
+	const QString & label() const;
+	void setLabel( const QString & l );
+
+private:
+	QSharedPointer< Paragraph > m_text;
+	int m_level;
+	QString m_label;
+
+	Q_DISABLE_COPY( Heading )
+}; // class Heading
 
 
 //
