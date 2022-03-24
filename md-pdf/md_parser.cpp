@@ -921,6 +921,8 @@ Parser::parseParagraph( QStringList & fr, QSharedPointer< Block > parent,
 
 			p.reset( new Paragraph );
 		}
+
+		parent->appendItem( QSharedPointer< Item > ( new HorizontalLine ) );
 	}
 
 	if( !p->isEmpty() )
@@ -2304,6 +2306,8 @@ Parser::parseList( QStringList & fr, QSharedPointer< Block > parent,
 					parent->appendItem( list );
 
 				list.reset( new List );
+
+				doc->appendItem( QSharedPointer< Item > ( new HorizontalLine ) );
 
 				continue;
 			}

@@ -79,7 +79,9 @@ enum class ItemType {
 	//! Page break.
 	PageBreak,
 	//! Anchor.
-	Anchor
+	Anchor,
+	//! Horizontal line.
+	HorizontalLine
 }; // enum class ItemType
 
 
@@ -118,6 +120,25 @@ public:
 
 private:
 	Q_DISABLE_COPY( PageBreak )
+}; // class PageBreak
+
+
+//
+// HorizontalLine
+//
+
+//! Horizontal line.
+class HorizontalLine final
+	:	public Item
+{
+public:
+	HorizontalLine() = default;
+	~HorizontalLine() override = default;
+
+	ItemType type() const override;
+
+private:
+	Q_DISABLE_COPY( HorizontalLine )
 }; // class PageBreak
 
 

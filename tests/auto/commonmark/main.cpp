@@ -276,7 +276,9 @@ TEST_CASE( "011" )
 	const auto doc = load_test( 11 );
 
 	REQUIRE( doc->isEmpty() == false );
-	REQUIRE( doc->items().size() == 1 );
+	REQUIRE( doc->items().size() == 2 );
+
+	REQUIRE( doc->items().at( 1 )->type() == MD::ItemType::HorizontalLine );
 }
 
 TEST_CASE( "012" )
@@ -775,7 +777,7 @@ TEST_CASE( "057" )
 	const auto doc = load_test( 57 );
 
 	REQUIRE( doc->isEmpty() == false );
-	REQUIRE( doc->items().size() == 3 );
+	REQUIRE( doc->items().size() == 4 );
 
 	{
 		REQUIRE( doc->items().at( 1 )->type() == MD::ItemType::List );
@@ -793,9 +795,11 @@ TEST_CASE( "057" )
 		REQUIRE( t->text() == QStringLiteral( "foo" ) );
 	}
 
+	REQUIRE( doc->items().at( 2 )->type() == MD::ItemType::HorizontalLine );
+
 	{
-		REQUIRE( doc->items().at( 2 )->type() == MD::ItemType::List );
-		auto l = static_cast< MD::List* > ( doc->items().at( 2 ).data() );
+		REQUIRE( doc->items().at( 3 )->type() == MD::ItemType::List );
+		auto l = static_cast< MD::List* > ( doc->items().at( 3 ).data() );
 		REQUIRE( l->items().size() == 1 );
 		REQUIRE( l->items().at( 0 )->type() == MD::ItemType::ListItem );
 		auto li = static_cast< MD::ListItem* > ( l->items().at( 0 ).data() );
@@ -815,7 +819,7 @@ TEST_CASE( "058" )
 	const auto doc = load_test( 58 );
 
 	REQUIRE( doc->isEmpty() == false );
-	REQUIRE( doc->items().size() == 3 );
+	REQUIRE( doc->items().size() == 4 );
 
 	{
 		REQUIRE( doc->items().at( 1 )->type() == MD::ItemType::Paragraph );
@@ -827,9 +831,11 @@ TEST_CASE( "058" )
 		REQUIRE( t->text() == QStringLiteral( "Foo" ) );
 	}
 
+	REQUIRE( doc->items().at( 2 )->type() == MD::ItemType::HorizontalLine );
+
 	{
-		REQUIRE( doc->items().at( 2 )->type() == MD::ItemType::Paragraph );
-		auto p = static_cast< MD::Paragraph* > ( doc->items().at( 2 ).data() );
+		REQUIRE( doc->items().at( 3 )->type() == MD::ItemType::Paragraph );
+		auto p = static_cast< MD::Paragraph* > ( doc->items().at( 3 ).data() );
 		REQUIRE( p->items().size() == 1 );
 		REQUIRE( p->items().at( 0 )->type() == MD::ItemType::Text );
 		auto t = static_cast< MD::Text* > ( p->items().at( 0 ).data() );
@@ -868,7 +874,7 @@ TEST_CASE( "060" )
 	const auto doc = load_test( 60 );
 
 	REQUIRE( doc->isEmpty() == false );
-	REQUIRE( doc->items().size() == 3 );
+	REQUIRE( doc->items().size() == 4 );
 
 	{
 		REQUIRE( doc->items().at( 1 )->type() == MD::ItemType::List );
@@ -887,9 +893,11 @@ TEST_CASE( "060" )
 		REQUIRE( t->text() == QStringLiteral( "Foo" ) );
 	}
 
+	REQUIRE( doc->items().at( 2 )->type() == MD::ItemType::HorizontalLine );
+
 	{
-		REQUIRE( doc->items().at( 2 )->type() == MD::ItemType::List );
-		auto l = static_cast< MD::List* > ( doc->items().at( 2 ).data() );
+		REQUIRE( doc->items().at( 3 )->type() == MD::ItemType::List );
+		auto l = static_cast< MD::List* > ( doc->items().at( 3 ).data() );
 		REQUIRE( l->items().size() == 1 );
 		REQUIRE( l->items().at( 0 )->type() == MD::ItemType::ListItem );
 		auto li = static_cast< MD::ListItem* > ( l->items().at( 0 ).data() );
@@ -905,7 +913,7 @@ TEST_CASE( "060" )
 	}
 }
 
-TEST_CASE( "061" ) // Not strict to CommonMark as I don't add horizontal lines to the document.
+TEST_CASE( "061" )
 {
 	const auto doc = load_test( 61 );
 
@@ -914,7 +922,7 @@ TEST_CASE( "061" ) // Not strict to CommonMark as I don't add horizontal lines t
 
 	REQUIRE( doc->items().at( 1 )->type() == MD::ItemType::List );
 	auto l = static_cast< MD::List* > ( doc->items().at( 1 ).data() );
-	REQUIRE( l->items().size() == 1 );
+	REQUIRE( l->items().size() == 2 );
 
 	{
 		REQUIRE( l->items().at( 0 )->type() == MD::ItemType::ListItem );
@@ -928,5 +936,13 @@ TEST_CASE( "061" ) // Not strict to CommonMark as I don't add horizontal lines t
 		auto t = static_cast< MD::Text* > ( p->items().at( 0 ).data() );
 		REQUIRE( t->opts() == MD::TextWithoutFormat );
 		REQUIRE( t->text() == QStringLiteral( "Foo" ) );
+	}
+
+	{
+		REQUIRE( l->items().at( 1 )->type() == MD::ItemType::ListItem );
+		auto li = static_cast< MD::ListItem* > ( l->items().at( 1 ).data() );
+		REQUIRE( li->listType() == MD::ListItem::Unordered );
+		REQUIRE( li->items().size() == 1 );
+		REQUIRE( li->items().at( 0 )->type() == MD::ItemType::HorizontalLine );
 	}
 }

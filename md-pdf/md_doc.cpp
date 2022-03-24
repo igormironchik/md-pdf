@@ -48,6 +48,18 @@ PageBreak::type() const
 	return ItemType::PageBreak;
 }
 
+
+//
+// HorizontalLine
+//
+
+ItemType
+HorizontalLine::type() const
+{
+	return ItemType::HorizontalLine;
+}
+
+
 //
 // Anchor
 //
