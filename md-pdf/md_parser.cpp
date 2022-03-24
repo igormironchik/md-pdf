@@ -352,7 +352,17 @@ Parser::whatIsTheLine( QString & str, bool inList, qsizetype * indent, bool calc
 	else if( s.isEmpty() )
 		return BlockType::Unknown;
 	else if( s.startsWith( c_35 ) )
-		return BlockType::Heading;
+	{
+		qsizetype c = 0;
+
+		while( c < s.length() && s[ c ] == c_35 )
+			++c;
+
+		if( c <= 6 && c < s.length() && s[ c ].isSpace() )
+			return BlockType::Heading;
+		else
+			return BlockType::Text;
+	}
 
 	if( first < 4 && isHorizontalLine( s ) )
 		return BlockType::Text;

@@ -1020,3 +1020,35 @@ TEST_CASE( "061" )
 		REQUIRE( li->items().at( 0 )->type() == MD::ItemType::HorizontalLine );
 	}
 }
+
+TEST_CASE( "062" )
+{
+	const auto doc = load_test( 62 );
+
+	REQUIRE( doc->isEmpty() == false );
+	REQUIRE( doc->items().size() == 7 );
+
+	for( qsizetype i = 1; i < 7; ++i )
+	{
+		REQUIRE( doc->items().at( i )->type() == MD::ItemType::Heading );
+		auto h = static_cast< MD::Heading* > ( doc->items().at( i ).data() );
+		REQUIRE( h->level() == i );
+		REQUIRE( h->text() == QStringLiteral( "foo" ) );
+	}
+}
+
+TEST_CASE( "063" )
+{
+	const auto doc = load_test( 63 );
+
+	REQUIRE( doc->isEmpty() == false );
+	REQUIRE( doc->items().size() == 2 );
+
+	REQUIRE( doc->items().at( 1 )->type() == MD::ItemType::Paragraph );
+	auto p = static_cast< MD::Paragraph* > ( doc->items().at( 1 ).data() );
+	REQUIRE( p->items().size() == 1 );
+	REQUIRE( p->items().at( 0 )->type() == MD::ItemType::Text );
+	auto t = static_cast< MD::Text* > ( p->items().at( 0 ).data() );
+	REQUIRE( t->opts() == MD::TextWithoutFormat );
+	REQUIRE( t->text() == QStringLiteral( "####### foo" ) );
+}
