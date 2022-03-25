@@ -133,6 +133,7 @@ Java: 96809767 ns.
 
 # Why don't I use `md4c` for Markdown parsing?
 
-`md4c` doesn't support footnotes, that `md-pdf` renders. Ok, I don't support tasks lists,
-`LaTeX` math expressions yet. But this is because I don't need it yet. If you need something
-that is not implemented yet - just create an issue. Thanks.
+`md4c` doesn't separate footnotes from its definitions, that is needed for `md-pdf` render.
+Ok, I don't support tasks lists, `LaTeX` math expressions yet. But this is because I don't
+need it yet. If you need something that is not implemented yet - just create an issue.
+`md4c` is oriented on HTML output, whereas I need a paginated printing.
