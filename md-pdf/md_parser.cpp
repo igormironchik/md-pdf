@@ -644,6 +644,39 @@ paragraphToLabel( Paragraph * p )
 	return l;
 }
 
+inline void
+findAndRemoveClosingSequence( QString & s, qsizetype p )
+{
+	qsizetype end = -1;
+	qsizetype start = -1;
+
+	for( qsizetype i = s.length() - 1; i > p; --i )
+	{
+		if( !s[ i ].isSpace() && s[ i ] != c_35 && end == -1 )
+			return;
+
+		if( s[ i ] == c_35 )
+		{
+			if( end == -1 )
+				end = i;
+
+			if( i - 1 >= 0 )
+			{
+				if( s[ i - 1 ].isSpace() )
+				{
+					start = i;
+					break;
+				}
+				else if( s[ i - 1 ] != c_35 )
+					return;
+			}
+		}
+	}
+
+	if( start != -1 && end != -1 )
+		s.remove( start, end - start + 1 );
+}
+
 } /* namespace anonymous */
 
 void
@@ -654,7 +687,7 @@ Parser::parseHeading( QStringList & fr, QSharedPointer< Block > parent,
 	if( !fr.isEmpty() )
 	{
 		auto line = fr.first();
-		int pos = 0;
+		qsizetype pos = 0;
 		pos = skipSpaces( pos, line );
 
 		if( pos > 0 )
@@ -675,6 +708,8 @@ Parser::parseHeading( QStringList & fr, QSharedPointer< Block > parent,
 
 		const auto label = findAndRemoveHeaderLabel( fr.first() );
 
+		findAndRemoveClosingSequence( fr.first(), pos );
+
 		QSharedPointer< Heading > h( new Heading() );
 		h->setLevel( lvl );
 
@@ -685,7 +720,7 @@ Parser::parseHeading( QStringList & fr, QSharedPointer< Block > parent,
 		QSharedPointer< Paragraph > p( new Paragraph() );
 
 		QStringList tmp;
-		tmp << fr.first();
+		tmp << fr.first().simplified();
 
 		parseFormattedTextLinksImages( tmp, p, doc, linksToParse, workingPath, fileName );
 
