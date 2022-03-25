@@ -645,12 +645,12 @@ paragraphToLabel( Paragraph * p )
 }
 
 inline void
-findAndRemoveClosingSequence( QString & s, qsizetype p )
+findAndRemoveClosingSequence( QString & s )
 {
 	qsizetype end = -1;
 	qsizetype start = -1;
 
-	for( qsizetype i = s.length() - 1; i > p; --i )
+	for( qsizetype i = s.length() - 1; i >= 0 ; --i )
 	{
 		if( !s[ i ].isSpace() && s[ i ] != c_35 && end == -1 )
 			return;
@@ -708,7 +708,7 @@ Parser::parseHeading( QStringList & fr, QSharedPointer< Block > parent,
 
 		const auto label = findAndRemoveHeaderLabel( fr.first() );
 
-		findAndRemoveClosingSequence( fr.first(), pos );
+		findAndRemoveClosingSequence( fr.first() );
 
 		QSharedPointer< Heading > h( new Heading() );
 		h->setLevel( lvl );
