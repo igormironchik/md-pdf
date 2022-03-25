@@ -79,17 +79,17 @@ static const QChar c_10 = QLatin1Char( '\n' );
 static const QChar c_13 = QLatin1Char( '\r' );
 
 
+// Skip spaces in line from pos \a i.
 inline qsizetype
-posOfFirstNonSpace( const QString & s )
+skipSpaces( qsizetype i, QStringView line )
 {
-	for( qsizetype p = 0; p < s.size(); ++p )
-	{
-		if( !s[ p ].isSpace() )
-			return p;
-	}
+	const auto length = line.length();
 
-	return -1;
-}
+	while( i < length && line[ i ].isSpace() )
+		++i;
+
+	return i;
+}; // skipSpaces
 
 inline bool
 isFootnote( const QString & s )
@@ -299,8 +299,7 @@ private:
 
 				if( firstLine )
 				{				
-					spaces = posOfFirstNonSpace( line );
-					if( spaces < 0 ) spaces = 0;
+					spaces = skipSpaces( 0, line );
 
 					firstLine = false;
 				}
@@ -344,12 +343,12 @@ private:
 		{
 			auto line = rl();
 
-			const auto ns = posOfFirstNonSpace( line );
+			const auto ns = skipSpaces( 0, line );
 
 			BlockType lineType = whatIsTheLine( line, emptyLineInList, &indent, true );
 
 			// First line of the fragment.
-			if( ns != -1 && type == BlockType::Unknown )
+			if( ns != line.length() && type == BlockType::Unknown )
 			{
 				type = lineType;
 
@@ -360,11 +359,11 @@ private:
 
 				continue;
 			}
-			else if( ns == -1 && type == BlockType::Unknown )
+			else if( ns == line.length() && type == BlockType::Unknown )
 				continue;
 
 			// Got new empty line.
-			if( ns == -1 )
+			if( ns == line.length() )
 			{
 				switch( type )
 				{

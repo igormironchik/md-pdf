@@ -182,18 +182,6 @@ isOrderedList( const QString & s, int * num = nullptr )
 	return false;
 }
 
-// Skip spaces in line from pos \a i.
-inline qsizetype
-skipSpaces( qsizetype i, QStringView line )
-{
-	const auto length = line.length();
-
-	while( i < length && line[ i ].isSpace() )
-		++i;
-
-	return i;
-}; // skipSpaces
-
 inline QString
 readEscapedSequence( qsizetype i, QStringView & str )
 {
@@ -337,8 +325,7 @@ Parser::whatIsTheLine( QString & str, bool inList, qsizetype * indent, bool calc
 {
 	str.replace( c_9, QString( 4, c_32 ) );
 
-	auto first = posOfFirstNonSpace( str );
-	if( first < 0 ) first = 0;
+	const auto first = skipSpaces( 0, str );
 
 	auto s = QStringView( str ).sliced( first );
 
@@ -883,13 +870,10 @@ namespace /* anonymous */ {
 inline bool
 isH( const QString & s, const QChar & c )
 {
-	qsizetype p = 0;
+	qsizetype p = skipSpaces( 0, s );
 
-	for( ; p < s.size(); ++p )
-	{
-		if( !s[ p ].isSpace() )
-			break;
-	}
+	if( p > 3 )
+		return false;
 
 	const auto start = p;
 
@@ -930,57 +914,81 @@ Parser::parseParagraph( QStringList & fr, QSharedPointer< Block > parent,
 	QSharedPointer< Document > doc, QStringList & linksToParse,
 	const QString & workingPath, const QString & fileName )
 {
-	auto ph = [&]( const QString & label )
-	{
-		QStringList tmp = fr.mid( 0, 1 );
-		tmp.first().prepend( label );
-
-		parseHeading( tmp, parent, doc, linksToParse, workingPath, fileName );
-
-		for( int idx = 0; idx < 2; ++idx )
-			fr.removeFirst();
-
-		parseParagraph( fr, parent, doc, linksToParse, workingPath, fileName );
-	};
-	\
 	// Check for alternative syntax of H1 and H2 headings.
 	if( fr.size() >= 2 )
 	{
-		const auto ns = posOfFirstNonSpace( fr[ 0 ] );
+		qsizetype i = 1;
+		bool heading = false;
+		int lvl = 0;
 
-		if( ns > 3 || !isHorizontalLine( QStringView( fr[ 0 ] ).sliced( ( ns > -1 ? ns : 0 ) ) ) )
+		for( ; i < fr.size(); ++i )
 		{
-			if( isH1( fr[ 1 ] ) )
-			{
-				ph( QLatin1String( "# " ) );
+			const auto first = skipSpaces( 0, fr.at( i - 1 ) );
 
-				return;
-			}
-			else if( isH2( fr[ 1 ] ) )
-			{
-				ph( QLatin1String( "## " ) );
+			auto s = QStringView( fr.at( i - 1 ) ).sliced( first );
 
-				return;
+			const bool prevHorLine = ( first < 4 && isHorizontalLine( s ) );
+
+			if( isH1( fr.at( i ) ) && !prevHorLine )
+			{
+				lvl = 1;
+				heading = true;
+				break;
 			}
+			else if( isH2( fr.at( i ) ) && !prevHorLine )
+			{
+				lvl = 2;
+				heading = true;
+				break;
+			}
+		}
+
+		if( heading )
+		{
+			QSharedPointer< Heading > h( new Heading() );
+			h->setLevel( lvl );
+
+			QSharedPointer< Paragraph > p( new Paragraph() );
+
+			QStringList tmp = fr.mid( 0, i );
+
+			parseFormattedTextLinksImages( tmp, p, doc, linksToParse, workingPath, fileName );
+
+			fr.remove( 0, i + 1 );
+
+			h->setText( p );
+
+			QString label = QStringLiteral( "#" ) + paragraphToLabel( p.data() );
+
+			label += QStringLiteral( "/" ) + workingPath + fileName;
+
+			h->setLabel( label );
+
+			doc->insertLabeledHeading( label, h );
+
+			parent->appendItem( h );
 		}
 	}
 
-	QSharedPointer< Paragraph > p( new Paragraph );
-
-	while( !parseFormattedTextLinksImages( fr, p, doc, linksToParse, workingPath, fileName ) )
+	if( !fr.isEmpty() )
 	{
-		if( !p->isEmpty() )
-		{
-			parent->appendItem( p );
+		QSharedPointer< Paragraph > p( new Paragraph );
 
-			p.reset( new Paragraph );
+		while( !parseFormattedTextLinksImages( fr, p, doc, linksToParse, workingPath, fileName ) )
+		{
+			if( !p->isEmpty() )
+			{
+				parent->appendItem( p );
+
+				p.reset( new Paragraph );
+			}
+
+			parent->appendItem( QSharedPointer< Item > ( new HorizontalLine ) );
 		}
 
-		parent->appendItem( QSharedPointer< Item > ( new HorizontalLine ) );
+		if( !p->isEmpty() )
+			parent->appendItem( p );
 	}
-
-	if( !p->isEmpty() )
-		parent->appendItem( p );
 }
 
 namespace /* anoymous*/ {
@@ -1819,9 +1827,9 @@ parseInlineCode( qsizetype pos, QStringList::iterator & it, QVector< InlineCodeM
 
 	data.lexems.append( Lex::StartOfCode );
 
-	const auto ns = posOfFirstNonSpace( code );
+	const auto ns = skipSpaces( 0, code );
 
-	if( ns != -1 )
+	if( ns != code.length() )
 	{
 		if( code.length() > 2 && code.front().isSpace() && code.back().isSpace() )
 		{
@@ -1916,9 +1924,9 @@ parseLine( QStringList::iterator it, qsizetype & line, qsizetype pos, PreparsedD
 		it->remove( it->length() - 1, 1 );
 	}
 
-	const auto ns = posOfFirstNonSpace( *it );
+	const auto ns = skipSpaces( 0, *it );
 
-	if( ns > 0 )
+	if( ns != (*it).length() )
 		*it = it->right( it->length() - ns );
 
 	const auto isHorLine = isHorizontalLine( *it );
@@ -2329,9 +2337,9 @@ Parser::parseList( QStringList & fr, QSharedPointer< Block > parent,
 	for( auto it = fr.begin(), last  = fr.end(); it != last; ++it )
 		it->replace( c_9, QLatin1String( "    " ) );
 
-	const auto indent = posOfFirstNonSpace( fr.first() );
+	const auto indent = skipSpaces( 0, fr.first() );
 
-	if( indent > -1 )
+	if( indent != fr.first().length() )
 	{
 		QSharedPointer< List > list( new List );
 
@@ -2346,8 +2354,8 @@ Parser::parseList( QStringList & fr, QSharedPointer< Block > parent,
 
 		for( auto last = fr.end(); it != last; ++it )
 		{
-			auto s = posOfFirstNonSpace( *it );
-			s = ( s > indent ? indent : ( s >= 0 ? s : 0 ) );
+			auto s = skipSpaces( 0, *it );
+			s = ( s > indent ? indent : ( s != (*it).length() ? s : 0 ) );
 
 			*it = it->right( it->length() - s );
 
@@ -2501,9 +2509,9 @@ Parser::parseListItem( QStringList & fr, QSharedPointer< Block > parent,
 void
 Parser::parseCode( QStringList & fr, QSharedPointer< Block > parent, int indent )
 {
-	const auto i = posOfFirstNonSpace( fr.first() );
+	const auto i = skipSpaces( 0, fr.first() );
 
-	if( i > -1 )
+	if( i != fr.first().length() )
 		indent += i;
 
 	if( fr.size() < 2 )

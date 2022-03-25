@@ -1501,3 +1501,29 @@ TEST_CASE( "079" )
 		REQUIRE( p->items().size() == 0 );
 	}
 }
+
+TEST_CASE( "080" )
+{
+	const auto doc = load_test( 80 );
+
+	REQUIRE( doc->isEmpty() == false );
+	REQUIRE( doc->items().size() == 3 );
+
+	for( auto i = 1; i < 3; ++i )
+	{
+		REQUIRE( doc->items().at( i )->type() == MD::ItemType::Heading );
+		auto h = static_cast< MD::Heading* > ( doc->items().at( i ).data() );
+		REQUIRE( h->level() == i );
+		REQUIRE( !h->text().isNull() );
+		auto p = h->text().data();
+		REQUIRE( p->items().size() == 2 );
+		REQUIRE( p->items().at( 0 )->type() == MD::ItemType::Text );
+		auto t1 = static_cast< MD::Text* > ( p->items().at( 0 ).data() );
+		REQUIRE( t1->opts() == MD::TextWithoutFormat );
+		REQUIRE( t1->text() == QStringLiteral( "Foo" ) );
+		REQUIRE( p->items().at( 1 )->type() == MD::ItemType::Text );
+		auto t2 = static_cast< MD::Text* > ( p->items().at( 1 ).data() );
+		REQUIRE( t2->opts() == MD::ItalicText );
+		REQUIRE( t2->text() == QStringLiteral( "bar" ) );
+	}
+}
