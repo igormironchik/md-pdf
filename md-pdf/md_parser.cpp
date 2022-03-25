@@ -327,71 +327,74 @@ Parser::whatIsTheLine( QString & str, bool inList, qsizetype * indent, bool calc
 
 	const auto first = skipSpaces( 0, str );
 
-	auto s = QStringView( str ).sliced( first );
-
-	if( s.startsWith( c_62 ) )
-		return BlockType::Blockquote;
-	else if( s.startsWith( QLatin1String( "```" ) ) ||
-		s.startsWith( QLatin1String( "~~~" ) ) )
+	if( first < str.length() )
 	{
-		return BlockType::Code;
-	}
-	else if( s.isEmpty() )
-		return BlockType::Unknown;
-	else if( s.startsWith( c_35 ) && first < 4 )
-	{
-		qsizetype c = 0;
+		auto s = QStringView( str ).sliced( first );
 
-		while( c < s.length() && s[ c ] == c_35 )
-			++c;
-
-		if( c <= 6 && ( ( c < s.length() && s[ c ].isSpace() ) || c == s.length() ) )
-			return BlockType::Heading;
-		else
-			return BlockType::Text;
-	}
-
-	if( first < 4 && isHorizontalLine( s ) )
-		return BlockType::Text;
-
-	if( inList )
-	{
-		if( ( ( s.startsWith( c_45 ) ||
-			s.startsWith( c_43 ) ||
-			s.startsWith( c_42 ) ) && s.length() > 1 && s[ 1 ].isSpace() ) ||
-				isOrderedList( str ) )
+		if( s.startsWith( c_62 ) )
+			return BlockType::Blockquote;
+		else if( s.startsWith( QLatin1String( "```" ) ) ||
+			s.startsWith( QLatin1String( "~~~" ) ) )
 		{
-			return BlockType::List;
+			return BlockType::Code;
 		}
-		else if( str.startsWith( QString( ( indent ? *indent : 4 ), c_32 ) ) )
+		else if( s.startsWith( c_35 ) && first < 4 )
 		{
-			if( str.startsWith( QString( ( indent ? *indent : 4 ), c_32 ) +
-				QLatin1String( "    " ) ) )
+			qsizetype c = 0;
+
+			while( c < s.length() && s[ c ] == c_35 )
+				++c;
+
+			if( c <= 6 && ( ( c < s.length() && s[ c ].isSpace() ) || c == s.length() ) )
+				return BlockType::Heading;
+			else
+				return BlockType::Text;
+		}
+
+		if( first < 4 && isHorizontalLine( s ) )
+			return BlockType::Text;
+
+		if( inList )
+		{
+			if( ( ( s.startsWith( c_45 ) ||
+				s.startsWith( c_43 ) ||
+				s.startsWith( c_42 ) ) && s.length() > 1 && s[ 1 ].isSpace() ) ||
+					isOrderedList( str ) )
+			{
+				return BlockType::List;
+			}
+			else if( str.startsWith( QString( ( indent ? *indent : 4 ), c_32 ) ) )
+			{
+				if( str.startsWith( QString( ( indent ? *indent : 4 ), c_32 ) +
+					QLatin1String( "    " ) ) )
+				{
+					return BlockType::CodeIndentedBySpaces;
+				}
+			}
+		}
+		else
+		{
+			const auto orderedList = isOrderedList( str );
+
+			if( ( ( s.startsWith( c_45 ) ||
+				s.startsWith( c_43 ) ||
+				s.startsWith( c_42 ) ) && s.length() > 1 && s[ 1 ].isSpace() ) ||
+					orderedList )
+			{
+				if( calcIndent && indent )
+					*indent = posOfListItem( str, orderedList );
+
+				return BlockType::List;
+			}
+			else if( str.startsWith( QLatin1String( "    " ) ) ||
+				str.startsWith( c_9 ) )
 			{
 				return BlockType::CodeIndentedBySpaces;
 			}
 		}
 	}
 	else
-	{
-		const auto orderedList = isOrderedList( str );
-
-		if( ( ( s.startsWith( c_45 ) ||
-			s.startsWith( c_43 ) ||
-			s.startsWith( c_42 ) ) && s.length() > 1 && s[ 1 ].isSpace() ) ||
-				orderedList )
-		{
-			if( calcIndent && indent )				
-				*indent = posOfListItem( str, orderedList );
-
-			return BlockType::List;
-		}
-		else if( str.startsWith( QLatin1String( "    " ) ) ||
-			str.startsWith( c_9 ) )
-		{
-			return BlockType::CodeIndentedBySpaces;
-		}
-	}
+		return BlockType::Unknown;
 
 	return BlockType::Text;
 }
@@ -679,8 +682,8 @@ Parser::parseHeading( QStringList & fr, QSharedPointer< Block > parent,
 		qsizetype pos = 0;
 		pos = skipSpaces( pos, line );
 
-		if( pos > 0 )
-			line = line.mid( pos );
+		if( pos > 0  )
+			line = line.sliced( pos );
 
 		pos = 0;
 		int lvl = 0;
@@ -693,7 +696,8 @@ Parser::parseHeading( QStringList & fr, QSharedPointer< Block > parent,
 
 		pos = skipSpaces( pos, line );
 
-		fr.first() = line.mid( pos );
+		if( pos > 0 )
+			fr.first() = line.sliced( pos );
 
 		const auto label = findAndRemoveHeaderLabel( fr.first() );
 
@@ -703,7 +707,7 @@ Parser::parseHeading( QStringList & fr, QSharedPointer< Block > parent,
 		h->setLevel( lvl );
 
 		if( !label.isEmpty() )
-			h->setLabel( label.mid( 1, label.length() - 2) + QStringLiteral( "/" ) +
+			h->setLabel( label.mid( 1, label.length() - 2 ) + QStringLiteral( "/" ) +
 				workingPath + fileName );
 
 		QSharedPointer< Paragraph > p( new Paragraph() );
@@ -749,7 +753,7 @@ Parser::parseFootnote( QStringList & fr, QSharedPointer< Block >,
 		int pos = skipSpaces( 0, line );
 
 		if( pos > 0 )
-			line = line.mid( pos );
+			line = line.sliced( pos );
 
 		if( line.startsWith( QLatin1String( "[^" ) ) )
 		{
@@ -761,7 +765,7 @@ Parser::parseFootnote( QStringList & fr, QSharedPointer< Block >,
 			{
 				++pos;
 
-				line = line.mid( pos );
+				line = line.sliced( pos );
 
 				for( auto it = fr.begin(), last = fr.end(); it != last; ++it )
 				{
@@ -1926,8 +1930,8 @@ parseLine( QStringList::iterator it, qsizetype & line, qsizetype pos, PreparsedD
 
 	const auto ns = skipSpaces( 0, *it );
 
-	if( ns != (*it).length() )
-		*it = it->right( it->length() - ns );
+	if( ns > 0 )
+		*it = it->sliced( ns );
 
 	const auto isHorLine = isHorizontalLine( *it );
 
@@ -2480,7 +2484,7 @@ Parser::parseListItem( QStringList & fr, QSharedPointer< Block > parent,
 
 			data.clear();
 
-			QStringList nestedList = fr.mid( pos );
+			QStringList nestedList = fr.sliced( pos );
 
 			parseList( nestedList, item, doc, linksToParse, workingPath, fileName );
 
