@@ -1466,3 +1466,38 @@ TEST_CASE( "078" )
 		REQUIRE( t->text() == QStringLiteral( "Bar foo" ) );
 	}
 }
+
+TEST_CASE( "079" )
+{
+	const auto doc = load_test( 79 );
+
+	REQUIRE( doc->isEmpty() == false );
+	REQUIRE( doc->items().size() == 4 );
+
+	{
+		REQUIRE( doc->items().at( 1 )->type() == MD::ItemType::Heading );
+		auto h = static_cast< MD::Heading* > ( doc->items().at( 1 ).data() );
+		REQUIRE( h->level() == 2 );
+		REQUIRE( !h->text().isNull() );
+		auto p = h->text().data();
+		REQUIRE( p->items().size() == 0 );
+	}
+
+	{
+		REQUIRE( doc->items().at( 2 )->type() == MD::ItemType::Heading );
+		auto h = static_cast< MD::Heading* > ( doc->items().at( 2 ).data() );
+		REQUIRE( h->level() == 1 );
+		REQUIRE( !h->text().isNull() );
+		auto p = h->text().data();
+		REQUIRE( p->items().size() == 0 );
+	}
+
+	{
+		REQUIRE( doc->items().at( 3 )->type() == MD::ItemType::Heading );
+		auto h = static_cast< MD::Heading* > ( doc->items().at( 3 ).data() );
+		REQUIRE( h->level() == 3 );
+		REQUIRE( !h->text().isNull() );
+		auto p = h->text().data();
+		REQUIRE( p->items().size() == 0 );
+	}
+}

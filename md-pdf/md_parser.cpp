@@ -358,7 +358,7 @@ Parser::whatIsTheLine( QString & str, bool inList, qsizetype * indent, bool calc
 		while( c < s.length() && s[ c ] == c_35 )
 			++c;
 
-		if( c <= 6 && c < s.length() && s[ c ].isSpace() )
+		if( c <= 6 && ( ( c < s.length() && s[ c ].isSpace() ) || c == s.length() ) )
 			return BlockType::Heading;
 		else
 			return BlockType::Text;
@@ -670,6 +670,8 @@ findAndRemoveClosingSequence( QString & s )
 				else if( s[ i - 1 ] != c_35 )
 					return;
 			}
+			else
+				start = 0;
 		}
 	}
 
@@ -726,25 +728,22 @@ Parser::parseHeading( QStringList & fr, QSharedPointer< Block > parent,
 
 		fr.removeFirst();
 
-		if( !p->isEmpty() )
+		h->setText( p );
+
+		if( h->isLabeled() )
+			doc->insertLabeledHeading( h->label(), h );
+		else
 		{
-			h->setText( p );
+			QString label = QStringLiteral( "#" ) + paragraphToLabel( p.data() );
 
-			if( h->isLabeled() )
-				doc->insertLabeledHeading( h->label(), h );
-			else
-			{
-				QString label = QStringLiteral( "#" ) + paragraphToLabel( p.data() );
+			label += QStringLiteral( "/" ) + workingPath + fileName;
 
-				label += QStringLiteral( "/" ) + workingPath + fileName;
+			h->setLabel( label );
 
-				h->setLabel( label );
-
-				doc->insertLabeledHeading( label, h );
-			}
-
-			parent->appendItem( h );
+			doc->insertLabeledHeading( label, h );
 		}
+
+		parent->appendItem( h );
 	}
 }
 
