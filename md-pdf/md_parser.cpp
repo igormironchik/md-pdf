@@ -887,7 +887,7 @@ isH( const QString & s, const QChar & c )
 			break;
 	}
 
-	if( p - start < 3 )
+	if( p - start < 1 )
 		return false;
 
 	for( ; p < s.size(); ++p )
