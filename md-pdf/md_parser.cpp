@@ -956,6 +956,24 @@ Parser::parseParagraph( QStringList & fr, QSharedPointer< Block > parent,
 
 			QStringList tmp = fr.mid( 0, i );
 
+			const auto ns1 = skipSpaces( 0, tmp.first() );
+
+			if( ns1 > 0 && ns1 < tmp.first().length() )
+				tmp.first() = tmp.first().sliced( ns1 );
+
+			qsizetype ns2 = tmp.back().length();
+
+			for( qsizetype i = tmp.back().length() - 1; i >= 0; --i )
+			{
+				if( tmp.back()[ i ].isSpace() )
+					ns2 = i;
+				else
+					break;
+			}
+
+			if( ns2 < tmp.back().length() )
+				tmp.back() = tmp.back().sliced( 0, ns2 );
+
 			parseFormattedTextLinksImages( tmp, p, doc, linksToParse, workingPath, fileName );
 
 			fr.remove( 0, i + 1 );

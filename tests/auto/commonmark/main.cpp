@@ -1556,3 +1556,32 @@ TEST_CASE( "081" )
 		REQUIRE( t3->text() == QStringLiteral( "baz" ) );
 	}
 }
+
+TEST_CASE( "082" )
+{
+	const auto doc = load_test( 82 );
+
+	REQUIRE( doc->isEmpty() == false );
+	REQUIRE( doc->items().size() == 2 );
+
+	{
+		REQUIRE( doc->items().at( 1 )->type() == MD::ItemType::Heading );
+		auto h = static_cast< MD::Heading* > ( doc->items().at( 1 ).data() );
+		REQUIRE( h->level() == 1 );
+		REQUIRE( !h->text().isNull() );
+		auto p = h->text().data();
+		REQUIRE( p->items().size() == 3 );
+		REQUIRE( p->items().at( 0 )->type() == MD::ItemType::Text );
+		auto t1 = static_cast< MD::Text* > ( p->items().at( 0 ).data() );
+		REQUIRE( t1->opts() == MD::TextWithoutFormat );
+		REQUIRE( t1->text() == QStringLiteral( "Foo" ) );
+		REQUIRE( p->items().at( 1 )->type() == MD::ItemType::Text );
+		auto t2 = static_cast< MD::Text* > ( p->items().at( 1 ).data() );
+		REQUIRE( t2->opts() == MD::ItalicText );
+		REQUIRE( t2->text() == QStringLiteral( "bar" ) );
+		REQUIRE( p->items().at( 2 )->type() == MD::ItemType::Text );
+		auto t3 = static_cast< MD::Text* > ( p->items().at( 2 ).data() );
+		REQUIRE( t3->opts() == MD::ItalicText );
+		REQUIRE( t3->text() == QStringLiteral( "baz" ) );
+	}
+}
