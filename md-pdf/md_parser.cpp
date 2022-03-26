@@ -920,12 +920,14 @@ Parser::parseParagraph( QStringList & fr, QSharedPointer< Block > parent,
 	QSharedPointer< Document > doc, QStringList & linksToParse,
 	const QString & workingPath, const QString & fileName )
 {
+	bool heading = false;
+
 	// Check for alternative syntax of H1 and H2 headings.
 	if( fr.size() >= 2 )
 	{
 		qsizetype i = 1;
-		bool heading = false;
 		int lvl = 0;
+		qsizetype horLines = 0;
 
 		for( ; i < fr.size(); ++i )
 		{
@@ -934,6 +936,9 @@ Parser::parseParagraph( QStringList & fr, QSharedPointer< Block > parent,
 			auto s = QStringView( fr.at( i - 1 ) ).sliced( first );
 
 			const bool prevHorLine = ( first < 4 && isHorizontalLine( s ) );
+
+			if( prevHorLine )
+				++horLines;
 
 			if( isH1( fr.at( i ) ) && !prevHorLine )
 			{
@@ -951,12 +956,17 @@ Parser::parseParagraph( QStringList & fr, QSharedPointer< Block > parent,
 
 		if( heading )
 		{
+			for( qsizetype j = 0; j < horLines; ++j )
+				parent->appendItem( QSharedPointer< Item > ( new HorizontalLine ) );
+
+			fr.remove( 0, horLines );
+
 			QSharedPointer< Heading > h( new Heading() );
 			h->setLevel( lvl );
 
 			QSharedPointer< Paragraph > p( new Paragraph() );
 
-			QStringList tmp = fr.mid( 0, i );
+			QStringList tmp = fr.sliced( 0, i - horLines );
 
 			const auto ns1 = skipSpaces( 0, tmp.first() );
 
@@ -979,7 +989,7 @@ Parser::parseParagraph( QStringList & fr, QSharedPointer< Block > parent,
 			parseFormattedTextLinksImages( tmp, p, doc, linksToParse,
 				workingPath, fileName, true );
 
-			fr.remove( 0, i + 1 );
+			fr.remove( 0, i - horLines + 1 );
 
 			h->setText( p );
 
@@ -997,22 +1007,27 @@ Parser::parseParagraph( QStringList & fr, QSharedPointer< Block > parent,
 
 	if( !fr.isEmpty() )
 	{
-		QSharedPointer< Paragraph > p( new Paragraph );
-
-		while( !parseFormattedTextLinksImages( fr, p, doc, linksToParse, workingPath, fileName ) )
+		if( heading )
+			parseParagraph( fr, parent, doc, linksToParse, workingPath, fileName );
+		else
 		{
-			if( !p->isEmpty() )
-			{
-				parent->appendItem( p );
+			QSharedPointer< Paragraph > p( new Paragraph );
 
-				p.reset( new Paragraph );
+			while( !parseFormattedTextLinksImages( fr, p, doc, linksToParse, workingPath, fileName ) )
+			{
+				if( !p->isEmpty() )
+				{
+					parent->appendItem( p );
+
+					p.reset( new Paragraph );
+				}
+
+				parent->appendItem( QSharedPointer< Item > ( new HorizontalLine ) );
 			}
 
-			parent->appendItem( QSharedPointer< Item > ( new HorizontalLine ) );
+			if( !p->isEmpty() )
+				parent->appendItem( p );
 		}
-
-		if( !p->isEmpty() )
-			parent->appendItem( p );
 	}
 }
 
