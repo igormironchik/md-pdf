@@ -275,6 +275,7 @@ private:
 
 		BlockType type = BlockType::Unknown;
 		bool emptyLineInList = false;
+		qsizetype emptyLinesInCode = 0;
 		bool firstLine = true;
 		qsizetype spaces = 0;
 
@@ -390,13 +391,7 @@ private:
 
 					case BlockType::CodeIndentedBySpaces :
 					{
-						if( line.startsWith( QLatin1String( "    " ) ) ||
-							line.startsWith( c_9 ) )
-						{
-							fragment.append( line );
-						}
-						else
-							pf();
+						++emptyLinesInCode;
 
 						continue;
 					}
@@ -441,6 +436,30 @@ private:
 
 					continue;
 				}
+			}
+			else if( emptyLinesInCode )
+			{
+				if( lineType == BlockType::CodeIndentedBySpaces )
+				{
+					const auto indent = skipSpaces( 0, fragment.first() );
+
+					for( qsizetype i = 0; i < emptyLinesInCode; ++i )
+						fragment.append( QString( indent, c_32 ) );
+
+					fragment.append( line );
+				}
+				else
+				{
+					pf();
+
+					type = lineType;
+
+					fragment.append( line );
+				}
+
+				emptyLinesInCode = 0;
+
+				continue;
 			}
 
 			// Something new and this is not a code block or a list.

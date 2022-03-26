@@ -1666,3 +1666,19 @@ TEST_CASE( "084" )
 		REQUIRE( t->text() == QStringLiteral( "Foo" ) );
 	}
 }
+
+TEST_CASE( "085" )
+{
+	const auto doc = load_test( 85 );
+
+	REQUIRE( doc->isEmpty() == false );
+	REQUIRE( doc->items().size() == 3 );
+
+	REQUIRE( doc->items().at( 1 )->type() == MD::ItemType::Code );
+	auto c = static_cast< MD::Code* > ( doc->items().at( 1 ).data() );
+	REQUIRE( c->inlined() == false );
+	REQUIRE( c->syntax().isEmpty() );
+	REQUIRE( c->text() == QStringLiteral( "Foo\n---\n\nFoo" ) );
+
+	REQUIRE( doc->items().at( 2 )->type() == MD::ItemType::HorizontalLine );
+}
