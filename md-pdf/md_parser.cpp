@@ -2321,7 +2321,7 @@ Parser::parseBlockquote( QStringList & fr, QSharedPointer< Block > parent,
 		bool horLine = false;
 		qsizetype j = i;
 
-		for( auto it = fr.begin() + i, last = fr.end(); it != last; ++it, ++i )
+		for( auto it = fr.begin(), last = fr.end(); it != last; ++it, ++i )
 		{
 			const auto first = skipSpaces( 0, *it );
 
