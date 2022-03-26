@@ -282,7 +282,8 @@ private:
 		// Parse fragment and clear internal cache.
 		auto pf = [&]()
 			{
-				parseFragment( fragment, parent, doc, linksToParse, workingPath, fileName );
+				parseFragment( fragment, parent, doc, linksToParse,
+					workingPath, fileName );
 				fragment.clear();
 				type = BlockType::Unknown;
 				emptyLineInList = false;

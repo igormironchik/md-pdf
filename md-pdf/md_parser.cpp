@@ -407,7 +407,8 @@ Parser::parseFragment( QStringList & fr, QSharedPointer< Block > parent,
 	switch( whatIsTheLine( fr.first() ) )
 	{
 		case BlockType::Text :
-			parseText( fr, parent, doc, linksToParse, workingPath, fileName );
+			parseText( fr, parent, doc, linksToParse,
+				workingPath, fileName );
 			break;
 
 		case BlockType::Blockquote :
@@ -535,7 +536,8 @@ Parser::parseText( QStringList & fr, QSharedPointer< Block > parent,
 	else if( isTableHeader( fr.first() ) && fr.size() > 1 && isTableAlignment( fr[ 1 ] ) )
 		parseTable( fr, parent, doc, linksToParse, workingPath, fileName );
 	else
-		parseParagraph( fr, parent, doc, linksToParse, workingPath, fileName );
+		parseParagraph( fr, parent, doc, linksToParse,
+			workingPath, fileName );
 }
 
 namespace /* anonymous */ {
@@ -2310,22 +2312,58 @@ Parser::parseBlockquote( QStringList & fr, QSharedPointer< Block > parent,
 	QSharedPointer< Document > doc, QStringList & linksToParse,
 	const QString & workingPath, const QString & fileName )
 {
-	QSharedPointer< Blockquote > bq( new Blockquote() );
-
 	const int pos = fr.first().indexOf( c_62 );
-
-	StringListStream stream( fr );
 
 	if( pos > -1 )
 	{
-		for( auto it = fr.begin(), last = fr.end(); it != last; ++it )
-			*it = it->mid( it->indexOf( c_62 ) + 1 );
+		qsizetype i = 0;
 
-		parse( stream, bq, doc, linksToParse, workingPath, fileName );
+		while( i < fr.size() )
+		{
+			bool horLine = false;
+			qsizetype j = i;
+
+			for( auto it = fr.begin() + i, last = fr.end(); it != last; ++it, ++i )
+			{
+				const auto first = skipSpaces( 0, *it );
+
+				if( first < 4 && isHorizontalLine( (*it).sliced( first ) ) )
+				{
+					horLine = true;
+					break;
+				}
+
+				if( isH1( *it ) )
+				{
+					const auto p = (*it).indexOf( c_35 );
+
+					(*it).insert( p, c_92 );
+				}
+
+				*it = it->sliced( it->indexOf( c_62 ) + 1 );
+			}
+
+			QStringList tmp;
+
+			for( ; j < i; ++j )
+				tmp.append( fr.at( j ) );
+
+			StringListStream stream( tmp );
+
+			QSharedPointer< Blockquote > bq( new Blockquote() );
+
+			parse( stream, bq, doc, linksToParse, workingPath, fileName );
+
+			if( !bq->isEmpty() )
+				parent->appendItem( bq );
+
+			if( horLine )
+			{
+				parent->appendItem( QSharedPointer< Item > ( new HorizontalLine ) );
+				++i;
+			}
+		}
 	}
-
-	if( !bq->isEmpty() )
-		parent->appendItem( bq );
 }
 
 namespace /* anonymous */ {
