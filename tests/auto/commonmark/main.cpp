@@ -2048,3 +2048,14 @@ TEST_CASE( "097" )
 		REQUIRE( t->text() == QStringLiteral( "====" ) );
 	}
 }
+
+TEST_CASE( "098" )
+{
+	const auto doc = load_test( 98 );
+
+	REQUIRE( doc->isEmpty() == false );
+	REQUIRE( doc->items().size() == 3 );
+
+	REQUIRE( doc->items().at( 1 )->type() == MD::ItemType::HorizontalLine );
+	REQUIRE( doc->items().at( 2 )->type() == MD::ItemType::HorizontalLine );
+}
