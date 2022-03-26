@@ -2318,49 +2318,56 @@ Parser::parseBlockquote( QStringList & fr, QSharedPointer< Block > parent,
 	{
 		qsizetype i = 0;
 
-		while( i < fr.size() )
+		bool horLine = false;
+		qsizetype j = i;
+
+		for( auto it = fr.begin() + i, last = fr.end(); it != last; ++it, ++i )
 		{
-			bool horLine = false;
-			qsizetype j = i;
+			const auto first = skipSpaces( 0, *it );
 
-			for( auto it = fr.begin() + i, last = fr.end(); it != last; ++it, ++i )
+			if( first < 4 && isHorizontalLine( (*it).sliced( first ) ) )
 			{
-				const auto first = skipSpaces( 0, *it );
-
-				if( first < 4 && isHorizontalLine( (*it).sliced( first ) ) )
-				{
-					horLine = true;
-					break;
-				}
-
-				if( isH1( *it ) )
-				{
-					const auto p = (*it).indexOf( c_35 );
-
-					(*it).insert( p, c_92 );
-				}
-
-				*it = it->sliced( it->indexOf( c_62 ) + 1 );
+				horLine = true;
+				break;
 			}
 
-			QStringList tmp;
-
-			for( ; j < i; ++j )
-				tmp.append( fr.at( j ) );
-
-			StringListStream stream( tmp );
-
-			QSharedPointer< Blockquote > bq( new Blockquote() );
-
-			parse( stream, bq, doc, linksToParse, workingPath, fileName );
-
-			if( !bq->isEmpty() )
-				parent->appendItem( bq );
-
-			if( horLine )
+			if( isH1( *it ) )
 			{
-				parent->appendItem( QSharedPointer< Item > ( new HorizontalLine ) );
-				++i;
+				const auto p = (*it).indexOf( c_35 );
+
+				(*it).insert( p, c_92 );
+			}
+
+			*it = it->sliced( it->indexOf( c_62 ) + 1 );
+		}
+
+		QStringList tmp;
+
+		for( ; j < i; ++j )
+			tmp.append( fr.at( j ) );
+
+		StringListStream stream( tmp );
+
+		QSharedPointer< Blockquote > bq( new Blockquote() );
+
+		parse( stream, bq, doc, linksToParse, workingPath, fileName );
+
+		if( !bq->isEmpty() )
+			parent->appendItem( bq );
+
+		if( horLine )
+		{
+			parent->appendItem( QSharedPointer< Item > ( new HorizontalLine ) );
+
+			++i;
+
+			if( i < fr.size() )
+			{
+				tmp = fr.sliced( i );
+
+				StringListStream stream( tmp );
+
+				parse( stream, parent, doc, linksToParse, workingPath, fileName );
 			}
 		}
 	}
