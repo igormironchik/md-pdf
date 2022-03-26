@@ -2099,3 +2099,26 @@ TEST_CASE( "100" )
 
 	REQUIRE( doc->items().at( 2 )->type() == MD::ItemType::HorizontalLine );
 }
+
+TEST_CASE( "101" )
+{
+	const auto doc = load_test( 101 );
+
+	REQUIRE( doc->isEmpty() == false );
+	REQUIRE( doc->items().size() == 3 );
+
+	{
+		REQUIRE( doc->items().at( 1 )->type() == MD::ItemType::Blockquote );
+		auto b = static_cast< MD::Blockquote* > ( doc->items().at( 1 ).data() );
+		REQUIRE( b->items().size() == 1 );
+		REQUIRE( b->items().at( 0 )->type() == MD::ItemType::Paragraph );
+		auto p = static_cast< MD::Paragraph* > ( b->items().at( 0 ).data() );
+		REQUIRE( p->items().size() == 1 );
+		REQUIRE( p->items().at( 0 )->type() == MD::ItemType::Text );
+		auto t = static_cast< MD::Text* > ( p->items().at( 0 ).data() );
+		REQUIRE( t->opts() == MD::TextWithoutFormat );
+		REQUIRE( t->text() == QStringLiteral( "foo" ) );
+	}
+
+	REQUIRE( doc->items().at( 2 )->type() == MD::ItemType::HorizontalLine );
+}
