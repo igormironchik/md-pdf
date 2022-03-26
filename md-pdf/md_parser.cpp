@@ -974,7 +974,8 @@ Parser::parseParagraph( QStringList & fr, QSharedPointer< Block > parent,
 			if( ns2 < tmp.back().length() )
 				tmp.back() = tmp.back().sliced( 0, ns2 );
 
-			parseFormattedTextLinksImages( tmp, p, doc, linksToParse, workingPath, fileName );
+			parseFormattedTextLinksImages( tmp, p, doc, linksToParse,
+				workingPath, fileName, true );
 
 			fr.remove( 0, i + 1 );
 
@@ -1934,13 +1935,13 @@ parseUrl( int i, const QString & line, QString & text, PreparsedData & data )
 inline QPair< QStringList::iterator, bool >
 parseLine( QStringList::iterator it, qsizetype & line, qsizetype pos, PreparsedData & data,
 	const QString & workingPath, const QString & fileName, QStringList & linksToParse,
-	QSharedPointer< Document > doc, const QStringList & fr )
+	QSharedPointer< Document > doc, const QStringList & fr, bool ignoreLineBreak )
 {
 	static const QString specialChars( QLatin1String( "!\"#$%&'()*+,-.\\/:;<=>?@[]^_`{|}~" ) );
 
-	bool hasBreakLine = it->endsWith( QLatin1String( "  " ) );
+	bool hasBreakLine = !ignoreLineBreak && it->endsWith( QLatin1String( "  " ) );
 
-	if( it->endsWith( c_92 ) )
+	if( !ignoreLineBreak && it->endsWith( c_92 ) )
 	{
 		hasBreakLine = true;
 		it->remove( it->length() - 1, 1 );
@@ -2270,7 +2271,7 @@ addItemsToParent( PreparsedData & data, QSharedPointer< Block > parent )
 bool
 Parser::parseFormattedTextLinksImages( QStringList & fr, QSharedPointer< Block > parent,
 	QSharedPointer< Document > doc, QStringList & linksToParse, const QString & workingPath,
-	const QString & fileName )
+	const QString & fileName, bool ignoreLineBreak )
 
 {
 	if( fr.isEmpty() )
@@ -2286,7 +2287,8 @@ Parser::parseFormattedTextLinksImages( QStringList & fr, QSharedPointer< Block >
 	for( auto it = fr.begin(), last = fr.end(); it != last; )
 	{
 		std::tie( it, breakParagraph ) =
-			parseLine( it, line, pos, data, workingPath, fileName, linksToParse, doc, fr );
+			parseLine( it, line, pos, data, workingPath, fileName, linksToParse, doc, fr,
+				ignoreLineBreak );
 
 		if( breakParagraph )
 		{

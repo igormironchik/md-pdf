@@ -205,7 +205,7 @@ private:
 	bool parseFormattedTextLinksImages( QStringList & fr, QSharedPointer< Block > parent,
 		QSharedPointer< Document > doc,
 		QStringList & linksToParse, const QString & workingPath,
-		const QString & fileName );
+		const QString & fileName, bool ignoreLineBreak = false );
 
 	// Read line from stream.
 	template< typename STREAM >
