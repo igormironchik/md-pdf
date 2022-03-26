@@ -940,13 +940,13 @@ Parser::parseParagraph( QStringList & fr, QSharedPointer< Block > parent,
 			if( prevHorLine )
 				++horLines;
 
-			if( isH1( fr.at( i ) ) && !prevHorLine )
+			if( isH1( fr.at( i ) ) && !prevHorLine && !fr.at( i - 1 ).simplified().isEmpty() )
 			{
 				lvl = 1;
 				heading = true;
 				break;
 			}
-			else if( isH2( fr.at( i ) ) && !prevHorLine )
+			else if( isH2( fr.at( i ) ) && !prevHorLine && !fr.at( i - 1 ).simplified().isEmpty() )
 			{
 				lvl = 2;
 				heading = true;
