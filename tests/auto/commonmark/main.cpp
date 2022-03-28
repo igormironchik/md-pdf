@@ -2306,3 +2306,17 @@ TEST_CASE( "106" )
 		}
 	}
 }
+
+TEST_CASE( "107" )
+{
+	const auto doc = load_test( 107 );
+
+	REQUIRE( doc->isEmpty() == false );
+	REQUIRE( doc->items().size() == 2 );
+
+	REQUIRE( doc->items().at( 1 )->type() == MD::ItemType::Code );
+	auto c = static_cast< MD::Code* > ( doc->items().at( 1 ).data() );
+	REQUIRE( !c->inlined() );
+	REQUIRE( c->syntax().isEmpty() );
+	REQUIRE( c->text() == QStringLiteral( "a simple\n  indented code block" ) );
+}
