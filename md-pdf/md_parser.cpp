@@ -1008,7 +1008,10 @@ Parser::parseParagraph( QStringList & fr, QSharedPointer< Block > parent,
 	if( !fr.isEmpty() )
 	{
 		if( heading )
-			parseParagraph( fr, parent, doc, linksToParse, workingPath, fileName );
+		{
+			StringListStream stream( fr );
+			parse( stream, parent, doc, linksToParse, workingPath, fileName );
+		}
 		else
 		{
 			QSharedPointer< Paragraph > p( new Paragraph );
