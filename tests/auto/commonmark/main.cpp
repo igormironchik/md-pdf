@@ -2400,3 +2400,17 @@ TEST_CASE( "109" )
 		}
 	}
 }
+
+TEST_CASE( "110" )
+{
+	const auto doc = load_test( 110 );
+
+	REQUIRE( doc->isEmpty() == false );
+	REQUIRE( doc->items().size() == 2 );
+
+	REQUIRE( doc->items().at( 1 )->type() == MD::ItemType::Code );
+	auto c = static_cast< MD::Code* > ( doc->items().at( 1 ).data() );
+	REQUIRE( !c->inlined() );
+	REQUIRE( c->syntax().isEmpty() );
+	REQUIRE( c->text() == QStringLiteral( "<a/>\n*hi*\n\n- one" ) );
+}

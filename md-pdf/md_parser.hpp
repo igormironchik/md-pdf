@@ -349,6 +349,9 @@ private:
 
 			BlockType lineType = whatIsTheLine( line, emptyLineInList, &indent, true );
 
+			if( type == BlockType::CodeIndentedBySpaces && ns > 3 )
+				lineType = BlockType::CodeIndentedBySpaces;
+
 			// First line of the fragment.
 			if( ns != line.length() && type == BlockType::Unknown )
 			{
