@@ -130,6 +130,30 @@ isFootnote( const QString & s )
 		return false;
 }
 
+inline QString
+startSequence( const QString & line )
+{
+	auto pos = skipSpaces( 0, line );
+
+	const auto sch = ( pos < line.length() ? line[ pos ] : QChar() );
+
+	QString s = sch;
+
+	++pos;
+
+	while( pos < line.length() )
+	{
+		if( line[ pos ] == sch )
+			s.append( sch );
+		else
+			break;
+
+		++pos;
+	}
+
+	return s;
+}
+
 bool fileExists( const QString & fileName, const QString & workingPath );
 
 
@@ -341,6 +365,8 @@ private:
 
 		qsizetype indent = 0;
 
+		QString startOfCode;
+
 		while( !stream.atEnd() )
 		{
 			auto line = rl();
@@ -356,6 +382,9 @@ private:
 			if( ns != line.length() && type == BlockType::Unknown )
 			{
 				type = lineType;
+
+				if( type == BlockType::Code )
+					startOfCode = startSequence( line );
 
 				fragment.append( line );
 
@@ -466,7 +495,7 @@ private:
 				continue;
 			}
 
-			// Something new and this is not a code block or a list.
+			// Something new and this is not a code block or a list, blockquote.
 			if( type != lineType && type != BlockType::Code && type != BlockType::List &&
 				type != BlockType::Blockquote )
 			{
@@ -483,7 +512,8 @@ private:
 				}
 			}
 			// End of code block.
-			else if( type == BlockType::Code && type == lineType )
+			else if( type == BlockType::Code && type == lineType &&
+				startSequence( line ).contains( startOfCode ) )
 			{
 				fragment.append( line );
 
