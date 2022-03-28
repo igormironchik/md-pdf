@@ -2571,3 +2571,19 @@ TEST_CASE( "117" )
 		REQUIRE( c->text() == QStringLiteral( "foo" ) );
 	}
 }
+
+TEST_CASE( "118" )
+{
+	const auto doc = load_test( 118 );
+
+	REQUIRE( doc->isEmpty() == false );
+	REQUIRE( doc->items().size() == 2 );
+
+
+	{
+		REQUIRE( doc->items().at( 1 )->type() == MD::ItemType::Code );
+		auto c = static_cast< MD::Code* > ( doc->items().at( 1 ).data() );
+		REQUIRE( !c->inlined() );
+		REQUIRE( c->text() == QStringLiteral( "foo  " ) );
+	}
+}
