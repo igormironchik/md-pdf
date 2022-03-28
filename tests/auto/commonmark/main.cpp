@@ -2470,3 +2470,24 @@ TEST_CASE( "113" )
 		REQUIRE( t->text() == QStringLiteral( "bar" ) );
 	}
 }
+
+TEST_CASE( "114" )
+{
+	const auto doc = load_test( 114 );
+
+	REQUIRE( doc->isEmpty() == false );
+	REQUIRE( doc->items().size() == 3 );
+
+	REQUIRE( doc->items().at( 1 )->type() == MD::ItemType::Code );
+	auto c = static_cast< MD::Code* > ( doc->items().at( 1 ).data() );
+	REQUIRE( !c->inlined() );
+	REQUIRE( c->text() == QStringLiteral( "foo" ) );
+
+	REQUIRE( doc->items().at( 2 )->type() == MD::ItemType::Paragraph );
+	auto p = static_cast< MD::Paragraph* > ( doc->items().at( 2 ).data() );
+	REQUIRE( p->items().size() == 1 );
+	REQUIRE( p->items().at( 0 )->type() == MD::ItemType::Text );
+	auto t = static_cast< MD::Text* > ( p->items().at( 0 ).data() );
+	REQUIRE( t->opts() == MD::TextWithoutFormat );
+	REQUIRE( t->text() == QStringLiteral( "bar" ) );
+}
