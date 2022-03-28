@@ -2428,3 +2428,19 @@ TEST_CASE( "111" )
 	REQUIRE( c->syntax().isEmpty() );
 	REQUIRE( c->text() == QStringLiteral( "chunk1\n\nchunk2\n\n\n\nchunk3" ) );
 }
+
+TEST_CASE( "112" ) // Not strict to CommonMark.
+{
+	const auto doc = load_test( 112 );
+
+	REQUIRE( doc->isEmpty() == false );
+	REQUIRE( doc->items().size() == 2 );
+
+	REQUIRE( doc->items().at( 1 )->type() == MD::ItemType::Code );
+	auto c = static_cast< MD::Code* > ( doc->items().at( 1 ).data() );
+	REQUIRE( !c->inlined() );
+	REQUIRE( c->syntax().isEmpty() );
+	// I skipped two spaces on the second line. Line is empty, so I guess
+	// that this is not so critical for renderer.
+	REQUIRE( c->text() == QStringLiteral( "chunk1\n\n  chunk2" ) );
+}
