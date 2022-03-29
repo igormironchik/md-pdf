@@ -2191,6 +2191,9 @@ PdfRenderer::drawCode( PdfAuxData & pdfData, const RenderOpts & renderOpts,
 {
 	Q_UNUSED( doc )
 
+	if( item->text().isEmpty() )
+		return {};
+
 	if( heightCalcOpt == CalcHeightOpt::Unknown )
 		emit status( tr( "Drawing code." ) );
 
