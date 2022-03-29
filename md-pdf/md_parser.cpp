@@ -333,11 +333,6 @@ Parser::whatIsTheLine( QString & str, bool inList, qsizetype * indent, bool calc
 
 		if( s.startsWith( c_62 ) )
 			return BlockType::Blockquote;
-		else if( s.startsWith( QLatin1String( "```" ) ) ||
-			s.startsWith( QLatin1String( "~~~" ) ) )
-		{
-			return BlockType::Code;
-		}
 		else if( s.startsWith( c_35 ) && first < 4 )
 		{
 			qsizetype c = 0;
@@ -391,6 +386,12 @@ Parser::whatIsTheLine( QString & str, bool inList, qsizetype * indent, bool calc
 			{
 				return BlockType::CodeIndentedBySpaces;
 			}
+		}
+
+		if( s.startsWith( QLatin1String( "```" ) ) ||
+			s.startsWith( QLatin1String( "~~~" ) ) )
+		{
+			return BlockType::Code;
 		}
 	}
 	else
