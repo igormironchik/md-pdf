@@ -3021,3 +3021,17 @@ TEST_CASE( "143" )
 	REQUIRE( c->syntax() == QStringLiteral( "ruby" ) );
 	REQUIRE( c->text() == QStringLiteral( "def foo(x)\n  return 3\nend" ) );
 }
+
+TEST_CASE( "144" )
+{
+	const auto doc = load_test( 144 );
+
+	REQUIRE( doc->isEmpty() == false );
+	REQUIRE( doc->items().size() == 2 );
+
+	REQUIRE( doc->items().at( 1 )->type() == MD::ItemType::Code );
+	auto c = static_cast< MD::Code* > ( doc->items().at( 1 ).data() );
+	REQUIRE( !c->inlined() );
+	REQUIRE( c->syntax() == QStringLiteral( ";" ) );
+	REQUIRE( c->text().isEmpty() );
+}
