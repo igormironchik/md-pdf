@@ -391,20 +391,10 @@ Parser::whatIsTheLine( QString & str, bool inList, qsizetype * indent, bool calc
 		if( s.startsWith( QLatin1String( "```" ) ) ||
 			s.startsWith( QLatin1String( "~~~" ) ) )
 		{
-			const auto ch = s[ 0 ];
-			bool space = false;
-
-			for( qsizetype i = 3; i < s.length(); ++i )
-			{
-				if( s[ i ].isSpace() )
-					space = true;
-				else if( s[ i ] != ch )
-					break;
-				else if( space )
-					return BlockType::Text;
-			}
-
-			return BlockType::Code;
+			if( isCodeFences( str ) )
+				return BlockType::Code;
+			else
+				return BlockType::Text;
 		}
 	}
 	else

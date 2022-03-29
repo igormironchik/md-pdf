@@ -154,6 +154,41 @@ startSequence( const QString & line )
 	return s;
 }
 
+inline bool
+isCodeFences( const QString & s )
+{
+	const auto p = skipSpaces( 0, s );
+
+	if( p > 3 )
+		return false;
+
+	const auto ch = s[ p ];
+
+	if( ch != c_126 && ch != c_96 )
+		return false;
+
+	bool space = false;
+
+	qsizetype c = 1;
+
+	for( qsizetype i = p + 1; i < s.length(); ++i )
+	{
+		if( s[ i ].isSpace() )
+			space = true;
+		else if( s[ i ] == ch )
+		{
+			if( space )
+				return false;
+
+			++c;
+		}
+		else
+			break;
+	}
+
+	return ( c >= 3 );
+}
+
 bool fileExists( const QString & fileName, const QString & workingPath );
 
 
@@ -513,7 +548,8 @@ private:
 			}
 			// End of code block.
 			else if( type == BlockType::Code && type == lineType &&
-				startSequence( line ).contains( startOfCode ) && ns < 4 )
+				startSequence( line ).contains( startOfCode ) &&
+				isCodeFences( line ) )
 			{
 				fragment.append( line );
 
