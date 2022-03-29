@@ -3071,3 +3071,17 @@ TEST_CASE( "146" )
 	REQUIRE( c->syntax() == QStringLiteral( "aa" ) );
 	REQUIRE( c->text() == QStringLiteral( "foo" ) );
 }
+
+TEST_CASE( "147" )
+{
+	const auto doc = load_test( 147 );
+
+	REQUIRE( doc->isEmpty() == false );
+	REQUIRE( doc->items().size() == 2 );
+
+	REQUIRE( doc->items().at( 1 )->type() == MD::ItemType::Code );
+	auto c = static_cast< MD::Code* > ( doc->items().at( 1 ).data() );
+	REQUIRE( !c->inlined() );
+	REQUIRE( c->syntax().isEmpty() );
+	REQUIRE( c->text() == QStringLiteral( "``` aaa" ) );
+}

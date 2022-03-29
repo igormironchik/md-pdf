@@ -155,7 +155,7 @@ startSequence( const QString & line )
 }
 
 inline bool
-isCodeFences( const QString & s )
+isCodeFences( const QString & s, bool closing = false )
 {
 	const auto p = skipSpaces( 0, s );
 
@@ -177,12 +177,14 @@ isCodeFences( const QString & s )
 			space = true;
 		else if( s[ i ] == ch )
 		{
-			if( space && ch == c_96 )
+			if( space && ( closing ? true : ch == c_96 ) )
 				return false;
 
 			if( !space )
 				++c;
 		}
+		else if( closing )
+			return false;
 	}
 
 	return ( c >= 3 );
@@ -548,7 +550,7 @@ private:
 			// End of code block.
 			else if( type == BlockType::Code && type == lineType &&
 				startSequence( line ).contains( startOfCode ) &&
-				isCodeFences( line ) )
+				isCodeFences( line, true ) )
 			{
 				fragment.append( line );
 
