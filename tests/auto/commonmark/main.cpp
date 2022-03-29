@@ -2643,7 +2643,6 @@ TEST_CASE( "122" )
 	REQUIRE( doc->isEmpty() == false );
 	REQUIRE( doc->items().size() == 2 );
 
-
 	{
 		REQUIRE( doc->items().at( 1 )->type() == MD::ItemType::Code );
 		auto c = static_cast< MD::Code* > ( doc->items().at( 1 ).data() );
@@ -2658,7 +2657,6 @@ TEST_CASE( "123" )
 
 	REQUIRE( doc->isEmpty() == false );
 	REQUIRE( doc->items().size() == 2 );
-
 
 	{
 		REQUIRE( doc->items().at( 1 )->type() == MD::ItemType::Code );
@@ -2675,7 +2673,6 @@ TEST_CASE( "124" )
 	REQUIRE( doc->isEmpty() == false );
 	REQUIRE( doc->items().size() == 2 );
 
-
 	{
 		REQUIRE( doc->items().at( 1 )->type() == MD::ItemType::Code );
 		auto c = static_cast< MD::Code* > ( doc->items().at( 1 ).data() );
@@ -2691,11 +2688,25 @@ TEST_CASE( "125" )
 	REQUIRE( doc->isEmpty() == false );
 	REQUIRE( doc->items().size() == 2 );
 
-
 	{
 		REQUIRE( doc->items().at( 1 )->type() == MD::ItemType::Code );
 		auto c = static_cast< MD::Code* > ( doc->items().at( 1 ).data() );
 		REQUIRE( !c->inlined() );
 		REQUIRE( c->text() == QStringLiteral( "aaa\n~~~" ) );
+	}
+}
+
+TEST_CASE( "126" )
+{
+	const auto doc = load_test( 126 );
+
+	REQUIRE( doc->isEmpty() == false );
+	REQUIRE( doc->items().size() == 2 );
+
+	{
+		REQUIRE( doc->items().at( 1 )->type() == MD::ItemType::Code );
+		auto c = static_cast< MD::Code* > ( doc->items().at( 1 ).data() );
+		REQUIRE( !c->inlined() );
+		REQUIRE( c->text().isEmpty() );
 	}
 }
