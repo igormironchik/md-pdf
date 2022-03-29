@@ -65,7 +65,8 @@ Good example of work of this application is
 
 # Known issues
 
- * Internal Markdown parser is not strict to CommonMark 0.30, work on this is in progress.
+ * Internal Markdown parser does not correspond strictly to CommonMark 0.30,
+ work on this is in progress.
 
  * I don't support Chinese, as they don't use spaces. I don't know theirs rules, to adapt
  algorithms.
