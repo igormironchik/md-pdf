@@ -2993,3 +2993,17 @@ TEST_CASE( "141" )
 		REQUIRE( t->text() == QStringLiteral( "baz" ) );
 	}
 }
+
+TEST_CASE( "142" )
+{
+	const auto doc = load_test( 142 );
+
+	REQUIRE( doc->isEmpty() == false );
+	REQUIRE( doc->items().size() == 2 );
+
+	REQUIRE( doc->items().at( 1 )->type() == MD::ItemType::Code );
+	auto c = static_cast< MD::Code* > ( doc->items().at( 1 ).data() );
+	REQUIRE( !c->inlined() );
+	REQUIRE( c->syntax() == QStringLiteral( "ruby" ) );
+	REQUIRE( c->text() == QStringLiteral( "def foo(x)\n  return 3\nend" ) );
+}

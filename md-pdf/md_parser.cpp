@@ -197,7 +197,7 @@ readEscapedSequence( qsizetype i, QStringView & str )
 			backslash = true;
 			now = true;
 		}
-		else if( str[ i ].isSpace() )
+		else if( str[ i ].isSpace() && !backslash )
 			break;
 		else
 			ret.append( str[ i ] );
