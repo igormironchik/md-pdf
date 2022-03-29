@@ -524,7 +524,12 @@ private:
 		}
 
 		if( !fragment.isEmpty() )
+		{
+			if( type == BlockType::Code )
+				fragment.append( startOfCode );
+
 			pf();
+		}
 	}
 
 	//! Wrapper for QStringList to be behaved like a stream.

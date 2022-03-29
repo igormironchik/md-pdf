@@ -2723,25 +2723,31 @@ TEST_CASE( "053" )
 	auto doc = parser.parse( QStringLiteral( "data/053.md" ) );
 
 	REQUIRE( doc->isEmpty() == false );
-	REQUIRE( doc->items().size() == 1 );
+	REQUIRE( doc->items().size() == 2 );
+
+	{
+		REQUIRE( doc->items().at( 1 )->type() == MD::ItemType::Code );
+		auto c = static_cast< MD::Code* > ( doc->items().at( 1 ).data() );
+		REQUIRE( !c->inlined() );
+		REQUIRE( c->text().isEmpty() );
+	}
 }
 
 TEST_CASE( "054" )
 {
 	MD::Parser parser;
 
-	try {
-		parser.parse( QStringLiteral( "data/054.md" ) );
-	}
-	catch ( const MD::ParserException & x )
+	const auto doc = parser.parse( QStringLiteral( "data/054.md" ) );
+
+	REQUIRE( doc->isEmpty() == false );
+	REQUIRE( doc->items().size() == 2 );
+
 	{
-		REQUIRE( x.reason() == QStringLiteral(
-			"We found code block started with \"```java\" that doesn't finished." ) );
-
-		return;
+		REQUIRE( doc->items().at( 1 )->type() == MD::ItemType::Code );
+		auto c = static_cast< MD::Code* > ( doc->items().at( 1 ).data() );
+		REQUIRE( !c->inlined() );
+		REQUIRE( c->text().isEmpty() );
 	}
-
-	REQUIRE( false );
 }
 
 TEST_CASE( "055" )

@@ -2625,12 +2625,11 @@ Parser::parseCodeIndentedBySpaces( QStringList & fr, QSharedPointer< Block > par
 			l + c_10 ) );
 
 	if( !code.isEmpty() )
-	{
 		code = code.left( code.length() - 1 );
-		QSharedPointer< Code > codeItem( new Code( code ) );
-		codeItem->setSyntax( syntax );
-		parent->appendItem( codeItem );
-	}
+
+	QSharedPointer< Code > codeItem( new Code( code ) );
+	codeItem->setSyntax( syntax );
+	parent->appendItem( codeItem );
 }
 
 bool
