@@ -513,7 +513,7 @@ private:
 			}
 			// End of code block.
 			else if( type == BlockType::Code && type == lineType &&
-				startSequence( line ).contains( startOfCode ) )
+				startSequence( line ).contains( startOfCode ) && ns < 4 )
 			{
 				fragment.append( line );
 

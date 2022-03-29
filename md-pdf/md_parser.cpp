@@ -2621,8 +2621,12 @@ Parser::parseCodeIndentedBySpaces( QStringList & fr, QSharedPointer< Block > par
 	QString code;
 
 	for( const auto & l : qAsConst( fr ) )
-		code.append( ( indent > 0 ? l.right( l.length() - indent ) + c_10 :
+	{
+		const auto ns = skipSpaces( 0, l );
+
+		code.append( ( indent > 0 ? l.right( l.length() - ( ns < indent ? ns : indent ) ) + c_10 :
 			l + c_10 ) );
+	}
 
 	if( !code.isEmpty() )
 		code = code.left( code.length() - 1 );
