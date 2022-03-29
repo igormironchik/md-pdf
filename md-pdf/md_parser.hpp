@@ -168,7 +168,6 @@ isCodeFences( const QString & s )
 		return false;
 
 	bool space = false;
-	bool take = false;
 
 	qsizetype c = 1;
 
@@ -178,17 +177,11 @@ isCodeFences( const QString & s )
 			space = true;
 		else if( s[ i ] == ch )
 		{
-			if( space || take )
+			if( space && ch == c_96 )
 				return false;
 
-			++c;
-		}
-		else
-		{
-			if( ch == c_126 && s[ i ] == c_96 )
-				return false;
-
-			take = true;
+			if( !space )
+				++c;
 		}
 	}
 
