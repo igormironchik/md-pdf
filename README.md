@@ -67,6 +67,8 @@ Good example of work of this application is
 
  * Internal Markdown parser does not correspond strictly to CommonMark 0.30,
  work on this is in progress.
+ 
+ * I do not support HTML tags in Markdown, as for PDF rendering HTML is unuseful.
 
  * I don't support Chinese, as they don't use spaces. I don't know theirs rules, to adapt
  algorithms.
