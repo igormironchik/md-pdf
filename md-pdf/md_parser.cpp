@@ -183,7 +183,7 @@ isOrderedList( const QString & s, int * num = nullptr )
 }
 
 inline QString
-readEscapedSequence( qsizetype i, QStringView & str )
+readEscapedSequence( qsizetype i, QStringView str )
 {
 	QString ret;
 	bool backslash = false;
@@ -224,10 +224,19 @@ isStartOfCode( QStringView str, QString * syntax = nullptr )
 	if( c96 || c126 )
 	{
 		qsizetype p = 1;
+		qsizetype c = 1;
 
-		for( ; p < 3; ++p )
+		while( p < str.length() )
+		{
 			if( str[ p ] != ( c96 ? c_96 : c_126 ) )
-				return false;
+				break;
+
+			++c;
+			++p;
+		}
+
+		if( c < 3 )
+			return false;
 
 		if( syntax )
 		{
