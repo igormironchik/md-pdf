@@ -415,7 +415,7 @@ Parser::whatIsTheLine( QString & str, bool inList, qsizetype * indent, bool calc
 void
 Parser::parseFragment( QStringList & fr, QSharedPointer< Block > parent,
 	QSharedPointer< Document > doc, QStringList & linksToParse,
-	const QString & workingPath, const QString & fileName )
+	const QString & workingPath, const QString & fileName, bool collectRefLinks )
 {
 	switch( whatIsTheLine( fr.first() ) )
 	{
@@ -2297,6 +2297,304 @@ addItemsToParent( PreparsedData & data, QSharedPointer< Block > parent )
 				break;
 		}
 	}
+}
+
+struct Delimiter {
+	enum DelimiterType {
+		// (
+		ParenthesesOpen,
+		// )
+		ParenthesesClose,
+		// [
+		SquareBracketsOpen,
+		// ]
+		SquareBracketsClose,
+		// ![
+		ImageOpen,
+		// ~~
+		Strikethrough,
+		// *
+		Italic1,
+		// _
+		Italic2,
+		// **
+		Bold1,
+		// __
+		Bold2,
+		// ***
+		BoldItalic1,
+		// ___
+		BoldItalic2,
+		// _**
+		BoldItalic3Open,
+		// **_
+		BoldItalic3Close,
+		// __*
+		BoldItalic4Open,
+		// *__
+		BoldItalic4Close,
+		// `
+		InlineCode,
+		HorizontalLine,
+		Unknown
+	}; // enum DelimiterType
+
+	DelimiterType m_type;
+	qsizetype m_line;
+	qsizetype m_pos;
+	qsizetype m_len;
+	bool m_spaceBefore;
+	bool m_spaceAfter;
+	bool m_isWordBefore;
+}; // struct Delimiter
+
+inline Delimiter::DelimiterType
+styleType( const QString & s )
+{
+	if( s == QStringLiteral( "*" ) )
+		return Delimiter::Italic1;
+	else if( s == QStringLiteral( "_" ) )
+		return Delimiter::Italic2;
+	else if( s == QStringLiteral( "**" ) )
+		return Delimiter::Bold1;
+	else if( s == QStringLiteral( "__" ) )
+		return Delimiter::Bold2;
+	else if( s == QStringLiteral( "***" ) )
+		return Delimiter::BoldItalic1;
+	else if( s == QStringLiteral( "___" ) )
+		return Delimiter::BoldItalic2;
+	else if( s == QStringLiteral( "_**" ) )
+		return Delimiter::BoldItalic3Open;
+	else if( s == QStringLiteral( "**_" ) )
+		return Delimiter::BoldItalic3Close;
+	else if( s == QStringLiteral( "__*" ) )
+		return Delimiter::BoldItalic4Open;
+	else if( s == QStringLiteral( "*__" ) )
+		return Delimiter::BoldItalic4Close;
+	else
+		return Delimiter::Unknown;
+}
+
+using Delims = QList< Delimiter >;
+
+inline Delims
+collectDelimiters( const QStringList & fr )
+{
+	Delims d;
+
+	for( qsizetype line = 0; line < fr.size(); ++line )
+	{
+		const QString & str = fr.at( line );
+
+		if( isHorizontalLine( str ) )
+			d.push_back( { Delimiter::HorizontalLine, line, 0, str.length(), false, false, false } );
+		else
+		{
+			bool backslash = false;
+			bool space = false;
+			bool word = false;
+
+			for( qsizetype i = 0; i < str.size(); ++i )
+			{
+				bool now = false;
+
+				if( str[ i ] == c_92 && !backslash )
+				{
+					backslash = true;
+					now = true;
+				}
+				else if( str[ i ] == c_32 && !backslash )
+				{
+					space = true;
+					now = true;
+				}
+				else
+				{
+					// * or _
+					if( str[ i ] == c_95 || str[ i ] == c_42 )
+					{
+						QString style;
+
+						while( i < str.length() && ( str[ i ] == c_95 || str[ i ] == c_42 ) )
+						{
+							style.append( str[ i ] );
+							++i;
+						}
+
+						if( style.length() <= 3 && !backslash )
+						{
+							const auto dt = styleType( style );
+
+							if( dt != Delimiter::Unknown )
+							{
+								const bool spaceAfter =
+									( i < str.length() ? str[ i ] == c_32 : false );
+
+								d.push_back( { dt, line, i - style.length(), style.length(),
+									space, spaceAfter, word } );
+
+								word = false;
+							}
+							else
+								word = true;
+						}
+						else
+							word = true;
+					}
+					// ~
+					else if( str[ i ] == c_126 )
+					{
+						QString style;
+
+						while( i < str.length() && str[ i ] == c_126 )
+						{
+							style.append( str[ i ] );
+							++i;
+						}
+
+						if( style.length() == 2 && !backslash )
+						{
+							const bool spaceAfter =
+								( i < str.length() ? str[ i ] == c_32 : false );
+
+							d.push_back( { Delimiter::Strikethrough, line, i - style.length(),
+								style.length(), space, spaceAfter, word } );
+
+							word = false;
+						}
+						else
+							word = true;
+					}
+					// [
+					else if( str[ i ] == c_91 )
+					{
+						if( !backslash )
+						{
+							const bool spaceAfter =
+								( i < str.length() ? str[ i ] == c_32 : false );
+
+							d.push_back( { Delimiter::SquareBracketsOpen, line, i, 1,
+								space, spaceAfter, word } );
+
+							word = false;
+						}
+						else
+							word = true;
+					}
+					// !
+					else if( str[ i ] == c_33 )
+					{
+						if( !backslash )
+						{
+							if( i + 1 < str.length() )
+							{
+								if( str[ i + 1 ] == c_91 )
+								{
+									const bool spaceAfter =
+										( i < str.length() ? str[ i ] == c_32 : false );
+
+									d.push_back( { Delimiter::ImageOpen, line, i, 2,
+										space, spaceAfter, word } );
+
+									++i;
+
+									word = false;
+								}
+								else
+									word = true;
+							}
+							else
+								word = true;
+						}
+						else
+							word = true;
+					}
+					// (
+					else if( str[ i ] == c_40 )
+					{
+						if( !backslash )
+						{
+							const bool spaceAfter =
+								( i < str.length() ? str[ i ] == c_32 : false );
+
+							d.push_back( { Delimiter::ParenthesesOpen, line, i, 1,
+								space, spaceAfter, word } );
+
+							word = false;
+						}
+						else
+							word = true;
+					}
+					// ]
+					else if( str[ i ] == c_93 )
+					{
+						if( !backslash )
+						{
+							const bool spaceAfter =
+								( i < str.length() ? str[ i ] == c_32 : false );
+
+							d.push_back( { Delimiter::SquareBracketsClose, line, i, 1,
+								space, spaceAfter, word } );
+
+							word = false;
+						}
+						else
+							word = true;
+					}
+					// )
+					else if( str[ i ] == c_41 )
+					{
+						if( !backslash )
+						{
+							const bool spaceAfter =
+								( i < str.length() ? str[ i ] == c_32 : false );
+
+							d.push_back( { Delimiter::ParenthesesClose, line, i, 1,
+								space, spaceAfter, word } );
+
+							word = false;
+						}
+						else
+							word = true;
+					}
+					// `
+					else if( str[ i ] == c_96 )
+					{
+						QString code;
+
+						while( i < str.length() && str[ i ] == c_96 )
+						{
+							code.append( str[ i ] );
+							++i;
+						}
+
+						if( !backslash )
+						{
+							const bool spaceAfter =
+								( i < str.length() ? str[ i ] == c_32 : false );
+
+							d.push_back( { Delimiter::InlineCode, line, i - code.length(),
+								code.length(), space, spaceAfter, word } );
+
+							word = false;
+						}
+						else
+							word = true;
+					}
+					else
+						word = true;
+				}
+
+				if( !now )
+				{
+					backslash = false;
+					space = false;
+				}
+			}
+		}
+	}
+
+	return d;
 }
 
 } /* namespace anonymous */

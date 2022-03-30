@@ -226,7 +226,7 @@ private:
 	void parseFragment( QStringList & fr, QSharedPointer< Block > parent,
 		QSharedPointer< Document > doc,
 		QStringList & linksToParse, const QString & workingPath,
-		const QString & fileName );
+		const QString & fileName, bool collectRefLinks );
 	void parseText( QStringList & fr, QSharedPointer< Block > parent,
 		QSharedPointer< Document > doc,
 		QStringList & linksToParse, const QString & workingPath,
@@ -331,6 +331,8 @@ private:
 		const QString & workingPath, const QString & fileName,
 		bool skipSpacesAtStartOfLine = false )
 	{
+		QVector< QStringList > splitted;
+
 		QStringList fragment;
 
 		BlockType type = BlockType::Unknown;
@@ -343,7 +345,8 @@ private:
 		auto pf = [&]()
 			{
 				parseFragment( fragment, parent, doc, linksToParse,
-					workingPath, fileName );
+					workingPath, fileName, true );
+				splitted.append( fragment );
 				fragment.clear();
 				type = BlockType::Unknown;
 				emptyLineInList = false;
@@ -567,6 +570,12 @@ private:
 
 			pf();
 		}
+
+//		for( qsizetype i = 0; i < splitted.size(); ++i )
+//		{
+//			parseFragment( splitted[ i ], parent, doc, linksToParse,
+//				workingPath, fileName, false );
+//		}
 	}
 
 	//! Wrapper for QStringList to be behaved like a stream.
