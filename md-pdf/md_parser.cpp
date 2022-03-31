@@ -2597,6 +2597,422 @@ collectDelimiters( const QStringList & fr )
 	return d;
 }
 
+inline bool
+isLineBreak( const QString & s )
+{
+	return ( s.endsWith( QStringLiteral( "  " ) ) || s.endsWith( c_92 ) );
+}
+
+inline QString
+removeLineBreak( const QString & s )
+{
+	if( s.endsWith( c_92 ) )
+		return s.sliced( 0, s.size() - 1 );
+	else
+		return s;
+}
+
+inline void
+makeTextObject( const QString & text, const TextOptions & opts,
+	bool spaceBefore, bool spaceAfter, QSharedPointer< Block > parent )
+{
+	const auto s = text.simplified();
+
+	if( !s.isEmpty() )
+	{
+		QSharedPointer< Text > t( new Text() );
+		t->setText( s );
+		t->setOpts( opts );
+		t->setSpaceBefore( spaceBefore );
+		t->setSpaceAfter( spaceAfter );
+
+		parent->appendItem( t );
+	}
+}
+
+inline void
+makeTextObjectWithLineBreak( const QString & text, const TextOptions & opts,
+	bool spaceBefore, bool spaceAfter, QSharedPointer< Block > parent )
+{
+	makeTextObject( text, opts, spaceBefore, true, parent );
+
+	QSharedPointer< Item > hr( new LineBreak );
+	parent->appendItem( hr );
+}
+
+inline void
+makeText( qsizetype & line, qsizetype & pos,
+	// Inclusive.
+	qsizetype lastLine,
+	// Not inclusive
+	qsizetype lastPos,
+	const QStringList & fr,
+	QSharedPointer< Block > parent,
+	const TextOptions & opts,
+	bool ignoreLineBreak )
+{
+	QString text;
+
+	bool spaceBefore = ( pos > 0 ? fr.at( line )[ pos - 1 ].isSpace() ||
+		fr.at( line )[ pos ].isSpace() : true );
+
+	bool lineBreak = ( !ignoreLineBreak && ( line == lastLine ?
+		( lastPos == fr.at( line ).size() && isLineBreak( fr.at( line ) ) ) :
+		isLineBreak( fr.at( line ) ) ) );
+
+	// makeTOWLB
+	auto makeTOWLB = [&] () {
+		makeTextObjectWithLineBreak( text, opts, spaceBefore, true, parent );
+
+		text.clear();
+
+		spaceBefore = true;
+	}; // makeTOWLB
+
+	if( lineBreak )
+	{
+		text.append( removeLineBreak( fr.at( line ) ).sliced( pos ) );
+
+		makeTOWLB();
+	}
+	else
+		text.append( fr.at( line ).sliced( pos,
+			( line == lastLine ? lastPos - pos : fr.at( line ).size() - pos ) ) );
+
+	if( line != lastLine )
+	{
+		text.append( c_32 );
+		++line;
+
+		for( ; line < lastLine; ++line )
+		{
+			lineBreak = ( !ignoreLineBreak && isLineBreak( fr.at( line ) ) );
+
+			text.append( ( lineBreak ? removeLineBreak( fr.at( line ) ) : fr.at( line ) ) );
+
+			text.append( c_32 );
+
+			if( lineBreak )
+				makeTOWLB();
+		}
+
+		lineBreak = ( !ignoreLineBreak && lastPos == fr.at( line ).size() &&
+			isLineBreak( fr.at( line ) ) );
+
+		if( !lineBreak )
+			text.append( fr.at( line ).sliced( 0, lastPos ) );
+		else
+			makeTOWLB();
+	}
+
+	pos = lastPos;
+
+	makeTextObject( text, opts, spaceBefore,
+		( pos + 1 < fr.at( line ).size() ?
+			fr.at( line )[ pos + 1 ].isSpace() || fr.at( line )[ pos ].isSpace() : true ),
+		parent );
+}
+
+inline Delims::const_iterator
+checkForImage( qsizetype & line, qsizetype & pos,
+	Delims::const_iterator it, Delims::const_iterator last, bool create )
+{
+	return it;
+}
+
+inline Delims::const_iterator
+checkForInlineCode( qsizetype & line, qsizetype & pos,
+	Delims::const_iterator it, Delims::const_iterator last, bool create )
+{
+	return it;
+}
+
+
+inline Delims::const_iterator
+checkForLink( qsizetype & line, qsizetype & pos,
+	Delims::const_iterator it, Delims::const_iterator last, bool create )
+{
+	return it;
+}
+
+inline bool
+isClosingStyle( const QVector< Delimiter::DelimiterType > & styles,
+	Delimiter::DelimiterType s )
+{
+	switch( s )
+	{
+		case Delimiter::Strikethrough :
+		case Delimiter::Italic1 :
+		case Delimiter::Italic2 :
+		case Delimiter::Bold1 :
+		case Delimiter::Bold2 :
+		case Delimiter::BoldItalic1 :
+		case Delimiter::BoldItalic2 :
+			return styles.contains( s );
+
+		case Delimiter::BoldItalic3Close :
+			return styles.contains( Delimiter::BoldItalic3Open );
+
+		case Delimiter::BoldItalic4Close :
+			return styles.contains( Delimiter::BoldItalic4Open );
+
+		default :
+			return false;
+	}
+}
+
+inline void
+closeStyle( QVector< Delimiter::DelimiterType > & styles,
+	Delimiter::DelimiterType s )
+{
+	switch( s )
+	{
+		case Delimiter::Strikethrough :
+		case Delimiter::Italic1 :
+		case Delimiter::Italic2 :
+		case Delimiter::Bold1 :
+		case Delimiter::Bold2 :
+		case Delimiter::BoldItalic1 :
+		case Delimiter::BoldItalic2 :
+			styles.removeOne( s );
+			break;
+
+		case Delimiter::BoldItalic3Close :
+			styles.removeOne( Delimiter::BoldItalic3Open );
+			break;
+
+		case Delimiter::BoldItalic4Close :
+			styles.removeOne( Delimiter::BoldItalic4Open );
+			break;
+
+		default :
+			break;
+	}
+}
+
+inline void
+setStyle( TextOptions & opts, Delimiter::DelimiterType s, bool on )
+{
+	switch( s )
+	{
+		case Delimiter::Strikethrough :
+			opts.setFlag( StrikethroughText, on );
+			break;
+
+		case Delimiter::Italic1 :
+		case Delimiter::Italic2 :
+			opts.setFlag( ItalicText, on );
+			break;
+
+		case Delimiter::Bold1 :
+		case Delimiter::Bold2 :
+			opts.setFlag( BoldText, on );
+			break;
+
+		case Delimiter::BoldItalic1 :
+		case Delimiter::BoldItalic2 :
+		case Delimiter::BoldItalic3Close :
+		case Delimiter::BoldItalic4Close :
+			opts.setFlag( BoldText, on );
+			opts.setFlag( ItalicText, on );
+			break;
+
+		default :
+			break;
+	}
+}
+
+inline bool
+isClosingStyle( Delimiter::DelimiterType open,
+	Delimiter::DelimiterType close )
+{
+	switch( open )
+	{
+		case Delimiter::Strikethrough :
+		case Delimiter::Italic1 :
+		case Delimiter::Italic2 :
+		case Delimiter::Bold1 :
+		case Delimiter::Bold2 :
+		case Delimiter::BoldItalic1 :
+		case Delimiter::BoldItalic2 :
+			return ( open == close );
+
+		case Delimiter::BoldItalic3Open :
+			return ( close == Delimiter::BoldItalic3Close );
+
+		case Delimiter::BoldItalic4Open :
+			return ( close == Delimiter::BoldItalic4Close );
+
+		default :
+			return false;
+	}
+}
+
+inline bool
+isStyleClosed( Delims::const_iterator it, Delims::const_iterator last )
+{
+	const auto open = it->m_type;
+
+	qsizetype line = 0, pos = 0;
+
+	for( ; it != last; ++it )
+	{
+		switch( it->m_type )
+		{
+			case Delimiter::SquareBracketsOpen :
+				it = checkForLink( line, pos, it, last, false );
+				break;
+
+			case Delimiter::ImageOpen :
+				it = checkForImage( line, pos, it, last, false );
+				break;
+
+			case Delimiter::Strikethrough :
+			case Delimiter::Italic1 :
+			case Delimiter::Italic2 :
+			case Delimiter::Bold1 :
+			case Delimiter::Bold2 :
+			case Delimiter::BoldItalic1 :
+			case Delimiter::BoldItalic2 :
+			case Delimiter::BoldItalic3Close :
+			case Delimiter::BoldItalic4Close :
+			{
+				if( isClosingStyle( open, it->m_type ) )
+					return true;
+			}
+				break;
+
+			case Delimiter::InlineCode :
+				it = checkForInlineCode( line, pos, it, last, false );
+				break;
+
+			default :
+				break;
+		}
+	}
+
+	return false;
+}
+
+inline Delims::const_iterator
+checkForStyle( qsizetype & line, qsizetype & pos,
+	Delims::const_iterator it, Delims::const_iterator last,
+	QVector< Delimiter::DelimiterType > & styles,
+	TextOptions & opts,
+	const QStringList & fr,
+	QSharedPointer< Block > parent,
+	bool ignoreLineBreak )
+{
+	if( isClosingStyle( styles, it->m_type ) )
+	{
+		closeStyle( styles, it->m_type );
+		setStyle( opts, it->m_type, false );
+	}
+	else
+	{
+		switch( it->m_type )
+		{
+			case Delimiter::Strikethrough :
+			case Delimiter::Italic1 :
+			case Delimiter::Italic2 :
+			case Delimiter::Bold1 :
+			case Delimiter::Bold2 :
+			case Delimiter::BoldItalic1 :
+			case Delimiter::BoldItalic2 :
+			case Delimiter::BoldItalic3Open :
+			case Delimiter::BoldItalic4Open :
+			{
+				if( isStyleClosed( it, last ) )
+				{
+					setStyle( opts, it->m_type, true );
+					styles.append( it->m_type );
+				}
+				else
+					makeText( line, pos, it->m_line, it->m_pos + it->m_len,
+						fr, parent, opts, ignoreLineBreak );
+			}
+				break;
+
+			default :
+				makeText( line, pos, it->m_line, it->m_pos + it->m_len,
+					fr, parent, opts, ignoreLineBreak );
+				break;
+		}
+	}
+
+	return it;
+}
+
+bool
+parseFormattedTextLinksImages( QStringList & fr, QSharedPointer< Block > parent,
+	QSharedPointer< Document > doc, QStringList & linksToParse, const QString & workingPath,
+	const QString & fileName, bool ignoreLineBreak )
+
+{
+	if( fr.isEmpty() )
+		return true;
+
+	const auto delims = collectDelimiters( fr );
+
+	qsizetype pos = 0;
+	qsizetype line = 0;
+	TextOptions opts = TextWithoutFormat;
+
+	QVector< Delimiter::DelimiterType > styles;
+
+	for( auto it = delims.cbegin(), last = delims.cend(); it != last; ++it )
+	{
+		if( it->m_line > line || it->m_pos > pos )
+			makeText( line, pos, it->m_line, it->m_pos, fr, parent, opts, ignoreLineBreak );
+
+		switch( it->m_type )
+		{
+			case Delimiter::SquareBracketsOpen :
+				it = checkForLink( line, pos, it, last, true );
+				break;
+
+			case Delimiter::ImageOpen :
+				it = checkForImage( line, pos, it, last, true );
+				break;
+
+			case Delimiter::Strikethrough :
+			case Delimiter::Italic1 :
+			case Delimiter::Italic2 :
+			case Delimiter::Bold1 :
+			case Delimiter::Bold2 :
+			case Delimiter::BoldItalic1 :
+			case Delimiter::BoldItalic2 :
+			case Delimiter::BoldItalic3Open :
+			case Delimiter::BoldItalic4Open :
+			case Delimiter::BoldItalic3Close :
+			case Delimiter::BoldItalic4Close :
+				it = checkForStyle( line, pos, it, last, styles, opts,
+					fr, parent, ignoreLineBreak );
+				break;
+
+			case Delimiter::InlineCode :
+				it = checkForInlineCode( line, pos, it, last, true );
+				break;
+
+			case Delimiter::HorizontalLine :
+			{
+				QSharedPointer< Item > hr( new HorizontalLine );
+				parent->appendItem( hr );
+			}
+				break;
+
+			default :
+				makeText( line, pos, it->m_line, it->m_pos + it->m_len, fr,
+					parent, opts, ignoreLineBreak );
+				break;
+		}
+	}
+
+	makeText( line, pos, fr.size() - 1, fr.back().length() - 1, fr, parent, opts, ignoreLineBreak );
+
+	return true;
+}
+
 } /* namespace anonymous */
 
 bool
