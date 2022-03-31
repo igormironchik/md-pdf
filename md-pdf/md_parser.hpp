@@ -230,22 +230,22 @@ private:
 	void parseText( QStringList & fr, QSharedPointer< Block > parent,
 		QSharedPointer< Document > doc,
 		QStringList & linksToParse, const QString & workingPath,
-		const QString & fileName );
+		const QString & fileName, bool collectRefLinks );
 	void parseBlockquote( QStringList & fr, QSharedPointer< Block > parent,
 		QSharedPointer< Document > doc,
 		QStringList & linksToParse, const QString & workingPath,
-		const QString & fileName );
+		const QString & fileName, bool collectRefLinks );
 	void parseList( QStringList & fr, QSharedPointer< Block > parent,
 		QSharedPointer< Document > doc,
 		QStringList & linksToParse, const QString & workingPath,
-		const QString & fileName );
+		const QString & fileName, bool collectRefLinks );
 	void parseCode( QStringList & fr, QSharedPointer< Block > parent, int indent = 0 );
 	void parseCodeIndentedBySpaces( QStringList & fr, QSharedPointer< Block > parent,
 		int indent = 4, const QString & syntax = QString() );
 	void parseListItem( QStringList & fr, QSharedPointer< Block > parent,
 		QSharedPointer< Document > doc,
 		QStringList & linksToParse, const QString & workingPath,
-		const QString & fileName );
+		const QString & fileName, bool collectRefLinks );
 	void parseHeading( QStringList & fr, QSharedPointer< Block > parent,
 		QSharedPointer< Document > doc,
 		QStringList & linksToParse, const QString & workingPath,
@@ -253,19 +253,19 @@ private:
 	void parseFootnote( QStringList & fr, QSharedPointer< Block > parent,
 		QSharedPointer< Document > doc,
 		QStringList & linksToParse, const QString & workingPath,
-		const QString & fileName );
+		const QString & fileName, bool collectRefLinks );
 	void parseTable( QStringList & fr, QSharedPointer< Block > parent,
 		QSharedPointer< Document > doc,
 		QStringList & linksToParse, const QString & workingPath,
-		const QString & fileName );
+		const QString & fileName, bool collectRefLinks );
 	void parseParagraph( QStringList & fr, QSharedPointer< Block > parent,
 		QSharedPointer< Document > doc,
 		QStringList & linksToParse, const QString & workingPath,
-		const QString & fileName );
+		const QString & fileName, bool collectRefLinks );
 	bool parseFormattedTextLinksImages( QStringList & fr, QSharedPointer< Block > parent,
 		QSharedPointer< Document > doc,
 		QStringList & linksToParse, const QString & workingPath,
-		const QString & fileName, bool ignoreLineBreak = false );
+		const QString & fileName, bool collectRefLinks, bool ignoreLineBreak );
 
 	// Read line from stream.
 	template< typename STREAM >
@@ -329,7 +329,8 @@ private:
 	void parse( STREAM & stream, QSharedPointer< Block > parent,
 		QSharedPointer< Document > doc, QStringList & linksToParse,
 		const QString & workingPath, const QString & fileName,
-		bool skipSpacesAtStartOfLine = false )
+		bool collectRefLinks,
+		bool skipSpacesAtStartOfLine )
 	{
 		QVector< QStringList > splitted;
 
@@ -345,7 +346,7 @@ private:
 		auto pf = [&]()
 			{
 				parseFragment( fragment, parent, doc, linksToParse,
-					workingPath, fileName, true );
+					workingPath, fileName, collectRefLinks );
 				splitted.append( fragment );
 				fragment.clear();
 				type = BlockType::Unknown;

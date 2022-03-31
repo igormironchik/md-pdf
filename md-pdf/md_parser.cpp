@@ -87,7 +87,7 @@ Parser::parseFile( const QString & fileName, bool recursive, QSharedPointer< Doc
 			TextStream stream( s );
 
 			parse( stream, doc, doc, linksToParse,
-				fi.absolutePath() + QStringLiteral( "/" ), fi.fileName() );
+				fi.absolutePath() + QStringLiteral( "/" ), fi.fileName(), false, false );
 
 			f.close();
 
@@ -421,11 +421,12 @@ Parser::parseFragment( QStringList & fr, QSharedPointer< Block > parent,
 	{
 		case BlockType::Text :
 			parseText( fr, parent, doc, linksToParse,
-				workingPath, fileName );
+				workingPath, fileName, collectRefLinks );
 			break;
 
 		case BlockType::Blockquote :
-			parseBlockquote( fr, parent, doc, linksToParse, workingPath, fileName );
+			parseBlockquote( fr, parent, doc, linksToParse, workingPath, fileName,
+				collectRefLinks );
 			break;
 
 		case BlockType::Code :
@@ -448,7 +449,8 @@ Parser::parseFragment( QStringList & fr, QSharedPointer< Block > parent,
 			break;
 
 		case BlockType::List :
-			parseList( fr, parent, doc, linksToParse, workingPath, fileName );
+			parseList( fr, parent, doc, linksToParse, workingPath, fileName,
+				collectRefLinks );
 			break;
 
 		default :
@@ -542,15 +544,17 @@ isTableAlignment( const QString & s )
 void
 Parser::parseText( QStringList & fr, QSharedPointer< Block > parent,
 	QSharedPointer< Document > doc, QStringList & linksToParse,
-	const QString & workingPath, const QString & fileName )
+	const QString & workingPath, const QString & fileName,
+	bool collectRefLinks )
 {
 	if( isFootnote( fr.first() ) )
-		parseFootnote( fr, parent, doc, linksToParse, workingPath, fileName );
+		parseFootnote( fr, parent, doc, linksToParse, workingPath, fileName,
+			collectRefLinks );
 	else if( isTableHeader( fr.first() ) && fr.size() > 1 && isTableAlignment( fr[ 1 ] ) )
-		parseTable( fr, parent, doc, linksToParse, workingPath, fileName );
+		parseTable( fr, parent, doc, linksToParse, workingPath, fileName, collectRefLinks );
 	else
 		parseParagraph( fr, parent, doc, linksToParse,
-			workingPath, fileName );
+			workingPath, fileName, collectRefLinks );
 }
 
 namespace /* anonymous */ {
@@ -730,7 +734,8 @@ Parser::parseHeading( QStringList & fr, QSharedPointer< Block > parent,
 		QStringList tmp;
 		tmp << fr.first().simplified();
 
-		parseFormattedTextLinksImages( tmp, p, doc, linksToParse, workingPath, fileName );
+		parseFormattedTextLinksImages( tmp, p, doc, linksToParse, workingPath, fileName,
+			false, false );
 
 		fr.removeFirst();
 
@@ -756,7 +761,8 @@ Parser::parseHeading( QStringList & fr, QSharedPointer< Block > parent,
 void
 Parser::parseFootnote( QStringList & fr, QSharedPointer< Block >,
 	QSharedPointer< Document > doc, QStringList & linksToParse,
-	const QString & workingPath, const QString & fileName )
+	const QString & workingPath, const QString & fileName,
+	bool collectRefLinks )
 {
 	if( !fr.isEmpty() )
 	{
@@ -794,7 +800,7 @@ Parser::parseFootnote( QStringList & fr, QSharedPointer< Block >,
 
 				StringListStream stream( fr );
 
-				parse( stream, f, doc, linksToParse, workingPath, fileName, false );
+				parse( stream, f, doc, linksToParse, workingPath, fileName, collectRefLinks, false );
 
 				if( !f->isEmpty() )
 					doc->insertFootnote( QString::fromLatin1( "#" ) + id +
@@ -807,7 +813,8 @@ Parser::parseFootnote( QStringList & fr, QSharedPointer< Block >,
 void
 Parser::parseTable( QStringList & fr, QSharedPointer< Block > parent,
 	QSharedPointer< Document > doc, QStringList & linksToParse,
-	const QString & workingPath, const QString & fileName )
+	const QString & workingPath, const QString & fileName,
+	bool collectRefLinks )
 {
 	static const QChar sep( '|' );
 
@@ -841,7 +848,7 @@ Parser::parseTable( QStringList & fr, QSharedPointer< Block > parent,
 					fragment.append( *it );
 
 					parseFormattedTextLinksImages( fragment, c, doc,
-						linksToParse, workingPath, fileName );
+						linksToParse, workingPath, fileName, collectRefLinks, false );
 				}
 
 				tr->appendCell( c );
@@ -931,7 +938,8 @@ isH2( const QString & s )
 void
 Parser::parseParagraph( QStringList & fr, QSharedPointer< Block > parent,
 	QSharedPointer< Document > doc, QStringList & linksToParse,
-	const QString & workingPath, const QString & fileName )
+	const QString & workingPath, const QString & fileName,
+	bool collectRefLinks )
 {
 	bool heading = false;
 
@@ -1000,7 +1008,7 @@ Parser::parseParagraph( QStringList & fr, QSharedPointer< Block > parent,
 				tmp.back() = tmp.back().sliced( 0, ns2 );
 
 			parseFormattedTextLinksImages( tmp, p, doc, linksToParse,
-				workingPath, fileName, true );
+				workingPath, fileName, collectRefLinks, true );
 
 			fr.remove( 0, i - horLines + 1 );
 
@@ -1023,13 +1031,15 @@ Parser::parseParagraph( QStringList & fr, QSharedPointer< Block > parent,
 		if( heading )
 		{
 			StringListStream stream( fr );
-			parse( stream, parent, doc, linksToParse, workingPath, fileName );
+			parse( stream, parent, doc, linksToParse, workingPath, fileName,
+				collectRefLinks, false );
 		}
 		else
 		{
 			QSharedPointer< Paragraph > p( new Paragraph );
 
-			while( !parseFormattedTextLinksImages( fr, p, doc, linksToParse, workingPath, fileName ) )
+			while( !parseFormattedTextLinksImages( fr, p, doc, linksToParse, workingPath, fileName,
+						collectRefLinks, false ) )
 			{
 				if( !p->isEmpty() )
 				{
@@ -2741,11 +2751,12 @@ makeText( qsizetype & line, qsizetype & pos,
 
 inline Delims::const_iterator
 checkForImage( qsizetype & line, qsizetype & pos,
-	Delims::const_iterator it, Delims::const_iterator last, bool create,
+	Delims::const_iterator it, Delims::const_iterator last,
 	QSharedPointer< Document > doc,
 	const QStringList & fr,
 	QSharedPointer< Block > parent,
 	const TextOptions & opts,
+	bool collectRefLinks,
 	bool ignoreLineBreak )
 {
 	return it;
@@ -2782,11 +2793,12 @@ makeInlineCode( qsizetype line, qsizetype pos,
 
 inline Delims::const_iterator
 checkForInlineCode( qsizetype & line, qsizetype & pos,
-	Delims::const_iterator it, Delims::const_iterator last, bool create,
+	Delims::const_iterator it, Delims::const_iterator last,
 	QSharedPointer< Document > doc,
 	const QStringList & fr,
 	QSharedPointer< Block > parent,
 	const TextOptions & opts,
+	bool collectRefLinks,
 	bool ignoreLineBreak )
 {
 	const auto len = it->m_len;
@@ -2798,7 +2810,7 @@ checkForInlineCode( qsizetype & line, qsizetype & pos,
 	{
 		if( it->m_type == Delimiter::InlineCode && it->m_len == len )
 		{
-			if( create )
+			if( !collectRefLinks )
 			{
 				makeText( line, pos, start->m_line, start->m_pos,
 					fr, parent, opts, ignoreLineBreak );
@@ -2814,7 +2826,7 @@ checkForInlineCode( qsizetype & line, qsizetype & pos,
 		}
 	}
 
-	if( create )
+	if( !collectRefLinks )
 		makeText( line, pos, start->m_line, start->m_pos + start->m_len,
 			fr, parent, opts, ignoreLineBreak );
 
@@ -2824,11 +2836,12 @@ checkForInlineCode( qsizetype & line, qsizetype & pos,
 
 inline Delims::const_iterator
 checkForLink( qsizetype & line, qsizetype & pos,
-	Delims::const_iterator it, Delims::const_iterator last, bool create,
+	Delims::const_iterator it, Delims::const_iterator last,
 	QSharedPointer< Document > doc,
 	const QStringList & fr,
 	QSharedPointer< Block > parent,
 	const TextOptions & opts,
+	bool collectRefLinks,
 	bool ignoreLineBreak )
 {
 	return it;
@@ -2964,13 +2977,13 @@ isStyleClosed( Delims::const_iterator it, Delims::const_iterator last,
 		switch( it->m_type )
 		{
 			case Delimiter::SquareBracketsOpen :
-				it = checkForLink( line, pos, it, last, false, doc,
-					fr, parent, opts, ignoreLineBreak );
+				it = checkForLink( line, pos, it, last, doc,
+					fr, parent, opts, false, ignoreLineBreak );
 				break;
 
 			case Delimiter::ImageOpen :
-				it = checkForImage( line, pos, it, last, false, doc,
-					fr, parent, opts, ignoreLineBreak );
+				it = checkForImage( line, pos, it, last, doc,
+					fr, parent, opts, false, ignoreLineBreak );
 				break;
 
 			case Delimiter::Strikethrough :
@@ -2989,8 +3002,8 @@ isStyleClosed( Delims::const_iterator it, Delims::const_iterator last,
 				break;
 
 			case Delimiter::InlineCode :
-				it = checkForInlineCode( line, pos, it, last, false, doc,
-					fr, parent, opts, ignoreLineBreak );
+				it = checkForInlineCode( line, pos, it, last, doc,
+					fr, parent, opts, false, ignoreLineBreak );
 				break;
 
 			default :
@@ -3008,6 +3021,7 @@ checkForStyle( qsizetype & line, qsizetype & pos,
 	TextOptions & opts,
 	const QStringList & fr,
 	QSharedPointer< Block > parent,
+	bool collectRefLinks,
 	bool ignoreLineBreak,
 	QSharedPointer< Document > doc )
 {
@@ -3035,15 +3049,18 @@ checkForStyle( qsizetype & line, qsizetype & pos,
 					setStyle( opts, it->m_type, true );
 					styles.append( it->m_type );
 				}
-				else
+				else if( !collectRefLinks )
 					makeText( line, pos, it->m_line, it->m_pos + it->m_len,
 						fr, parent, opts, ignoreLineBreak );
 			}
 				break;
 
 			default :
-				makeText( line, pos, it->m_line, it->m_pos + it->m_len,
-					fr, parent, opts, ignoreLineBreak );
+			{
+				if( !collectRefLinks )
+					makeText( line, pos, it->m_line, it->m_pos + it->m_len,
+						fr, parent, opts, ignoreLineBreak );
+			}
 				break;
 		}
 	}
@@ -3054,7 +3071,7 @@ checkForStyle( qsizetype & line, qsizetype & pos,
 bool
 parseFormattedTextLinksImages( QStringList & fr, QSharedPointer< Block > parent,
 	QSharedPointer< Document > doc, QStringList & linksToParse, const QString & workingPath,
-	const QString & fileName, bool ignoreLineBreak )
+	const QString & fileName, bool collectRefLinks, bool ignoreLineBreak )
 
 {
 	if( fr.isEmpty() )
@@ -3071,18 +3088,21 @@ parseFormattedTextLinksImages( QStringList & fr, QSharedPointer< Block > parent,
 	for( auto it = delims.cbegin(), last = delims.cend(); it != last; ++it )
 	{
 		if( it->m_line > line || it->m_pos > pos )
-			makeText( line, pos, it->m_line, it->m_pos, fr, parent, opts, ignoreLineBreak );
+		{
+			if( !collectRefLinks )
+				makeText( line, pos, it->m_line, it->m_pos, fr, parent, opts, ignoreLineBreak );
+		}
 
 		switch( it->m_type )
 		{
 			case Delimiter::SquareBracketsOpen :
-				it = checkForLink( line, pos, it, last, true, doc,
-					fr, parent, opts, ignoreLineBreak );
+				it = checkForLink( line, pos, it, last, doc,
+					fr, parent, opts, collectRefLinks, ignoreLineBreak );
 				break;
 
 			case Delimiter::ImageOpen :
-				it = checkForImage( line, pos, it, last, true, doc,
-					fr, parent, opts, ignoreLineBreak );
+				it = checkForImage( line, pos, it, last, doc,
+					fr, parent, opts, collectRefLinks, ignoreLineBreak );
 				break;
 
 			case Delimiter::Strikethrough :
@@ -3097,24 +3117,30 @@ parseFormattedTextLinksImages( QStringList & fr, QSharedPointer< Block > parent,
 			case Delimiter::BoldItalic3Close :
 			case Delimiter::BoldItalic4Close :
 				it = checkForStyle( line, pos, it, last, styles, opts,
-					fr, parent, ignoreLineBreak, doc );
+					fr, parent, collectRefLinks, ignoreLineBreak, doc );
 				break;
 
 			case Delimiter::InlineCode :
-				it = checkForInlineCode( line, pos, it, last, true, doc,
-					fr, parent, opts, ignoreLineBreak );
+				it = checkForInlineCode( line, pos, it, last, doc,
+					fr, parent, opts, collectRefLinks, ignoreLineBreak );
 				break;
 
 			case Delimiter::HorizontalLine :
 			{
-				QSharedPointer< Item > hr( new HorizontalLine );
-				parent->appendItem( hr );
+				if( !collectRefLinks )
+				{
+					QSharedPointer< Item > hr( new HorizontalLine );
+					parent->appendItem( hr );
+				}
 			}
 				break;
 
 			default :
-				makeText( line, pos, it->m_line, it->m_pos + it->m_len, fr,
-					parent, opts, ignoreLineBreak );
+			{
+				if( !collectRefLinks )
+					makeText( line, pos, it->m_line, it->m_pos + it->m_len, fr,
+						parent, opts, ignoreLineBreak );
+			}
 				break;
 		}
 	}
@@ -3129,7 +3155,7 @@ parseFormattedTextLinksImages( QStringList & fr, QSharedPointer< Block > parent,
 bool
 Parser::parseFormattedTextLinksImages( QStringList & fr, QSharedPointer< Block > parent,
 	QSharedPointer< Document > doc, QStringList & linksToParse, const QString & workingPath,
-	const QString & fileName, bool ignoreLineBreak )
+	const QString & fileName, bool collectRefLinks, bool ignoreLineBreak )
 
 {
 	if( fr.isEmpty() )
@@ -3166,7 +3192,8 @@ Parser::parseFormattedTextLinksImages( QStringList & fr, QSharedPointer< Block >
 void
 Parser::parseBlockquote( QStringList & fr, QSharedPointer< Block > parent,
 	QSharedPointer< Document > doc, QStringList & linksToParse,
-	const QString & workingPath, const QString & fileName )
+	const QString & workingPath, const QString & fileName,
+	bool collectRefLinks )
 {
 	const int pos = fr.first().indexOf( c_62 );
 
@@ -3206,7 +3233,7 @@ Parser::parseBlockquote( QStringList & fr, QSharedPointer< Block > parent,
 
 		QSharedPointer< Blockquote > bq( new Blockquote() );
 
-		parse( stream, bq, doc, linksToParse, workingPath, fileName );
+		parse( stream, bq, doc, linksToParse, workingPath, fileName, collectRefLinks, false );
 
 		if( !bq->isEmpty() )
 			parent->appendItem( bq );
@@ -3223,7 +3250,8 @@ Parser::parseBlockquote( QStringList & fr, QSharedPointer< Block > parent,
 
 				StringListStream stream( tmp );
 
-				parse( stream, parent, doc, linksToParse, workingPath, fileName );
+				parse( stream, parent, doc, linksToParse, workingPath, fileName,
+					collectRefLinks, false );
 			}
 		}
 	}
@@ -3257,7 +3285,8 @@ isListItemAndNotNested( const QString & s )
 void
 Parser::parseList( QStringList & fr, QSharedPointer< Block > parent,
 	QSharedPointer< Document > doc, QStringList & linksToParse,
-	const QString & workingPath, const QString & fileName )
+	const QString & workingPath, const QString & fileName,
+	bool collectRefLinks )
 {
 	for( auto it = fr.begin(), last  = fr.end(); it != last; ++it )
 		it->replace( c_9, QLatin1String( "    " ) );
@@ -3286,7 +3315,8 @@ Parser::parseList( QStringList & fr, QSharedPointer< Block > parent,
 
 			if( isHorizontalLine( *it ) && !listItem.isEmpty() )
 			{
-				parseListItem( listItem, list, doc, linksToParse, workingPath, fileName );
+				parseListItem( listItem, list, doc, linksToParse, workingPath, fileName,
+					collectRefLinks );
 				listItem.clear();
 
 				if( !list->isEmpty() )
@@ -3300,7 +3330,8 @@ Parser::parseList( QStringList & fr, QSharedPointer< Block > parent,
 			}
 			else if( isListItemAndNotNested( *it ) && !listItem.isEmpty() )
 			{
-				parseListItem( listItem, list, doc, linksToParse, workingPath, fileName );
+				parseListItem( listItem, list, doc, linksToParse, workingPath, fileName,
+					collectRefLinks );
 				listItem.clear();
 			}
 
@@ -3308,7 +3339,8 @@ Parser::parseList( QStringList & fr, QSharedPointer< Block > parent,
 		}
 
 		if( !listItem.isEmpty() )
-			parseListItem( listItem, list, doc, linksToParse, workingPath, fileName );
+			parseListItem( listItem, list, doc, linksToParse, workingPath, fileName,
+				collectRefLinks );
 
 		if( !list->isEmpty() )
 			parent->appendItem( list );
@@ -3365,7 +3397,8 @@ listItemData( const QString & s )
 void
 Parser::parseListItem( QStringList & fr, QSharedPointer< Block > parent,
 	QSharedPointer< Document > doc, QStringList & linksToParse,
-	const QString & workingPath, const QString & fileName )
+	const QString & workingPath, const QString & fileName,
+	bool collectRefLinks )
 {
 	QSharedPointer< ListItem > item( new ListItem() );
 
@@ -3401,13 +3434,15 @@ Parser::parseListItem( QStringList & fr, QSharedPointer< Block > parent,
 		{
 			StringListStream stream( data );
 
-			parse( stream, item, doc, linksToParse, workingPath, fileName );
+			parse( stream, item, doc, linksToParse, workingPath, fileName,
+				collectRefLinks, false );
 
 			data.clear();
 
 			QStringList nestedList = fr.sliced( pos );
 
-			parseList( nestedList, item, doc, linksToParse, workingPath, fileName );
+			parseList( nestedList, item, doc, linksToParse, workingPath, fileName,
+				collectRefLinks );
 
 			break;
 		}
@@ -3424,7 +3459,7 @@ Parser::parseListItem( QStringList & fr, QSharedPointer< Block > parent,
 	{
 		StringListStream stream( data );
 
-		parse( stream, item, doc, linksToParse, workingPath, fileName );
+		parse( stream, item, doc, linksToParse, workingPath, fileName, collectRefLinks, false );
 	}
 
 	if( !item->isEmpty() )
