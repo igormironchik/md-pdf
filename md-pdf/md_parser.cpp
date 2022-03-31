@@ -87,7 +87,7 @@ Parser::parseFile( const QString & fileName, bool recursive, QSharedPointer< Doc
 			TextStream stream( s );
 
 			parse( stream, doc, doc, linksToParse,
-				fi.absolutePath() + QStringLiteral( "/" ), fi.fileName(), false, false );
+				fi.absolutePath() + QStringLiteral( "/" ), fi.fileName(), true, false );
 
 			f.close();
 
@@ -3145,7 +3145,9 @@ parseFormattedTextLinksImages( QStringList & fr, QSharedPointer< Block > parent,
 		}
 	}
 
-	makeText( line, pos, fr.size() - 1, fr.back().length() - 1, fr, parent, opts, ignoreLineBreak );
+	if( !collectRefLinks )
+		makeText( line, pos, fr.size() - 1, fr.back().length() - 1, fr, parent, opts,
+			ignoreLineBreak );
 
 	return true;
 }
