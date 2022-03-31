@@ -2640,6 +2640,31 @@ makeTextObjectWithLineBreak( const QString & text, const TextOptions & opts,
 	parent->appendItem( hr );
 }
 
+inline QString
+removeBackslashes( const QString & s )
+{
+	QString r;
+	bool backslash = false;
+
+	for( qsizetype i = 0; i < s.size(); ++i )
+	{
+		bool now = false;
+
+		if( s[ i ] == c_92 && !backslash && i != s.size() - 1 )
+		{
+			backslash = true;
+			now = true;
+		}
+		else
+			r.append( s[ i ] );
+
+		if( !now )
+			backslash = false;
+	}
+
+	return r;
+}
+
 inline void
 makeText( qsizetype & line, qsizetype & pos,
 	// Inclusive.
@@ -2671,13 +2696,13 @@ makeText( qsizetype & line, qsizetype & pos,
 
 	if( lineBreak )
 	{
-		text.append( removeLineBreak( fr.at( line ) ).sliced( pos ) );
+		text.append( removeBackslashes( removeLineBreak( fr.at( line ) ).sliced( pos ) ) );
 
 		makeTOWLB();
 	}
 	else
-		text.append( fr.at( line ).sliced( pos,
-			( line == lastLine ? lastPos - pos : fr.at( line ).size() - pos ) ) );
+		text.append( removeBackslashes( fr.at( line ).sliced( pos,
+			( line == lastLine ? lastPos - pos : fr.at( line ).size() - pos ) ) ) );
 
 	if( line != lastLine )
 	{
@@ -2688,7 +2713,8 @@ makeText( qsizetype & line, qsizetype & pos,
 		{
 			lineBreak = ( !ignoreLineBreak && isLineBreak( fr.at( line ) ) );
 
-			text.append( ( lineBreak ? removeLineBreak( fr.at( line ) ) : fr.at( line ) ) );
+			text.append( removeBackslashes( ( lineBreak ?
+				removeLineBreak( fr.at( line ) ) : fr.at( line ) ) ) );
 
 			text.append( c_32 );
 
@@ -2700,7 +2726,7 @@ makeText( qsizetype & line, qsizetype & pos,
 			isLineBreak( fr.at( line ) ) );
 
 		if( !lineBreak )
-			text.append( fr.at( line ).sliced( 0, lastPos ) );
+			text.append( removeBackslashes( fr.at( line ).sliced( 0, lastPos ) ) );
 		else
 			makeTOWLB();
 	}
@@ -2715,22 +2741,95 @@ makeText( qsizetype & line, qsizetype & pos,
 
 inline Delims::const_iterator
 checkForImage( qsizetype & line, qsizetype & pos,
-	Delims::const_iterator it, Delims::const_iterator last, bool create )
+	Delims::const_iterator it, Delims::const_iterator last, bool create,
+	QSharedPointer< Document > doc,
+	const QStringList & fr,
+	QSharedPointer< Block > parent,
+	const TextOptions & opts,
+	bool ignoreLineBreak )
 {
 	return it;
 }
 
+inline void
+makeInlineCode( qsizetype line, qsizetype pos,
+	qsizetype lastLine, qsizetype lastPos,
+	const QStringList & fr,
+	QSharedPointer< Block > parent )
+{
+	QString c;
+
+	for( ; line <= lastLine; ++line )
+	{
+		c.append( fr.at( line ).sliced( pos,
+			( line == lastLine ? lastPos : fr.at( line ).size() - pos ) ) );
+
+		if( line < lastLine )
+			c.append( c_32 );
+
+		pos = 0;
+	}
+
+	if( c.front().isSpace() && c.back().isSpace() && skipSpaces( 0, c ) < c.size() )
+	{
+		c.remove( 0, 1 );
+		c.remove( c.size() - 1, 1 );
+	}
+
+	if( !c.isEmpty() )
+		parent->appendItem( QSharedPointer< Code >( new Code( c, true ) ) );
+}
+
 inline Delims::const_iterator
 checkForInlineCode( qsizetype & line, qsizetype & pos,
-	Delims::const_iterator it, Delims::const_iterator last, bool create )
+	Delims::const_iterator it, Delims::const_iterator last, bool create,
+	QSharedPointer< Document > doc,
+	const QStringList & fr,
+	QSharedPointer< Block > parent,
+	const TextOptions & opts,
+	bool ignoreLineBreak )
 {
-	return it;
+	const auto len = it->m_len;
+	const auto start = it;
+
+	++it;
+
+	for( ; it != last; ++it )
+	{
+		if( it->m_type == Delimiter::InlineCode && it->m_len == len )
+		{
+			if( create )
+			{
+				makeText( line, pos, start->m_line, start->m_pos,
+					fr, parent, opts, ignoreLineBreak );
+
+				makeInlineCode( start->m_line, start->m_pos + start->m_len,
+					it->m_line, it->m_pos, fr, parent );
+			}
+
+			line = it->m_line;
+			pos = it->m_pos + it->m_len;
+
+			return it;
+		}
+	}
+
+	if( create )
+		makeText( line, pos, start->m_line, start->m_pos + start->m_len,
+			fr, parent, opts, ignoreLineBreak );
+
+	return start;
 }
 
 
 inline Delims::const_iterator
 checkForLink( qsizetype & line, qsizetype & pos,
-	Delims::const_iterator it, Delims::const_iterator last, bool create )
+	Delims::const_iterator it, Delims::const_iterator last, bool create,
+	QSharedPointer< Document > doc,
+	const QStringList & fr,
+	QSharedPointer< Block > parent,
+	const TextOptions & opts,
+	bool ignoreLineBreak )
 {
 	return it;
 }
@@ -2849,7 +2948,12 @@ isClosingStyle( Delimiter::DelimiterType open,
 }
 
 inline bool
-isStyleClosed( Delims::const_iterator it, Delims::const_iterator last )
+isStyleClosed( Delims::const_iterator it, Delims::const_iterator last,
+	QSharedPointer< Document > doc,
+	const QStringList & fr,
+	QSharedPointer< Block > parent,
+	const TextOptions & opts,
+	bool ignoreLineBreak )
 {
 	const auto open = it->m_type;
 
@@ -2860,11 +2964,13 @@ isStyleClosed( Delims::const_iterator it, Delims::const_iterator last )
 		switch( it->m_type )
 		{
 			case Delimiter::SquareBracketsOpen :
-				it = checkForLink( line, pos, it, last, false );
+				it = checkForLink( line, pos, it, last, false, doc,
+					fr, parent, opts, ignoreLineBreak );
 				break;
 
 			case Delimiter::ImageOpen :
-				it = checkForImage( line, pos, it, last, false );
+				it = checkForImage( line, pos, it, last, false, doc,
+					fr, parent, opts, ignoreLineBreak );
 				break;
 
 			case Delimiter::Strikethrough :
@@ -2883,7 +2989,8 @@ isStyleClosed( Delims::const_iterator it, Delims::const_iterator last )
 				break;
 
 			case Delimiter::InlineCode :
-				it = checkForInlineCode( line, pos, it, last, false );
+				it = checkForInlineCode( line, pos, it, last, false, doc,
+					fr, parent, opts, ignoreLineBreak );
 				break;
 
 			default :
@@ -2901,7 +3008,8 @@ checkForStyle( qsizetype & line, qsizetype & pos,
 	TextOptions & opts,
 	const QStringList & fr,
 	QSharedPointer< Block > parent,
-	bool ignoreLineBreak )
+	bool ignoreLineBreak,
+	QSharedPointer< Document > doc )
 {
 	if( isClosingStyle( styles, it->m_type ) )
 	{
@@ -2922,7 +3030,7 @@ checkForStyle( qsizetype & line, qsizetype & pos,
 			case Delimiter::BoldItalic3Open :
 			case Delimiter::BoldItalic4Open :
 			{
-				if( isStyleClosed( it, last ) )
+				if( isStyleClosed( it, last, doc, fr, parent, opts, ignoreLineBreak ) )
 				{
 					setStyle( opts, it->m_type, true );
 					styles.append( it->m_type );
@@ -2968,11 +3076,13 @@ parseFormattedTextLinksImages( QStringList & fr, QSharedPointer< Block > parent,
 		switch( it->m_type )
 		{
 			case Delimiter::SquareBracketsOpen :
-				it = checkForLink( line, pos, it, last, true );
+				it = checkForLink( line, pos, it, last, true, doc,
+					fr, parent, opts, ignoreLineBreak );
 				break;
 
 			case Delimiter::ImageOpen :
-				it = checkForImage( line, pos, it, last, true );
+				it = checkForImage( line, pos, it, last, true, doc,
+					fr, parent, opts, ignoreLineBreak );
 				break;
 
 			case Delimiter::Strikethrough :
@@ -2987,11 +3097,12 @@ parseFormattedTextLinksImages( QStringList & fr, QSharedPointer< Block > parent,
 			case Delimiter::BoldItalic3Close :
 			case Delimiter::BoldItalic4Close :
 				it = checkForStyle( line, pos, it, last, styles, opts,
-					fr, parent, ignoreLineBreak );
+					fr, parent, ignoreLineBreak, doc );
 				break;
 
 			case Delimiter::InlineCode :
-				it = checkForInlineCode( line, pos, it, last, true );
+				it = checkForInlineCode( line, pos, it, last, true, doc,
+					fr, parent, opts, ignoreLineBreak );
 				break;
 
 			case Delimiter::HorizontalLine :
