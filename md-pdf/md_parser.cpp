@@ -2345,6 +2345,10 @@ struct Delimiter {
 		BoldItalic4Close,
 		// `
 		InlineCode,
+		// <
+		Less,
+		// >
+		Greater,
 		HorizontalLine,
 		Unknown
 	}; // enum DelimiterType
@@ -2567,6 +2571,38 @@ collectDelimiters( const QStringList & fr )
 						else
 							word = true;
 					}
+					// <
+					else if( str[ i ] == c_60 )
+					{
+						if( !backslash )
+						{
+							const bool spaceAfter =
+								( i < str.length() ? str[ i ] == c_32 : false );
+
+							d.push_back( { Delimiter::Less, line, i, 1,
+								space, spaceAfter, word } );
+
+							word = false;
+						}
+						else
+							word = true;
+					}
+					// >
+					else if( str[ i ] == c_62 )
+					{
+						if( !backslash )
+						{
+							const bool spaceAfter =
+								( i < str.length() ? str[ i ] == c_32 : false );
+
+							d.push_back( { Delimiter::Greater, line, i, 1,
+								space, spaceAfter, word } );
+
+							word = false;
+						}
+						else
+							word = true;
+					}
 					// `
 					else if( str[ i ] == c_96 )
 					{
@@ -2751,6 +2787,19 @@ makeText( qsizetype & line, qsizetype & pos,
 
 inline Delims::const_iterator
 checkForImage( qsizetype & line, qsizetype & pos,
+	Delims::const_iterator it, Delims::const_iterator last,
+	QSharedPointer< Document > doc,
+	const QStringList & fr,
+	QSharedPointer< Block > parent,
+	const TextOptions & opts,
+	bool collectRefLinks,
+	bool ignoreLineBreak )
+{
+	return it;
+}
+
+inline Delims::const_iterator
+checkForAutolinkHtml( qsizetype & line, qsizetype & pos,
 	Delims::const_iterator it, Delims::const_iterator last,
 	QSharedPointer< Document > doc,
 	const QStringList & fr,
@@ -2986,6 +3035,11 @@ isStyleClosed( Delims::const_iterator it, Delims::const_iterator last,
 					fr, parent, opts, false, ignoreLineBreak );
 				break;
 
+			case Delimiter::Less :
+				it = checkForAutolinkHtml( line, pos, it, last, doc,
+					fr, parent, opts, false, ignoreLineBreak );
+				break;
+
 			case Delimiter::Strikethrough :
 			case Delimiter::Italic1 :
 			case Delimiter::Italic2 :
@@ -3102,6 +3156,11 @@ parseFormattedTextLinksImages( QStringList & fr, QSharedPointer< Block > parent,
 
 			case Delimiter::ImageOpen :
 				it = checkForImage( line, pos, it, last, doc,
+					fr, parent, opts, collectRefLinks, ignoreLineBreak );
+				break;
+
+			case Delimiter::Less :
+				it = checkForAutolinkHtml( line, pos, it, last, doc,
 					fr, parent, opts, collectRefLinks, ignoreLineBreak );
 				break;
 
