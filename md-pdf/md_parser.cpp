@@ -2813,6 +2813,65 @@ checkForAutolinkHtml( qsizetype & line, qsizetype & pos,
 	bool collectRefLinks,
 	bool ignoreLineBreak )
 {
+	const auto nit = std::find_if( std::next( it ), last,
+		[] ( const auto & d ) { return ( d.m_type == Delimiter::Greater ); } );
+
+	if( nit != last && nit->m_line == it->m_line )
+	{
+		if( !collectRefLinks )
+		{
+			const auto url = fr.at( line ).sliced( pos + 1, nit->m_pos - pos - 1 );
+
+			const auto sit = std::find_if( url.cbegin(), url.cend(),
+				[] ( const auto & c ) { return c.isSpace(); } );
+
+			bool isUrl = true;
+
+			if( sit != url.cend() )
+				isUrl = false;
+			else
+			{
+				static const QRegularExpression er(
+					"^[a-zA-Z0-9.!#$%&'*+/=?^_`{|}~-]+@[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?"
+					"(?:\\.[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?)*$" );
+
+				QRegularExpressionMatch erm;
+
+				if( url.startsWith( QStringLiteral( "mailto:" ), Qt::CaseInsensitive ) )
+					erm = er.match( url.right( url.length() - 7 ) );
+				else
+					erm = er.match( url );
+
+				const QUrl u( url );
+
+				if( ( !u.isValid() || u.isRelative() ) && !erm.hasMatch() )
+					isUrl = false;
+			}
+
+			if( isUrl )
+			{
+				QSharedPointer< Link > lnk( new Link );
+				lnk->setUrl( url.simplified() );
+				lnk->setTextOptions( opts );
+				parent->appendItem( lnk );
+			}
+			else
+				makeText( line, pos, nit->m_line, nit->m_pos + nit->m_len,
+					fr, parent, opts, ignoreLineBreak );
+		}
+
+		pos = nit->m_pos + nit->m_len;
+		line = nit->m_line;
+
+		return nit;
+	}
+	else if( !collectRefLinks )
+		makeText( line, pos, it->m_line, it->m_pos + it->m_len,
+			fr, parent, opts, ignoreLineBreak );
+
+	pos = it->m_pos + it->m_len;
+	line = it->m_line;
+
 	return it;
 }
 
@@ -3127,14 +3186,16 @@ checkForStyle( qsizetype & line, qsizetype & pos,
 	return it;
 }
 
-bool
+void
 parseFormattedTextLinksImages( QStringList & fr, QSharedPointer< Block > parent,
 	QSharedPointer< Document > doc, QStringList & linksToParse, const QString & workingPath,
 	const QString & fileName, bool collectRefLinks, bool ignoreLineBreak )
 
 {
 	if( fr.isEmpty() )
-		return true;
+		return;
+
+	QSharedPointer< Paragraph > p( new Paragraph );
 
 	const auto delims = collectDelimiters( fr );
 
@@ -3149,24 +3210,24 @@ parseFormattedTextLinksImages( QStringList & fr, QSharedPointer< Block > parent,
 		if( it->m_line > line || it->m_pos > pos )
 		{
 			if( !collectRefLinks )
-				makeText( line, pos, it->m_line, it->m_pos, fr, parent, opts, ignoreLineBreak );
+				makeText( line, pos, it->m_line, it->m_pos, fr, p, opts, ignoreLineBreak );
 		}
 
 		switch( it->m_type )
 		{
 			case Delimiter::SquareBracketsOpen :
 				it = checkForLink( line, pos, it, last, doc,
-					fr, parent, opts, collectRefLinks, ignoreLineBreak );
+					fr, p, opts, collectRefLinks, ignoreLineBreak );
 				break;
 
 			case Delimiter::ImageOpen :
 				it = checkForImage( line, pos, it, last, doc,
-					fr, parent, opts, collectRefLinks, ignoreLineBreak );
+					fr, p, opts, collectRefLinks, ignoreLineBreak );
 				break;
 
 			case Delimiter::Less :
 				it = checkForAutolinkHtml( line, pos, it, last, doc,
-					fr, parent, opts, collectRefLinks, ignoreLineBreak );
+					fr, p, opts, collectRefLinks, ignoreLineBreak );
 				break;
 
 			case Delimiter::Strikethrough :
@@ -3181,20 +3242,25 @@ parseFormattedTextLinksImages( QStringList & fr, QSharedPointer< Block > parent,
 			case Delimiter::BoldItalic3Close :
 			case Delimiter::BoldItalic4Close :
 				it = checkForStyle( line, pos, it, last, styles, opts,
-					fr, parent, collectRefLinks, ignoreLineBreak, doc );
+					fr, p, collectRefLinks, ignoreLineBreak, doc );
 				break;
 
 			case Delimiter::InlineCode :
 				it = checkForInlineCode( line, pos, it, last, doc,
-					fr, parent, opts, collectRefLinks, ignoreLineBreak );
+					fr, p, opts, collectRefLinks, ignoreLineBreak );
 				break;
 
 			case Delimiter::HorizontalLine :
 			{
 				if( !collectRefLinks )
 				{
+					if( !p->isEmpty() )
+						parent->appendItem( p );
+
 					QSharedPointer< Item > hr( new HorizontalLine );
 					parent->appendItem( hr );
+
+					p.reset( new Paragraph );
 				}
 			}
 				break;
@@ -3203,17 +3269,18 @@ parseFormattedTextLinksImages( QStringList & fr, QSharedPointer< Block > parent,
 			{
 				if( !collectRefLinks )
 					makeText( line, pos, it->m_line, it->m_pos + it->m_len, fr,
-						parent, opts, ignoreLineBreak );
+						p, opts, ignoreLineBreak );
 			}
 				break;
 		}
 	}
 
 	if( !collectRefLinks )
-		makeText( line, pos, fr.size() - 1, fr.back().length() - 1, fr, parent, opts,
+		makeText( line, pos, fr.size() - 1, fr.back().length() - 1, fr, p, opts,
 			ignoreLineBreak );
 
-	return true;
+	if( !p->isEmpty() )
+		parent->appendItem( p );
 }
 
 } /* namespace anonymous */
