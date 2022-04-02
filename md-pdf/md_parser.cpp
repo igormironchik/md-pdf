@@ -2946,6 +2946,166 @@ checkForInlineCode( qsizetype & line, qsizetype & pos,
 	return start;
 }
 
+inline QPair< QString, Delims::const_iterator >
+checkForLinkText( qsizetype & line, qsizetype & pos,
+	Delims::const_iterator it, Delims::const_iterator last,
+	QSharedPointer< Document > doc,
+	const QStringList & fr,
+	QSharedPointer< Block > parent,
+	const TextOptions & opts,
+	bool collectRefLinks,
+	bool ignoreLineBreak )
+{
+	const auto start = it;
+
+	qsizetype brackets = 0;
+
+	for( it = std::next( it ); it != last; ++it )
+	{
+		bool quit = false;
+
+		switch( it->m_type )
+		{
+			case Delimiter::SquareBracketsClose :
+			{
+				if( !brackets )
+					quit = true;
+				else
+					--brackets;
+			}
+				break;
+
+			case Delimiter::SquareBracketsOpen :
+			case Delimiter::ImageOpen :
+				++brackets;
+				break;
+
+			case Delimiter::InlineCode :
+				it = checkForInlineCode( line, pos, it, last, doc, fr, parent,
+					opts, true, ignoreLineBreak );
+				break;
+
+			case Delimiter::Less :
+				it = checkForAutolinkHtml( line, pos, it, last, doc, fr, parent,
+					opts, true, ignoreLineBreak );
+				break;
+
+			default :
+				break;
+		}
+
+		if( quit )
+			break;
+	}
+
+	if( it != last )
+	{
+		line = start->m_line;
+		pos = start->m_pos + start->m_len;
+
+		if( line == it->m_line )
+		{
+			pos = it->m_pos + it->m_len;
+
+			return { fr.at( line ).sliced( pos, it->m_pos - pos ).simplified(), it };
+		}
+		else
+		{
+			pos = skipSpaces( pos, fr.at( line ) );
+
+			if( pos < fr.at( line ).size() )
+			{
+				if( it->m_line == line + 1 )
+				{
+					auto text = fr.at( line ).sliced( pos ).simplified();
+
+					pos = skipSpaces( 0, fr.at( line + 1 ) );
+
+					++line;
+
+					if( pos == it->m_pos )
+					{
+						pos = it->m_pos + it->m_len;
+
+						return { text, it };
+					}
+					else
+					{
+						text.append( c_32 );
+						text.append( fr.at( line ).sliced( pos, it->m_pos - pos ) );
+
+						pos = it->m_pos + it->m_len;
+
+						return { text, it };
+					}
+				}
+				else
+				{
+					if( !collectRefLinks )
+						makeText( line, pos, start->m_line, start->m_pos + start->m_len, fr,
+							parent, opts, ignoreLineBreak );
+
+					return { {}, start };
+				}
+			}
+			else
+			{
+				pos = skipSpaces( 0, fr.at( line + 1 ) );
+
+				if( it->m_line == line + 1 )
+				{
+					const auto text = fr.at( line + 1 ).sliced( pos, it->m_pos - pos ).simplified();
+					pos = it->m_pos + it->m_len;
+					++line;
+
+					return { text, it };
+				}
+				else if( it->m_line == line + 2 )
+				{
+					auto text = fr.at( line + 1 ).sliced( pos ).simplified();
+					pos = skipSpaces( 0, fr.at( line + 2 ) );
+
+					if( pos == it->m_pos )
+					{
+						line = it->m_line;
+						pos = it->m_pos + it->m_len;
+
+						return { text, it };
+					}
+					else
+					{
+						text.append( c_32 );
+						text.append( fr.at( line + 2 ).sliced( pos, it->m_pos - pos ) );
+
+						line = it->m_line;
+						pos = it->m_pos + it->m_len;
+
+						return { text, it };
+					}
+				}
+				else
+				{
+					if( !collectRefLinks )
+						makeText( line, pos, start->m_line, start->m_pos + start->m_len, fr,
+							parent, opts, ignoreLineBreak );
+
+					return { {}, start };
+				}
+			}
+		}
+	}
+	else
+	{
+		line = start->m_line;
+		pos = start->m_pos;
+
+		if( !collectRefLinks )
+			makeText( line, pos, start->m_line, start->m_pos + start->m_len, fr,
+				parent, opts, ignoreLineBreak );
+
+		return { {}, start };
+	}
+}
 
 inline Delims::const_iterator
 checkForLink( qsizetype & line, qsizetype & pos,
@@ -2955,9 +3115,74 @@ checkForLink( qsizetype & line, qsizetype & pos,
 	QSharedPointer< Block > parent,
 	const TextOptions & opts,
 	bool collectRefLinks,
-	bool ignoreLineBreak )
+	bool ignoreLineBreak,
+	const QString & workingPath,
+	const QString & fileName )
 {
-	return it;
+	const auto start = it;
+
+	QString text;
+
+	std::tie( text, it ) = checkForLinkText( line, pos, it, last, doc, fr, parent,
+		opts, collectRefLinks, ignoreLineBreak );
+
+	if( it != start )
+	{
+		// Footnote reference.
+		if( text.startsWith( c_94 ) )
+		{
+			if( !collectRefLinks )
+			{
+				QSharedPointer< FootnoteRef > fnr(
+					new FootnoteRef( QStringLiteral( "#" ) + text +
+						QStringLiteral( "/" ) + workingPath + fileName ) );
+			}
+		}
+		else if( it->m_pos + it->m_len < fr.at( it->m_line ).size() )
+		{
+			// Reference definition
+			if( fr.at( it->m_line )[ it->m_pos + it->m_len ] == c_58 )
+			{
+				// Reference definitions allowed only at start of paragraph.
+				if( line == 0 & pos == 0 )
+				{
+
+				}
+				else if( !collectRefLinks )
+				{
+					pos = start->m_pos;
+					line = start->m_line;
+
+					makeText( line, pos, start->m_line, start->m_pos + start->m_len,
+						fr, parent, opts, ignoreLineBreak );
+
+					return start;
+				}
+			}
+			// Inline
+			else if( fr.at( it->m_line )[ it->m_pos + it->m_len ] == c_40 )
+			{
+
+			}
+			// Reference
+			else if( fr.at( it->m_line )[ it->m_pos + it->m_len ] == c_91 )
+			{
+
+			}
+			// Shortcut
+			else
+			{
+
+			}
+		}
+		// Shortcut
+		else
+		{
+
+		}
+	}
+
+	return start;
 }
 
 inline bool
@@ -3079,7 +3304,9 @@ isStyleClosed( Delims::const_iterator it, Delims::const_iterator last,
 	const QStringList & fr,
 	QSharedPointer< Block > parent,
 	const TextOptions & opts,
-	bool ignoreLineBreak )
+	bool ignoreLineBreak,
+	const QString & workingPath,
+	const QString & fileName )
 {
 	const auto open = it->m_type;
 
@@ -3091,7 +3318,8 @@ isStyleClosed( Delims::const_iterator it, Delims::const_iterator last,
 		{
 			case Delimiter::SquareBracketsOpen :
 				it = checkForLink( line, pos, it, last, doc,
-					fr, parent, opts, false, ignoreLineBreak );
+					fr, parent, opts, false, ignoreLineBreak,
+					workingPath, fileName );
 				break;
 
 			case Delimiter::ImageOpen :
@@ -3141,7 +3369,9 @@ checkForStyle( qsizetype & line, qsizetype & pos,
 	QSharedPointer< Block > parent,
 	bool collectRefLinks,
 	bool ignoreLineBreak,
-	QSharedPointer< Document > doc )
+	QSharedPointer< Document > doc,
+	const QString & workingPath,
+	const QString & fileName )
 {
 	if( isClosingStyle( styles, it->m_type ) )
 	{
@@ -3162,7 +3392,8 @@ checkForStyle( qsizetype & line, qsizetype & pos,
 			case Delimiter::BoldItalic3Open :
 			case Delimiter::BoldItalic4Open :
 			{
-				if( isStyleClosed( it, last, doc, fr, parent, opts, ignoreLineBreak ) )
+				if( isStyleClosed( it, last, doc, fr, parent, opts, ignoreLineBreak,
+						workingPath, fileName ) )
 				{
 					setStyle( opts, it->m_type, true );
 					styles.append( it->m_type );
@@ -3217,7 +3448,8 @@ parseFormattedTextLinksImages( QStringList & fr, QSharedPointer< Block > parent,
 		{
 			case Delimiter::SquareBracketsOpen :
 				it = checkForLink( line, pos, it, last, doc,
-					fr, p, opts, collectRefLinks, ignoreLineBreak );
+					fr, p, opts, collectRefLinks, ignoreLineBreak,
+					workingPath, fileName );
 				break;
 
 			case Delimiter::ImageOpen :
@@ -3242,7 +3474,8 @@ parseFormattedTextLinksImages( QStringList & fr, QSharedPointer< Block > parent,
 			case Delimiter::BoldItalic3Close :
 			case Delimiter::BoldItalic4Close :
 				it = checkForStyle( line, pos, it, last, styles, opts,
-					fr, p, collectRefLinks, ignoreLineBreak, doc );
+					fr, p, collectRefLinks, ignoreLineBreak, doc,
+					workingPath, fileName );
 				break;
 
 			case Delimiter::InlineCode :
