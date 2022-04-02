@@ -2722,6 +2722,11 @@ makeText( qsizetype & line, qsizetype & pos,
 	const TextOptions & opts,
 	bool ignoreLineBreak )
 {
+	if( line > lastLine )
+		return;
+	else if( line == lastLine && pos >= lastPos )
+		return;
+
 	QString text;
 
 	bool spaceBefore = ( pos > 0 ? fr.at( line )[ pos - 1 ].isSpace() ||
