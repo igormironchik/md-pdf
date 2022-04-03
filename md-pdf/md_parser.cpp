@@ -3018,87 +3018,44 @@ checkForLinkText( qsizetype & line, qsizetype & pos,
 		}
 		else
 		{
-			pos = skipSpaces( pos, fr.at( line ) );
+			QString text;
 
-			if( pos < fr.at( line ).size() )
+			text.append( fr.at( line ).sliced( pos ).simplified() );
+
+			if( it->m_line == line + 1 )
 			{
-				if( it->m_line == line + 1 )
-				{
-					auto text = fr.at( line ).sliced( pos ).simplified();
+				text.append( c_32 );
 
-					pos = skipSpaces( 0, fr.at( line + 1 ) );
-
-					++line;
-
-					if( pos == it->m_pos )
-					{
-						pos = it->m_pos + it->m_len;
-
-						return { text, it };
-					}
-					else
-					{
-						text.append( c_32 );
-						text.append( fr.at( line ).sliced( pos, it->m_pos - pos ) );
-
-						pos = it->m_pos + it->m_len;
-
-						return { text, it };
-					}
-				}
-				else
-				{
-					if( !collectRefLinks )
-						makeText( line, pos, start->m_line, start->m_pos + start->m_len, fr,
-							parent, opts, ignoreLineBreak );
-
-					return { {}, start };
-				}
+				text.append( fr.at( line + 1 ).sliced( 0, it->m_pos ) );
 			}
 			else
 			{
+				text.append( c_32 );
+
+				text.append( fr.at( line + 1 ) );
+			}
+
+			if( it->m_line == line + 2 )
+			{
 				pos = skipSpaces( 0, fr.at( line + 1 ) );
 
-				if( it->m_line == line + 1 )
-				{
-					const auto text = fr.at( line + 1 ).sliced( pos, it->m_pos - pos ).simplified();
-					pos = it->m_pos + it->m_len;
-					++line;
+				text.append( c_32 );
 
-					return { text, it };
-				}
-				else if( it->m_line == line + 2 )
-				{
-					auto text = fr.at( line + 1 ).sliced( pos ).simplified();
-					pos = skipSpaces( 0, fr.at( line + 2 ) );
-
-					if( pos == it->m_pos )
-					{
-						line = it->m_line;
-						pos = it->m_pos + it->m_len;
-
-						return { text, it };
-					}
-					else
-					{
-						text.append( c_32 );
-						text.append( fr.at( line + 2 ).sliced( pos, it->m_pos - pos ) );
-
-						line = it->m_line;
-						pos = it->m_pos + it->m_len;
-
-						return { text, it };
-					}
-				}
-				else
-				{
-					if( !collectRefLinks )
-						makeText( line, pos, start->m_line, start->m_pos + start->m_len, fr,
-							parent, opts, ignoreLineBreak );
-
-					return { {}, start };
-				}
+				text.append( fr.at( line + 2 ).sliced( 0, it->m_pos ) );
 			}
+			else
+			{
+				if( !collectRefLinks )
+					makeText( line, pos, start->m_line, start->m_pos + start->m_len, fr,
+						parent, opts, ignoreLineBreak );
+
+				return { {}, start };
+			}
+
+			pos = it->m_pos + it->m_len;
+			line = it->m_line;
+
+			return { text, it };
 		}
 	}
 	else
