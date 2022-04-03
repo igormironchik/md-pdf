@@ -3018,13 +3018,13 @@ checkForLinkText( qsizetype & line, qsizetype & pos,
 
 			text.append( fr.at( line ).sliced( start->m_pos + start->m_len ).simplified() );
 
-			qsizetype i = line;
+			qsizetype i = line + 1;
 
 			for( ; i <= it->m_line; ++i )
 			{
 				text.append( c_32 );
 
-				if( line == it->m_line )
+				if( i == it->m_line )
 					text.append( fr.at( i ).sliced( 0, it->m_pos ) );
 				else
 					text.append( fr.at( i ) );
@@ -3076,6 +3076,8 @@ checkForLink( qsizetype & line, qsizetype & pos,
 
 	std::tie( text, it ) = checkForLinkText( line, pos, it, last, doc, fr, parent,
 		opts, collectRefLinks, ignoreLineBreak );
+
+	qDebug() << ( it != start ) << text;
 
 	if( it != start )
 	{
