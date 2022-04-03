@@ -3078,8 +3078,6 @@ checkForLink( qsizetype & line, qsizetype & pos,
 	std::tie( text, it ) = checkForLinkText( line, pos, it, last, doc, fr, parent,
 		opts, collectRefLinks, ignoreLineBreak );
 
-	qDebug() << ( it != start ) << text;
-
 	if( it != start )
 	{
 		// Footnote reference.
