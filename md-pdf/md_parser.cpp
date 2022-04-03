@@ -2791,8 +2791,7 @@ makeText( qsizetype & line, qsizetype & pos,
 	pos = lastPos;
 
 	makeTextObject( text, opts, spaceBefore,
-		( fr.at( line )[ pos - 1 ].isSpace() || fr.at( line )[ pos ].isSpace() ),
-		parent );
+		fr.at( line )[ pos - 1 ].isSpace(), parent );
 }
 
 inline Delims::const_iterator
@@ -3005,12 +3004,9 @@ checkForLinkText( qsizetype & line, qsizetype & pos,
 
 	if( it != last )
 	{
-		line = start->m_line;
-		pos = start->m_pos + start->m_len;
-
 		if( line == it->m_line )
 		{
-			const auto p = pos;
+			const auto p = start->m_pos + start->m_len;
 			const auto n = it->m_pos - p;
 			pos = it->m_pos + it->m_len;
 
@@ -3022,28 +3018,19 @@ checkForLinkText( qsizetype & line, qsizetype & pos,
 
 			text.append( fr.at( line ).sliced( pos ).simplified() );
 
-			if( it->m_line == line + 1 )
+			qsizetype i = line;
+
+			for( ; i <= it->m_line; ++i )
 			{
 				text.append( c_32 );
 
-				text.append( fr.at( line + 1 ).sliced( 0, it->m_pos ) );
-			}
-			else
-			{
-				text.append( c_32 );
-
-				text.append( fr.at( line + 1 ) );
+				if( line == it->m_line )
+					text.append( fr.at( i ).sliced( 0, it->m_pos ) );
+				else
+					text.append( fr.at( i ) );
 			}
 
-			if( it->m_line == line + 2 )
-			{
-				pos = skipSpaces( 0, fr.at( line + 1 ) );
-
-				text.append( c_32 );
-
-				text.append( fr.at( line + 2 ).sliced( 0, it->m_pos ) );
-			}
-			else
+			if( i - line > 3 )
 			{
 				if( !collectRefLinks )
 					makeText( line, pos, start->m_line, start->m_pos + start->m_len, fr,
