@@ -3088,6 +3088,8 @@ checkForLink( qsizetype & line, qsizetype & pos,
 				QSharedPointer< FootnoteRef > fnr(
 					new FootnoteRef( QStringLiteral( "#" ) + text +
 						QStringLiteral( "/" ) + workingPath + fileName ) );
+
+				parent->appendItem( fnr );
 			}
 		}
 		else if( it->m_pos + it->m_len < fr.at( it->m_line ).size() )
