@@ -2447,6 +2447,8 @@ collectDelimiters( const QStringList & fr )
 								d.push_back( { dt, line, i - style.length(), style.length(),
 									space, spaceAfter, word } );
 
+								--i;
+
 								word = false;
 							}
 							else
@@ -2473,6 +2475,8 @@ collectDelimiters( const QStringList & fr )
 
 							d.push_back( { Delimiter::Strikethrough, line, i - style.length(),
 								style.length(), space, spaceAfter, word } );
+
+							--i;
 
 							word = false;
 						}
@@ -2621,6 +2625,8 @@ collectDelimiters( const QStringList & fr )
 
 							d.push_back( { Delimiter::InlineCode, line, i - code.length(),
 								code.length(), space, spaceAfter, word } );
+
+							--i;
 
 							word = false;
 						}
@@ -2785,8 +2791,7 @@ makeText( qsizetype & line, qsizetype & pos,
 	pos = lastPos;
 
 	makeTextObject( text, opts, spaceBefore,
-		( pos + 1 < fr.at( line ).size() ?
-			fr.at( line )[ pos + 1 ].isSpace() || fr.at( line )[ pos ].isSpace() : true ),
+		( fr.at( line )[ pos - 1 ].isSpace() || fr.at( line )[ pos ].isSpace() ),
 		parent );
 }
 
@@ -3005,9 +3010,11 @@ checkForLinkText( qsizetype & line, qsizetype & pos,
 
 		if( line == it->m_line )
 		{
+			const auto p = pos;
+			const auto n = it->m_pos - p;
 			pos = it->m_pos + it->m_len;
 
-			return { fr.at( line ).sliced( pos, it->m_pos - pos ).simplified(), it };
+			return { fr.at( line ).sliced( p, n ).simplified(), it };
 		}
 		else
 		{
@@ -3312,7 +3319,7 @@ isStyleClosed( Delims::const_iterator it, Delims::const_iterator last,
 
 	qsizetype line = 0, pos = 0;
 
-	for( ; it != last; ++it )
+	for( it = std::next( it ); it != last; ++it )
 	{
 		switch( it->m_type )
 		{
@@ -3377,6 +3384,9 @@ checkForStyle( qsizetype & line, qsizetype & pos,
 	{
 		closeStyle( styles, it->m_type );
 		setStyle( opts, it->m_type, false );
+
+		pos = it->m_pos + it->m_len;
+		line = it->m_line;
 	}
 	else
 	{
@@ -3397,6 +3407,9 @@ checkForStyle( qsizetype & line, qsizetype & pos,
 				{
 					setStyle( opts, it->m_type, true );
 					styles.append( it->m_type );
+
+					pos = it->m_pos + it->m_len;
+					line = it->m_line;
 				}
 				else if( !collectRefLinks )
 					makeText( line, pos, it->m_line, it->m_pos + it->m_len,
@@ -3418,7 +3431,7 @@ checkForStyle( qsizetype & line, qsizetype & pos,
 }
 
 void
-parseFormattedTextLinksImages( QStringList & fr, QSharedPointer< Block > parent,
+parseFormattedText( QStringList & fr, QSharedPointer< Block > parent,
 	QSharedPointer< Document > doc, QStringList & linksToParse, const QString & workingPath,
 	const QString & fileName, bool collectRefLinks, bool ignoreLineBreak )
 
@@ -3524,6 +3537,7 @@ Parser::parseFormattedTextLinksImages( QStringList & fr, QSharedPointer< Block >
 	const QString & fileName, bool collectRefLinks, bool ignoreLineBreak )
 
 {
+#ifndef DEV
 	if( fr.isEmpty() )
 		return true;
 
@@ -3553,6 +3567,12 @@ Parser::parseFormattedTextLinksImages( QStringList & fr, QSharedPointer< Block >
 	addItemsToParent( data, parent );
 
 	return true;
+#else
+	parseFormattedText( fr, parent, doc, linksToParse, workingPath, fileName,
+		collectRefLinks, ignoreLineBreak );
+
+	return true;
+#endif
 }
 
 void

@@ -572,11 +572,13 @@ private:
 			pf();
 		}
 
-//		for( qsizetype i = 0; i < splitted.size(); ++i )
-//		{
-//			parseFragment( splitted[ i ], parent, doc, linksToParse,
-//				workingPath, fileName, false );
-//		}
+#ifdef DEV
+		for( qsizetype i = 0; i < splitted.size(); ++i )
+		{
+			parseFragment( splitted[ i ], parent, doc, linksToParse,
+				workingPath, fileName, false );
+		}
+#endif
 	}
 
 	//! Wrapper for QStringList to be behaved like a stream.
