@@ -3017,7 +3017,7 @@ checkForLinkText( qsizetype & line, qsizetype & pos,
 		{
 			if( it->m_line - line < 3 )
 			{
-				auto text = fr.at( line ).sliced( start->m_pos + start->m_len ).simplified();
+				auto text = fr.at( line ).sliced( start->m_pos + start->m_len );
 
 				qsizetype i = line + 1;
 
