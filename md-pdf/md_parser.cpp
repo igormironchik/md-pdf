@@ -3008,29 +3008,35 @@ checkForLinkText( qsizetype & line, qsizetype & pos,
 		{
 			const auto p = start->m_pos + start->m_len;
 			const auto n = it->m_pos - p;
+
 			pos = it->m_pos + it->m_len;
 
 			return { fr.at( line ).sliced( p, n ).simplified(), it };
 		}
 		else
 		{
-			QString text;
-
-			text.append( fr.at( line ).sliced( start->m_pos + start->m_len ).simplified() );
-
-			qsizetype i = line + 1;
-
-			for( ; i <= it->m_line; ++i )
+			if( it->m_line - line < 3 )
 			{
-				text.append( c_32 );
+				auto text = fr.at( line ).sliced( start->m_pos + start->m_len ).simplified();
 
-				if( i == it->m_line )
-					text.append( fr.at( i ).sliced( 0, it->m_pos ) );
-				else
-					text.append( fr.at( i ) );
+				qsizetype i = line + 1;
+
+				for( ; i <= it->m_line; ++i )
+				{
+					text.append( c_32 );
+
+					if( i == it->m_line )
+						text.append( fr.at( i ).sliced( 0, it->m_pos ) );
+					else
+						text.append( fr.at( i ) );
+				}
+
+				pos = it->m_pos + it->m_len;
+				line = it->m_line;
+
+				return { text.simplified(), it };
 			}
-
-			if( i - line > 3 )
+			else
 			{
 				if( !collectRefLinks )
 					makeText( line, pos, start->m_line, start->m_pos + start->m_len, fr,
@@ -3038,11 +3044,6 @@ checkForLinkText( qsizetype & line, qsizetype & pos,
 
 				return { {}, start };
 			}
-
-			pos = it->m_pos + it->m_len;
-			line = it->m_line;
-
-			return { text.simplified(), it };
 		}
 	}
 	else
