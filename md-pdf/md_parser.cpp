@@ -3016,7 +3016,7 @@ checkForLinkText( qsizetype & line, qsizetype & pos,
 		{
 			QString text;
 
-			text.append( fr.at( line ).sliced( pos ).simplified() );
+			text.append( fr.at( line ).sliced( start->m_pos + start->m_len ).simplified() );
 
 			qsizetype i = line;
 
@@ -3042,7 +3042,7 @@ checkForLinkText( qsizetype & line, qsizetype & pos,
 			pos = it->m_pos + it->m_len;
 			line = it->m_line;
 
-			return { text, it };
+			return { text.simplified(), it };
 		}
 	}
 	else
