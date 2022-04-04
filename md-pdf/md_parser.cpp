@@ -3191,7 +3191,7 @@ checkForLink( qsizetype & line, qsizetype & pos,
 		}
 		else if( it->m_pos + it->m_len < fr.at( it->m_line ).size() )
 		{
-			// Reference definition
+			// Reference definition -> :
 			if( fr.at( it->m_line )[ it->m_pos + it->m_len ] == c_58 )
 			{
 				// Reference definitions allowed only at start of paragraph.
@@ -3207,12 +3207,12 @@ checkForLink( qsizetype & line, qsizetype & pos,
 					return start;
 				}
 			}
-			// Inline
+			// Inline -> (
 			else if( fr.at( it->m_line )[ it->m_pos + it->m_len ] == c_40 )
 			{
 
 			}
-			// Reference
+			// Reference -> [
 			else if( fr.at( it->m_line )[ it->m_pos + it->m_len ] == c_91 )
 			{
 				QString label;
