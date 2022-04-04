@@ -3119,6 +3119,55 @@ checkForLinkLabel( qsizetype & line, qsizetype & pos,
 		fr, parent, opts, collectRefLinks, ignoreLineBreak, true );
 }
 
+inline QSharedPointer< Link >
+makeLink( const QString & url, const QString & text,
+	QStringList & linksToParse, const QString & workingPath, const QString & fileName,
+	QSharedPointer< Document > doc, bool collectRefLinks, const TextOptions & opts,
+	bool doNotCreateTextOnFail, qsizetype & line, qsizetype & pos,
+	qsizetype lastLine, qsizetype lastPos, const QStringList & fr,
+	QSharedPointer< Block > parent, bool ignoreLineBreak )
+{
+	QSharedPointer< Link > link( new Link );
+	link->setUrl( url );
+	link->setTextOptions( opts );
+
+	QStringList tmp;
+	tmp << text;
+
+	QSharedPointer< Paragraph > p( new Paragraph );
+
+	parseFormattedText( tmp, p, doc,
+		linksToParse, workingPath, fileName, collectRefLinks, true );
+
+	if( !p->isEmpty() )
+	{
+		for( auto it = p->items().cbegin(), last = p->items().cend(); it != last; ++it )
+		{
+			switch( (*it)->type() )
+			{
+				case ItemType::Link :
+				{
+					if( !collectRefLinks && !doNotCreateTextOnFail )
+						makeText( line, pos, lastLine, lastPos,
+							fr, parent, opts, ignoreLineBreak );
+
+					return {};
+				}
+					break;
+
+				default :
+					break;
+			}
+		}
+
+		link->setP( p );
+	}
+
+	link->setText( text );
+
+	return link;
+}
+
 inline bool
 createShortcutLink( const QString & text, QSharedPointer< Document > doc,
 	QSharedPointer< Block > parent, QStringList & linksToParse,
@@ -3138,53 +3187,28 @@ createShortcutLink( const QString & text, QSharedPointer< Document > doc,
 	{
 		if( !collectRefLinks )
 		{
-			QSharedPointer< Link > link( new Link );
-			link->setUrl( url );
-			link->setTextOptions( opts );
+			const auto link = makeLink( url, ( linkText.isEmpty() ? text : linkText ), linksToParse,
+				workingPath, fileName, doc, collectRefLinks, opts, doNotCreateTextOnFail, line, pos,
+				lastLine, lastPos, fr, parent, ignoreLineBreak );
 
-			const auto s = ( !linkText.isEmpty() ? linkText : text );
-
-			QStringList tmp;
-			tmp << s;
-
-			QSharedPointer< Paragraph > p( new Paragraph );
-
-			parseFormattedText( tmp, p, doc,
-				linksToParse, workingPath, fileName, collectRefLinks, true );
-
-			if( !p->isEmpty() )
+			if( !link.isNull() )
 			{
-				for( auto it = p->items().cbegin(), last = p->items().cend(); it != last; ++it )
-				{
-					switch( (*it)->type() )
-					{
-						case ItemType::Link :
-						{
-							if( !collectRefLinks && !doNotCreateTextOnFail )
-								makeText( line, pos, lastLine, lastPos,
-									fr, parent, opts, ignoreLineBreak );
+				linksToParse.append( url );
 
-							return false;
-						}
-							break;
+				parent->appendItem( link );
 
-						default :
-							break;
-					}
-				}
-
-				link->setP( p );
+				line = lastIt->m_line;
+				pos = lastIt->m_pos + lastIt->m_len;
 			}
+			else
+			{
+				if( !collectRefLinks && !doNotCreateTextOnFail )
+					makeText( line, pos, lastLine, lastPos,
+						fr, parent, opts, ignoreLineBreak );
 
-			link->setText( s );
-
-			linksToParse.append( url );
-
-			parent->appendItem( link );
+				return false;
+			}
 		}
-
-		line = lastIt->m_line;
-		pos = lastIt->m_pos + lastIt->m_len;
 
 		return true;
 	}
