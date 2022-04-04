@@ -2951,6 +2951,69 @@ checkForInlineCode( qsizetype & line, qsizetype & pos,
 }
 
 inline QPair< QString, Delims::const_iterator >
+readTextBetweenSquareBrackets( qsizetype & line, qsizetype & pos,
+	Delims::const_iterator start, Delims::const_iterator it, Delims::const_iterator last,
+	const QStringList & fr,
+	QSharedPointer< Block > parent,
+	const TextOptions & opts,
+	bool collectRefLinks,
+	bool ignoreLineBreak )
+{
+	if( it != last )
+	{
+		if( start->m_line == it->m_line )
+		{
+			const auto p = start->m_pos + start->m_len;
+			const auto n = it->m_pos - p;
+
+			pos = it->m_pos + it->m_len;
+
+			return { fr.at( start->m_line ).sliced( p, n ).simplified(), it };
+		}
+		else
+		{
+			if( it->m_line - start->m_line < 3 )
+			{
+				auto text = fr.at( start->m_line ).sliced( start->m_pos + start->m_len );
+
+				qsizetype i = start->m_line + 1;
+
+				for( ; i <= it->m_line; ++i )
+				{
+					text.append( c_32 );
+
+					if( i == it->m_line )
+						text.append( fr.at( i ).sliced( 0, it->m_pos ) );
+					else
+						text.append( fr.at( i ) );
+				}
+
+				pos = it->m_pos + it->m_len;
+				line = it->m_line;
+
+				return { text.simplified(), it };
+			}
+			else
+			{
+				if( !collectRefLinks )
+					makeText( line, pos, start->m_line, start->m_pos + start->m_len, fr,
+						parent, opts, ignoreLineBreak );
+
+				return { {}, start };
+			}
+		}
+	}
+	else
+	{
+		if( !collectRefLinks )
+			makeText( line, pos, start->m_line, start->m_pos + start->m_len, fr,
+				parent, opts, ignoreLineBreak );
+
+		return { {}, start };
+	}
+}
+
+inline QPair< QString, Delims::const_iterator >
 checkForLinkText( qsizetype & line, qsizetype & pos,
 	Delims::const_iterator it, Delims::const_iterator last,
 	QSharedPointer< Document > doc,
@@ -3002,58 +3065,8 @@ checkForLinkText( qsizetype & line, qsizetype & pos,
 			break;
 	}
 
-	if( it != last )
-	{
-		if( line == it->m_line )
-		{
-			const auto p = start->m_pos + start->m_len;
-			const auto n = it->m_pos - p;
-
-			pos = it->m_pos + it->m_len;
-
-			return { fr.at( line ).sliced( p, n ).simplified(), it };
-		}
-		else
-		{
-			if( it->m_line - line < 3 )
-			{
-				auto text = fr.at( line ).sliced( start->m_pos + start->m_len );
-
-				qsizetype i = line + 1;
-
-				for( ; i <= it->m_line; ++i )
-				{
-					text.append( c_32 );
-
-					if( i == it->m_line )
-						text.append( fr.at( i ).sliced( 0, it->m_pos ) );
-					else
-						text.append( fr.at( i ) );
-				}
-
-				pos = it->m_pos + it->m_len;
-				line = it->m_line;
-
-				return { text.simplified(), it };
-			}
-			else
-			{
-				if( !collectRefLinks )
-					makeText( line, pos, start->m_line, start->m_pos + start->m_len, fr,
-						parent, opts, ignoreLineBreak );
-
-				return { {}, start };
-			}
-		}
-	}
-	else
-	{
-		if( !collectRefLinks )
-			makeText( line, pos, start->m_line, start->m_pos + start->m_len, fr,
-				parent, opts, ignoreLineBreak );
-
-		return { {}, start };
-	}
+	return readTextBetweenSquareBrackets( line, pos, start, it, last,
+		fr, parent, opts, collectRefLinks, ignoreLineBreak );
 }
 
 inline bool
