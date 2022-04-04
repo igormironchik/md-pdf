@@ -3048,15 +3048,50 @@ checkForLinkText( qsizetype & line, qsizetype & pos,
 	}
 	else
 	{
-		line = start->m_line;
-		pos = start->m_pos;
-
 		if( !collectRefLinks )
 			makeText( line, pos, start->m_line, start->m_pos + start->m_len, fr,
 				parent, opts, ignoreLineBreak );
 
 		return { {}, start };
 	}
+}
+
+inline bool
+createShortcutLink( const QString & text, QSharedPointer< Document > doc,
+	QSharedPointer< Block > parent, QStringList & linksToParse,
+	const QString & workingPath, const QString & fileName,
+	const TextOptions & opts, bool collectRefLinks,
+	qsizetype & line, qsizetype & pos,
+	qsizetype lastLine, qsizetype lastPos,
+	const QStringList & fr, bool ignoreLineBreak,
+	Delims::const_iterator lastIt )
+{
+	const auto url = QString::fromLatin1( "#" ) + text.simplified().toLower() +
+		QStringLiteral( "/" ) + workingPath + fileName;
+
+	if( doc->labeledLinks().contains( url ) )
+	{
+		if( !collectRefLinks )
+		{
+			QSharedPointer< Link > link( new Link );
+			link->setUrl( url );
+			link->setTextOptions( opts );
+
+			linksToParse.append( url );
+
+			parent->appendItem( link );
+		}
+
+		line = lastIt->m_line;
+		pos = lastIt->m_pos + lastIt->m_len;
+
+		return true;
+	}
+	else if( !collectRefLinks )
+		makeText( line, pos, lastLine, lastPos,
+			fr, parent, opts, ignoreLineBreak );
+
+	return false;
 }
 
 inline Delims::const_iterator
@@ -3069,7 +3104,8 @@ checkForLink( qsizetype & line, qsizetype & pos,
 	bool collectRefLinks,
 	bool ignoreLineBreak,
 	const QString & workingPath,
-	const QString & fileName )
+	const QString & fileName,
+	QStringList & linksToParse )
 {
 	const auto start = it;
 
@@ -3104,9 +3140,6 @@ checkForLink( qsizetype & line, qsizetype & pos,
 				}
 				else if( !collectRefLinks )
 				{
-					pos = start->m_pos;
-					line = start->m_line;
-
 					makeText( line, pos, start->m_line, start->m_pos + start->m_len,
 						fr, parent, opts, ignoreLineBreak );
 
@@ -3124,17 +3157,26 @@ checkForLink( qsizetype & line, qsizetype & pos,
 
 			}
 			// Shortcut
-			else
+			else if( createShortcutLink( text, doc, parent, linksToParse,
+						workingPath, fileName, opts, collectRefLinks,
+						line, pos, start->m_line, start->m_pos + start->m_len,
+						fr, ignoreLineBreak, it ) )
 			{
-
+				return it;
 			}
 		}
 		// Shortcut
-		else
+		else if( createShortcutLink( text, doc, parent, linksToParse,
+					workingPath, fileName, opts, collectRefLinks,
+					line, pos, start->m_line, start->m_pos + start->m_len,
+					fr, ignoreLineBreak, it ) )
 		{
-
+			return it;
 		}
 	}
+	else if( !collectRefLinks )
+		makeText( line, pos, start->m_line, start->m_pos + start->m_len,
+			fr, parent, opts, ignoreLineBreak );
 
 	return start;
 }
@@ -3260,7 +3302,8 @@ isStyleClosed( Delims::const_iterator it, Delims::const_iterator last,
 	const TextOptions & opts,
 	bool ignoreLineBreak,
 	const QString & workingPath,
-	const QString & fileName )
+	const QString & fileName,
+	QStringList & linksToParse )
 {
 	const auto open = it->m_type;
 
@@ -3273,7 +3316,7 @@ isStyleClosed( Delims::const_iterator it, Delims::const_iterator last,
 			case Delimiter::SquareBracketsOpen :
 				it = checkForLink( line, pos, it, last, doc,
 					fr, parent, opts, false, ignoreLineBreak,
-					workingPath, fileName );
+					workingPath, fileName, linksToParse );
 				break;
 
 			case Delimiter::ImageOpen :
@@ -3325,7 +3368,8 @@ checkForStyle( qsizetype & line, qsizetype & pos,
 	bool ignoreLineBreak,
 	QSharedPointer< Document > doc,
 	const QString & workingPath,
-	const QString & fileName )
+	const QString & fileName,
+	QStringList & linksToParse )
 {
 	if( isClosingStyle( styles, it->m_type ) )
 	{
@@ -3350,7 +3394,7 @@ checkForStyle( qsizetype & line, qsizetype & pos,
 			case Delimiter::BoldItalic4Open :
 			{
 				if( isStyleClosed( it, last, doc, fr, parent, opts, ignoreLineBreak,
-						workingPath, fileName ) )
+						workingPath, fileName, linksToParse ) )
 				{
 					setStyle( opts, it->m_type, true );
 					styles.append( it->m_type );
@@ -3409,7 +3453,7 @@ parseFormattedText( QStringList & fr, QSharedPointer< Block > parent,
 			case Delimiter::SquareBracketsOpen :
 				it = checkForLink( line, pos, it, last, doc,
 					fr, p, opts, collectRefLinks, ignoreLineBreak,
-					workingPath, fileName );
+					workingPath, fileName, linksToParse );
 				break;
 
 			case Delimiter::ImageOpen :
@@ -3435,7 +3479,7 @@ parseFormattedText( QStringList & fr, QSharedPointer< Block > parent,
 			case Delimiter::BoldItalic4Close :
 				it = checkForStyle( line, pos, it, last, styles, opts,
 					fr, p, collectRefLinks, ignoreLineBreak, doc,
-					workingPath, fileName );
+					workingPath, fileName, linksToParse );
 				break;
 
 			case Delimiter::InlineCode :
