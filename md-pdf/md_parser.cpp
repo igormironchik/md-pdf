@@ -2649,6 +2649,22 @@ collectDelimiters( const QStringList & fr )
 	return d;
 }
 
+struct TextParsingOpts {
+	QStringList & fr;
+	QSharedPointer< Block > parent;
+	QSharedPointer< Document > doc;
+	QStringList & linksToParse;
+	QString workingPath;
+	QString fileName;
+	bool collectRefLinks;
+	bool ignoreLineBreak;
+
+	qsizetype line = 0;
+	qsizetype pos = 0;
+	TextOptions opts = TextWithoutFormat;
+	QVector< Delimiter::DelimiterType > styles;
+}; // struct TextParsingOpts
+
 void
 parseFormattedText( QStringList & fr, QSharedPointer< Block > parent,
 	QSharedPointer< Document > doc, QStringList & linksToParse, const QString & workingPath,
@@ -2723,33 +2739,30 @@ removeBackslashes( const QString & s )
 }
 
 inline void
-makeText( qsizetype & line, qsizetype & pos,
+makeText(
 	// Inclusive.
 	qsizetype lastLine,
 	// Not inclusive
 	qsizetype lastPos,
-	const QStringList & fr,
-	QSharedPointer< Block > parent,
-	const TextOptions & opts,
-	bool ignoreLineBreak )
+	TextParsingOpts & po )
 {
-	if( line > lastLine )
+	if( po.line > lastLine )
 		return;
-	else if( line == lastLine && pos >= lastPos )
+	else if( po.line == lastLine && po.pos >= lastPos )
 		return;
 
 	QString text;
 
-	bool spaceBefore = ( pos > 0 ? fr.at( line )[ pos - 1 ].isSpace() ||
-		fr.at( line )[ pos ].isSpace() : true );
+	bool spaceBefore = ( po.pos > 0 ? po.fr.at( po.line )[ po.pos - 1 ].isSpace() ||
+		po.fr.at( po.line )[ po.pos ].isSpace() : true );
 
-	bool lineBreak = ( !ignoreLineBreak && ( line == lastLine ?
-		( lastPos == fr.at( line ).size() && isLineBreak( fr.at( line ) ) ) :
-		isLineBreak( fr.at( line ) ) ) );
+	bool lineBreak = ( !po.ignoreLineBreak && ( po.line == lastLine ?
+		( lastPos == po.fr.at( po.line ).size() && isLineBreak( po.fr.at( po.line ) ) ) :
+		isLineBreak( po.fr.at( po.line ) ) ) );
 
 	// makeTOWLB
 	auto makeTOWLB = [&] () {
-		makeTextObjectWithLineBreak( text, opts, spaceBefore, true, parent );
+		makeTextObjectWithLineBreak( text, po.opts, spaceBefore, true, po.parent );
 
 		text.clear();
 
@@ -2758,25 +2771,25 @@ makeText( qsizetype & line, qsizetype & pos,
 
 	if( lineBreak )
 	{
-		text.append( removeBackslashes( removeLineBreak( fr.at( line ) ).sliced( pos ) ) );
+		text.append( removeBackslashes( removeLineBreak( po.fr.at( po.line ) ).sliced( po.pos ) ) );
 
 		makeTOWLB();
 	}
 	else
-		text.append( removeBackslashes( fr.at( line ).sliced( pos,
-			( line == lastLine ? lastPos - pos : fr.at( line ).size() - pos ) ) ) );
+		text.append( removeBackslashes( po.fr.at( po.line ).sliced( po.pos,
+			( po.line == lastLine ? lastPos - po.pos : po.fr.at( po.line ).size() - po.pos ) ) ) );
 
-	if( line != lastLine )
+	if( po.line != lastLine )
 	{
 		text.append( c_32 );
-		++line;
+		++po.line;
 
-		for( ; line < lastLine; ++line )
+		for( ; po.line < lastLine; ++po.line )
 		{
-			lineBreak = ( !ignoreLineBreak && isLineBreak( fr.at( line ) ) );
+			lineBreak = ( !po.ignoreLineBreak && isLineBreak( po.fr.at( po.line ) ) );
 
 			text.append( removeBackslashes( ( lineBreak ?
-				removeLineBreak( fr.at( line ) ) : fr.at( line ) ) ) );
+				removeLineBreak( po.fr.at( po.line ) ) : po.fr.at( po.line ) ) ) );
 
 			text.append( c_32 );
 
@@ -2784,52 +2797,40 @@ makeText( qsizetype & line, qsizetype & pos,
 				makeTOWLB();
 		}
 
-		lineBreak = ( !ignoreLineBreak && lastPos == fr.at( line ).size() &&
-			isLineBreak( fr.at( line ) ) );
+		lineBreak = ( !po.ignoreLineBreak && lastPos == po.fr.at( po.line ).size() &&
+			isLineBreak( po.fr.at( po.line ) ) );
 
 		if( !lineBreak )
-			text.append( removeBackslashes( fr.at( line ).sliced( 0, lastPos ) ) );
+			text.append( removeBackslashes( po.fr.at( po.line ).sliced( 0, lastPos ) ) );
 		else
 			makeTOWLB();
 	}
 
-	pos = lastPos;
+	po.pos = lastPos;
 
-	makeTextObject( text, opts, spaceBefore,
-		fr.at( line )[ pos - 1 ].isSpace(), parent );
+	makeTextObject( text, po.opts, spaceBefore,
+		po.fr.at( po.line )[ po.pos - 1 ].isSpace(), po.parent );
 }
 
 inline Delims::const_iterator
-checkForImage( qsizetype & line, qsizetype & pos,
-	Delims::const_iterator it, Delims::const_iterator last,
-	QSharedPointer< Document > doc,
-	const QStringList & fr,
-	QSharedPointer< Block > parent,
-	const TextOptions & opts,
-	bool collectRefLinks,
-	bool ignoreLineBreak )
+checkForImage( Delims::const_iterator it, Delims::const_iterator last,
+	TextParsingOpts & po )
 {
 	return it;
 }
 
 inline Delims::const_iterator
-checkForAutolinkHtml( qsizetype & line, qsizetype & pos,
-	Delims::const_iterator it, Delims::const_iterator last,
-	QSharedPointer< Document > doc,
-	const QStringList & fr,
-	QSharedPointer< Block > parent,
-	const TextOptions & opts,
-	bool collectRefLinks,
-	bool ignoreLineBreak )
+checkForAutolinkHtml( Delims::const_iterator it, Delims::const_iterator last,
+	TextParsingOpts & po )
 {
 	const auto nit = std::find_if( std::next( it ), last,
 		[] ( const auto & d ) { return ( d.m_type == Delimiter::Greater ); } );
 
 	if( nit != last && nit->m_line == it->m_line )
 	{
-		if( !collectRefLinks )
+		if( !po.collectRefLinks )
 		{
-			const auto url = fr.at( line ).sliced( pos + 1, nit->m_pos - pos - 1 );
+			const auto url = po.fr.at( po.line ).sliced( po.pos + 1, nit->m_pos - po.pos - 1 );
 
 			const auto sit = std::find_if( url.cbegin(), url.cend(),
 				[] ( const auto & c ) { return c.isSpace(); } );
@@ -2861,47 +2862,45 @@ checkForAutolinkHtml( qsizetype & line, qsizetype & pos,
 			{
 				QSharedPointer< Link > lnk( new Link );
 				lnk->setUrl( url.simplified() );
-				lnk->setTextOptions( opts );
-				parent->appendItem( lnk );
+				lnk->setTextOptions( po.opts );
+				po.parent->appendItem( lnk );
 			}
 			else
-				makeText( line, pos, nit->m_line, nit->m_pos + nit->m_len,
-					fr, parent, opts, ignoreLineBreak );
+				makeText( nit->m_line, nit->m_pos + nit->m_len, po );
 		}
 
-		pos = nit->m_pos + nit->m_len;
-		line = nit->m_line;
+		po.pos = nit->m_pos + nit->m_len;
+		po.line = nit->m_line;
 
 		return nit;
 	}
-	else if( !collectRefLinks )
-		makeText( line, pos, it->m_line, it->m_pos + it->m_len,
-			fr, parent, opts, ignoreLineBreak );
+	else if( !po.collectRefLinks )
+		makeText( it->m_line, it->m_pos + it->m_len, po );
 
-	pos = it->m_pos + it->m_len;
-	line = it->m_line;
+	po.pos = it->m_pos + it->m_len;
+	po.line = it->m_line;
 
 	return it;
 }
 
 inline void
-makeInlineCode( qsizetype line, qsizetype pos,
-	qsizetype lastLine, qsizetype lastPos,
-	const QStringList & fr,
-	QSharedPointer< Block > parent )
+makeInlineCode( qsizetype lastLine, qsizetype lastPos,
+	TextParsingOpts & po )
 {
 	QString c;
 
-	for( ; line <= lastLine; ++line )
+	for( ; po.line <= lastLine; ++po.line )
 	{
-		c.append( fr.at( line ).sliced( pos,
-			( line == lastLine ? lastPos : fr.at( line ).size() - pos ) ) );
+		c.append( po.fr.at( po.line ).sliced( po.pos,
+			( po.line == lastLine ? lastPos : po.fr.at( po.line ).size() - po.pos ) ) );
 
-		if( line < lastLine )
+		if( po.line < lastLine )
 			c.append( c_32 );
 
-		pos = 0;
+		po.pos = 0;
 	}
+
+	po.line = lastLine;
 
 	if( c.front().isSpace() && c.back().isSpace() && skipSpaces( 0, c ) < c.size() )
 	{
@@ -2910,18 +2909,12 @@ makeInlineCode( qsizetype line, qsizetype pos,
 	}
 
 	if( !c.isEmpty() )
-		parent->appendItem( QSharedPointer< Code >( new Code( c, true ) ) );
+		po.parent->appendItem( QSharedPointer< Code >( new Code( c, true ) ) );
 }
 
 inline Delims::const_iterator
-checkForInlineCode( qsizetype & line, qsizetype & pos,
-	Delims::const_iterator it, Delims::const_iterator last,
-	QSharedPointer< Document > doc,
-	const QStringList & fr,
-	QSharedPointer< Block > parent,
-	const TextOptions & opts,
-	bool collectRefLinks,
-	bool ignoreLineBreak )
+checkForInlineCode( Delims::const_iterator it, Delims::const_iterator last,
+	TextParsingOpts & po )
 {
 	const auto len = it->m_len;
 	const auto start = it;
@@ -2932,37 +2925,32 @@ checkForInlineCode( qsizetype & line, qsizetype & pos,
 	{
 		if( it->m_type == Delimiter::InlineCode && it->m_len == len )
 		{
-			if( !collectRefLinks )
+			if( !po.collectRefLinks )
 			{
-				makeText( line, pos, start->m_line, start->m_pos,
-					fr, parent, opts, ignoreLineBreak );
+				makeText( start->m_line, start->m_pos, po );
 
-				makeInlineCode( start->m_line, start->m_pos + start->m_len,
-					it->m_line, it->m_pos, fr, parent );
+				po.pos = start->m_pos + start->m_len;
+
+				makeInlineCode( it->m_line, it->m_pos, po );
 			}
 
-			line = it->m_line;
-			pos = it->m_pos + it->m_len;
+			po.line = it->m_line;
+			po.pos = it->m_pos + it->m_len;
 
 			return it;
 		}
 	}
 
-	if( !collectRefLinks )
-		makeText( line, pos, start->m_line, start->m_pos + start->m_len,
-			fr, parent, opts, ignoreLineBreak );
+	if( !po.collectRefLinks )
+		makeText( start->m_line, start->m_pos + start->m_len, po );
 
 	return start;
 }
 
 inline QPair< QString, Delims::const_iterator >
-readTextBetweenSquareBrackets( qsizetype & line, qsizetype & pos,
-	Delims::const_iterator start, Delims::const_iterator it, Delims::const_iterator last,
-	const QStringList & fr,
-	QSharedPointer< Block > parent,
-	const TextOptions & opts,
-	bool collectRefLinks,
-	bool ignoreLineBreak,
+readTextBetweenSquareBrackets( Delims::const_iterator start,
+	Delims::const_iterator it, Delims::const_iterator last,
+	TextParsingOpts & po,
 	bool doNotCreateTextOnFail )
 {
 	if( it != last )
@@ -2972,15 +2960,15 @@ readTextBetweenSquareBrackets( qsizetype & line, qsizetype & pos,
 			const auto p = start->m_pos + start->m_len;
 			const auto n = it->m_pos - p;
 
-			pos = it->m_pos + it->m_len;
+			po.pos = it->m_pos + it->m_len;
 
-			return { fr.at( start->m_line ).sliced( p, n ).simplified(), it };
+			return { po.fr.at( start->m_line ).sliced( p, n ).simplified(), it };
 		}
 		else
 		{
 			if( it->m_line - start->m_line < 3 )
 			{
-				auto text = fr.at( start->m_line ).sliced( start->m_pos + start->m_len );
+				auto text = po.fr.at( start->m_line ).sliced( start->m_pos + start->m_len );
 
 				qsizetype i = start->m_line + 1;
 
@@ -2989,21 +2977,20 @@ readTextBetweenSquareBrackets( qsizetype & line, qsizetype & pos,
 					text.append( c_32 );
 
 					if( i == it->m_line )
-						text.append( fr.at( i ).sliced( 0, it->m_pos ) );
+						text.append( po.fr.at( i ).sliced( 0, it->m_pos ) );
 					else
-						text.append( fr.at( i ) );
+						text.append( po.fr.at( i ) );
 				}
 
-				pos = it->m_pos + it->m_len;
-				line = it->m_line;
+				po.pos = it->m_pos + it->m_len;
+				po.line = it->m_line;
 
 				return { text.simplified(), it };
 			}
 			else
 			{
-				if( !collectRefLinks && !doNotCreateTextOnFail )
-					makeText( line, pos, start->m_line, start->m_pos + start->m_len, fr,
-						parent, opts, ignoreLineBreak );
+				if( !po.collectRefLinks && !doNotCreateTextOnFail )
+					makeText( start->m_line, start->m_pos + start->m_len, po );
 
 				return { {}, start };
 			}
@@ -3011,27 +2998,23 @@ readTextBetweenSquareBrackets( qsizetype & line, qsizetype & pos,
 	}
 	else
 	{
-		if( !collectRefLinks && !doNotCreateTextOnFail )
-			makeText( line, pos, start->m_line, start->m_pos + start->m_len, fr,
-				parent, opts, ignoreLineBreak );
+		if( !po.collectRefLinks && !doNotCreateTextOnFail )
+			makeText( start->m_line, start->m_pos + start->m_len, po );
 
 		return { {}, start };
 	}
 }
 
 inline QPair< QString, Delims::const_iterator >
-checkForLinkText( qsizetype & line, qsizetype & pos,
-	Delims::const_iterator it, Delims::const_iterator last,
-	QSharedPointer< Document > doc,
-	const QStringList & fr,
-	QSharedPointer< Block > parent,
-	const TextOptions & opts,
-	bool collectRefLinks,
-	bool ignoreLineBreak )
+checkForLinkText( Delims::const_iterator it, Delims::const_iterator last,
+	TextParsingOpts & po )
 {
 	const auto start = it;
 
 	qsizetype brackets = 0;
+
+	const bool collectRefLinks = po.collectRefLinks;
+	po.collectRefLinks = true;
 
 	for( it = std::next( it ); it != last; ++it )
 	{
@@ -3054,13 +3037,11 @@ checkForLinkText( qsizetype & line, qsizetype & pos,
 				break;
 
 			case Delimiter::InlineCode :
-				it = checkForInlineCode( line, pos, it, last, doc, fr, parent,
-					opts, true, ignoreLineBreak );
+				it = checkForInlineCode( it, last, po );
 				break;
 
 			case Delimiter::Less :
-				it = checkForAutolinkHtml( line, pos, it, last, doc, fr, parent,
-					opts, true, ignoreLineBreak );
+				it = checkForAutolinkHtml( it, last, po );
 				break;
 
 			default :
@@ -3071,19 +3052,16 @@ checkForLinkText( qsizetype & line, qsizetype & pos,
 			break;
 	}
 
-	return readTextBetweenSquareBrackets( line, pos, start, it, last,
-		fr, parent, opts, collectRefLinks, ignoreLineBreak, false );
+	const auto r =  readTextBetweenSquareBrackets( start, it, last, po, false );
+
+	po.collectRefLinks = collectRefLinks;
+
+	return r;
 }
 
 inline QPair< QString, Delims::const_iterator >
-checkForLinkLabel( qsizetype & line, qsizetype & pos,
-	Delims::const_iterator it, Delims::const_iterator last,
-	QSharedPointer< Document > doc,
-	const QStringList & fr,
-	QSharedPointer< Block > parent,
-	const TextOptions & opts,
-	bool collectRefLinks,
-	bool ignoreLineBreak )
+checkForLinkLabel( Delims::const_iterator it, Delims::const_iterator last,
+	TextParsingOpts & po )
 {
 	const auto start = it;
 
@@ -3115,29 +3093,27 @@ checkForLinkLabel( qsizetype & line, qsizetype & pos,
 			break;
 	}
 
-	return readTextBetweenSquareBrackets( line, pos, start, it, last,
-		fr, parent, opts, collectRefLinks, ignoreLineBreak, true );
+	return readTextBetweenSquareBrackets( start, it, last, po, true );
 }
 
 inline QSharedPointer< Link >
 makeLink( const QString & url, const QString & text,
-	QStringList & linksToParse, const QString & workingPath, const QString & fileName,
-	QSharedPointer< Document > doc, bool collectRefLinks, const TextOptions & opts,
-	bool doNotCreateTextOnFail, qsizetype & line, qsizetype & pos,
-	qsizetype lastLine, qsizetype lastPos, const QStringList & fr,
-	QSharedPointer< Block > parent, bool ignoreLineBreak )
+	TextParsingOpts & po,
+	bool doNotCreateTextOnFail,
+	qsizetype lastLine, qsizetype lastPos )
 {
 	QSharedPointer< Link > link( new Link );
 	link->setUrl( url );
-	link->setTextOptions( opts );
+	link->setTextOptions( po.opts );
 
 	QStringList tmp;
 	tmp << text;
 
 	QSharedPointer< Paragraph > p( new Paragraph );
 
-	parseFormattedText( tmp, p, doc,
-		linksToParse, workingPath, fileName, collectRefLinks, true );
+	parseFormattedText( tmp, p, po.doc,
+		po.linksToParse, po.workingPath,
+		po.fileName, po.collectRefLinks, true );
 
 	if( !p->isEmpty() )
 	{
@@ -3147,9 +3123,8 @@ makeLink( const QString & url, const QString & text,
 			{
 				case ItemType::Link :
 				{
-					if( !collectRefLinks && !doNotCreateTextOnFail )
-						makeText( line, pos, lastLine, lastPos,
-							fr, parent, opts, ignoreLineBreak );
+					if( !po.collectRefLinks && !doNotCreateTextOnFail )
+						makeText( lastLine, lastPos, po );
 
 					return {};
 				}
@@ -3160,7 +3135,8 @@ makeLink( const QString & url, const QString & text,
 			}
 		}
 
-		link->setP( p );
+		if( p->items().at( 0 )->type() == ItemType::Paragraph )
+			link->setP( p->items().at( 0 ).staticCast< Paragraph > () );
 	}
 
 	link->setText( text );
@@ -3169,42 +3145,36 @@ makeLink( const QString & url, const QString & text,
 }
 
 inline bool
-createShortcutLink( const QString & text, QSharedPointer< Document > doc,
-	QSharedPointer< Block > parent, QStringList & linksToParse,
-	const QString & workingPath, const QString & fileName,
-	const TextOptions & opts, bool collectRefLinks,
-	qsizetype & line, qsizetype & pos,
+createShortcutLink( const QString & text,
+	TextParsingOpts & po,
 	qsizetype lastLine, qsizetype lastPos,
-	const QStringList & fr, bool ignoreLineBreak,
 	Delims::const_iterator lastIt,
 	const QString & linkText,
 	bool doNotCreateTextOnFail )
 {
 	const auto url = QString::fromLatin1( "#" ) + text.simplified().toLower() +
-		QStringLiteral( "/" ) + workingPath + fileName;
+		QStringLiteral( "/" ) + po.workingPath + po.fileName;
 
-	if( doc->labeledLinks().contains( url ) )
+	if( po.doc->labeledLinks().contains( url ) )
 	{
-		if( !collectRefLinks )
+		if( !po.collectRefLinks )
 		{
-			const auto link = makeLink( url, ( linkText.isEmpty() ? text : linkText ), linksToParse,
-				workingPath, fileName, doc, collectRefLinks, opts, doNotCreateTextOnFail, line, pos,
-				lastLine, lastPos, fr, parent, ignoreLineBreak );
+			const auto link = makeLink( url, ( linkText.isEmpty() ? text : linkText ), po,
+				doNotCreateTextOnFail, lastLine, lastPos );
 
 			if( !link.isNull() )
 			{
-				linksToParse.append( url );
+				po.linksToParse.append( url );
 
-				parent->appendItem( link );
+				po.parent->appendItem( link );
 
-				line = lastIt->m_line;
-				pos = lastIt->m_pos + lastIt->m_len;
+				po.line = lastIt->m_line;
+				po.pos = lastIt->m_pos + lastIt->m_len;
 			}
 			else
 			{
-				if( !collectRefLinks && !doNotCreateTextOnFail )
-					makeText( line, pos, lastLine, lastPos,
-						fr, parent, opts, ignoreLineBreak );
+				if( !po.collectRefLinks && !doNotCreateTextOnFail )
+					makeText( lastLine, lastPos, po );
 
 				return false;
 			}
@@ -3212,104 +3182,87 @@ createShortcutLink( const QString & text, QSharedPointer< Document > doc,
 
 		return true;
 	}
-	else if( !collectRefLinks && !doNotCreateTextOnFail )
-		makeText( line, pos, lastLine, lastPos,
-			fr, parent, opts, ignoreLineBreak );
+	else if( !po.collectRefLinks && !doNotCreateTextOnFail )
+		makeText( lastLine, lastPos, po );
 
 	return false;
 }
 
 inline Delims::const_iterator
-checkForLink( qsizetype & line, qsizetype & pos,
-	Delims::const_iterator it, Delims::const_iterator last,
-	QSharedPointer< Document > doc,
-	const QStringList & fr,
-	QSharedPointer< Block > parent,
-	const TextOptions & opts,
-	bool collectRefLinks,
-	bool ignoreLineBreak,
-	const QString & workingPath,
-	const QString & fileName,
-	QStringList & linksToParse )
+checkForLink( Delims::const_iterator it, Delims::const_iterator last,
+	TextParsingOpts & po )
 {
 	const auto start = it;
 
 	QString text;
 
-	std::tie( text, it ) = checkForLinkText( line, pos, it, last, doc, fr, parent,
-		opts, collectRefLinks, ignoreLineBreak );
+	std::tie( text, it ) = checkForLinkText( it, last, po );
 
 	if( it != start )
 	{
 		// Footnote reference.
 		if( text.startsWith( c_94 ) )
 		{
-			if( !collectRefLinks )
+			if( !po.collectRefLinks )
 			{
 				QSharedPointer< FootnoteRef > fnr(
 					new FootnoteRef( QStringLiteral( "#" ) + text.simplified().toLower() +
-						QStringLiteral( "/" ) + workingPath + fileName ) );
+						QStringLiteral( "/" ) + po.workingPath + po.fileName ) );
 
-				parent->appendItem( fnr );
+				po.parent->appendItem( fnr );
 			}
 
-			line = it->m_line;
-			pos = it->m_pos + it->m_len;
+			po.line = it->m_line;
+			po.pos = it->m_pos + it->m_len;
 
 			return it;
 		}
-		else if( it->m_pos + it->m_len < fr.at( it->m_line ).size() )
+		else if( it->m_pos + it->m_len < po.fr.at( it->m_line ).size() )
 		{
 			// Reference definition -> :
-			if( fr.at( it->m_line )[ it->m_pos + it->m_len ] == c_58 )
+			if( po.fr.at( it->m_line )[ it->m_pos + it->m_len ] == c_58 )
 			{
 				// Reference definitions allowed only at start of paragraph.
-				if( line == 0 & pos == 0 )
+				if( po.line == 0 & po.pos == 0 )
 				{
 
 				}
-				else if( !collectRefLinks )
+				else if( !po.collectRefLinks )
 				{
-					makeText( line, pos, start->m_line, start->m_pos + start->m_len,
-						fr, parent, opts, ignoreLineBreak );
+					makeText( start->m_line, start->m_pos + start->m_len, po );
 
 					return start;
 				}
 			}
 			// Inline -> (
-			else if( fr.at( it->m_line )[ it->m_pos + it->m_len ] == c_40 )
+			else if( po.fr.at( it->m_line )[ it->m_pos + it->m_len ] == c_40 )
 			{
 
 			}
 			// Reference -> [
-			else if( fr.at( it->m_line )[ it->m_pos + it->m_len ] == c_91 )
+			else if( po.fr.at( it->m_line )[ it->m_pos + it->m_len ] == c_91 )
 			{
 				QString label;
 				Delims::const_iterator lit;
 
-				std::tie( label, lit ) = checkForLinkLabel( line, pos, std::next( it ), last,
-					doc, fr, parent, opts, collectRefLinks, ignoreLineBreak );
+				std::tie( label, lit ) = checkForLinkLabel( std::next( it ), last, po );
 
 				if( lit != it )
 				{
 					if( createShortcutLink( label.simplified().toLower(),
-							doc, parent, linksToParse,
-							workingPath, fileName, opts, collectRefLinks,
-							line, pos, start->m_line, start->m_pos + start->m_len,
-							fr, ignoreLineBreak, lit, text, true ) )
+							po, start->m_line, start->m_pos + start->m_len,
+							lit, text, true ) )
 					{
 						return lit;
 					}
 					else if( createShortcutLink( text.simplified().toLower(),
-								doc, parent, linksToParse,
-								workingPath, fileName, opts, collectRefLinks,
-								line, pos, start->m_line, start->m_pos + start->m_len,
-								fr, ignoreLineBreak, it, {}, false ) )
+								po, start->m_line, start->m_pos + start->m_len,
+								it, {}, false ) )
 					{
 						if( label.isEmpty() )
 						{
-							line = lit->m_line;
-							pos = lit->m_pos + lit->m_line;
+							po.line = lit->m_line;
+							po.pos = lit->m_pos + lit->m_line;
 
 							return lit;
 						}
@@ -3318,37 +3271,30 @@ checkForLink( qsizetype & line, qsizetype & pos,
 					}
 				}
 				else if( createShortcutLink( text.simplified().toLower(),
-							doc, parent, linksToParse,
-							workingPath, fileName, opts, collectRefLinks,
-							line, pos, start->m_line, start->m_pos + start->m_len,
-							fr, ignoreLineBreak, it, {}, false ) )
+							po, start->m_line, start->m_pos + start->m_len,
+							it, {}, false ) )
 				{
 					return it;
 				}
 			}
 			// Shortcut
 			else if( createShortcutLink( text.simplified().toLower(),
-						doc, parent, linksToParse,
-						workingPath, fileName, opts, collectRefLinks,
-						line, pos, start->m_line, start->m_pos + start->m_len,
-						fr, ignoreLineBreak, it, {}, false ) )
+						po, start->m_line, start->m_pos + start->m_len,
+						it, {}, false ) )
 			{
 				return it;
 			}
 		}
 		// Shortcut
 		else if( createShortcutLink( text.simplified().toLower(),
-					doc, parent, linksToParse,
-					workingPath, fileName, opts, collectRefLinks,
-					line, pos, start->m_line, start->m_pos + start->m_len,
-					fr, ignoreLineBreak, it, {}, false ) )
+					po, start->m_line, start->m_pos + start->m_len,
+					it, {}, false ) )
 		{
 			return it;
 		}
 	}
-	else if( !collectRefLinks )
-		makeText( line, pos, start->m_line, start->m_pos + start->m_len,
-			fr, parent, opts, ignoreLineBreak );
+	else if( !po.collectRefLinks )
+		makeText( start->m_line, start->m_pos + start->m_len, po );
 
 	return start;
 }
@@ -3468,37 +3414,29 @@ isClosingStyle( Delimiter::DelimiterType open,
 
 inline bool
 isStyleClosed( Delims::const_iterator it, Delims::const_iterator last,
-	QSharedPointer< Document > doc,
-	const QStringList & fr,
-	QSharedPointer< Block > parent,
-	const TextOptions & opts,
-	bool ignoreLineBreak,
-	const QString & workingPath,
-	const QString & fileName,
-	QStringList & linksToParse )
+	TextParsingOpts & po )
 {
 	const auto open = it->m_type;
 
 	qsizetype line = 0, pos = 0;
+
+	const bool collectRefLinks = po.collectRefLinks;
+	po.collectRefLinks = true;
 
 	for( it = std::next( it ); it != last; ++it )
 	{
 		switch( it->m_type )
 		{
 			case Delimiter::SquareBracketsOpen :
-				it = checkForLink( line, pos, it, last, doc,
-					fr, parent, opts, false, ignoreLineBreak,
-					workingPath, fileName, linksToParse );
+				it = checkForLink( it, last, po );
 				break;
 
 			case Delimiter::ImageOpen :
-				it = checkForImage( line, pos, it, last, doc,
-					fr, parent, opts, false, ignoreLineBreak );
+				it = checkForImage( it, last, po );
 				break;
 
 			case Delimiter::Less :
-				it = checkForAutolinkHtml( line, pos, it, last, doc,
-					fr, parent, opts, false, ignoreLineBreak );
+				it = checkForAutolinkHtml( it, last, po );
 				break;
 
 			case Delimiter::Strikethrough :
@@ -3512,13 +3450,16 @@ isStyleClosed( Delims::const_iterator it, Delims::const_iterator last,
 			case Delimiter::BoldItalic4Close :
 			{
 				if( isClosingStyle( open, it->m_type ) )
+				{
+					po.collectRefLinks = collectRefLinks;
+
 					return true;
+				}
 			}
 				break;
 
 			case Delimiter::InlineCode :
-				it = checkForInlineCode( line, pos, it, last, doc,
-					fr, parent, opts, false, ignoreLineBreak );
+				it = checkForInlineCode( it, last, po );
 				break;
 
 			default :
@@ -3526,30 +3467,22 @@ isStyleClosed( Delims::const_iterator it, Delims::const_iterator last,
 		}
 	}
 
+	po.collectRefLinks = collectRefLinks;
+
 	return false;
 }
 
 inline Delims::const_iterator
-checkForStyle( qsizetype & line, qsizetype & pos,
-	Delims::const_iterator it, Delims::const_iterator last,
-	QVector< Delimiter::DelimiterType > & styles,
-	TextOptions & opts,
-	const QStringList & fr,
-	QSharedPointer< Block > parent,
-	bool collectRefLinks,
-	bool ignoreLineBreak,
-	QSharedPointer< Document > doc,
-	const QString & workingPath,
-	const QString & fileName,
-	QStringList & linksToParse )
+checkForStyle( Delims::const_iterator it, Delims::const_iterator last,
+	TextParsingOpts & po )
 {
-	if( isClosingStyle( styles, it->m_type ) )
+	if( isClosingStyle( po.styles, it->m_type ) )
 	{
-		closeStyle( styles, it->m_type );
-		setStyle( opts, it->m_type, false );
+		closeStyle( po.styles, it->m_type );
+		setStyle( po.opts, it->m_type, false );
 
-		pos = it->m_pos + it->m_len;
-		line = it->m_line;
+		po.pos = it->m_pos + it->m_len;
+		po.line = it->m_line;
 	}
 	else
 	{
@@ -3565,26 +3498,23 @@ checkForStyle( qsizetype & line, qsizetype & pos,
 			case Delimiter::BoldItalic3Open :
 			case Delimiter::BoldItalic4Open :
 			{
-				if( isStyleClosed( it, last, doc, fr, parent, opts, ignoreLineBreak,
-						workingPath, fileName, linksToParse ) )
+				if( isStyleClosed( it, last, po ) )
 				{
-					setStyle( opts, it->m_type, true );
-					styles.append( it->m_type );
+					setStyle( po.opts, it->m_type, true );
+					po.styles.append( it->m_type );
 
-					pos = it->m_pos + it->m_len;
-					line = it->m_line;
+					po.pos = it->m_pos + it->m_len;
+					po.line = it->m_line;
 				}
-				else if( !collectRefLinks )
-					makeText( line, pos, it->m_line, it->m_pos + it->m_len,
-						fr, parent, opts, ignoreLineBreak );
+				else if( !po.collectRefLinks )
+					makeText( it->m_line, it->m_pos + it->m_len, po );
 			}
 				break;
 
 			default :
 			{
-				if( !collectRefLinks )
-					makeText( line, pos, it->m_line, it->m_pos + it->m_len,
-						fr, parent, opts, ignoreLineBreak );
+				if( !po.collectRefLinks )
+					makeText( it->m_line, it->m_pos + it->m_len, po );
 			}
 				break;
 		}
@@ -3606,36 +3536,29 @@ parseFormattedText( QStringList & fr, QSharedPointer< Block > parent,
 
 	const auto delims = collectDelimiters( fr );
 
-	qsizetype pos = 0;
-	qsizetype line = 0;
-	TextOptions opts = TextWithoutFormat;
-
-	QVector< Delimiter::DelimiterType > styles;
+	TextParsingOpts po = { fr, p, doc, linksToParse, workingPath,
+		fileName, collectRefLinks, ignoreLineBreak };
 
 	for( auto it = delims.cbegin(), last = delims.cend(); it != last; ++it )
 	{
-		if( it->m_line > line || it->m_pos > pos )
+		if( it->m_line > po.line || it->m_pos > po.pos )
 		{
 			if( !collectRefLinks )
-				makeText( line, pos, it->m_line, it->m_pos, fr, p, opts, ignoreLineBreak );
+				makeText( it->m_line, it->m_pos, po );
 		}
 
 		switch( it->m_type )
 		{
 			case Delimiter::SquareBracketsOpen :
-				it = checkForLink( line, pos, it, last, doc,
-					fr, p, opts, collectRefLinks, ignoreLineBreak,
-					workingPath, fileName, linksToParse );
+				it = checkForLink( it, last, po );
 				break;
 
 			case Delimiter::ImageOpen :
-				it = checkForImage( line, pos, it, last, doc,
-					fr, p, opts, collectRefLinks, ignoreLineBreak );
+				it = checkForImage( it, last, po );
 				break;
 
 			case Delimiter::Less :
-				it = checkForAutolinkHtml( line, pos, it, last, doc,
-					fr, p, opts, collectRefLinks, ignoreLineBreak );
+				it = checkForAutolinkHtml( it, last, po );
 				break;
 
 			case Delimiter::Strikethrough :
@@ -3649,14 +3572,11 @@ parseFormattedText( QStringList & fr, QSharedPointer< Block > parent,
 			case Delimiter::BoldItalic4Open :
 			case Delimiter::BoldItalic3Close :
 			case Delimiter::BoldItalic4Close :
-				it = checkForStyle( line, pos, it, last, styles, opts,
-					fr, p, collectRefLinks, ignoreLineBreak, doc,
-					workingPath, fileName, linksToParse );
+				it = checkForStyle( it, last, po );
 				break;
 
 			case Delimiter::InlineCode :
-				it = checkForInlineCode( line, pos, it, last, doc,
-					fr, p, opts, collectRefLinks, ignoreLineBreak );
+				it = checkForInlineCode( it, last, po );
 				break;
 
 			case Delimiter::HorizontalLine :
@@ -3677,16 +3597,14 @@ parseFormattedText( QStringList & fr, QSharedPointer< Block > parent,
 			default :
 			{
 				if( !collectRefLinks )
-					makeText( line, pos, it->m_line, it->m_pos + it->m_len, fr,
-						p, opts, ignoreLineBreak );
+					makeText( it->m_line, it->m_pos + it->m_len, po );
 			}
 				break;
 		}
 	}
 
 	if( !collectRefLinks )
-		makeText( line, pos, fr.size() - 1, fr.back().length() - 1, fr, p, opts,
-			ignoreLineBreak );
+		makeText( fr.size() - 1, fr.back().length() - 1, po );
 
 	if( !p->isEmpty() )
 		parent->appendItem( p );
