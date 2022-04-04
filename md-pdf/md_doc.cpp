@@ -413,6 +413,18 @@ Link::setImg( QSharedPointer< Image > i )
 	m_img = i;
 }
 
+QSharedPointer< Paragraph >
+Link::p() const
+{
+	return m_p;
+}
+
+void
+Link::setP( QSharedPointer< Paragraph > v )
+{
+	m_p = v;
+}
+
 
 //
 // Code

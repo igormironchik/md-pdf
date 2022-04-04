@@ -2649,6 +2649,11 @@ collectDelimiters( const QStringList & fr )
 	return d;
 }
 
+void
+parseFormattedText( QStringList & fr, QSharedPointer< Block > parent,
+	QSharedPointer< Document > doc, QStringList & linksToParse, const QString & workingPath,
+	const QString & fileName, bool collectRefLinks, bool ignoreLineBreak );
+
 inline bool
 isLineBreak( const QString & s )
 {
@@ -3136,7 +3141,42 @@ createShortcutLink( const QString & text, QSharedPointer< Document > doc,
 			QSharedPointer< Link > link( new Link );
 			link->setUrl( url );
 			link->setTextOptions( opts );
-			link->setText( linkText );
+
+			const auto s = ( !linkText.isEmpty() ? linkText : text );
+
+			QStringList tmp;
+			tmp << s;
+
+			QSharedPointer< Paragraph > p( new Paragraph );
+
+			parseFormattedText( tmp, p, doc,
+				linksToParse, workingPath, fileName, collectRefLinks, true );
+
+			if( !p->isEmpty() )
+			{
+				for( auto it = p->items().cbegin(), last = p->items().cend(); it != last; ++it )
+				{
+					switch( (*it)->type() )
+					{
+						case ItemType::Link :
+						{
+							if( !collectRefLinks && !doNotCreateTextOnFail )
+								makeText( line, pos, lastLine, lastPos,
+									fr, parent, opts, ignoreLineBreak );
+
+							return false;
+						}
+							break;
+
+						default :
+							break;
+					}
+				}
+
+				link->setP( p );
+			}
+
+			link->setText( s );
 
 			linksToParse.append( url );
 
@@ -3188,6 +3228,11 @@ checkForLink( qsizetype & line, qsizetype & pos,
 
 				parent->appendItem( fnr );
 			}
+
+			line = it->m_line;
+			pos = it->m_pos + it->m_len;
+
+			return it;
 		}
 		else if( it->m_pos + it->m_len < fr.at( it->m_line ).size() )
 		{
@@ -3218,9 +3263,7 @@ checkForLink( qsizetype & line, qsizetype & pos,
 				QString label;
 				Delims::const_iterator lit;
 
-				it = std::next( it );
-
-				std::tie( label, lit ) = checkForLinkLabel( line, pos, it, last,
+				std::tie( label, lit ) = checkForLinkLabel( line, pos, std::next( it ), last,
 					doc, fr, parent, opts, collectRefLinks, ignoreLineBreak );
 
 				if( lit != it )
@@ -3237,12 +3280,17 @@ checkForLink( qsizetype & line, qsizetype & pos,
 								doc, parent, linksToParse,
 								workingPath, fileName, opts, collectRefLinks,
 								line, pos, start->m_line, start->m_pos + start->m_len,
-								fr, ignoreLineBreak, std::prev( it ), {}, false ) )
+								fr, ignoreLineBreak, it, {}, false ) )
 					{
 						if( label.isEmpty() )
+						{
+							line = lit->m_line;
+							pos = lit->m_pos + lit->m_line;
+
 							return lit;
+						}
 						else
-							return std::prev( it );
+							return it;
 					}
 				}
 				else if( createShortcutLink( text.simplified().toLower(),
@@ -3251,7 +3299,7 @@ checkForLink( qsizetype & line, qsizetype & pos,
 							line, pos, start->m_line, start->m_pos + start->m_len,
 							fr, ignoreLineBreak, it, {}, false ) )
 				{
-					return std::prev( it );
+					return it;
 				}
 			}
 			// Shortcut

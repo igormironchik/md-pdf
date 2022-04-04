@@ -450,11 +450,15 @@ public:
 	QSharedPointer< Image > img() const;
 	void setImg( QSharedPointer< Image > i );
 
+	QSharedPointer< Paragraph > p() const;
+	void setP( QSharedPointer< Paragraph > v );
+
 private:
 	QString m_url;
 	QString m_text;
 	TextOptions m_opts;
 	QSharedPointer< Image > m_img;
+	QSharedPointer< Paragraph > m_p;
 
 	Q_DISABLE_COPY( Link )
 }; // class Link
