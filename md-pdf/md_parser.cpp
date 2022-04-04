@@ -3183,7 +3183,7 @@ checkForLink( qsizetype & line, qsizetype & pos,
 			if( !collectRefLinks )
 			{
 				QSharedPointer< FootnoteRef > fnr(
-					new FootnoteRef( QStringLiteral( "#" ) + text +
+					new FootnoteRef( QStringLiteral( "#" ) + text.simplified().toLower() +
 						QStringLiteral( "/" ) + workingPath + fileName ) );
 
 				parent->appendItem( fnr );
@@ -3225,14 +3225,16 @@ checkForLink( qsizetype & line, qsizetype & pos,
 
 				if( lit != it )
 				{
-					if( createShortcutLink( label, doc, parent, linksToParse,
+					if( createShortcutLink( label.simplified().toLower(),
+							doc, parent, linksToParse,
 							workingPath, fileName, opts, collectRefLinks,
 							line, pos, start->m_line, start->m_pos + start->m_len,
 							fr, ignoreLineBreak, lit, text, true ) )
 					{
 						return lit;
 					}
-					else if( createShortcutLink( text, doc, parent, linksToParse,
+					else if( createShortcutLink( text.simplified().toLower(),
+								doc, parent, linksToParse,
 								workingPath, fileName, opts, collectRefLinks,
 								line, pos, start->m_line, start->m_pos + start->m_len,
 								fr, ignoreLineBreak, std::prev( it ), {}, false ) )
@@ -3243,7 +3245,8 @@ checkForLink( qsizetype & line, qsizetype & pos,
 							return std::prev( it );
 					}
 				}
-				else if( createShortcutLink( text, doc, parent, linksToParse,
+				else if( createShortcutLink( text.simplified().toLower(),
+							doc, parent, linksToParse,
 							workingPath, fileName, opts, collectRefLinks,
 							line, pos, start->m_line, start->m_pos + start->m_len,
 							fr, ignoreLineBreak, it, {}, false ) )
@@ -3252,7 +3255,8 @@ checkForLink( qsizetype & line, qsizetype & pos,
 				}
 			}
 			// Shortcut
-			else if( createShortcutLink( text, doc, parent, linksToParse,
+			else if( createShortcutLink( text.simplified().toLower(),
+						doc, parent, linksToParse,
 						workingPath, fileName, opts, collectRefLinks,
 						line, pos, start->m_line, start->m_pos + start->m_len,
 						fr, ignoreLineBreak, it, {}, false ) )
@@ -3261,7 +3265,8 @@ checkForLink( qsizetype & line, qsizetype & pos,
 			}
 		}
 		// Shortcut
-		else if( createShortcutLink( text, doc, parent, linksToParse,
+		else if( createShortcutLink( text.simplified().toLower(),
+					doc, parent, linksToParse,
 					workingPath, fileName, opts, collectRefLinks,
 					line, pos, start->m_line, start->m_pos + start->m_len,
 					fr, ignoreLineBreak, it, {}, false ) )
