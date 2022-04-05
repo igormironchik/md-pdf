@@ -3206,10 +3206,93 @@ createShortcutLink( const QString & text,
 	return false;
 }
 
+inline void
+skipSpacesUpTo1Line( qsizetype & line, qsizetype & pos, const QStringList & fr )
+{
+	pos = skipSpaces( pos, fr.at( line ) );
+
+	if( pos == fr.at( line ).size() )
+	{
+		++line;
+		pos = skipSpaces( 0, fr.at( line ) );
+	}
+}
+
 inline std::tuple< qsizetype, qsizetype, bool, QString >
 readLinkDestination( qsizetype line, qsizetype pos, const QStringList & fr )
 {
-	return { line, pos, false, {} };
+	skipSpacesUpTo1Line( line, pos, fr );
+
+	const auto & s = fr.at( line );
+	QString dest;
+	bool backslash = false;
+
+	if( s[ pos ] == c_60 )
+	{
+		++pos;
+
+		while( pos < s.size() )
+		{
+			bool now = false;
+
+			if( s[ pos ] == c_92 && !backslash )
+			{
+				backslash = true;
+				now = true;
+			}
+
+			if( !backslash && s[ pos ] == c_60 )
+				return { line, pos, false, {} };
+			else if( !backslash && s[ pos ] == c_62 )
+				break;
+			else
+				dest.append( s[ pos ] );
+
+			if( !now )
+				backslash = false;
+		}
+
+		return { line, pos, true, dest };
+	}
+	else
+	{
+		qsizetype pc = 0;
+
+		while( pos < s.size() )
+		{
+			bool now = false;
+
+			if( s[ pos ] == c_92 && !backslash )
+			{
+				backslash = true;
+				now = true;
+			}
+
+			if( !backslash && s[ pos ].isSpace() )
+			{
+				if( !pc )
+					return { line, pos, true, dest };
+				else
+					return { line, pos, false, {} };
+			}
+			else if( !backslash && s[ pos ] == c_40 )
+				++pc;
+			else if( !backslash && s[ pos ] == c_41 )
+			{
+				if( !pc )
+					return { line, pos, false, {} };
+				else
+					--pc;
+			}
+			else
+				dest.append( s[ pos ] );
+
+			if( !now )
+				backslash = false;
+		}
+
+		return { line, pos, true, dest };
+	}
 }
 
 inline std::tuple< qsizetype, qsizetype, bool, QString >
