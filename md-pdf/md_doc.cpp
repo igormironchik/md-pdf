@@ -348,6 +348,18 @@ Image::isEmpty() const
 	return ( m_url.isEmpty() );
 }
 
+QSharedPointer< Paragraph >
+Image::p() const
+{
+	return m_p;
+}
+
+void
+Image::setP( QSharedPointer< Paragraph > v )
+{
+	m_p = v;
+}
+
 
 //
 // Link

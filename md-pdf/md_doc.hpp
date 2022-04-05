@@ -416,9 +416,13 @@ public:
 
 	bool isEmpty() const;
 
+	QSharedPointer< Paragraph > p() const;
+	void setP( QSharedPointer< Paragraph > v );
+
 private:
 	QString m_url;
 	QString m_text;
+	QSharedPointer< Paragraph > m_p;
 
 	Q_DISABLE_COPY( Image )
 }; // class Image

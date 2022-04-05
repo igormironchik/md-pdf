@@ -2816,13 +2816,6 @@ makeText(
 }
 
 inline Delims::const_iterator
-checkForImage( Delims::const_iterator it, Delims::const_iterator last,
-	TextParsingOpts & po )
-{
-	return it;
-}
-
-inline Delims::const_iterator
 checkForAutolinkHtml( Delims::const_iterator it, Delims::const_iterator last,
 	TextParsingOpts & po )
 {
@@ -3206,6 +3199,67 @@ createShortcutLink( const QString & text,
 	return false;
 }
 
+inline QSharedPointer< Image >
+makeImage( const QString & url, const QString & text,
+	TextParsingOpts & po,
+	bool doNotCreateTextOnFail,
+	qsizetype lastLine, qsizetype lastPos )
+{
+	QSharedPointer< Image > img( new Image );
+	img->setUrl( url );
+
+	QStringList tmp;
+	tmp << text;
+
+	QSharedPointer< Paragraph > p( new Paragraph );
+
+	parseFormattedText( tmp, p, po.doc,
+		po.linksToParse, po.workingPath,
+		po.fileName, po.collectRefLinks, true );
+
+	if( !p->isEmpty() )
+	{
+		if( p->items().size() == 1 && p->items().at( 0 )->type() == ItemType::Paragraph )
+			img->setP( p->items().at( 0 ).staticCast< Paragraph > () );
+	}
+
+	img->setText( text );
+
+	return img;
+}
+
+inline bool
+createShortcutImage( const QString & text,
+	TextParsingOpts & po,
+	qsizetype lastLine, qsizetype lastPos,
+	Delims::const_iterator lastIt,
+	const QString & linkText,
+	bool doNotCreateTextOnFail )
+{
+	const auto url = QString::fromLatin1( "#" ) + text.simplified().toLower() +
+		QStringLiteral( "/" ) + po.workingPath + po.fileName;
+
+	if( po.doc->labeledLinks().contains( url ) )
+	{
+		if( !po.collectRefLinks )
+		{
+			const auto img = makeImage( url, ( linkText.isEmpty() ? text : linkText ), po,
+				doNotCreateTextOnFail, lastLine, lastPos );
+
+			po.parent->appendItem( img );
+
+			po.line = lastIt->m_line;
+			po.pos = lastIt->m_pos + lastIt->m_len;
+		}
+
+		return true;
+	}
+	else if( !po.collectRefLinks && !doNotCreateTextOnFail )
+		makeText( lastLine, lastPos, po );
+
+	return false;
+}
+
 inline void
 skipSpacesUpTo1Line( qsizetype & line, qsizetype & pos, const QStringList & fr )
 {
@@ -3410,6 +3464,95 @@ checkForRefLink( Delims::const_iterator it, Delims::const_iterator last,
 	}
 
 	return { dest, title, std::prev( it ) };
+}
+
+inline Delims::const_iterator
+checkForImage( Delims::const_iterator it, Delims::const_iterator last,
+	TextParsingOpts & po )
+{
+	const auto start = it;
+
+	QString text;
+
+	std::tie( text, it ) = checkForLinkText( it, last, po );
+
+	if( it != start )
+	{
+		if( it->m_pos + it->m_len < po.fr.at( it->m_line ).size() )
+		{
+			// Inline -> (
+			if( po.fr.at( it->m_line )[ it->m_pos + it->m_len ] == c_40 )
+			{
+				QString url, title;
+				Delims::const_iterator iit;
+
+				std::tie( url, title, iit ) = checkForInlineLink( std::next( it ), last, po );
+
+				if( iit != std::next( it ) )
+				{
+					po.parent->appendItem( makeImage( url, text, po, false,
+						start->m_line, start->m_pos + start->m_len ) );
+
+					return iit;
+				}
+				else if( createShortcutImage( text.simplified().toLower(),
+							po, start->m_line, start->m_pos + start->m_len,
+							it, {}, false ) )
+				{
+					return it;
+				}
+			}
+			// Reference -> [
+			else if( po.fr.at( it->m_line )[ it->m_pos + it->m_len ] == c_91 )
+			{
+				QString label;
+				Delims::const_iterator lit;
+
+				std::tie( label, lit ) = checkForLinkLabel( std::next( it ), last, po );
+
+				if( lit != std::next( it ) )
+				{
+					if( createShortcutImage( label.simplified().toLower(),
+							po, start->m_line, start->m_pos + start->m_len,
+							lit, text, true ) )
+					{
+						return lit;
+					}
+					else if( createShortcutImage( text.simplified().toLower(),
+								po, start->m_line, start->m_pos + start->m_len,
+								it, {}, false ) )
+					{
+						if( label.isEmpty() )
+						{
+							po.line = lit->m_line;
+							po.pos = lit->m_pos + lit->m_line;
+
+							return lit;
+						}
+						else
+							return it;
+					}
+				}
+				else if( createShortcutImage( text.simplified().toLower(),
+							po, start->m_line, start->m_pos + start->m_len,
+							it, {}, false ) )
+				{
+					return it;
+				}
+			}
+			// Shortcut
+			else if( createShortcutImage( text.simplified().toLower(),
+						po, start->m_line, start->m_pos + start->m_len,
+						it, {}, false ) )
+			{
+				return it;
+			}
+		}
+		else if( !po.collectRefLinks )
+			makeText( start->m_line, start->m_pos + start->m_len, po );
+	}
+
+	return start;
 }
 
 inline Delims::const_iterator
