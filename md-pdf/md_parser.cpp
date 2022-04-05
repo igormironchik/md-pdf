@@ -3206,11 +3206,90 @@ createShortcutLink( const QString & text,
 	return false;
 }
 
+inline std::tuple< qsizetype, qsizetype, bool, QString >
+readLinkDestination( qsizetype line, qsizetype pos, const QStringList & fr )
+{
+	return { line, pos, false, {} };
+}
+
+inline std::tuple< qsizetype, qsizetype, bool, QString >
+readLinkTitle( qsizetype line, qsizetype pos, const QStringList & fr )
+{
+	return { line, pos, false, {} };
+}
+
 inline std::tuple< QString, QString, Delims::const_iterator >
 checkForInlineLink( Delims::const_iterator it, Delims::const_iterator last,
 	TextParsingOpts & po )
 {
+	qsizetype l = it->m_pos + it->m_len;
+	qsizetype p = it->m_line;
+	bool ok = false;
+	QString dest, title;
+
+	std::tie( l, p, ok, dest ) = readLinkDestination( l, p, po.fr );
+
+	if( !ok )
+		return { {}, {}, it };
+
+	std::tie( l, p, ok, title ) = readLinkTitle( l, p, po.fr );
+
+	if( !ok )
+		return { {}, {}, it };
+
+	p = skipSpaces( p, po.fr.at( l ) );
+
+	if( p == po.fr.at( l ).size() )
+	{
+		if( l + 1 < po.fr.size() )
+			p = skipSpaces( 0, po.fr.at( ++l ) );
+		else
+			return { {}, {}, it };
+	}
+
+	if( po.fr.at( l )[ p ] == c_41 )
+	{
+		for( ; it != last; ++it )
+		{
+			if( it->m_line == l && it->m_pos == p )
+				return { dest, title, it };
+		}
+	}
+
 	return { {}, {}, it };
+}
+
+inline std::tuple< QString, QString, Delims::const_iterator >
+checkForRefLink( Delims::const_iterator it, Delims::const_iterator last,
+	TextParsingOpts & po )
+{
+	qsizetype l = it->m_pos + it->m_len + 1;
+	qsizetype p = it->m_line;
+	bool ok = false;
+	QString dest, title;
+
+	std::tie( l, p, ok, dest ) = readLinkDestination( l, p, po.fr );
+
+	if( !ok )
+		return { {}, {}, it };
+
+	std::tie( l, p, ok, title ) = readLinkTitle( l, p, po.fr );
+
+	if( !ok )
+		return { {}, {}, it };
+
+	p = skipSpaces( p, po.fr.at( l ) );
+
+	if( p != po.fr.at( l ).size() )
+		return { {}, {},  it };
+
+	for( ; it != last; ++it )
+	{
+		if( it->m_line > l || ( it->m_line == l && it->m_pos > p ) )
+			break;
+	}
+
+	return { dest, title, std::prev( it ) };
 }
 
 inline Delims::const_iterator
@@ -3250,7 +3329,31 @@ checkForLink( Delims::const_iterator it, Delims::const_iterator last,
 				// Reference definitions allowed only at start of paragraph.
 				if( po.line == 0 & po.pos == 0 )
 				{
+					QString url, title;
+					Delims::const_iterator iit;
 
+					std::tie( url, title, iit ) = checkForRefLink( std::next( it ), last, po );
+
+					if( iit != std::next( it ) )
+					{
+						const auto label = QString::fromLatin1( "#" ) + text.simplified().toLower() +
+							QStringLiteral( "/" ) + po.workingPath + po.fileName;
+
+						QSharedPointer< Link > link( new Link );
+						link->setUrl( url );
+
+						if( !po.doc->labeledLinks().contains( label ) )
+							po.doc->insertLabeledLink( label, link );
+
+						return iit;
+					}
+					else
+					{
+						if( !po.collectRefLinks )
+							makeText( start->m_line, start->m_pos + start->m_len, po );
+
+						return start;
+					}
 				}
 				else if( !po.collectRefLinks )
 				{
@@ -3269,7 +3372,17 @@ checkForLink( Delims::const_iterator it, Delims::const_iterator last,
 
 				if( iit != std::next( it ) )
 				{
+					const auto link = makeLink( url, text, po, false,
+						start->m_line, start->m_pos + start->m_len );
 
+					if( !link.isNull() )
+					{
+						po.parent->appendItem( link );
+
+						return iit;
+					}
+					else
+						return it;
 				}
 				else if( createShortcutLink( text.simplified().toLower(),
 							po, start->m_line, start->m_pos + start->m_len,
