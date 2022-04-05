@@ -3945,6 +3945,78 @@ checkForStyle( Delims::const_iterator it, Delims::const_iterator last,
 	return it;
 }
 
+inline QSharedPointer< Text >
+concatenateText( Block::Items::const_iterator it, Block::Items::const_iterator last )
+{
+	QSharedPointer< Text > t( new Text );
+	t->setOpts( (*it).staticCast< Text > ()->opts() );
+	t->setSpaceBefore( (*it).staticCast< Text > ()->isSpaceBefore() );
+
+	QString data;
+
+	for( ; it != last; ++it )
+	{
+		const auto tt = (*it).staticCast< Text > ();
+
+		if( tt->isSpaceBefore() )
+			data.append( c_32 );
+
+		data.append( tt->text() );
+
+		if( tt->isSpaceAfter() )
+			data.append( c_32 );
+	}
+
+	t->setText( data.simplified() );
+
+	t->setSpaceAfter( ( *std::prev( it ) ).staticCast< Text > ()->isSpaceAfter() );
+
+	return t;
+}
+
+inline void
+optimizaParagraph( QSharedPointer< Paragraph > & p )
+{
+	QSharedPointer< Paragraph > np( new Paragraph );
+
+	TextOptions opts = TextWithoutFormat;
+
+	auto start = p->items().cend();
+
+	for( auto it = p->items().cbegin(), last = p->items().cend(); it != last; ++it )
+	{
+		if( (*it)->type() == ItemType::Text )
+		{
+			const auto t = (*it).staticCast< Text > ();
+
+			if( start == last )
+			{
+				start = it;
+				opts = t->opts();
+			}
+			else if( opts != t->opts() )
+			{
+				np->appendItem( concatenateText( start, it ) );
+				start = last;
+				opts = TextWithoutFormat;
+			}
+		}
+		else
+		{
+			if( start != last )
+			{
+				np->appendItem( concatenateText( start, it ) );
+				start = last;
+				opts = TextWithoutFormat;
+			}
+
+			np->appendItem( (*it) );
+		}
+	}
+
+	p = np;
+}
+
 void
 parseFormattedText( QStringList & fr, QSharedPointer< Block > parent,
 	QSharedPointer< Document > doc, QStringList & linksToParse, const QString & workingPath,
@@ -4006,7 +4078,10 @@ parseFormattedText( QStringList & fr, QSharedPointer< Block > parent,
 				if( !collectRefLinks )
 				{
 					if( !p->isEmpty() )
+					{
+						optimizaParagraph( p );
 						parent->appendItem( p );
+					}
 
 					QSharedPointer< Item > hr( new HorizontalLine );
 					parent->appendItem( hr );
@@ -4029,7 +4104,10 @@ parseFormattedText( QStringList & fr, QSharedPointer< Block > parent,
 		makeText( fr.size() - 1, fr.back().length(), po );
 
 	if( !p->isEmpty() )
+	{
+		optimizaParagraph( p );
 		parent->appendItem( p );
+	}
 }
 
 } /* namespace anonymous */
