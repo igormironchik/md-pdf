@@ -3222,8 +3222,8 @@ inline std::tuple< QString, QString, Delims::const_iterator >
 checkForInlineLink( Delims::const_iterator it, Delims::const_iterator last,
 	TextParsingOpts & po )
 {
-	qsizetype l = it->m_pos + it->m_len;
-	qsizetype p = it->m_line;
+	qsizetype p = it->m_pos + it->m_len;
+	qsizetype l = it->m_line;
 	bool ok = false;
 	QString dest, title;
 
@@ -3263,8 +3263,8 @@ inline std::tuple< QString, QString, Delims::const_iterator >
 checkForRefLink( Delims::const_iterator it, Delims::const_iterator last,
 	TextParsingOpts & po )
 {
-	qsizetype l = it->m_pos + it->m_len + 1;
-	qsizetype p = it->m_line;
+	qsizetype p = it->m_pos + it->m_len + 1;
+	qsizetype l = it->m_line;
 	bool ok = false;
 	QString dest, title;
 
