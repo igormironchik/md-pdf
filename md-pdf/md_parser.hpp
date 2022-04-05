@@ -240,8 +240,10 @@ private:
 		QSharedPointer< Document > doc,
 		QStringList & linksToParse, const QString & workingPath,
 		const QString & fileName, bool collectRefLinks );
-	void parseCode( QStringList & fr, QSharedPointer< Block > parent, int indent = 0 );
+	void parseCode( QStringList & fr, QSharedPointer< Block > parent,
+		bool collectRefLinks, int indent = 0 );
 	void parseCodeIndentedBySpaces( QStringList & fr, QSharedPointer< Block > parent,
+		bool collectRefLinks,
 		int indent = 4, const QString & syntax = QString() );
 	void parseListItem( QStringList & fr, QSharedPointer< Block > parent,
 		QSharedPointer< Document > doc,
@@ -250,7 +252,8 @@ private:
 	void parseHeading( QStringList & fr, QSharedPointer< Block > parent,
 		QSharedPointer< Document > doc,
 		QStringList & linksToParse, const QString & workingPath,
-		const QString & fileName );
+		const QString & fileName,
+		bool collectRefLinks );
 	void parseFootnote( QStringList & fr, QSharedPointer< Block > parent,
 		QSharedPointer< Document > doc,
 		QStringList & linksToParse, const QString & workingPath,
@@ -331,7 +334,8 @@ private:
 		QSharedPointer< Document > doc, QStringList & linksToParse,
 		const QString & workingPath, const QString & fileName,
 		bool collectRefLinks,
-		bool skipSpacesAtStartOfLine )
+		bool skipSpacesAtStartOfLine,
+		bool top = false )
 	{
 		QVector< QStringList > splitted;
 
@@ -346,9 +350,9 @@ private:
 		// Parse fragment and clear internal cache.
 		auto pf = [&]()
 			{
+				splitted.append( fragment );
 				parseFragment( fragment, parent, doc, linksToParse,
 					workingPath, fileName, collectRefLinks );
-				splitted.append( fragment );
 				fragment.clear();
 				type = BlockType::Unknown;
 				emptyLineInList = false;
@@ -573,13 +577,14 @@ private:
 			pf();
 		}
 
-#ifdef DEV
-		for( qsizetype i = 0; i < splitted.size(); ++i )
+		if( top )
 		{
-			parseFragment( splitted[ i ], parent, doc, linksToParse,
-				workingPath, fileName, false );
+			for( qsizetype i = 0; i < splitted.size(); ++i )
+			{
+				parseFragment( splitted[ i ], parent, doc, linksToParse,
+					workingPath, fileName, false );
+			}
 		}
-#endif
 	}
 
 	//! Wrapper for QStringList to be behaved like a stream.

@@ -110,34 +110,14 @@ TEST_CASE( "004" )
 
 	auto dp = static_cast< MD::Paragraph* > ( doc->items().at( 1 ).data() );
 
-	REQUIRE( dp->items().size() == 3 );
+	REQUIRE( dp->items().size() == 1 );
 
-	{
-		REQUIRE( dp->items().at( 0 )->type() == MD::ItemType::Text );
+	REQUIRE( dp->items().at( 0 )->type() == MD::ItemType::Text );
 
-		auto dt = static_cast< MD::Text* > ( dp->items().at( 0 ).data() );
+	auto dt = static_cast< MD::Text* > ( dp->items().at( 0 ).data() );
 
-		REQUIRE( dt->opts() == MD::TextOption::TextWithoutFormat );
-		REQUIRE( dt->text() == QStringLiteral( "Line 1..." ) );
-	}
-
-	{
-		REQUIRE( dp->items().at( 1 )->type() == MD::ItemType::Text );
-
-		auto dt = static_cast< MD::Text* > ( dp->items().at( 1 ).data() );
-
-		REQUIRE( dt->opts() == MD::TextOption::TextWithoutFormat );
-		REQUIRE( dt->text() == QStringLiteral( "Line 2..." ) );
-	}
-
-	{
-		REQUIRE( dp->items().at( 2 )->type() == MD::ItemType::Text );
-
-		auto dt = static_cast< MD::Text* > ( dp->items().at( 2 ).data() );
-
-		REQUIRE( dt->opts() == MD::TextOption::TextWithoutFormat );
-		REQUIRE( dt->text() == QStringLiteral( "Line 3..." ) );
-	}
+	REQUIRE( dt->opts() == MD::TextOption::TextWithoutFormat );
+	REQUIRE( dt->text() == QStringLiteral( "Line 1... Line 2... Line 3..." ) );
 }
 
 TEST_CASE( "005" )
@@ -153,7 +133,7 @@ TEST_CASE( "005" )
 
 	auto dp = static_cast< MD::Paragraph* > ( doc->items().at( 1 ).data() );
 
-	REQUIRE( dp->items().size() == 4 );
+	REQUIRE( dp->items().size() == 3 );
 
 	{
 		REQUIRE( dp->items().at( 0 )->type() == MD::ItemType::Text );
@@ -172,16 +152,7 @@ TEST_CASE( "005" )
 		auto dt = static_cast< MD::Text* > ( dp->items().at( 2 ).data() );
 
 		REQUIRE( dt->opts() == MD::TextOption::TextWithoutFormat );
-		REQUIRE( dt->text() == QStringLiteral( "Line 2..." ) );
-	}
-
-	{
-		REQUIRE( dp->items().at( 3 )->type() == MD::ItemType::Text );
-
-		auto dt = static_cast< MD::Text* > ( dp->items().at( 3 ).data() );
-
-		REQUIRE( dt->opts() == MD::TextOption::TextWithoutFormat );
-		REQUIRE( dt->text() == QStringLiteral( "Line 3..." ) );
+		REQUIRE( dt->text() == QStringLiteral( "Line 2... Line 3..." ) );
 	}
 }
 
@@ -241,34 +212,14 @@ TEST_CASE( "007" )
 
 	auto dp = static_cast< MD::Paragraph* > ( doc->items().at( 1 ).data() );
 
-	REQUIRE( dp->items().size() == 3 );
+	REQUIRE( dp->items().size() == 1 );
 
-	{
-		REQUIRE( dp->items().at( 0 )->type() == MD::ItemType::Text );
+	REQUIRE( dp->items().at( 0 )->type() == MD::ItemType::Text );
 
-		auto dt = static_cast< MD::Text* > ( dp->items().at( 0 ).data() );
+	auto dt = static_cast< MD::Text* > ( dp->items().at( 0 ).data() );
 
-		REQUIRE( dt->opts() == ( MD::TextOption::ItalicText | MD::TextOption::BoldText ) );
-		REQUIRE( dt->text() == QStringLiteral( "Line 1..." ) );
-	}
-
-	{
-		REQUIRE( dp->items().at( 1 )->type() == MD::ItemType::Text );
-
-		auto dt = static_cast< MD::Text* > ( dp->items().at( 1 ).data() );
-
-		REQUIRE( dt->opts() == ( MD::TextOption::ItalicText | MD::TextOption::BoldText ) );
-		REQUIRE( dt->text() == QStringLiteral( "Line 2..." ) );
-	}
-
-	{
-		REQUIRE( dp->items().at( 2 )->type() == MD::ItemType::Text );
-
-		auto dt = static_cast< MD::Text* > ( dp->items().at( 2 ).data() );
-
-		REQUIRE( dt->opts() == ( MD::TextOption::ItalicText | MD::TextOption::BoldText ) );
-		REQUIRE( dt->text() == QStringLiteral( "Line 3..." ) );
-	}
+	REQUIRE( dt->opts() == ( MD::TextOption::ItalicText | MD::TextOption::BoldText ) );
+	REQUIRE( dt->text() == QStringLiteral( "Line 1... Line 2... Line 3..." ) );
 }
 
 TEST_CASE( "008" )
@@ -284,37 +235,15 @@ TEST_CASE( "008" )
 
 	auto dp = static_cast< MD::Paragraph* > ( doc->items().at( 1 ).data() );
 
-	REQUIRE( dp->items().size() == 3 );
+	REQUIRE( dp->items().size() == 1 );
 
-	{
-		REQUIRE( dp->items().at( 0 )->type() == MD::ItemType::Text );
+	REQUIRE( dp->items().at( 0 )->type() == MD::ItemType::Text );
 
-		auto dt = static_cast< MD::Text* > ( dp->items().at( 0 ).data() );
+	auto dt = static_cast< MD::Text* > ( dp->items().at( 0 ).data() );
 
-		REQUIRE( dt->opts() == ( MD::TextOption::ItalicText | MD::TextOption::BoldText |
-			MD::TextOption::StrikethroughText ) );
-		REQUIRE( dt->text() == QStringLiteral( "Line 1..." ) );
-	}
-
-	{
-		REQUIRE( dp->items().at( 1 )->type() == MD::ItemType::Text );
-
-		auto dt = static_cast< MD::Text* > ( dp->items().at( 1 ).data() );
-
-		REQUIRE( dt->opts() == ( MD::TextOption::ItalicText | MD::TextOption::BoldText |
-			MD::TextOption::StrikethroughText ) );
-		REQUIRE( dt->text() == QStringLiteral( "Line 2..." ) );
-	}
-
-	{
-		REQUIRE( dp->items().at( 2 )->type() == MD::ItemType::Text );
-
-		auto dt = static_cast< MD::Text* > ( dp->items().at( 2 ).data() );
-
-		REQUIRE( dt->opts() == ( MD::TextOption::ItalicText | MD::TextOption::BoldText |
-			MD::TextOption::StrikethroughText ) );
-		REQUIRE( dt->text() == QStringLiteral( "Line 3..." ) );
-	}
+	REQUIRE( dt->opts() == ( MD::TextOption::ItalicText | MD::TextOption::BoldText |
+		MD::TextOption::StrikethroughText ) );
+	REQUIRE( dt->text() == QStringLiteral( "Line 1... Line 2... Line 3..." ) );
 }
 
 TEST_CASE( "009" )
@@ -330,7 +259,7 @@ TEST_CASE( "009" )
 
 	auto dp = static_cast< MD::Paragraph* > ( doc->items().at( 1 ).data() );
 
-	REQUIRE( dp->items().size() == 3 );
+	REQUIRE( dp->items().size() == 2 );
 
 	{
 		REQUIRE( dp->items().at( 0 )->type() == MD::ItemType::Text );
@@ -339,23 +268,13 @@ TEST_CASE( "009" )
 
 		REQUIRE( dt->opts() == ( MD::TextOption::ItalicText | MD::TextOption::BoldText |
 			MD::TextOption::StrikethroughText ) );
-		REQUIRE( dt->text() == QStringLiteral( "Line 1..." ) );
+		REQUIRE( dt->text() == QStringLiteral( "Line 1... Line 2..." ) );
 	}
 
 	{
 		REQUIRE( dp->items().at( 1 )->type() == MD::ItemType::Text );
 
 		auto dt = static_cast< MD::Text* > ( dp->items().at( 1 ).data() );
-
-		REQUIRE( dt->opts() == ( MD::TextOption::ItalicText | MD::TextOption::BoldText |
-			MD::TextOption::StrikethroughText ) );
-		REQUIRE( dt->text() == QStringLiteral( "Line 2..." ) );
-	}
-
-	{
-		REQUIRE( dp->items().at( 2 )->type() == MD::ItemType::Text );
-
-		auto dt = static_cast< MD::Text* > ( dp->items().at( 2 ).data() );
 
 		REQUIRE( dt->opts() == ( MD::TextOption::ItalicText | MD::TextOption::BoldText ) );
 		REQUIRE( dt->text() == QStringLiteral( "Line 3..." ) );
@@ -375,7 +294,7 @@ TEST_CASE( "010" )
 
 	auto dp = static_cast< MD::Paragraph* > ( doc->items().at( 1 ).data() );
 
-	REQUIRE( dp->items().size() == 3 );
+	REQUIRE( dp->items().size() == 1 );
 
 	{
 		REQUIRE( dp->items().at( 0 )->type() == MD::ItemType::Text );
@@ -383,25 +302,7 @@ TEST_CASE( "010" )
 		auto dt = static_cast< MD::Text* > ( dp->items().at( 0 ).data() );
 
 		REQUIRE( dt->opts() == MD::TextOption::TextWithoutFormat );
-		REQUIRE( dt->text() == QStringLiteral( "~~__*Line 1..." ) );
-	}
-
-	{
-		REQUIRE( dp->items().at( 1 )->type() == MD::ItemType::Text );
-
-		auto dt = static_cast< MD::Text* > ( dp->items().at( 1 ).data() );
-
-		REQUIRE( dt->opts() == MD::TextOption::TextWithoutFormat );
-		REQUIRE( dt->text() == QStringLiteral( "Line 2...~~" ) );
-	}
-
-	{
-		REQUIRE( dp->items().at( 2 )->type() == MD::ItemType::Text );
-
-		auto dt = static_cast< MD::Text* > ( dp->items().at( 2 ).data() );
-
-		REQUIRE( dt->opts() == MD::TextOption::TextWithoutFormat );
-		REQUIRE( dt->text() == QStringLiteral( "Line 3...*__" ) );
+		REQUIRE( dt->text() == QStringLiteral( "~~__*Line 1... Line 2...~~ Line 3...*__" ) );
 	}
 }
 
@@ -506,7 +407,7 @@ TEST_CASE( "014" )
 
 		auto dp = static_cast< MD::Paragraph* > ( doc->items().at( 1 ).data() );
 
-		REQUIRE( dp->items().size() == 3 );
+		REQUIRE( dp->items().size() == 1 );
 
 		{
 			REQUIRE( dp->items().at( 0 )->type() == MD::ItemType::Text );
@@ -514,25 +415,7 @@ TEST_CASE( "014" )
 			auto dt = static_cast< MD::Text* > ( dp->items().at( 0 ).data() );
 
 			REQUIRE( dt->opts() == MD::TextOption::TextWithoutFormat );
-			REQUIRE( dt->text() == QStringLiteral( "Line 1..." ) );
-		}
-
-		{
-			REQUIRE( dp->items().at( 1 )->type() == MD::ItemType::Text );
-
-			auto dt = static_cast< MD::Text* > ( dp->items().at( 1 ).data() );
-
-			REQUIRE( dt->opts() == MD::TextOption::TextWithoutFormat );
-			REQUIRE( dt->text() == QStringLiteral( "Line 2..." ) );
-		}
-
-		{
-			REQUIRE( dp->items().at( 2 )->type() == MD::ItemType::Text );
-
-			auto dt = static_cast< MD::Text* > ( dp->items().at( 2 ).data() );
-
-			REQUIRE( dt->opts() == MD::TextOption::TextWithoutFormat );
-			REQUIRE( dt->text() == QStringLiteral( "Line 3..." ) );
+			REQUIRE( dt->text() == QStringLiteral( "Line 1... Line 2... Line 3..." ) );
 		}
 	}
 	else
@@ -624,7 +507,7 @@ TEST_CASE( "016" )
 
 		auto dp = static_cast< MD::Paragraph* > ( doc->items().at( 1 ).data() );
 
-		REQUIRE( dp->items().size() == 3 );
+		REQUIRE( dp->items().size() == 1 );
 
 		{
 			REQUIRE( dp->items().at( 0 )->type() == MD::ItemType::Text );
@@ -632,25 +515,7 @@ TEST_CASE( "016" )
 			auto dt = static_cast< MD::Text* > ( dp->items().at( 0 ).data() );
 
 			REQUIRE( dt->opts() == MD::TextOption::TextWithoutFormat );
-			REQUIRE( dt->text() == QStringLiteral( "Line 1..." ) );
-		}
-
-		{
-			REQUIRE( dp->items().at( 1 )->type() == MD::ItemType::Text );
-
-			auto dt = static_cast< MD::Text* > ( dp->items().at( 1 ).data() );
-
-			REQUIRE( dt->opts() == MD::TextOption::TextWithoutFormat );
-			REQUIRE( dt->text() == QStringLiteral( "Line 2..." ) );
-		}
-
-		{
-			REQUIRE( dp->items().at( 2 )->type() == MD::ItemType::Text );
-
-			auto dt = static_cast< MD::Text* > ( dp->items().at( 2 ).data() );
-
-			REQUIRE( dt->opts() == MD::TextOption::TextWithoutFormat );
-			REQUIRE( dt->text() == QStringLiteral( "Line 3..." ) );
+			REQUIRE( dt->text() == QStringLiteral( "Line 1... Line 2... Line 3..." ) );
 		}
 	}
 	else
@@ -1473,16 +1338,12 @@ TEST_CASE( "031" )
 
 	REQUIRE( p->items().size() == 5 );
 
-	REQUIRE( p->items().at( 0 )->type() == MD::ItemType::Link );
+	REQUIRE( p->items().at( 0 )->type() == MD::ItemType::Text );
 
-	auto l0 = static_cast< MD::Link* > ( p->items().at( 0 ).data() );
+	auto t0 = static_cast< MD::Text* > ( p->items().at( 0 ).data() );
 
-	REQUIRE( l0->text() == QStringLiteral( "link 0" ) );
-
-	const QString wrong = QString::fromLatin1( "#wrong-label" ) + QStringLiteral( "/" ) +
-		wd + QStringLiteral( "/" ) + QStringLiteral( "031.md" );
-
-	REQUIRE( l0->url() == wrong );
+	REQUIRE( t0->text() == QStringLiteral( "[link 0][wrong-label]" ) );
+	REQUIRE( t0->opts() == MD::TextWithoutFormat );
 
 	REQUIRE( p->items().at( 1 )->type() == MD::ItemType::Link );
 
@@ -1495,7 +1356,6 @@ TEST_CASE( "031" )
 
 	auto l2 = static_cast< MD::Link* > ( p->items().at( 2 ).data() );
 
-	REQUIRE( l2->text().isEmpty() );
 	REQUIRE( l2->url() == wd + QStringLiteral( "/b.md" ) );
 	REQUIRE( l2->textOptions() == MD::TextOption::TextWithoutFormat );
 
@@ -1520,7 +1380,7 @@ TEST_CASE( "031" )
 	auto f1 = static_cast< MD::FootnoteRef* > ( p->items().at( 4 ).data() );
 
 	REQUIRE( f1->id() ==
-		QString::fromLatin1( "#ref" ) + QStringLiteral( "/" ) + wd +
+		QString::fromLatin1( "#^ref" ) + QStringLiteral( "/" ) + wd +
 		QStringLiteral( "/" ) + QStringLiteral( "031.md" ) );
 
 	REQUIRE( !doc->labeledLinks().isEmpty() );
@@ -1540,7 +1400,7 @@ TEST_CASE( "031" )
 		f1 = static_cast< MD::FootnoteRef* > ( p->items().at( 0 ).data() );
 
 		REQUIRE( f1->id() ==
-			QString::fromLatin1( "#ref" ) + QStringLiteral( "/" ) + wd +
+			QString::fromLatin1( "#^ref" ) + QStringLiteral( "/" ) + wd +
 			QStringLiteral( "/" ) + QStringLiteral( "031.md" ) );
 
 		auto t = static_cast< MD::Text* > ( p->items().at( 1 ).data() );
@@ -1833,7 +1693,11 @@ TEST_CASE( "037" )
 
 		REQUIRE( p->items().size() == 1 );
 
-		REQUIRE( p->items().at( 0 )->type() == MD::ItemType::Link );
+		REQUIRE( p->items().at( 0 )->type() == MD::ItemType::Text );
+
+		auto t = static_cast< MD::Text* > ( p->items().at( 0 ).data() );
+
+		REQUIRE( t->text() == QStringLiteral( "[Google]" ) );
 	}
 
 	{
@@ -1883,13 +1747,20 @@ TEST_CASE( "037" )
 
 		auto p = static_cast< MD::Paragraph* > ( doc->items().at( 8 ).data() );
 
-		REQUIRE( p->items().size() == 1 );
+		REQUIRE( p->items().size() == 2 );
 
 		REQUIRE( p->items().at( 0 )->type() == MD::ItemType::Text );
 
 		auto t = static_cast< MD::Text* > ( p->items().at( 0 ).data() );
 
-		REQUIRE( t->text() == QStringLiteral( "[![Google](https://www.google.com/logo.png)" ) );
+		REQUIRE( t->text() == QStringLiteral( "[" ) );
+
+		REQUIRE( p->items().at( 1 )->type() == MD::ItemType::Image );
+
+		auto i = static_cast< MD::Image* > ( p->items().at( 1 ).data() );
+
+		REQUIRE( i->url() == QStringLiteral( "https://www.google.com/logo.png" ) );
+		REQUIRE( i->text() == QStringLiteral( "Google" ) );
 	}
 
 	{
@@ -1897,7 +1768,7 @@ TEST_CASE( "037" )
 
 		auto p = static_cast< MD::Paragraph* > ( doc->items().at( 9 ).data() );
 
-		REQUIRE( p->items().size() == 2 );
+		REQUIRE( p->items().size() == 3 );
 
 		REQUIRE( p->items().at( 0 )->type() == MD::ItemType::Text );
 
@@ -1905,11 +1776,13 @@ TEST_CASE( "037" )
 
 		REQUIRE( t->text() == QStringLiteral( "text" ) );
 
-		REQUIRE( p->items().at( 1 )->type() == MD::ItemType::Text );
+		REQUIRE( p->items().at( 1 )->type() == MD::ItemType::FootnoteRef );
 
-		t = static_cast< MD::Text* > ( p->items().at( 1 ).data() );
+		REQUIRE( p->items().at( 2 )->type() == MD::ItemType::Text );
 
-		REQUIRE( t->text() == QStringLiteral( "[^ref]:" ) );
+		t = static_cast< MD::Text* > ( p->items().at( 2 ).data() );
+
+		REQUIRE( t->text() == QStringLiteral( ":" ) );
 	}
 
 	{
@@ -1987,16 +1860,14 @@ TEST_CASE( "037" )
 
 		auto p = static_cast< MD::Paragraph* > ( doc->items().at( 15 ).data() );
 
-		REQUIRE( p->items().size() == 2 );
+		REQUIRE( p->items().size() == 1 );
 
-		REQUIRE( p->items().at( 0 )->type() == MD::ItemType::Link );
+		REQUIRE( p->items().at( 0 )->type() == MD::ItemType::Text );
 
-		REQUIRE( p->items().at( 1 )->type() == MD::ItemType::Text );
-
-		auto t = static_cast< MD::Text* > ( p->items().at( 1 ).data() );
+		auto t = static_cast< MD::Text* > ( p->items().at( 0 ).data() );
 
 		REQUIRE( t->opts() == MD::TextWithoutFormat );
-		REQUIRE( t->text() == QStringLiteral( "#" ) );
+		REQUIRE( t->text() == QStringLiteral( "[text]#" ) );
 	}
 
 	{
@@ -2158,31 +2029,25 @@ TEST_CASE( "040" )
 
 	auto dp = static_cast< MD::Paragraph* > ( doc->items().at( 1 ).data() );
 
-	REQUIRE( dp->items().size() == 4 );
+	REQUIRE( dp->items().size() == 3 );
 
 	REQUIRE( dp->items().at( 0 )->type() == MD::ItemType::Text );
 
 	auto t1 = static_cast< MD::Text* > ( dp->items().at( 0 ).data() );
 
-	REQUIRE( t1->text() == QStringLiteral( "`" ) );
+	REQUIRE( t1->text() == QStringLiteral( "``Use this" ) );
 
 	REQUIRE( dp->items().at( 1 )->type() == MD::ItemType::Code );
 
 	auto c1 = static_cast< MD::Code* > ( dp->items().at( 1 ).data() );
 
-	REQUIRE( c1->text() == QStringLiteral( "Use this " ) );
+	REQUIRE( c1->text() == QStringLiteral( "code" ) );
 
 	REQUIRE( dp->items().at( 2 )->type() == MD::ItemType::Text );
 
 	auto t2 = static_cast< MD::Text* > ( dp->items().at( 2 ).data() );
 
-	REQUIRE( t2->text() == QStringLiteral( "code`" ) );
-
-	REQUIRE( dp->items().at( 3 )->type() == MD::ItemType::Text );
-
-	auto t3 = static_cast< MD::Text* > ( dp->items().at( 3 ).data() );
-
-	REQUIRE( t3->text() == QStringLiteral( "in the code" ) );
+	REQUIRE( t2->text() == QStringLiteral( "in the code" ) );
 }
 
 TEST_CASE( "041" )
@@ -2399,7 +2264,7 @@ TEST_CASE( "045" )
 
 	const QString wd = QDir().absolutePath() + QStringLiteral( "/data/" );
 
-	const QString label = QString::fromLatin1( "#footnote" ) + QStringLiteral( "/" ) + wd +
+	const QString label = QString::fromLatin1( "#^footnote" ) + QStringLiteral( "/" ) + wd +
 		QStringLiteral( "045.md" );
 
 	REQUIRE( doc->footnotesMap().contains( label ) );
@@ -2764,7 +2629,7 @@ TEST_CASE( "055" )
 
 	const QString wd = QDir().absolutePath() + QStringLiteral( "/data/" );
 
-	const QString label = QString::fromLatin1( "#footnote" ) + QStringLiteral( "/" ) + wd +
+	const QString label = QString::fromLatin1( "#^footnote" ) + QStringLiteral( "/" ) + wd +
 		QStringLiteral( "055.md" );
 
 	REQUIRE( doc->footnotesMap().contains( label ) );
@@ -3023,5 +2888,33 @@ TEST_CASE( "062" )
 		REQUIRE( p->items().at( 1 )->type() == MD::ItemType::Text );
 		auto t1 = static_cast< MD::Text* > ( p->items().at( 1 ).data() );
 		REQUIRE( t1->text() == QStringLiteral( "`*" ) );
+	}
+}
+
+TEST_CASE( "063" )
+{
+	MD::Parser parser;
+
+	auto doc = parser.parse( QStringLiteral( "data/063.md" ) );
+
+	REQUIRE( doc->isEmpty() == false );
+	REQUIRE( doc->items().size() == 2 );
+
+	REQUIRE( doc->items().at( 1 )->type() == MD::ItemType::Paragraph );
+	auto p = static_cast< MD::Paragraph* > ( doc->items().at( 1 ).data() );
+	REQUIRE( p->items().size() == 2 );
+
+	{
+		REQUIRE( p->items().at( 0 )->type() == MD::ItemType::Text );
+		auto t = static_cast< MD::Text* > ( p->items().at( 0 ).data() );
+		REQUIRE( t->opts() == ( MD::ItalicText | MD::BoldText ) );
+		REQUIRE( t->text() == QStringLiteral( "Lorem." ) );
+	}
+
+	{
+		REQUIRE( p->items().at( 1 )->type() == MD::ItemType::Text );
+		auto t = static_cast< MD::Text* > ( p->items().at( 1 ).data() );
+		REQUIRE( t->opts() == MD::TextWithoutFormat );
+		REQUIRE( t->text() == QStringLiteral( "Aenean" ) );
 	}
 }

@@ -53,7 +53,7 @@ end a line with two or more spaces, then type return.
 
 ### Headers
 
-Markdown supports two styles of headers, [Setext] [1] and [atx] [2].
+Markdown supports two styles of headers, [Setext][1] and [atx][2].
 
 [1]: http://docutils.sourceforge.net/mirror/setext.html
 

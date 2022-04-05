@@ -330,52 +330,14 @@ TEST_CASE( "014" )
 
 	auto p = static_cast< MD::Paragraph* > ( doc->items().at( 1 ).data() );
 
-	REQUIRE( p->items().size() == 9 );
+	REQUIRE( p->items().size() == 1 );
 
 	REQUIRE( p->items().at( 0 )->type() == MD::ItemType::Text );
 	auto t1 = static_cast< MD::Text* > ( p->items().at( 0 ).data() );
 	REQUIRE( t1->opts() == MD::TextWithoutFormat );
-	REQUIRE( t1->text() == QStringLiteral( "*not emphasized*" ) );
-
-	REQUIRE( p->items().at( 1 )->type() == MD::ItemType::Text );
-	auto t2 = static_cast< MD::Text* > ( p->items().at( 1 ).data() );
-	REQUIRE( t2->opts() == MD::TextWithoutFormat );
-	REQUIRE( t2->text() == QStringLiteral( "<br/> not a tag" ) );
-
-	REQUIRE( p->items().at( 2 )->type() == MD::ItemType::Text );
-	auto t3 = static_cast< MD::Text* > ( p->items().at( 2 ).data() );
-	REQUIRE( t3->opts() == MD::TextWithoutFormat );
-	REQUIRE( t3->text() == QStringLiteral( "[not a link](/foo)" ) );
-
-	REQUIRE( p->items().at( 3 )->type() == MD::ItemType::Text );
-	auto t4 = static_cast< MD::Text* > ( p->items().at( 3 ).data() );
-	REQUIRE( t4->opts() == MD::TextWithoutFormat );
-	REQUIRE( t4->text() == QStringLiteral( "`not code`" ) );
-
-	REQUIRE( p->items().at( 4 )->type() == MD::ItemType::Text );
-	auto t5 = static_cast< MD::Text* > ( p->items().at( 4 ).data() );
-	REQUIRE( t5->opts() == MD::TextWithoutFormat );
-	REQUIRE( t5->text() == QStringLiteral( "1. not a list" ) );
-
-	REQUIRE( p->items().at( 5 )->type() == MD::ItemType::Text );
-	auto t6 = static_cast< MD::Text* > ( p->items().at( 5 ).data() );
-	REQUIRE( t6->opts() == MD::TextWithoutFormat );
-	REQUIRE( t6->text() == QStringLiteral( "* not a list" ) );
-
-	REQUIRE( p->items().at( 6 )->type() == MD::ItemType::Text );
-	auto t7 = static_cast< MD::Text* > ( p->items().at( 6 ).data() );
-	REQUIRE( t7->opts() == MD::TextWithoutFormat );
-	REQUIRE( t7->text() == QStringLiteral( "# not a heading" ) );
-
-	REQUIRE( p->items().at( 7 )->type() == MD::ItemType::Text );
-	auto t8 = static_cast< MD::Text* > ( p->items().at( 7 ).data() );
-	REQUIRE( t8->opts() == MD::TextWithoutFormat );
-	REQUIRE( t8->text() == QStringLiteral( "[foo]: /url \"not a reference\"" ) );
-
-	REQUIRE( p->items().at( 8 )->type() == MD::ItemType::Text );
-	auto t9 = static_cast< MD::Text* > ( p->items().at( 8 ).data() );
-	REQUIRE( t9->opts() == MD::TextWithoutFormat );
-	REQUIRE( t9->text() == QStringLiteral( "&ouml; not a character entity" ) );
+	REQUIRE( t1->text() == QStringLiteral( "*not emphasized* <br/> not a tag [not a link](/foo) "
+		"`not code` 1. not a list * not a list # not a heading [foo]: /url \"not a reference\" "
+		"&ouml; not a character entity" ) );
 }
 
 TEST_CASE( "015" )
@@ -666,28 +628,12 @@ TEST_CASE( "046" )
 
 	auto p = static_cast< MD::Paragraph* > ( doc->items().at( 1 ).data() );
 
-	REQUIRE( p->items().size() == 3 );
+	REQUIRE( p->items().size() == 1 );
 
-	{
-		REQUIRE( p->items().at( 0 )->type() == MD::ItemType::Text );
-		auto t = static_cast< MD::Text* > ( p->items().at( 0 ).data() );
-		REQUIRE( t->opts() == MD::TextWithoutFormat );
-		REQUIRE( t->text() == QStringLiteral( "--" ) );
-	}
-
-	{
-		REQUIRE( p->items().at( 1 )->type() == MD::ItemType::Text );
-		auto t = static_cast< MD::Text* > ( p->items().at( 1 ).data() );
-		REQUIRE( t->opts() == MD::TextWithoutFormat );
-		REQUIRE( t->text() == QStringLiteral( "**" ) );
-	}
-
-	{
-		REQUIRE( p->items().at( 2 )->type() == MD::ItemType::Text );
-		auto t = static_cast< MD::Text* > ( p->items().at( 2 ).data() );
-		REQUIRE( t->opts() == MD::TextWithoutFormat );
-		REQUIRE( t->text() == QStringLiteral( "__" ) );
-	}
+	REQUIRE( p->items().at( 0 )->type() == MD::ItemType::Text );
+	auto t = static_cast< MD::Text* > ( p->items().at( 0 ).data() );
+	REQUIRE( t->opts() == MD::TextWithoutFormat );
+	REQUIRE( t->text() == QStringLiteral( "-- ** __" ) );
 }
 
 TEST_CASE( "047" )
@@ -729,21 +675,12 @@ TEST_CASE( "049" )
 
 	auto p = static_cast< MD::Paragraph* > ( doc->items().at( 1 ).data() );
 
-	REQUIRE( p->items().size() == 2 );
+	REQUIRE( p->items().size() == 1 );
 
-	{
-		REQUIRE( p->items().at( 0 )->type() == MD::ItemType::Text );
-		auto t = static_cast< MD::Text* > ( p->items().at( 0 ).data() );
-		REQUIRE( t->opts() == MD::TextWithoutFormat );
-		REQUIRE( t->text() == QStringLiteral( "Foo" ) );
-	}
-
-	{
-		REQUIRE( p->items().at( 1 )->type() == MD::ItemType::Text );
-		auto t = static_cast< MD::Text* > ( p->items().at( 1 ).data() );
-		REQUIRE( t->opts() == MD::TextWithoutFormat );
-		REQUIRE( t->text() == QStringLiteral( "***" ) );
-	}
+	REQUIRE( p->items().at( 0 )->type() == MD::ItemType::Text );
+	auto t = static_cast< MD::Text* > ( p->items().at( 0 ).data() );
+	REQUIRE( t->opts() == MD::TextWithoutFormat );
+	REQUIRE( t->text() == QStringLiteral( "Foo ***" ) );
 }
 
 TEST_CASE( "050" )
@@ -1220,21 +1157,12 @@ TEST_CASE( "070" )
 
 	auto p = static_cast< MD::Paragraph* > ( doc->items().at( 1 ).data() );
 
-	REQUIRE( p->items().size() == 2 );
+	REQUIRE( p->items().size() == 1 );
 
-	{
-		REQUIRE( p->items().at( 0 )->type() == MD::ItemType::Text );
-		auto t = static_cast< MD::Text* > ( p->items().at( 0 ).data() );
-		REQUIRE( t->opts() == MD::TextWithoutFormat );
-		REQUIRE( t->text() == QStringLiteral( "foo" ) );
-	}
-
-	{
-		REQUIRE( p->items().at( 1 )->type() == MD::ItemType::Text );
-		auto t = static_cast< MD::Text* > ( p->items().at( 1 ).data() );
-		REQUIRE( t->opts() == MD::TextWithoutFormat );
-		REQUIRE( t->text() == QStringLiteral( "# bar" ) );
-	}
+	REQUIRE( p->items().at( 0 )->type() == MD::ItemType::Text );
+	auto t = static_cast< MD::Text* > ( p->items().at( 0 ).data() );
+	REQUIRE( t->opts() == MD::TextWithoutFormat );
+	REQUIRE( t->text() == QStringLiteral( "foo # bar" ) );
 }
 
 TEST_CASE( "071" )
@@ -1541,7 +1469,7 @@ TEST_CASE( "081" )
 		REQUIRE( h->level() == 1 );
 		REQUIRE( !h->text().isNull() );
 		auto p = h->text().data();
-		REQUIRE( p->items().size() == 3 );
+		REQUIRE( p->items().size() == 2 );
 		REQUIRE( p->items().at( 0 )->type() == MD::ItemType::Text );
 		auto t1 = static_cast< MD::Text* > ( p->items().at( 0 ).data() );
 		REQUIRE( t1->opts() == MD::TextWithoutFormat );
@@ -1549,11 +1477,7 @@ TEST_CASE( "081" )
 		REQUIRE( p->items().at( 1 )->type() == MD::ItemType::Text );
 		auto t2 = static_cast< MD::Text* > ( p->items().at( 1 ).data() );
 		REQUIRE( t2->opts() == MD::ItalicText );
-		REQUIRE( t2->text() == QStringLiteral( "bar" ) );
-		REQUIRE( p->items().at( 2 )->type() == MD::ItemType::Text );
-		auto t3 = static_cast< MD::Text* > ( p->items().at( 2 ).data() );
-		REQUIRE( t3->opts() == MD::ItalicText );
-		REQUIRE( t3->text() == QStringLiteral( "baz" ) );
+		REQUIRE( t2->text() == QStringLiteral( "bar baz" ) );
 	}
 }
 
@@ -1570,7 +1494,7 @@ TEST_CASE( "082" )
 		REQUIRE( h->level() == 1 );
 		REQUIRE( !h->text().isNull() );
 		auto p = h->text().data();
-		REQUIRE( p->items().size() == 3 );
+		REQUIRE( p->items().size() == 2 );
 		REQUIRE( p->items().at( 0 )->type() == MD::ItemType::Text );
 		auto t1 = static_cast< MD::Text* > ( p->items().at( 0 ).data() );
 		REQUIRE( t1->opts() == MD::TextWithoutFormat );
@@ -1578,11 +1502,7 @@ TEST_CASE( "082" )
 		REQUIRE( p->items().at( 1 )->type() == MD::ItemType::Text );
 		auto t2 = static_cast< MD::Text* > ( p->items().at( 1 ).data() );
 		REQUIRE( t2->opts() == MD::ItalicText );
-		REQUIRE( t2->text() == QStringLiteral( "bar" ) );
-		REQUIRE( p->items().at( 2 )->type() == MD::ItemType::Text );
-		auto t3 = static_cast< MD::Text* > ( p->items().at( 2 ).data() );
-		REQUIRE( t3->opts() == MD::ItalicText );
-		REQUIRE( t3->text() == QStringLiteral( "baz" ) );
+		REQUIRE( t2->text() == QStringLiteral( "bar baz" ) );
 	}
 }
 
@@ -1713,21 +1633,12 @@ TEST_CASE( "087" )
 
 	REQUIRE( doc->items().at( 1 )->type() == MD::ItemType::Paragraph );
 	auto p = static_cast< MD::Paragraph* > ( doc->items().at( 1 ).data() );
-	REQUIRE( p->items().size() == 2 );
+	REQUIRE( p->items().size() == 1 );
 
-	{
-		REQUIRE( p->items().at( 0 )->type() == MD::ItemType::Text );
-		auto t = static_cast< MD::Text* > ( p->items().at( 0 ).data() );
-		REQUIRE( t->opts() == MD::TextWithoutFormat );
-		REQUIRE( t->text() == QStringLiteral( "Foo" ) );
-	}
-
-	{
-		REQUIRE( p->items().at( 1 )->type() == MD::ItemType::Text );
-		auto t = static_cast< MD::Text* > ( p->items().at( 1 ).data() );
-		REQUIRE( t->opts() == MD::TextWithoutFormat );
-		REQUIRE( t->text() == QStringLiteral( "---" ) );
-	}
+	REQUIRE( p->items().at( 0 )->type() == MD::ItemType::Text );
+	auto t = static_cast< MD::Text* > ( p->items().at( 0 ).data() );
+	REQUIRE( t->opts() == MD::TextWithoutFormat );
+	REQUIRE( t->text() == QStringLiteral( "Foo ---" ) );
 }
 
 TEST_CASE( "088" )
@@ -1740,21 +1651,12 @@ TEST_CASE( "088" )
 	{
 		REQUIRE( doc->items().at( 1 )->type() == MD::ItemType::Paragraph );
 		auto p = static_cast< MD::Paragraph* > ( doc->items().at( 1 ).data() );
-		REQUIRE( p->items().size() == 2 );
+		REQUIRE( p->items().size() == 1 );
 
-		{
-			REQUIRE( p->items().at( 0 )->type() == MD::ItemType::Text );
-			auto t = static_cast< MD::Text* > ( p->items().at( 0 ).data() );
-			REQUIRE( t->opts() == MD::TextWithoutFormat );
-			REQUIRE( t->text() == QStringLiteral( "Foo" ) );
-		}
-
-		{
-			REQUIRE( p->items().at( 1 )->type() == MD::ItemType::Text );
-			auto t = static_cast< MD::Text* > ( p->items().at( 1 ).data() );
-			REQUIRE( t->opts() == MD::TextWithoutFormat );
-			REQUIRE( t->text() == QStringLiteral( "= =" ) );
-		}
+		REQUIRE( p->items().at( 0 )->type() == MD::ItemType::Text );
+		auto t = static_cast< MD::Text* > ( p->items().at( 0 ).data() );
+		REQUIRE( t->opts() == MD::TextWithoutFormat );
+		REQUIRE( t->text() == QStringLiteral( "Foo = =" ) );
 	}
 
 	{
@@ -1905,28 +1807,12 @@ TEST_CASE( "093" )
 		REQUIRE( b->items().size() == 1 );
 		REQUIRE( b->items().at( 0 )->type() == MD::ItemType::Paragraph );
 		auto p = static_cast< MD::Paragraph* > ( b->items().at( 0 ).data() );
-		REQUIRE( p->items().size() == 3 );
+		REQUIRE( p->items().size() == 1 );
 
-		{
-			REQUIRE( p->items().at( 0 )->type() == MD::ItemType::Text );
-			auto t = static_cast< MD::Text* > ( p->items().at( 0 ).data() );
-			REQUIRE( t->opts() == MD::TextWithoutFormat );
-			REQUIRE( t->text() == QStringLiteral( "foo" ) );
-		}
-
-		{
-			REQUIRE( p->items().at( 1 )->type() == MD::ItemType::Text );
-			auto t = static_cast< MD::Text* > ( p->items().at( 1 ).data() );
-			REQUIRE( t->opts() == MD::TextWithoutFormat );
-			REQUIRE( t->text() == QStringLiteral( "bar" ) );
-		}
-
-		{
-			REQUIRE( p->items().at( 2 )->type() == MD::ItemType::Text );
-			auto t = static_cast< MD::Text* > ( p->items().at( 2 ).data() );
-			REQUIRE( t->opts() == MD::TextWithoutFormat );
-			REQUIRE( t->text() == QStringLiteral( "===" ) );
-		}
+		REQUIRE( p->items().at( 0 )->type() == MD::ItemType::Text );
+		auto t = static_cast< MD::Text* > ( p->items().at( 0 ).data() );
+		REQUIRE( t->opts() == MD::TextWithoutFormat );
+		REQUIRE( t->text() == QStringLiteral( "foo bar ===" ) );
 	}
 }
 
@@ -1967,21 +1853,12 @@ TEST_CASE( "095" )
 		REQUIRE( h->level() == 2 );
 		REQUIRE( !h->text().isNull() );
 		auto p = h->text().data();
-		REQUIRE( p->items().size() == 2 );
+		REQUIRE( p->items().size() == 1 );
 
-		{
-			REQUIRE( p->items().at( 0 )->type() == MD::ItemType::Text );
-			auto t = static_cast< MD::Text* > ( p->items().at( 0 ).data() );
-			REQUIRE( t->opts() == MD::TextWithoutFormat );
-			REQUIRE( t->text() == QStringLiteral( "Foo" ) );
-		}
-
-		{
-			REQUIRE( p->items().at( 1 )->type() == MD::ItemType::Text );
-			auto t = static_cast< MD::Text* > ( p->items().at( 1 ).data() );
-			REQUIRE( t->opts() == MD::TextWithoutFormat );
-			REQUIRE( t->text() == QStringLiteral( "Bar" ) );
-		}
+		REQUIRE( p->items().at( 0 )->type() == MD::ItemType::Text );
+		auto t = static_cast< MD::Text* > ( p->items().at( 0 ).data() );
+		REQUIRE( t->opts() == MD::TextWithoutFormat );
+		REQUIRE( t->text() == QStringLiteral( "Foo Bar" ) );
 	}
 }
 
@@ -2195,21 +2072,12 @@ TEST_CASE( "104" )
 	{
 		REQUIRE( doc->items().at( 1 )->type() == MD::ItemType::Paragraph );
 		auto p = static_cast< MD::Paragraph* > ( doc->items().at( 1 ).data() );
-		REQUIRE( p->items().size() == 2 );
+		REQUIRE( p->items().size() == 1 );
 
-		{
-			REQUIRE( p->items().at( 0 )->type() == MD::ItemType::Text );
-			auto t = static_cast< MD::Text* > ( p->items().at( 0 ).data() );
-			REQUIRE( t->opts() == MD::TextWithoutFormat );
-			REQUIRE( t->text() == QStringLiteral( "Foo" ) );
-		}
-
-		{
-			REQUIRE( p->items().at( 1 )->type() == MD::ItemType::Text );
-			auto t = static_cast< MD::Text* > ( p->items().at( 1 ).data() );
-			REQUIRE( t->opts() == MD::TextWithoutFormat );
-			REQUIRE( t->text() == QStringLiteral( "bar" ) );
-		}
+		REQUIRE( p->items().at( 0 )->type() == MD::ItemType::Text );
+		auto t = static_cast< MD::Text* > ( p->items().at( 0 ).data() );
+		REQUIRE( t->opts() == MD::TextWithoutFormat );
+		REQUIRE( t->text() == QStringLiteral( "Foo bar" ) );
 	}
 
 	REQUIRE( doc->items().at( 2 )->type() == MD::ItemType::HorizontalLine );
@@ -2235,21 +2103,12 @@ TEST_CASE( "105" )
 	{
 		REQUIRE( doc->items().at( 1 )->type() == MD::ItemType::Paragraph );
 		auto p = static_cast< MD::Paragraph* > ( doc->items().at( 1 ).data() );
-		REQUIRE( p->items().size() == 2 );
+		REQUIRE( p->items().size() == 1 );
 
-		{
-			REQUIRE( p->items().at( 0 )->type() == MD::ItemType::Text );
-			auto t = static_cast< MD::Text* > ( p->items().at( 0 ).data() );
-			REQUIRE( t->opts() == MD::TextWithoutFormat );
-			REQUIRE( t->text() == QStringLiteral( "Foo" ) );
-		}
-
-		{
-			REQUIRE( p->items().at( 1 )->type() == MD::ItemType::Text );
-			auto t = static_cast< MD::Text* > ( p->items().at( 1 ).data() );
-			REQUIRE( t->opts() == MD::TextWithoutFormat );
-			REQUIRE( t->text() == QStringLiteral( "bar" ) );
-		}
+		REQUIRE( p->items().at( 0 )->type() == MD::ItemType::Text );
+		auto t = static_cast< MD::Text* > ( p->items().at( 0 ).data() );
+		REQUIRE( t->opts() == MD::TextWithoutFormat );
+		REQUIRE( t->text() == QStringLiteral( "Foo bar" ) );
 	}
 
 	REQUIRE( doc->items().at( 2 )->type() == MD::ItemType::HorizontalLine );
@@ -2275,35 +2134,12 @@ TEST_CASE( "106" )
 	{
 		REQUIRE( doc->items().at( 1 )->type() == MD::ItemType::Paragraph );
 		auto p = static_cast< MD::Paragraph* > ( doc->items().at( 1 ).data() );
-		REQUIRE( p->items().size() == 4 );
+		REQUIRE( p->items().size() == 1 );
 
-		{
-			REQUIRE( p->items().at( 0 )->type() == MD::ItemType::Text );
-			auto t = static_cast< MD::Text* > ( p->items().at( 0 ).data() );
-			REQUIRE( t->opts() == MD::TextWithoutFormat );
-			REQUIRE( t->text() == QStringLiteral( "Foo" ) );
-		}
-
-		{
-			REQUIRE( p->items().at( 1 )->type() == MD::ItemType::Text );
-			auto t = static_cast< MD::Text* > ( p->items().at( 1 ).data() );
-			REQUIRE( t->opts() == MD::TextWithoutFormat );
-			REQUIRE( t->text() == QStringLiteral( "bar" ) );
-		}
-
-		{
-			REQUIRE( p->items().at( 2 )->type() == MD::ItemType::Text );
-			auto t = static_cast< MD::Text* > ( p->items().at( 2 ).data() );
-			REQUIRE( t->opts() == MD::TextWithoutFormat );
-			REQUIRE( t->text() == QStringLiteral( "---" ) );
-		}
-
-		{
-			REQUIRE( p->items().at( 3 )->type() == MD::ItemType::Text );
-			auto t = static_cast< MD::Text* > ( p->items().at( 3 ).data() );
-			REQUIRE( t->opts() == MD::TextWithoutFormat );
-			REQUIRE( t->text() == QStringLiteral( "baz" ) );
-		}
+		REQUIRE( p->items().at( 0 )->type() == MD::ItemType::Text );
+		auto t = static_cast< MD::Text* > ( p->items().at( 0 ).data() );
+		REQUIRE( t->opts() == MD::TextWithoutFormat );
+		REQUIRE( t->text() == QStringLiteral( "Foo bar --- baz" ) );
 	}
 }
 
@@ -2454,21 +2290,12 @@ TEST_CASE( "113" )
 
 	REQUIRE( doc->items().at( 1 )->type() == MD::ItemType::Paragraph );
 	auto p = static_cast< MD::Paragraph* > ( doc->items().at( 1 ).data() );
-	REQUIRE( p->items().size() == 2 );
+	REQUIRE( p->items().size() == 1 );
 
-	{
-		REQUIRE( p->items().at( 0 )->type() == MD::ItemType::Text );
-		auto t = static_cast< MD::Text* > ( p->items().at( 0 ).data() );
-		REQUIRE( t->opts() == MD::TextWithoutFormat );
-		REQUIRE( t->text() == QStringLiteral( "Foo" ) );
-	}
-
-	{
-		REQUIRE( p->items().at( 1 )->type() == MD::ItemType::Text );
-		auto t = static_cast< MD::Text* > ( p->items().at( 1 ).data() );
-		REQUIRE( t->opts() == MD::TextWithoutFormat );
-		REQUIRE( t->text() == QStringLiteral( "bar" ) );
-	}
+	REQUIRE( p->items().at( 0 )->type() == MD::ItemType::Text );
+	auto t = static_cast< MD::Text* > ( p->items().at( 0 ).data() );
+	REQUIRE( t->opts() == MD::TextWithoutFormat );
+	REQUIRE( t->text() == QStringLiteral( "Foo bar" ) );
 }
 
 TEST_CASE( "114" )
