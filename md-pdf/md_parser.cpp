@@ -23,6 +23,9 @@
 // md-pdf include
 #include "md_parser.hpp"
 
+// C++ include.
+#include <tuple>
+
 // Qt include.
 #include <QFileInfo>
 #include <QFile>
@@ -3117,26 +3120,41 @@ makeLink( const QString & url, const QString & text,
 
 	if( !p->isEmpty() )
 	{
-		for( auto it = p->items().cbegin(), last = p->items().cend(); it != last; ++it )
+		QSharedPointer< Image > img;
+
+		if( p->items().size() == 1 && p->items().at( 0 )->type() == ItemType::Paragraph )
 		{
-			switch( (*it)->type() )
+			const auto ip = p->items().at( 0 ).staticCast< Paragraph > ();
+
+			for( auto it = ip->items().cbegin(), last = ip->items().cend(); it != last; ++it )
 			{
-				case ItemType::Link :
+				switch( (*it)->type() )
 				{
-					if( !po.collectRefLinks && !doNotCreateTextOnFail )
-						makeText( lastLine, lastPos, po );
+					case ItemType::Link :
+					{
+						if( !po.collectRefLinks && !doNotCreateTextOnFail )
+							makeText( lastLine, lastPos, po );
 
-					return {};
+						return {};
+					}
+						break;
+
+					case ItemType::Image :
+					{
+						img = (*it).staticCast< Image > ();
+					}
+						break;
+
+					default :
+						break;
 				}
-					break;
-
-				default :
-					break;
 			}
-		}
 
-		if( p->items().at( 0 )->type() == ItemType::Paragraph )
+			if( !img.isNull() )
+				link->setImg( img );
+
 			link->setP( p->items().at( 0 ).staticCast< Paragraph > () );
+		}
 	}
 
 	link->setText( text );
@@ -3188,6 +3206,13 @@ createShortcutLink( const QString & text,
 	return false;
 }
 
+inline std::tuple< QString, QString, Delims::const_iterator >
+checkForInlineLink( Delims::const_iterator it, Delims::const_iterator last,
+	TextParsingOpts & po )
+{
+	return { {}, {}, it };
+}
+
 inline Delims::const_iterator
 checkForLink( Delims::const_iterator it, Delims::const_iterator last,
 	TextParsingOpts & po )
@@ -3237,7 +3262,21 @@ checkForLink( Delims::const_iterator it, Delims::const_iterator last,
 			// Inline -> (
 			else if( po.fr.at( it->m_line )[ it->m_pos + it->m_len ] == c_40 )
 			{
+				QString url, title;
+				Delims::const_iterator iit;
 
+				std::tie( url, title, iit ) = checkForInlineLink( std::next( it ), last, po );
+
+				if( iit != std::next( it ) )
+				{
+
+				}
+				else if( createShortcutLink( text.simplified().toLower(),
+							po, start->m_line, start->m_pos + start->m_len,
+							it, {}, false ) )
+				{
+					return it;
+				}
 			}
 			// Reference -> [
 			else if( po.fr.at( it->m_line )[ it->m_pos + it->m_len ] == c_91 )
@@ -3247,7 +3286,7 @@ checkForLink( Delims::const_iterator it, Delims::const_iterator last,
 
 				std::tie( label, lit ) = checkForLinkLabel( std::next( it ), last, po );
 
-				if( lit != it )
+				if( lit != std::next( it ) )
 				{
 					if( createShortcutLink( label.simplified().toLower(),
 							po, start->m_line, start->m_pos + start->m_len,
