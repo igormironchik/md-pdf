@@ -3548,9 +3548,16 @@ checkForImage( Delims::const_iterator it, Delims::const_iterator last,
 				return it;
 			}
 		}
-		else if( !po.collectRefLinks )
-			makeText( start->m_line, start->m_pos + start->m_len, po );
+		// Shortcut
+		else if( createShortcutImage( text.simplified().toLower(),
+					po, start->m_line, start->m_pos + start->m_len,
+					it, {}, false ) )
+		{
+			return it;
+		}
 	}
+	else if( !po.collectRefLinks )
+		makeText( start->m_line, start->m_pos + start->m_len, po );
 
 	return start;
 }
