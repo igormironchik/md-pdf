@@ -3643,7 +3643,7 @@ parseFormattedText( QStringList & fr, QSharedPointer< Block > parent,
 	}
 
 	if( !collectRefLinks )
-		makeText( fr.size() - 1, fr.back().length() - 1, po );
+		makeText( fr.size() - 1, fr.back().length(), po );
 
 	if( !p->isEmpty() )
 		parent->appendItem( p );
