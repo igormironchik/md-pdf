@@ -77,6 +77,7 @@ static const QChar c_33 = QLatin1Char( '!' );
 static const QChar c_60 = QLatin1Char( '<' );
 static const QChar c_10 = QLatin1Char( '\n' );
 static const QChar c_13 = QLatin1Char( '\r' );
+static const QChar c_39 = QLatin1Char( '\'' );
 
 
 // Skip spaces in line from pos \a i.

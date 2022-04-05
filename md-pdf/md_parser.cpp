@@ -3250,6 +3250,8 @@ readLinkDestination( qsizetype line, qsizetype pos, const QStringList & fr )
 
 			if( !now )
 				backslash = false;
+
+			++pos;
 		}
 
 		return { line, pos, true, dest };
@@ -3289,6 +3291,8 @@ readLinkDestination( qsizetype line, qsizetype pos, const QStringList & fr )
 
 			if( !now )
 				backslash = false;
+
+			++pos;
 		}
 
 		return { line, pos, true, dest };
@@ -3298,6 +3302,53 @@ readLinkDestination( qsizetype line, qsizetype pos, const QStringList & fr )
 inline std::tuple< qsizetype, qsizetype, bool, QString >
 readLinkTitle( qsizetype line, qsizetype pos, const QStringList & fr )
 {
+	const auto space = fr.at( line )[ pos ].isSpace();
+
+	skipSpacesUpTo1Line( line, pos, fr );
+
+	const auto sc = fr.at( line )[ pos ];
+
+	if( sc != c_34 && sc != c_39 && sc != c_40 )
+		return { line, pos, false, {} };
+	else if( !space )
+		return { line, pos, false, {} };
+
+	bool backslash = false;
+
+	++pos;
+
+	skipSpacesUpTo1Line( line, pos, fr );
+
+	QString title;
+
+	while( line < fr.size() && pos < fr.at( line ).size() &&
+		fr.at( line )[ pos ] != sc && !backslash )
+	{
+		bool now = false;
+
+		if( fr.at( line )[ pos ] == c_92 && !backslash )
+		{
+			backslash = true;
+			now = true;
+		}
+		else if( sc == c_40 && fr.at( line )[ pos ] == c_41 && !backslash )
+			return { line, ++pos, true, title };
+		else if( sc == c_40 && fr.at( line )[ pos ] == c_40 && !backslash )
+			return { line, pos, false, {} };
+		else if( sc != c_40 && fr.at( line )[ pos ] == sc && !backslash )
+			return { line, ++pos, true, title };
+		else
+			title.append( fr.at( line )[ pos ] );
+
+		if( !now )
+			backslash = false;
+
+		if( pos + 1 == fr.at( line ).size() )
+			skipSpacesUpTo1Line( line, pos, fr );
+		else
+			++pos;
+	}
+
 	return { line, pos, false, {} };
 }
 
@@ -3317,26 +3368,15 @@ checkForInlineLink( Delims::const_iterator it, Delims::const_iterator last,
 
 	std::tie( l, p, ok, title ) = readLinkTitle( l, p, po.fr );
 
-	if( !ok )
+	skipSpacesUpTo1Line( l, p, po.fr );
+
+	if( !ok && po.fr.at( l )[ p ] != c_41 )
 		return { {}, {}, it };
 
-	p = skipSpaces( p, po.fr.at( l ) );
-
-	if( p == po.fr.at( l ).size() )
+	for( ; it != last; ++it )
 	{
-		if( l + 1 < po.fr.size() )
-			p = skipSpaces( 0, po.fr.at( ++l ) );
-		else
-			return { {}, {}, it };
-	}
-
-	if( po.fr.at( l )[ p ] == c_41 )
-	{
-		for( ; it != last; ++it )
-		{
-			if( it->m_line == l && it->m_pos == p )
-				return { dest, title, it };
-		}
+		if( it->m_line == l && it->m_pos == p )
+			return { dest, title, it };
 	}
 
 	return { {}, {}, it };
@@ -3358,13 +3398,10 @@ checkForRefLink( Delims::const_iterator it, Delims::const_iterator last,
 
 	std::tie( l, p, ok, title ) = readLinkTitle( l, p, po.fr );
 
-	if( !ok )
-		return { {}, {}, it };
-
 	p = skipSpaces( p, po.fr.at( l ) );
 
-	if( p != po.fr.at( l ).size() )
-		return { {}, {},  it };
+	if( !ok && p < po.fr.at( l ).size() )
+		return { {}, {}, it };
 
 	for( ; it != last; ++it )
 	{
