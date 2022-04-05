@@ -3153,7 +3153,7 @@ makeLink( const QString & url, const QString & text,
 			if( !img.isNull() )
 				link->setImg( img );
 
-			link->setP( p->items().at( 0 ).staticCast< Paragraph > () );
+			link->setP( ip );
 		}
 	}
 
