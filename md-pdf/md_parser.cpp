@@ -2397,7 +2397,7 @@ checkForLink( Delims::const_iterator it, Delims::const_iterator last,
 			if( po.fr.at( it->m_line )[ it->m_pos + it->m_len ] == c_58 )
 			{
 				// Reference definitions allowed only at start of paragraph.
-				if( po.line == 0 && ns < 4 )
+				if( po.line == 0 && ns < 4 && start->m_pos == ns )
 				{
 					QString url, title;
 					Delims::const_iterator iit;
