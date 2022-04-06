@@ -2368,7 +2368,6 @@ checkForLink( Delims::const_iterator it, Delims::const_iterator last,
 
 	QString text;
 
-	const auto sp = po.pos;
 	const auto ns = skipSpaces( 0, po.fr.at( po.line ) );
 
 	std::tie( text, it ) = checkForLinkText( it, last, po );
@@ -2398,7 +2397,7 @@ checkForLink( Delims::const_iterator it, Delims::const_iterator last,
 			if( po.fr.at( it->m_line )[ it->m_pos + it->m_len ] == c_58 )
 			{
 				// Reference definitions allowed only at start of paragraph.
-				if( po.line == 0 && ( sp == 0 || ( sp == ns && ns < 4 ) ) )
+				if( po.line == 0 && ns < 4 )
 				{
 					QString url, title;
 					Delims::const_iterator iit;
