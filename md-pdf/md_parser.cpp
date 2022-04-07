@@ -2189,10 +2189,10 @@ readLinkTitle( qsizetype line, qsizetype pos, const QStringList & fr )
 		if( !now )
 			backslash = false;
 
-		if( pos + 1 == fr.at( line ).size() )
+		++pos;
+
+		if( pos == fr.at( line ).size() )
 			skipSpacesUpTo1Line( line, pos, fr );
-		else
-			++pos;
 	}
 
 	return { line, pos, false, {} };
