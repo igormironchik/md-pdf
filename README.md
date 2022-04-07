@@ -19,11 +19,9 @@ your opinion).
 
 # Status
 
-Alpha version is ready. Surely, there possible issues in the application.
-But we don't afraid of bugs. Just post the issue here, and I will fix it
-as soon as possible.
-
-The application is tested on Mac OS, Linux, Windows 10.
+Markdown parser is in active developemnt. Regular Markdown syntax is implemented,
+however some niceties may fail. Rendering is alomost done, however inlines in links
+is not rendered still, but will be implemented soon.
 
 # Testing
 
