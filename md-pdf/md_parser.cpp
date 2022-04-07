@@ -2112,13 +2112,19 @@ readLinkDestination( qsizetype line, qsizetype pos, const QStringList & fr )
 						return { line, pos, false, {} };
 				}
 				else if( !backslash && s[ pos ] == c_40 )
+				{
 					++pc;
+					dest.append( s[ pos ] );
+				}
 				else if( !backslash && s[ pos ] == c_41 )
 				{
 					if( !pc )
 						return { line, pos, true, dest };
 					else
+					{
+						dest.append( s[ pos ] );
 						--pc;
+					}
 				}
 				else
 					dest.append( s[ pos ] );
@@ -2464,7 +2470,7 @@ checkForLink( Delims::const_iterator it, Delims::const_iterator last,
 					else
 						return it;
 				}
-				else if( createShortcutLink( text.simplified().toLower(),
+				else if( createShortcutLink( text.simplified(),
 							po, start->m_line, start->m_pos + start->m_len,
 							it, {}, false ) )
 				{
@@ -2481,13 +2487,13 @@ checkForLink( Delims::const_iterator it, Delims::const_iterator last,
 
 				if( lit != std::next( it ) )
 				{
-					if( createShortcutLink( label.simplified().toLower(),
+					if( createShortcutLink( label.simplified(),
 							po, start->m_line, start->m_pos + start->m_len,
 							lit, text, true ) )
 					{
 						return lit;
 					}
-					else if( createShortcutLink( text.simplified().toLower(),
+					else if( createShortcutLink( text.simplified(),
 								po, start->m_line, start->m_pos + start->m_len,
 								it, {}, false ) )
 					{
@@ -2502,7 +2508,7 @@ checkForLink( Delims::const_iterator it, Delims::const_iterator last,
 							return it;
 					}
 				}
-				else if( createShortcutLink( text.simplified().toLower(),
+				else if( createShortcutLink( text.simplified(),
 							po, start->m_line, start->m_pos + start->m_len,
 							it, {}, false ) )
 				{
@@ -2510,7 +2516,7 @@ checkForLink( Delims::const_iterator it, Delims::const_iterator last,
 				}
 			}
 			// Shortcut
-			else if( createShortcutLink( text.simplified().toLower(),
+			else if( createShortcutLink( text.simplified(),
 						po, start->m_line, start->m_pos + start->m_len,
 						it, {}, false ) )
 			{
@@ -2518,7 +2524,7 @@ checkForLink( Delims::const_iterator it, Delims::const_iterator last,
 			}
 		}
 		// Shortcut
-		else if( createShortcutLink( text.simplified().toLower(),
+		else if( createShortcutLink( text.simplified(),
 					po, start->m_line, start->m_pos + start->m_len,
 					it, {}, false ) )
 		{
