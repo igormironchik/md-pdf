@@ -2074,11 +2074,13 @@ readLinkDestination( qsizetype line, qsizetype pos, const QStringList & fr )
 					backslash = true;
 					now = true;
 				}
-
-				if( !backslash && s[ pos ] == c_60 )
+				else if( !backslash && s[ pos ] == c_60 )
 					return { line, pos, false, {} };
 				else if( !backslash && s[ pos ] == c_62 )
+				{
+					++pos;
 					break;
+				}
 				else
 					dest.append( s[ pos ] );
 
@@ -2103,8 +2105,7 @@ readLinkDestination( qsizetype line, qsizetype pos, const QStringList & fr )
 					backslash = true;
 					now = true;
 				}
-
-				if( !backslash && s[ pos ].isSpace() )
+				else if( !backslash && s[ pos ].isSpace() )
 				{
 					if( !pc )
 						return { line, pos, true, dest };
