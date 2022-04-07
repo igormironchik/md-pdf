@@ -2151,7 +2151,7 @@ readLinkTitle( qsizetype line, qsizetype pos, const QStringList & fr )
 	skipSpacesUpTo1Line( line, pos, fr );
 
 	if( pos >= fr.at( line ).size() )
-		return { line, pos, false, {} };
+		return { line, pos, true, {} };
 
 	const auto sc = fr.at( line )[ pos ];
 
@@ -2251,7 +2251,7 @@ checkForRefLink( Delims::const_iterator it, Delims::const_iterator last,
 
 	p = skipSpaces( p, po.fr.at( l ) );
 
-	if( !ok && p < po.fr.at( l ).size() )
+	if( !ok || p < po.fr.at( l ).size() )
 		return { {}, {}, it, false };
 
 	for( ; it != last; ++it )
