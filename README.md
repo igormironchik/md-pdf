@@ -58,7 +58,7 @@ Good example of work of this application is
  * I don't support Chinese, as they don't use spaces. I don't know theirs rules, to adapt
  algorithms.
  
-   I checked on this weird [Markdown file](https://github.com/feiyangqingyun/qtkaifajingyan/blob/master/README.md), guys, they don't fit Markdown standard even.
+   I checked on this weird [Markdown file](https://github.com/feiyangqingyun/qtkaifajingyan/blob/master/README.md), guys, they don't follow up Markdown standard even.
    
  * I don't support right-to-left languages. I don't know theirs rules too.
  
