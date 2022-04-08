@@ -2082,7 +2082,12 @@ readLinkDestination( qsizetype line, qsizetype pos, const QStringList & fr )
 					break;
 				}
 				else
+				{
+					if( backslash )
+						dest.append( c_92 );
+
 					dest.append( s[ pos ] );
+				}
 
 				if( !now )
 					backslash = false;
@@ -2128,7 +2133,12 @@ readLinkDestination( qsizetype line, qsizetype pos, const QStringList & fr )
 					}
 				}
 				else
+				{
+					if( backslash )
+						dest.append( c_92 );
+
 					dest.append( s[ pos ] );
+				}
 
 				if( !now )
 					backslash = false;
