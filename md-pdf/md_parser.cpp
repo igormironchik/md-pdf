@@ -1004,45 +1004,41 @@ Parser::parseParagraph( QStringList & fr, QSharedPointer< Block > parent,
 
 			fr.remove( 0, horLines );
 
-			QSharedPointer< Heading > h;
-			QSharedPointer< Paragraph > p;
+			QSharedPointer< Heading > h( new Heading );
+			QSharedPointer< Paragraph > p( new Paragraph );
 
-			if( !collectRefLinks )
+			h->setLevel( lvl );
+
+			QStringList tmp = fr.sliced( 0, i - horLines );
+
+			const auto ns1 = skipSpaces( 0, tmp.first() );
+
+			if( ns1 > 0 && ns1 < tmp.first().length() )
+				tmp.first() = tmp.first().sliced( ns1 );
+
+			qsizetype ns2 = tmp.back().length();
+
+			for( qsizetype i = tmp.back().length() - 1; i >= 0; --i )
 			{
-				h.reset( new Heading );
-				h->setLevel( lvl );
-
-				p.reset( new Paragraph );
-
-				QStringList tmp = fr.sliced( 0, i - horLines );
-
-				const auto ns1 = skipSpaces( 0, tmp.first() );
-
-				if( ns1 > 0 && ns1 < tmp.first().length() )
-					tmp.first() = tmp.first().sliced( ns1 );
-
-				qsizetype ns2 = tmp.back().length();
-
-				for( qsizetype i = tmp.back().length() - 1; i >= 0; --i )
-				{
-					if( tmp.back()[ i ].isSpace() )
-						ns2 = i;
-					else
-						break;
-				}
-
-				if( ns2 < tmp.back().length() )
-					tmp.back() = tmp.back().sliced( 0, ns2 );
-
-				parseFormattedTextLinksImages( tmp, p, doc, linksToParse,
-					workingPath, fileName, collectRefLinks, true );
+				if( tmp.back()[ i ].isSpace() )
+					ns2 = i;
+				else
+					break;
 			}
 
-			fr.remove( 0, i - horLines + 1 );
+			if( ns2 < tmp.back().length() )
+				tmp.back() = tmp.back().sliced( 0, ns2 );
 
-			if( !collectRefLinks )
+			parseFormattedTextLinksImages( tmp, p, doc, linksToParse,
+				workingPath, fileName, collectRefLinks, true );
+
+			const bool keepHeadingLine = p->isEmpty();
+
+			fr.remove( 0, i - horLines + ( keepHeadingLine ? 0 : 1 ) );
+
+			if( !collectRefLinks && !keepHeadingLine )
 			{
-				if( !p->items().isEmpty() && p->items().at( 0 )->type() == ItemType::Paragraph )
+				if( p->items().at( 0 )->type() == ItemType::Paragraph )
 					h->setText( p->items().at( 0 ).staticCast< Paragraph > () );
 
 				QString label = QStringLiteral( "#" ) + paragraphToLabel( h->text().data() );
