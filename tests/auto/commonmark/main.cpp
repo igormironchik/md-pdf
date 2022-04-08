@@ -3158,3 +3158,22 @@ TEST_CASE( "202" )
 	REQUIRE( doc->labeledLinks().contains( l->url() ) );
 	REQUIRE( doc->labeledLinks()[ l->url() ]->url() == QStringLiteral( "/url\\bar*baz" ) );
 }
+
+TEST_CASE( "203" )
+{
+	const auto doc = load_test( 203 );
+
+	REQUIRE( doc->isEmpty() == false );
+	REQUIRE( doc->items().size() == 2 );
+
+	REQUIRE( doc->items().at( 1 )->type() == MD::ItemType::Paragraph );
+	auto p = static_cast< MD::Paragraph* > ( doc->items().at( 1 ).data() );
+	REQUIRE( p->items().size() == 1 );
+	REQUIRE( p->items().at( 0 )->type() == MD::ItemType::Link );
+	auto l = static_cast< MD::Link* > ( p->items().at( 0 ).data() );
+	REQUIRE( l->img()->isEmpty() );
+	REQUIRE( l->textOptions() == MD::TextWithoutFormat );
+	REQUIRE( l->text() == QStringLiteral( "foo" ) );
+	REQUIRE( doc->labeledLinks().contains( l->url() ) );
+	REQUIRE( doc->labeledLinks()[ l->url() ]->url() == QStringLiteral( "url" ) );
+}
