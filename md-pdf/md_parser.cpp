@@ -1401,6 +1401,7 @@ struct TextParsingOpts {
 	bool collectRefLinks;
 	bool ignoreLineBreak;
 
+	bool wasRefLink = false;
 	qsizetype line = 0;
 	qsizetype pos = 0;
 	TextOptions opts = TextWithoutFormat;
@@ -1428,8 +1429,8 @@ removeLineBreak( const QString & s )
 }
 
 inline void
-makeTextObject( const QString & text, const TextOptions & opts,
-	bool spaceBefore, bool spaceAfter, QSharedPointer< Block > parent )
+makeTextObject( const QString & text, bool spaceBefore, bool spaceAfter,
+	TextParsingOpts & po )
 {
 	const auto s = text.simplified();
 
@@ -1437,22 +1438,24 @@ makeTextObject( const QString & text, const TextOptions & opts,
 	{
 		QSharedPointer< Text > t( new Text() );
 		t->setText( s );
-		t->setOpts( opts );
+		t->setOpts( po.opts );
 		t->setSpaceBefore( spaceBefore );
 		t->setSpaceAfter( spaceAfter );
 
-		parent->appendItem( t );
+		po.wasRefLink = false;
+		po.parent->appendItem( t );
 	}
 }
 
 inline void
-makeTextObjectWithLineBreak( const QString & text, const TextOptions & opts,
-	bool spaceBefore, bool spaceAfter, QSharedPointer< Block > parent )
+makeTextObjectWithLineBreak( const QString & text, bool spaceBefore, bool spaceAfter,
+	TextParsingOpts & po )
 {
-	makeTextObject( text, opts, spaceBefore, true, parent );
+	makeTextObject( text, spaceBefore, true, po );
 
 	QSharedPointer< Item > hr( new LineBreak );
-	parent->appendItem( hr );
+	po.wasRefLink = false;
+	po.parent->appendItem( hr );
 }
 
 inline QString
@@ -1516,7 +1519,7 @@ makeText(
 
 	// makeTOWLB
 	auto makeTOWLB = [&] () {
-		makeTextObjectWithLineBreak( text, po.opts, spaceBefore, true, po.parent );
+		makeTextObjectWithLineBreak( text, spaceBefore, true, po );
 
 		text.clear();
 
@@ -1570,8 +1573,8 @@ makeText(
 
 	po.pos = lastPos;
 
-	makeTextObject( text, po.opts, spaceBefore,
-		( po.pos > 0 ? po.fr.at( po.line )[ po.pos - 1 ].isSpace() : true ), po.parent );
+	makeTextObject( text, spaceBefore,
+		( po.pos > 0 ? po.fr.at( po.line )[ po.pos - 1 ].isSpace() : true ), po );
 }
 
 inline Delims::const_iterator
@@ -1624,6 +1627,7 @@ checkForAutolinkHtml( Delims::const_iterator it, Delims::const_iterator last,
 				makeText( nit->m_line, nit->m_pos + nit->m_len, po, true );
 		}
 
+		po.wasRefLink = false;
 		po.pos = nit->m_pos + nit->m_len;
 		po.line = nit->m_line;
 
@@ -1666,6 +1670,8 @@ makeInlineCode( qsizetype lastLine, qsizetype lastPos,
 
 	if( !c.isEmpty() )
 		po.parent->appendItem( QSharedPointer< Code >( new Code( c, true ) ) );
+
+	po.wasRefLink = false;
 }
 
 inline Delims::const_iterator
@@ -1690,6 +1696,7 @@ checkForInlineCode( Delims::const_iterator it, Delims::const_iterator last,
 				makeInlineCode( it->m_line, it->m_pos, po );
 			}
 
+			po.wasRefLink = false;
 			po.line = it->m_line;
 			po.pos = it->m_pos + it->m_len;
 
@@ -1699,6 +1706,8 @@ checkForInlineCode( Delims::const_iterator it, Delims::const_iterator last,
 
 	if( !po.collectRefLinks )
 		makeText( start->m_line, start->m_pos + start->m_len, po );
+
+	po.wasRefLink = false;
 
 	return start;
 }
@@ -1939,6 +1948,8 @@ createShortcutLink( const QString & text,
 	const auto u = QString::fromLatin1( "#" ) + text.simplified().toLower();
 	const auto url = u + QStringLiteral( "/" ) + po.workingPath + po.fileName;
 
+	po.wasRefLink = false;
+
 	if( po.doc->labeledLinks().contains( url ) )
 	{
 		if( !po.collectRefLinks )
@@ -1949,7 +1960,6 @@ createShortcutLink( const QString & text,
 			if( !link.isNull() )
 			{
 				po.linksToParse.append( url );
-
 				po.parent->appendItem( link );
 
 				po.line = lastIt->m_line;
@@ -2015,6 +2025,8 @@ createShortcutImage( const QString & text,
 {
 	const auto url = QString::fromLatin1( "#" ) + text.simplified().toLower() +
 		QStringLiteral( "/" ) + po.workingPath + po.fileName;
+
+	po.wasRefLink = false;
 
 	if( po.doc->labeledLinks().contains( url ) )
 	{
@@ -2166,7 +2178,7 @@ readLinkTitle( qsizetype line, qsizetype pos, const QStringList & fr )
 	const auto sc = fr.at( line )[ pos ];
 
 	if( sc != c_34 && sc != c_39 && sc != c_40 )
-		return { line, pos, false, {} };
+		return { line, pos, true, {} };
 	else if( !space )
 		return { line, pos, false, {} };
 
@@ -2259,14 +2271,20 @@ checkForRefLink( Delims::const_iterator it, Delims::const_iterator last,
 
 	std::tie( l, p, ok, title ) = readLinkTitle( l, p, po.fr );
 
-	p = skipSpaces( p, po.fr.at( l ) );
-
-	if( !ok || p < po.fr.at( l ).size() )
+	if( !ok )
 		return { {}, {}, it, false };
+
+	if( !title.isEmpty() )
+	{
+		p = skipSpaces( p, po.fr.at( l ) );
+
+		if( p < po.fr.at( l ).size() )
+			return { {}, {}, it, false };
+	}
 
 	for( ; it != last; ++it )
 	{
-		if( it->m_line > l || ( it->m_line == l && it->m_pos > p ) )
+		if( it->m_line > l || ( it->m_line == l && it->m_pos >= p ) )
 			break;
 	}
 
@@ -2283,6 +2301,8 @@ checkForImage( Delims::const_iterator it, Delims::const_iterator last,
 	const auto start = it;
 
 	QString text;
+
+	po.wasRefLink = false;
 
 	std::tie( text, it ) = checkForLinkText( it, last, po );
 
@@ -2385,6 +2405,9 @@ checkForLink( Delims::const_iterator it, Delims::const_iterator last,
 
 	QString text;
 
+	const auto wasRefLink = po.wasRefLink;
+	po.wasRefLink = false;
+
 	const auto ns = skipSpaces( 0, po.fr.at( po.line ) );
 
 	std::tie( text, it ) = checkForLinkText( it, last, po );
@@ -2414,7 +2437,7 @@ checkForLink( Delims::const_iterator it, Delims::const_iterator last,
 			if( po.fr.at( it->m_line )[ it->m_pos + it->m_len ] == c_58 )
 			{
 				// Reference definitions allowed only at start of paragraph.
-				if( po.line == 0 && ns < 4 && start->m_pos == ns )
+				if( ( po.line == 0 || wasRefLink ) && ns < 4 && start->m_pos == ns )
 				{
 					QString url, title;
 					Delims::const_iterator iit;
@@ -2441,6 +2464,8 @@ checkForLink( Delims::const_iterator it, Delims::const_iterator last,
 						}
 
 						link->setUrl( url );
+
+						po.wasRefLink = true;
 
 						if( !po.doc->labeledLinks().contains( label ) )
 							po.doc->insertLabeledLink( label, link );
@@ -2736,6 +2761,8 @@ inline Delims::const_iterator
 checkForStyle( Delims::const_iterator it, Delims::const_iterator last,
 	TextParsingOpts & po )
 {
+	po.wasRefLink = false;
+
 	if( isClosingStyle( po.styles, it->m_type ) )
 	{
 		closeStyle( po.styles, it->m_type );
