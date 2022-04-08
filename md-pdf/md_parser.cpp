@@ -2419,13 +2419,18 @@ checkForLink( Delims::const_iterator it, Delims::const_iterator last,
 
 						QSharedPointer< Link > link( new Link );
 
-						if( QUrl( url ).isRelative() )
+						url = removeBackslashes( url );
+
+						if( !url.isEmpty() )
 						{
-							if( fileExists( url, po.workingPath ) )
-								url = QFileInfo( po.workingPath + url ).absoluteFilePath();
+							if( QUrl( url ).isRelative() )
+							{
+								if( fileExists( url, po.workingPath ) )
+									url = QFileInfo( po.workingPath + url ).absoluteFilePath();
+							}
 						}
 
-						link->setUrl( removeBackslashes( url ) );
+						link->setUrl( url );
 
 						if( !po.doc->labeledLinks().contains( label ) )
 							po.doc->insertLabeledLink( label, link );
