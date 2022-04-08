@@ -2170,6 +2170,8 @@ readLinkTitle( qsizetype line, qsizetype pos, const QStringList & fr )
 {
 	const auto space = ( pos < fr.at( line ).size() ? fr.at( line )[ pos ].isSpace() : true );
 
+	const auto startLine = line;
+
 	skipSpacesUpTo1Line( line, pos, fr );
 
 	if( pos >= fr.at( line ).size() )
@@ -2178,7 +2180,7 @@ readLinkTitle( qsizetype line, qsizetype pos, const QStringList & fr )
 	const auto sc = fr.at( line )[ pos ];
 
 	if( sc != c_34 && sc != c_39 && sc != c_40 )
-		return { line, pos, true, {} };
+		return { line, pos, ( startLine != line ), {} };
 	else if( !space )
 		return { line, pos, false, {} };
 
