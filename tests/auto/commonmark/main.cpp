@@ -3451,3 +3451,50 @@ TEST_CASE( "216" )
 		REQUIRE( doc->labeledLinks()[ l->url() ]->url() == QStringLiteral( "/url" ) );
 	}
 }
+
+TEST_CASE( "217" )
+{
+	const auto doc = load_test( 217 );
+
+	REQUIRE( doc->isEmpty() == false );
+	REQUIRE( doc->items().size() == 2 );
+
+	REQUIRE( doc->items().at( 1 )->type() == MD::ItemType::Paragraph );
+	auto p = static_cast< MD::Paragraph* > ( doc->items().at( 1 ).data() );
+	REQUIRE( p->items().size() == 5 );
+
+	{
+		REQUIRE( p->items().at( 0 )->type() == MD::ItemType::Link );
+		auto l = static_cast< MD::Link* > ( p->items().at( 0 ).data() );
+		REQUIRE( l->text() == QStringLiteral( "foo" ) );
+		REQUIRE( doc->labeledLinks()[ l->url() ]->url() == QStringLiteral( "/foo-url" ) );
+	}
+
+	{
+		REQUIRE( p->items().at( 1 )->type() == MD::ItemType::Text );
+		auto t = static_cast< MD::Text* > ( p->items().at( 1 ).data() );
+		REQUIRE( t->opts() == MD::TextWithoutFormat );
+		REQUIRE( t->text() == QStringLiteral( "," ) );
+	}
+
+	{
+		REQUIRE( p->items().at( 2 )->type() == MD::ItemType::Link );
+		auto l = static_cast< MD::Link* > ( p->items().at( 2 ).data() );
+		REQUIRE( l->text() == QStringLiteral( "bar" ) );
+		REQUIRE( doc->labeledLinks()[ l->url() ]->url() == QStringLiteral( "/bar-url" ) );
+	}
+
+	{
+		REQUIRE( p->items().at( 3 )->type() == MD::ItemType::Text );
+		auto t = static_cast< MD::Text* > ( p->items().at( 3 ).data() );
+		REQUIRE( t->opts() == MD::TextWithoutFormat );
+		REQUIRE( t->text() == QStringLiteral( "," ) );
+	}
+
+	{
+		REQUIRE( p->items().at( 4 )->type() == MD::ItemType::Link );
+		auto l = static_cast< MD::Link* > ( p->items().at( 4 ).data() );
+		REQUIRE( l->text() == QStringLiteral( "baz" ) );
+		REQUIRE( doc->labeledLinks()[ l->url() ]->url() == QStringLiteral( "/baz-url" ) );
+	}
+}
