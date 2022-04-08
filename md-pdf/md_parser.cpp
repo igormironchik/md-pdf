@@ -2062,11 +2062,12 @@ skipSpacesUpTo1Line( qsizetype & line, qsizetype & pos, const QStringList & fr )
 	}
 }
 
-inline std::tuple< qsizetype, qsizetype, bool, QString >
+inline std::tuple< qsizetype, qsizetype, bool, QString, qsizetype >
 readLinkDestination( qsizetype line, qsizetype pos, const QStringList & fr )
 {
 	skipSpacesUpTo1Line( line, pos, fr );
 
+	const auto destLine = line;
 	const auto & s = fr.at( line );
 	QString dest;
 	bool backslash = false;
@@ -2087,7 +2088,7 @@ readLinkDestination( qsizetype line, qsizetype pos, const QStringList & fr )
 					now = true;
 				}
 				else if( !backslash && s[ pos ] == c_60 )
-					return { line, pos, false, {} };
+					return { line, pos, false, {}, destLine };
 				else if( !backslash && s[ pos ] == c_62 )
 				{
 					++pos;
@@ -2107,7 +2108,7 @@ readLinkDestination( qsizetype line, qsizetype pos, const QStringList & fr )
 				++pos;
 			}
 
-			return { line, pos, true, dest };
+			return { line, pos, true, dest, destLine };
 		}
 		else
 		{
@@ -2125,9 +2126,9 @@ readLinkDestination( qsizetype line, qsizetype pos, const QStringList & fr )
 				else if( !backslash && s[ pos ].isSpace() )
 				{
 					if( !pc )
-						return { line, pos, true, dest };
+						return { line, pos, true, dest, destLine };
 					else
-						return { line, pos, false, {} };
+						return { line, pos, false, {}, destLine };
 				}
 				else if( !backslash && s[ pos ] == c_40 )
 				{
@@ -2137,7 +2138,7 @@ readLinkDestination( qsizetype line, qsizetype pos, const QStringList & fr )
 				else if( !backslash && s[ pos ] == c_41 )
 				{
 					if( !pc )
-						return { line, pos, true, dest };
+						return { line, pos, true, dest, destLine };
 					else
 					{
 						dest.append( s[ pos ] );
@@ -2158,31 +2159,33 @@ readLinkDestination( qsizetype line, qsizetype pos, const QStringList & fr )
 				++pos;
 			}
 
-			return { line, pos, true, dest };
+			return { line, pos, true, dest, destLine };
 		}
 	}
 	else
-		return { line, pos, false, {} };
+		return { line, pos, false, {}, destLine };
 }
 
-inline std::tuple< qsizetype, qsizetype, bool, QString >
+inline std::tuple< qsizetype, qsizetype, bool, QString, qsizetype >
 readLinkTitle( qsizetype line, qsizetype pos, const QStringList & fr )
 {
 	const auto space = ( pos < fr.at( line ).size() ? fr.at( line )[ pos ].isSpace() : true );
 
-	const auto startLine = line;
+	const auto firstLine = line;
 
 	skipSpacesUpTo1Line( line, pos, fr );
 
 	if( pos >= fr.at( line ).size() )
-		return { line, pos, true, {} };
+		return { line, pos, true, {}, firstLine };
 
 	const auto sc = fr.at( line )[ pos ];
 
 	if( sc != c_34 && sc != c_39 && sc != c_40 )
-		return { line, pos, ( startLine != line ), {} };
+		return { line, pos, ( firstLine != line ), {}, firstLine };
 	else if( !space )
-		return { line, pos, false, {} };
+		return { line, pos, false, {}, firstLine };
+
+	const auto startLine = line;
 
 	bool backslash = false;
 
@@ -2202,11 +2205,11 @@ readLinkTitle( qsizetype line, qsizetype pos, const QStringList & fr )
 			now = true;
 		}
 		else if( sc == c_40 && fr.at( line )[ pos ] == c_41 && !backslash )
-			return { line, ++pos, true, title };
+			return { line, ++pos, true, title, startLine };
 		else if( sc == c_40 && fr.at( line )[ pos ] == c_40 && !backslash )
-			return { line, pos, false, {} };
+			return { line, pos, false, {}, startLine };
 		else if( sc != c_40 && fr.at( line )[ pos ] == sc && !backslash )
-			return { line, ++pos, true, title };
+			return { line, ++pos, true, title, startLine };
 		else
 			title.append( fr.at( line )[ pos ] );
 
@@ -2219,7 +2222,7 @@ readLinkTitle( qsizetype line, qsizetype pos, const QStringList & fr )
 			skipSpacesUpTo1Line( line, pos, fr );
 	}
 
-	return { line, pos, false, {} };
+	return { line, pos, false, {}, startLine };
 }
 
 inline std::tuple< QString, QString, Delims::const_iterator, bool >
@@ -2230,13 +2233,16 @@ checkForInlineLink( Delims::const_iterator it, Delims::const_iterator last,
 	qsizetype l = it->m_line;
 	bool ok = false;
 	QString dest, title;
+	qsizetype destStartLine = 0;
 
-	std::tie( l, p, ok, dest ) = readLinkDestination( l, p, po.fr );
+	std::tie( l, p, ok, dest, destStartLine ) = readLinkDestination( l, p, po.fr );
 
 	if( !ok )
 		return { {}, {}, it, false };
 
-	std::tie( l, p, ok, title ) = readLinkTitle( l, p, po.fr );
+	qsizetype s = 0;
+
+	std::tie( l, p, ok, title, s ) = readLinkTitle( l, p, po.fr );
 
 	skipSpacesUpTo1Line( l, p, po.fr );
 
@@ -2265,13 +2271,17 @@ checkForRefLink( Delims::const_iterator it, Delims::const_iterator last,
 	qsizetype l = it->m_line;
 	bool ok = false;
 	QString dest, title;
+	qsizetype destStartLine = 0;
 
-	std::tie( l, p, ok, dest ) = readLinkDestination( l, p, po.fr );
+	std::tie( l, p, ok, dest, destStartLine ) = readLinkDestination( l, p, po.fr );
 
 	if( !ok )
 		return { {}, {}, it, false };
 
-	std::tie( l, p, ok, title ) = readLinkTitle( l, p, po.fr );
+	const auto dp = p, dl = l;
+	qsizetype titleStartLine = 0;
+
+	std::tie( l, p, ok, title, titleStartLine ) = readLinkTitle( l, p, po.fr );
 
 	if( !ok )
 		return { {}, {}, it, false };
@@ -2280,8 +2290,14 @@ checkForRefLink( Delims::const_iterator it, Delims::const_iterator last,
 	{
 		p = skipSpaces( p, po.fr.at( l ) );
 
-		if( p < po.fr.at( l ).size() )
+		if( titleStartLine == destStartLine && p < po.fr.at( l ).size() )
 			return { {}, {}, it, false };
+		else if( titleStartLine != destStartLine && p < po.fr.at( l ).size() )
+		{
+			l = destStartLine;
+			p = po.fr.at( l ).size();
+			title.clear();
+		}
 	}
 
 	for( ; it != last; ++it )
