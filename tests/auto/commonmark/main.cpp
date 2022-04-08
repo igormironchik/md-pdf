@@ -3234,3 +3234,13 @@ TEST_CASE( "206" )
 	REQUIRE( doc->labeledLinks().contains( l->url() ) );
 	REQUIRE( doc->labeledLinks()[ l->url() ]->url() == QStringLiteral( u"/φου" ) );
 }
+
+TEST_CASE( "207" )
+{
+	const auto doc = load_test( 207 );
+
+	REQUIRE( doc->isEmpty() == false );
+	REQUIRE( doc->items().size() == 1 );
+
+	REQUIRE( doc->labeledLinks().size() == 1 );
+}
