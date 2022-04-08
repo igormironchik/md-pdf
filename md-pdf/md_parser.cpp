@@ -2925,6 +2925,11 @@ parseFormattedText( QStringList & fr, QSharedPointer< Block > parent,
 		{
 			if( !collectRefLinks )
 				makeText( it->m_line, it->m_pos, po );
+			else
+			{
+				po.line = it->m_line;
+				po.pos = it->m_pos;
+			}
 		}
 
 		switch( it->m_type )
@@ -2985,6 +2990,11 @@ parseFormattedText( QStringList & fr, QSharedPointer< Block > parent,
 			{
 				if( !collectRefLinks )
 					makeText( it->m_line, it->m_pos + it->m_len, po );
+				else
+				{
+					po.line = it->m_line;
+					po.pos = it->m_pos + it->m_len;
+				}
 			}
 				break;
 		}
