@@ -44,6 +44,8 @@ QSharedPointer< MD::Document > load_test( int n )
 	return p.parse( fileName, false );
 }
 
+// Tabs section.
+
 TEST_CASE( "001" )
 {
 	const auto doc = load_test( 1 );
@@ -286,6 +288,8 @@ TEST_CASE( "011" )
 	REQUIRE( doc->items().at( 1 )->type() == MD::ItemType::HorizontalLine );
 }
 
+// Backslash escapes section
+
 TEST_CASE( "012" )
 {
 	const auto doc = load_test( 12 );
@@ -527,6 +531,11 @@ TEST_CASE( "024" )
 	REQUIRE( c->text() == QStringLiteral( "foo" ) );
 }
 
+// Entity and numeric character references
+// Skipped.
+
+// Blocks and inlines
+
 TEST_CASE( "042" )
 {
 	const auto doc = load_test( 42 );
@@ -568,6 +577,8 @@ TEST_CASE( "042" )
 		REQUIRE( t->text() == QStringLiteral( "two`" ) );
 	}
 }
+
+// Thematic breaks
 
 TEST_CASE( "043" )
 {
@@ -733,7 +744,7 @@ TEST_CASE( "054" )
 	REQUIRE( doc->items().at( 1 )->type() == MD::ItemType::HorizontalLine );
 }
 
-TEST_CASE( "055" ) // Not strict to CommonMark.
+TEST_CASE( "055" ) // Not strict to CommonMark. Will be fixed later.
 {
 	const auto doc = load_test( 55 );
 
@@ -967,6 +978,8 @@ TEST_CASE( "061" )
 		REQUIRE( li->items().at( 0 )->type() == MD::ItemType::HorizontalLine );
 	}
 }
+
+// ATX headings
 
 TEST_CASE( "062" )
 {
@@ -1429,6 +1442,8 @@ TEST_CASE( "079" )
 		REQUIRE( p->items().size() == 0 );
 	}
 }
+
+// Setext headings
 
 TEST_CASE( "080" )
 {
@@ -2143,6 +2158,8 @@ TEST_CASE( "106" )
 	}
 }
 
+// Indented code blocks
+
 TEST_CASE( "107" )
 {
 	const auto doc = load_test( 107 );
@@ -2414,6 +2431,8 @@ TEST_CASE( "118" )
 		REQUIRE( c->text() == QStringLiteral( "foo  " ) );
 	}
 }
+
+// Fenced code blocks
 
 TEST_CASE( "119" )
 {
@@ -2912,6 +2931,11 @@ TEST_CASE( "147" )
 	REQUIRE( c->syntax().isEmpty() );
 	REQUIRE( c->text() == QStringLiteral( "``` aaa" ) );
 }
+
+// HTML blocks
+// Skipped.
+
+// Link reference definitions
 
 TEST_CASE( "192" )
 {
@@ -3515,4 +3539,33 @@ TEST_CASE( "218" )
 	REQUIRE( doc->labeledLinks()[ l->url() ]->url() == QStringLiteral( "/url" ) );
 
 	// I don't add empty blockquote to the document...
+}
+
+// Paragraphs
+
+TEST_CASE( "219" )
+{
+	const auto doc = load_test( 219 );
+
+	REQUIRE( doc->items().size() == 3 );
+
+	{
+		REQUIRE( doc->items().at( 1 )->type() == MD::ItemType::Paragraph );
+		auto p = static_cast< MD::Paragraph* > ( doc->items().at( 1 ).data() );
+		REQUIRE( p->items().size() == 1 );
+		REQUIRE( p->items().at( 0 )->type() == MD::ItemType::Text );
+		auto t = static_cast< MD::Text* > ( p->items().at( 0 ).data() );
+		REQUIRE( t->opts() == MD::TextWithoutFormat );
+		REQUIRE( t->text() == QStringLiteral( "aaa" ) );
+	}
+
+	{
+		REQUIRE( doc->items().at( 2 )->type() == MD::ItemType::Paragraph );
+		auto p = static_cast< MD::Paragraph* > ( doc->items().at( 2 ).data() );
+		REQUIRE( p->items().size() == 1 );
+		REQUIRE( p->items().at( 0 )->type() == MD::ItemType::Text );
+		auto t = static_cast< MD::Text* > ( p->items().at( 0 ).data() );
+		REQUIRE( t->opts() == MD::TextWithoutFormat );
+		REQUIRE( t->text() == QStringLiteral( "bbb" ) );
+	}
 }
