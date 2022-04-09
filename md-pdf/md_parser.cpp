@@ -1515,11 +1515,14 @@ makeText(
 
 	// makeTOWLB
 	auto makeTOWLB = [&] () {
-		makeTextObjectWithLineBreak( text, spaceBefore, true, po );
+		if( po.line != po.fr.size() - 1 )
+		{
+			makeTextObjectWithLineBreak( text, spaceBefore, true, po );
 
-		text.clear();
+			text.clear();
 
-		spaceBefore = true;
+			spaceBefore = true;
+		}
 	}; // makeTOWLB
 
 	if( lineBreak )
@@ -1558,13 +1561,17 @@ makeText(
 		lineBreak = ( !po.ignoreLineBreak && lastPos == po.fr.at( po.line ).size() &&
 			isLineBreak( po.fr.at( po.line ) ) );
 
+		auto s = po.fr.at( po.line ).sliced( 0, lastPos );
+
 		if( !lineBreak )
-		{
-			const auto s = po.fr.at( po.line ).sliced( 0, lastPos );
 			text.append( doNotEscape ? s : removeBackslashes( s ) );
-		}
 		else
+		{
+			s = removeLineBreak( s );
+			text.append( doNotEscape ? s : removeBackslashes( s ) );
+
 			makeTOWLB();
+		}
 	}
 
 	po.pos = lastPos;
