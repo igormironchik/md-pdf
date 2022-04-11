@@ -4070,3 +4070,21 @@ TEST_CASE( "238" )
 		REQUIRE( t->text() == QStringLiteral( "foo - bar" ) );
 	}
 }
+
+TEST_CASE( "239" )
+{
+	const auto doc = load_test( 239 );
+
+	REQUIRE( doc->items().size() == 1 );
+
+	// I dont add empty blockquote...
+}
+
+TEST_CASE( "240" )
+{
+	const auto doc = load_test( 240 );
+
+	REQUIRE( doc->items().size() == 1 );
+
+	// I dont add empty blockquote...
+}
