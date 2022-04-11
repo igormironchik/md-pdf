@@ -383,10 +383,10 @@ Parser::whatIsTheLine( QString & str, bool inList, qsizetype * indent, bool calc
 		{
 			const auto orderedList = isOrderedList( str );
 
-			if( ( ( s.startsWith( c_45 ) ||
+			if( ( ( ( s.startsWith( c_45 ) ||
 				s.startsWith( c_43 ) ||
 				s.startsWith( c_42 ) ) && s.length() > 1 && s[ 1 ].isSpace() ) ||
-					orderedList )
+					orderedList ) && first < 4 )
 			{
 				if( calcIndent && indent )
 					*indent = posOfListItem( str, orderedList );
