@@ -3045,8 +3045,8 @@ Parser::parseBlockquote( QStringList & fr, QSharedPointer< Block > parent,
 
 		for( auto it = fr.begin(), last = fr.end(); it != last; ++it, ++i )
 		{
-			const auto gt = it->indexOf( c_62 );
 			const auto ns = skipSpaces( 0, *it );
+			const auto gt = ( ns < it->size() ? ( (*it)[ ns ] == c_62 ? ns : -1 ) : -1 );
 
 			if( gt > -1 )
 			{
@@ -3054,6 +3054,7 @@ Parser::parseBlockquote( QStringList & fr, QSharedPointer< Block > parent,
 					( (*it)[ gt + 1 ] == c_32 ? 1 : 0 ) : 0 ) + 1 );
 				bt = whatIsTheLine( *it );
 			}
+			// Process lazyness...
 			else
 			{
 				if( ns < 4 && isHorizontalLine( it->sliced( ns ) ) )
