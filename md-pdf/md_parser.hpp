@@ -565,15 +565,6 @@ private:
 
 				pf();
 			}
-			else if( type == BlockType::Blockquote && lineType == BlockType::List )
-			{
-				pf();
-
-				type = lineType;
-
-				if( !line.isEmpty() )
-					fragment.append( line );
-			}
 			else
 				fragment.append( line );
 		}

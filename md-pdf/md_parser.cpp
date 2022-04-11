@@ -3037,29 +3037,58 @@ Parser::parseBlockquote( QStringList & fr, QSharedPointer< Block > parent,
 
 	if( pos > -1 )
 	{
-		qsizetype i = 0;
+		qsizetype i = 0, j = 0;
 
 		bool horLine = false;
-		qsizetype j = i;
+
+		BlockType bt = BlockType::Unknown;
 
 		for( auto it = fr.begin(), last = fr.end(); it != last; ++it, ++i )
 		{
-			const auto first = skipSpaces( 0, *it );
+			const auto gt = it->indexOf( c_62 );
+			const auto ns = skipSpaces( 0, *it );
 
-			if( first < 4 && isHorizontalLine( (*it).sliced( first ) ) )
+			if( gt > -1 )
 			{
-				horLine = true;
-				break;
+				*it = it->sliced( gt + ( it->size() > gt + 1 ?
+					( (*it)[ gt + 1 ] == c_32 ? 1 : 0 ) : 0 ) + 1 );
+				bt = whatIsTheLine( *it );
 			}
-
-			if( isH1( *it ) )
+			else
 			{
-				const auto p = (*it).indexOf( c_35 );
+				if( ns < 4 && isHorizontalLine( it->sliced( ns ) ) )
+					break;
 
-				(*it).insert( p, c_92 );
+				const auto tmpBt = whatIsTheLine( *it );
+
+				if( bt == BlockType::Text )
+				{
+					if( isH1( *it ) )
+					{
+						const auto p = (*it).indexOf( c_61 );
+
+						(*it).insert( p, c_92 );
+
+						continue;
+					}
+					else if( isH2( *it ) )
+					{
+						const auto p = (*it).indexOf( c_45 );
+
+						(*it).insert( p, c_92 );
+
+						continue;
+					}
+				}
+
+				if( bt == BlockType::Text &&
+					( tmpBt == BlockType::Text || tmpBt == BlockType::CodeIndentedBySpaces ) )
+				{
+					continue;
+				}
+				else
+					break;
 			}
-
-			*it = it->sliced( it->indexOf( c_62 ) + 1 );
 		}
 
 		QStringList tmp;
@@ -3076,22 +3105,14 @@ Parser::parseBlockquote( QStringList & fr, QSharedPointer< Block > parent,
 		if( !bq->isEmpty() )
 			parent->appendItem( bq );
 
-		if( horLine )
+		if( i < fr.size() )
 		{
-			if( !collectRefLinks )
-				parent->appendItem( QSharedPointer< Item > ( new HorizontalLine ) );
+			tmp = fr.sliced( i );
 
-			++i;
+			StringListStream stream( tmp );
 
-			if( i < fr.size() )
-			{
-				tmp = fr.sliced( i );
-
-				StringListStream stream( tmp );
-
-				parse( stream, parent, doc, linksToParse, workingPath, fileName,
-					collectRefLinks, false );
-			}
+			parse( stream, parent, doc, linksToParse, workingPath, fileName,
+				collectRefLinks, false );
 		}
 	}
 }

@@ -167,7 +167,7 @@ TEST_CASE( "006" ) // Not strict to CommonMark.
 	REQUIRE( c->inlined() == false );
 	REQUIRE( c->syntax().isEmpty() );
 	// Extra spaces.
-	REQUIRE( c->text() == QStringLiteral( "    foo" ) );
+	REQUIRE( c->text() == QStringLiteral( "   foo" ) );
 }
 
 TEST_CASE( "007" ) // Not strict to CommonMark.
@@ -3989,5 +3989,29 @@ TEST_CASE( "235" )
 		auto t = static_cast< MD::Text* > ( p->items().at( 0 ).data() );
 		REQUIRE( t->opts() == MD::TextWithoutFormat );
 		REQUIRE( t->text() == QStringLiteral( "bar" ) );
+	}
+}
+
+TEST_CASE( "236" )
+{
+	const auto doc = load_test( 236 );
+
+	REQUIRE( doc->items().size() == 3 );
+
+	{
+		REQUIRE( doc->items().at( 1 )->type() == MD::ItemType::Blockquote );
+		auto b = static_cast< MD::Blockquote* > ( doc->items().at( 1 ).data() );
+		REQUIRE( b->items().size() == 1 );
+		REQUIRE( b->items().at( 0 )->type() == MD::ItemType::Code );
+		auto c = static_cast< MD::Code* > ( b->items().at( 0 ).data() );
+		REQUIRE( !c->inlined() );
+		REQUIRE( c->text() == QStringLiteral( "foo" ) );
+	}
+
+	{
+		REQUIRE( doc->items().at( 2 )->type() == MD::ItemType::Code );
+		auto c = static_cast< MD::Code* > ( doc->items().at( 2 ).data() );
+		REQUIRE( !c->inlined() );
+		REQUIRE( c->text() == QStringLiteral( "bar" ) );
 	}
 }
