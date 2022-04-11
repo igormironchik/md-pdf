@@ -343,7 +343,7 @@ Parser::whatIsTheLine( QString & str, bool inList, qsizetype * indent, bool calc
 	{
 		auto s = QStringView( str ).sliced( first );
 
-		if( s.startsWith( c_62 ) )
+		if( s.startsWith( c_62 ) && first < 4 )
 			return BlockType::Blockquote;
 		else if( s.startsWith( c_35 ) && first < 4 )
 		{

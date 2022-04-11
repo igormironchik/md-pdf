@@ -3860,3 +3860,15 @@ TEST_CASE( "230" )
 		REQUIRE( t->text() == QStringLiteral( "bar baz" ) );
 	}
 }
+
+TEST_CASE( "231" )
+{
+	const auto doc = load_test( 231 );
+
+	REQUIRE( doc->items().size() == 2 );
+
+	REQUIRE( doc->items().at( 1 )->type() == MD::ItemType::Code );
+	auto c = static_cast< MD::Code* > ( doc->items().at( 1 ).data() );
+	REQUIRE( !c->inlined() );
+	REQUIRE( c->text() == QStringLiteral( "> # Foo\n> bar\n> baz" ) );
+}
