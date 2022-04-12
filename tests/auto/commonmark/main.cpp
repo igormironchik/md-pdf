@@ -4365,3 +4365,35 @@ TEST_CASE( "249" )
 		REQUIRE( t->text() == QStringLiteral( "baz" ) );
 	}
 }
+
+TEST_CASE( "250" )
+{
+	const auto doc = load_test( 250 );
+
+	REQUIRE( doc->items().size() == 2 );
+
+	{
+		REQUIRE( doc->items().at( 1 )->type() == MD::ItemType::Blockquote );
+		auto b1 = static_cast< MD::Blockquote* > ( doc->items().at( 1 ).data() );
+		REQUIRE( b1->items().size() == 1 );
+
+		REQUIRE( b1->items().at( 0 )->type() == MD::ItemType::Blockquote );
+		auto b2 = static_cast< MD::Blockquote* > ( b1->items().at( 0 ).data() );
+
+		REQUIRE( b2->items().size() == 1 );
+		REQUIRE( b2->items().at( 0 )->type() == MD::ItemType::Blockquote );
+
+		auto b3 = static_cast< MD::Blockquote* > ( b2->items().at( 0 ).data() );
+		REQUIRE( b3->items().size() == 1 );
+
+		{
+			REQUIRE( b3->items().at( 0 )->type() == MD::ItemType::Paragraph );
+			auto p = static_cast< MD::Paragraph* > ( b3->items().at( 0 ).data() );
+			REQUIRE( p->items().size() == 1 );
+			REQUIRE( p->items().at( 0 )->type() == MD::ItemType::Text );
+			auto t = static_cast< MD::Text* > ( p->items().at( 0 ).data() );
+			REQUIRE( t->opts() == MD::TextWithoutFormat );
+			REQUIRE( t->text() == QStringLiteral( "foo bar" ) );
+		}
+	}
+}
