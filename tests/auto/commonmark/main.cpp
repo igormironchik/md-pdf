@@ -4429,3 +4429,35 @@ TEST_CASE( "251" )
 		}
 	}
 }
+
+TEST_CASE( "252" )
+{
+	const auto doc = load_test( 252 );
+
+	REQUIRE( doc->items().size() == 3 );
+
+	{
+		REQUIRE( doc->items().at( 1 )->type() == MD::ItemType::Blockquote );
+		auto b = static_cast< MD::Blockquote* > ( doc->items().at( 1 ).data() );
+		REQUIRE( b->items().size() == 1 );
+
+		REQUIRE( b->items().at( 0 )->type() == MD::ItemType::Code );
+		auto c = static_cast< MD::Code* > ( b->items().at( 0 ).data() );
+		REQUIRE( !c->inlined() );
+		REQUIRE( c->text() == QStringLiteral( "code" ) );
+	}
+
+	{
+		REQUIRE( doc->items().at( 2 )->type() == MD::ItemType::Blockquote );
+		auto b = static_cast< MD::Blockquote* > ( doc->items().at( 2 ).data() );
+		REQUIRE( b->items().size() == 1 );
+
+		REQUIRE( b->items().at( 0 )->type() == MD::ItemType::Paragraph );
+		auto p = static_cast< MD::Paragraph* > ( b->items().at( 0 ).data() );
+		REQUIRE( p->items().size() == 1 );
+		REQUIRE( p->items().at( 0 )->type() == MD::ItemType::Text );
+		auto t = static_cast< MD::Text* > ( p->items().at( 0 ).data() );
+		REQUIRE( t->opts() == MD::TextWithoutFormat );
+		REQUIRE( t->text() == QStringLiteral( "not code" ) );
+	}
+}
