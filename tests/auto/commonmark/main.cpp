@@ -4501,3 +4501,49 @@ TEST_CASE( "253" )
 		REQUIRE( t->text() == QStringLiteral( "A block quote." ) );
 	}
 }
+
+TEST_CASE( "254" )
+{
+	const auto doc = load_test( 254 );
+
+	REQUIRE( doc->items().size() == 2 );
+
+	REQUIRE( doc->items().at( 1 )->type() == MD::ItemType::List );
+	auto l = static_cast< MD::List* > ( doc->items().at( 1 ).data() );
+	REQUIRE( l->items().size() == 1 );
+	REQUIRE( l->items().at( 0 )->type() == MD::ItemType::ListItem );
+	auto li = static_cast< MD::ListItem* > ( l->items().at( 0 ).data() );
+
+	REQUIRE( li->items().size() == 3 );
+
+	{
+		REQUIRE( li->items().at( 0 )->type() == MD::ItemType::Paragraph );
+		auto p = static_cast< MD::Paragraph* > ( li->items().at( 0 ).data() );
+		REQUIRE( p->items().size() == 1 );
+		REQUIRE( p->items().at( 0 )->type() == MD::ItemType::Text );
+		auto t = static_cast< MD::Text* > ( p->items().at( 0 ).data() );
+		REQUIRE( t->opts() == MD::TextWithoutFormat );
+		REQUIRE( t->text() == QStringLiteral( "A paragraph with two lines." ) );
+	}
+
+	{
+		REQUIRE( li->items().at( 1 )->type() == MD::ItemType::Code );
+		auto c = static_cast< MD::Code* > ( li->items().at( 1 ).data() );
+		REQUIRE( !c->inlined() );
+		REQUIRE( c->text() == QStringLiteral( "indented code" ) );
+	}
+
+	{
+		REQUIRE( li->items().at( 2 )->type() == MD::ItemType::Blockquote );
+		auto b = static_cast< MD::Blockquote* > ( li->items().at( 2 ).data() );
+		REQUIRE( b->items().size() == 1 );
+
+		REQUIRE( b->items().at( 0 )->type() == MD::ItemType::Paragraph );
+		auto p = static_cast< MD::Paragraph* > ( b->items().at( 0 ).data() );
+		REQUIRE( p->items().size() == 1 );
+		REQUIRE( p->items().at( 0 )->type() == MD::ItemType::Text );
+		auto t = static_cast< MD::Text* > ( p->items().at( 0 ).data() );
+		REQUIRE( t->opts() == MD::TextWithoutFormat );
+		REQUIRE( t->text() == QStringLiteral( "A block quote." ) );
+	}
+}
