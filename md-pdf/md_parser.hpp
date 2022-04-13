@@ -341,6 +341,7 @@ private:
 				fragment.clear();
 				type = BlockType::Unknown;
 				emptyLineInList = false;
+				emptyLinesInList = 0;
 			};
 
 		bool commentFound = false;
