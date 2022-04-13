@@ -36,23 +36,6 @@
 namespace MD {
 
 //
-// ParserException
-//
-
-ParserException::ParserException( const QString & reason )
-	:	std::logic_error( "" )
-	,	m_what( reason )
-{
-}
-
-const QString &
-ParserException::reason() const noexcept
-{
-	return m_what;
-}
-
-
-//
 // Parser
 //
 
@@ -3015,7 +2998,7 @@ parseFormattedText( QStringList & fr, QSharedPointer< Block > parent,
 
 } /* namespace anonymous */
 
-bool
+void
 Parser::parseFormattedTextLinksImages( QStringList & fr, QSharedPointer< Block > parent,
 	QSharedPointer< Document > doc, QStringList & linksToParse, const QString & workingPath,
 	const QString & fileName, bool collectRefLinks, bool ignoreLineBreak )
@@ -3023,8 +3006,6 @@ Parser::parseFormattedTextLinksImages( QStringList & fr, QSharedPointer< Block >
 {
 	parseFormattedText( fr, parent, doc, linksToParse, workingPath, fileName,
 		collectRefLinks, ignoreLineBreak );
-
-	return true;
 }
 
 void
@@ -3338,10 +3319,6 @@ Parser::parseCode( QStringList & fr, QSharedPointer< Block > parent,
 
 		if( i != fr.first().length() )
 			indent += i;
-
-		if( fr.size() < 2 )
-			throw ParserException( QString(
-				"We found code block started with \"%1\" that doesn't finished." ).arg( fr.first() ) );
 
 		QString syntax;
 		isStartOfCode( fr.constFirst(), &syntax );

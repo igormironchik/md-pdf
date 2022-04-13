@@ -35,22 +35,6 @@
 
 namespace MD {
 
-//
-// ParserException
-//
-
-class ParserException final
-	:	public std::logic_error
-{
-public:
-	explicit ParserException( const QString & reason );
-
-	const QString & reason() const noexcept;
-
-private:
-	QString m_what;
-}; // class ParserException
-
 static const QChar c_35 = QLatin1Char( '#' );
 static const QChar c_46 = QLatin1Char( '.' );
 static const QChar c_41 = QLatin1Char( ')' );
@@ -266,7 +250,7 @@ private:
 		QSharedPointer< Document > doc,
 		QStringList & linksToParse, const QString & workingPath,
 		const QString & fileName, bool collectRefLinks );
-	bool parseFormattedTextLinksImages( QStringList & fr, QSharedPointer< Block > parent,
+	void parseFormattedTextLinksImages( QStringList & fr, QSharedPointer< Block > parent,
 		QSharedPointer< Document > doc,
 		QStringList & linksToParse, const QString & workingPath,
 		const QString & fileName, bool collectRefLinks, bool ignoreLineBreak );

@@ -184,66 +184,59 @@ MainWidget::process()
 		if( !fileName.endsWith( QLatin1String( ".pdf" ), Qt::CaseInsensitive ) )
 			fileName.append( QLatin1String( ".pdf" ) );
 
-		try {
-			MD::Parser parser;
+		MD::Parser parser;
 
-			auto doc = parser.parse( m_ui->m_fileName->text(), m_ui->m_recursive->isChecked() );
+		auto doc = parser.parse( m_ui->m_fileName->text(), m_ui->m_recursive->isChecked() );
 
-			if( !doc->isEmpty() )
-			{
-				auto * pdf = new PdfRenderer();
-				pdf->moveToThread( m_thread );
-
-				RenderOpts opts;
-
-				opts.m_textFont = m_ui->m_textFont->currentFont().family();
-				opts.m_textFontSize = m_ui->m_textFontSize->value();
-				opts.m_codeFont = m_ui->m_codeFont->currentFont().family();
-				opts.m_codeFontSize = m_ui->m_codeFontSize->value();
-				opts.m_linkColor = m_ui->m_linkColor->color();
-				opts.m_borderColor = m_ui->m_borderColor->color();
-				opts.m_codeBackground = m_ui->m_codeBackground->color();
-				opts.m_keywordColor = m_ui->m_keywordColor->color();
-				opts.m_commentColor = m_ui->m_commentColor->color();
-				opts.m_codeColor = m_ui->m_codeColor->color();
-				opts.m_left = ( m_ui->m_pt->isChecked() ? m_ui->m_left->value() :
-					m_ui->m_left->value() / c_mmInPt );
-				opts.m_right = ( m_ui->m_pt->isChecked() ? m_ui->m_right->value() :
-					m_ui->m_right->value() / c_mmInPt );
-				opts.m_top = ( m_ui->m_pt->isChecked() ? m_ui->m_top->value() :
-					m_ui->m_top->value() / c_mmInPt );
-				opts.m_bottom = ( m_ui->m_pt->isChecked() ? m_ui->m_bottom->value() :
-					m_ui->m_bottom->value() / c_mmInPt );
-				opts.m_dpi = m_ui->m_dpi->value();
-
-
-				ProgressDlg progress( pdf, this );
-
-				pdf->render( fileName, doc, opts );
-
-				if( progress.exec() == QDialog::Accepted )
-					QMessageBox::information( this, tr( "Markdown processed..." ),
-						tr( "PDF generated. Have a look at the result. Thank you." ) );
-				else
-				{
-					if( !progress.errorMsg().isEmpty() )
-						QMessageBox::critical( this, tr( "Error during rendering PDF..." ),
-							tr( "%1\n\nOutput PDF is broken. Sorry." )
-								.arg( progress.errorMsg() ) );
-					else
-						QMessageBox::information( this, tr( "Canceled..." ),
-							tr( "PDF generation is canceled." ) );
-				}
-			}
-			else
-				QMessageBox::warning( this, tr( "Markdown is empty..." ),
-					tr( "Input Markdown file is empty. Nothing saved." ) );
-		}
-		catch( const MD::ParserException & x )
+		if( !doc->isEmpty() )
 		{
-			QMessageBox::critical( this, tr( "Failed to parse Markdown..." ),
-				x.reason() );
+			auto * pdf = new PdfRenderer();
+			pdf->moveToThread( m_thread );
+
+			RenderOpts opts;
+
+			opts.m_textFont = m_ui->m_textFont->currentFont().family();
+			opts.m_textFontSize = m_ui->m_textFontSize->value();
+			opts.m_codeFont = m_ui->m_codeFont->currentFont().family();
+			opts.m_codeFontSize = m_ui->m_codeFontSize->value();
+			opts.m_linkColor = m_ui->m_linkColor->color();
+			opts.m_borderColor = m_ui->m_borderColor->color();
+			opts.m_codeBackground = m_ui->m_codeBackground->color();
+			opts.m_keywordColor = m_ui->m_keywordColor->color();
+			opts.m_commentColor = m_ui->m_commentColor->color();
+			opts.m_codeColor = m_ui->m_codeColor->color();
+			opts.m_left = ( m_ui->m_pt->isChecked() ? m_ui->m_left->value() :
+				m_ui->m_left->value() / c_mmInPt );
+			opts.m_right = ( m_ui->m_pt->isChecked() ? m_ui->m_right->value() :
+				m_ui->m_right->value() / c_mmInPt );
+			opts.m_top = ( m_ui->m_pt->isChecked() ? m_ui->m_top->value() :
+				m_ui->m_top->value() / c_mmInPt );
+			opts.m_bottom = ( m_ui->m_pt->isChecked() ? m_ui->m_bottom->value() :
+				m_ui->m_bottom->value() / c_mmInPt );
+			opts.m_dpi = m_ui->m_dpi->value();
+
+
+			ProgressDlg progress( pdf, this );
+
+			pdf->render( fileName, doc, opts );
+
+			if( progress.exec() == QDialog::Accepted )
+				QMessageBox::information( this, tr( "Markdown processed..." ),
+					tr( "PDF generated. Have a look at the result. Thank you." ) );
+			else
+			{
+				if( !progress.errorMsg().isEmpty() )
+					QMessageBox::critical( this, tr( "Error during rendering PDF..." ),
+						tr( "%1\n\nOutput PDF is broken. Sorry." )
+							.arg( progress.errorMsg() ) );
+				else
+					QMessageBox::information( this, tr( "Canceled..." ),
+						tr( "PDF generation is canceled." ) );
+			}
 		}
+		else
+			QMessageBox::warning( this, tr( "Markdown is empty..." ),
+				tr( "Input Markdown file is empty. Nothing saved." ) );
 	}
 }
 

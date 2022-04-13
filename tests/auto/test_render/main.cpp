@@ -93,46 +93,40 @@ struct TestRendering {
 	testRendering( const QString & fileName, const QString & suffix,
 		const QVector< DrawPrimitive > & data, double textFontSize, double codeFontSize )
 	{
-		try {
-			MD::Parser parser;
+		MD::Parser parser;
 
-			auto doc = parser.parse( c_folder + QStringLiteral( "/../../manual/" ) + fileName, true );
+		auto doc = parser.parse( c_folder + QStringLiteral( "/../../manual/" ) + fileName, true );
 
-			RenderOpts opts;
-			opts.m_borderColor = QColor( 81, 81, 81 );
-			opts.m_bottom = 50.0;
-			opts.m_codeBackground = QColor( 222, 222, 222 );
-			opts.m_codeColor = QColor( 0, 0, 0 );
-			opts.m_codeFont = QStringLiteral( "Courier New" );
-			opts.m_codeFontSize = codeFontSize;
-			opts.m_commentColor = QColor( 0, 128, 0 );
-			opts.m_keywordColor = QColor( 128, 128, 0 );
-			opts.m_left = 50.0;
-			opts.m_linkColor = QColor( 33, 122, 255 );
-			opts.m_right = 50.0;
-			opts.m_textFont = QStringLiteral( "Droid Serif" );
-			opts.m_textFontSize = textFontSize;
-			opts.m_top = 50.0;
-			opts.m_dpi = 150;
+		RenderOpts opts;
+		opts.m_borderColor = QColor( 81, 81, 81 );
+		opts.m_bottom = 50.0;
+		opts.m_codeBackground = QColor( 222, 222, 222 );
+		opts.m_codeColor = QColor( 0, 0, 0 );
+		opts.m_codeFont = QStringLiteral( "Courier New" );
+		opts.m_codeFontSize = codeFontSize;
+		opts.m_commentColor = QColor( 0, 128, 0 );
+		opts.m_keywordColor = QColor( 128, 128, 0 );
+		opts.m_left = 50.0;
+		opts.m_linkColor = QColor( 33, 122, 255 );
+		opts.m_right = 50.0;
+		opts.m_textFont = QStringLiteral( "Droid Serif" );
+		opts.m_textFontSize = textFontSize;
+		opts.m_top = 50.0;
+		opts.m_dpi = 150;
 
-			opts.testData = data;
-			opts.printDrawings = c_printData;
-			opts.testDataFileName = c_folder + QStringLiteral( "/" ) + fileName + suffix +
-				QStringLiteral( ".data" );
+		opts.testData = data;
+		opts.printDrawings = c_printData;
+		opts.testDataFileName = c_folder + QStringLiteral( "/" ) + fileName + suffix +
+			QStringLiteral( ".data" );
 
-			PdfRenderer render;
+		PdfRenderer render;
 
-			render.render( QStringLiteral( "./" ) + fileName + suffix + QStringLiteral( ".pdf" ),
-				doc, opts );
-			render.renderImpl();
+		render.render( QStringLiteral( "./" ) + fileName + suffix + QStringLiteral( ".pdf" ),
+			doc, opts );
+		render.renderImpl();
 
-			if( render.isError() )
-				QFAIL( "Rendering of Markdown failed. Test aborted." );
-		}
-		catch( const MD::ParserException & )
-		{
-			QFAIL( "Parsing of Markdown failed. Test aborted." );
-		}
+		if( render.isError() )
+			QFAIL( "Rendering of Markdown failed. Test aborted." );
 	}
 };
 
