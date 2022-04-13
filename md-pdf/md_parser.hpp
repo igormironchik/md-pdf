@@ -327,6 +327,7 @@ private:
 
 		BlockType type = BlockType::Unknown;
 		bool emptyLineInList = false;
+		qsizetype emptyLinesInList = 0;
 		qsizetype emptyLinesInCode = 0;
 		bool firstLine = true;
 		qsizetype spaces = 0;
@@ -468,6 +469,7 @@ private:
 					case BlockType::List :
 					{
 						emptyLineInList = true;
+						++emptyLinesInList;
 
 						continue;
 					}
@@ -482,10 +484,13 @@ private:
 				if( ( indent > 0 && line.startsWith( QString( indent, c_32 ) ) ) ||
 					lineType == BlockType::List )
 				{
-					fragment.append( QString() );
+					for( qsizetype i = 0; i < emptyLinesInList; ++i )
+						fragment.append( QString() );
+
 					fragment.append( line );
 
 					emptyLineInList = false;
+					emptyLinesInList = 0;
 
 					continue;
 				}
