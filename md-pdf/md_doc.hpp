@@ -368,9 +368,13 @@ public:
 	OrderedListPreState orderedListPreState() const;
 	void setOrderedListPreState( OrderedListPreState s );
 
+	int startNumber() const;
+	void setStartNumber( int n );
+
 private:
 	ListType m_listType = Unordered;
 	OrderedListPreState m_orderedListState = Start;
+	int m_startNumber = 0;
 
 	Q_DISABLE_COPY( ListItem )
 }; // class ListItem

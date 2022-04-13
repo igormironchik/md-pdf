@@ -296,6 +296,18 @@ ListItem::setOrderedListPreState( OrderedListPreState s )
 	m_orderedListState = s;
 }
 
+int
+ListItem::startNumber() const
+{
+	return m_startNumber;
+}
+
+void
+ListItem::setStartNumber( int n )
+{
+	m_startNumber = n;
+}
+
 
 //
 // List

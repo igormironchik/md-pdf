@@ -155,8 +155,18 @@ isOrderedList( const QString & s, int * num = nullptr )
 
 	if( dp != p && p < s.size() )
 	{
+		const auto digits = s.mid( dp, p - dp );
+
+		if( digits.size() > 9 )
+			return false;
+
+		const auto i = digits.toInt();
+
+		if( i < 0 )
+			return false;
+
 		if( num )
-			*num = s.mid( dp, p - dp ).toInt();
+			*num = i;
 
 		if( s[ p ] == c_46 || s[ p ] == c_41 )
 		{
@@ -3248,7 +3258,10 @@ Parser::parseListItem( QStringList & fr, QSharedPointer< Block > parent,
 	int i = 0;
 
 	if( isOrderedList( fr.first(), &i ) )
+	{
 		item->setListType( ListItem::Ordered );
+		item->setStartNumber( i );
+	}
 	else
 		item->setListType( ListItem::Unordered );
 
