@@ -374,7 +374,7 @@ public:
 private:
 	ListType m_listType = Unordered;
 	OrderedListPreState m_orderedListState = Start;
-	int m_startNumber = 0;
+	int m_startNumber = 1;
 
 	Q_DISABLE_COPY( ListItem )
 }; // class ListItem
