@@ -8,10 +8,11 @@ if( ENABLE_COVERAGE )
 	set( CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} --coverage" )
 endif( ENABLE_COVERAGE )
 
-set( SRC main.cpp )
-
 file( GLOB MD_FILES 0.30/*.md )
 file( COPY ${MD_FILES} DESTINATION ${CMAKE_CURRENT_BINARY_DIR}/0.30 )
+file( GLOB HPP *.hpp )
+
+set( SRC main.cpp ${HPP} )
 
 include_directories( ${CMAKE_CURRENT_SOURCE_DIR}
 	${CMAKE_CURRENT_SOURCE_DIR}/../../..

@@ -20,22 +20,24 @@
 	along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-#define DOCTEST_CONFIG_IMPLEMENT_WITH_MAIN
-#include <doctest/doctest.h>
+#pragma once
 
-#include "load.hpp"
-#include "tabs.hpp"
-#include "backslash.hpp"
+#include <md-pdf/md_parser.hpp>
+#include <QDir>
 
-// Entity and numeric character references
-// Skipped.
 
-#include "blocks.hpp"
+inline QSharedPointer< MD::Document >
+load_test( int n )
+{
+	auto fileName = QString::number( n );
 
-// HTML blocks
-// Skipped.
+	if( fileName.size() < 3 )
+		fileName.prepend( QString( 3 - fileName.size(), QLatin1Char( '0' ) ) );
 
-#include "link_ref.hpp"
-#include "paragraphs.hpp"
-#include "blockquote.hpp"
-#include "list_items.hpp"
+	fileName.prepend( QStringLiteral( "0.30/" ) );
+	fileName.append( QStringLiteral( ".md" ) );
+
+	MD::Parser p;
+
+	return p.parse( fileName, false );
+}
