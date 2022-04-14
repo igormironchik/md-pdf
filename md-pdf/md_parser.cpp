@@ -162,9 +162,6 @@ isOrderedList( const QString & s, int * num = nullptr, int * len = nullptr )
 
 		const auto i = digits.toInt();
 
-		if( i < 0 )
-			return false;
-
 		if( num )
 			*num = i;
 
