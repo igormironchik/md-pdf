@@ -135,7 +135,7 @@ Parser::parseFile( const QString & fileName, bool recursive, QSharedPointer< Doc
 namespace /* anonymous */ {
 
 inline bool
-isOrderedList( const QString & s, int * num = nullptr )
+isOrderedList( const QString & s, int * num = nullptr, int * len = nullptr )
 {
 	qsizetype p = 0;
 
@@ -167,6 +167,9 @@ isOrderedList( const QString & s, int * num = nullptr )
 
 		if( num )
 			*num = i;
+
+		if( len )
+			*len = p - dp;
 
 		if( s[ p ] == c_46 || s[ p ] == c_41 )
 		{
@@ -3236,10 +3239,10 @@ listItemData( const QString & s )
 		return { 0, p + 2 };
 	else
 	{
-		int d = 0;
+		int d = 0, l = 0;
 
-		if( isOrderedList( s, &d ) )
-			return { 0, p + QString::number( d ).size() + 2 };
+		if( isOrderedList( s, &d, &l ) )
+			return { 0, p + l + 2 };
 		else
 			return { -1, 0 };
 	}
