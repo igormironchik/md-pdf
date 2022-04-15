@@ -1243,9 +1243,9 @@ TEST_CASE( "291" )
 	}
 }
 
-TEST_CASE( "292" )
+void test_292_293( int test )
 {
-	const auto doc = load_test( 292 );
+	const auto doc = load_test( test );
 
 	REQUIRE( doc->items().size() == 2 );
 
@@ -1276,4 +1276,14 @@ TEST_CASE( "292" )
 			REQUIRE( t->text() == QStringLiteral( "Blockquote continued here." ) );
 		}
 	}
+}
+
+TEST_CASE( "292" )
+{
+	test_292_293( 292 );
+}
+
+TEST_CASE( "293" )
+{
+	test_292_293( 293 );
 }
