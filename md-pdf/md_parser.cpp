@@ -3047,8 +3047,8 @@ Parser::parseBlockquote( QStringList & fr, QSharedPointer< Block > parent,
 					}
 				}
 
-				if( ( bt == BlockType::Text || bt == BlockType::Blockquote )  &&
-					( tmpBt == BlockType::Text || tmpBt == BlockType::CodeIndentedBySpaces ) )
+				if( ( bt == BlockType::Text || bt == BlockType::Blockquote || bt == BlockType::List )
+					&& ( tmpBt == BlockType::Text || tmpBt == BlockType::CodeIndentedBySpaces ) )
 				{
 					continue;
 				}

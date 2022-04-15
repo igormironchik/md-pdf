@@ -1242,3 +1242,38 @@ TEST_CASE( "291" )
 		}
 	}
 }
+
+TEST_CASE( "292" )
+{
+	const auto doc = load_test( 292 );
+
+	REQUIRE( doc->items().size() == 2 );
+
+	REQUIRE( doc->items().at( 1 )->type() == MD::ItemType::Blockquote );
+	auto pb = static_cast< MD::Blockquote* > ( doc->items().at( 1 ).data() );
+	REQUIRE( pb->items().size() == 1 );
+	REQUIRE( pb->items().at( 0 )->type() == MD::ItemType::List );
+	auto l = static_cast< MD::List* > ( pb->items().at( 0 ).data() );
+	REQUIRE( l->items().size() == 1 );
+
+	{
+		REQUIRE( l->items().at( 0 )->type() == MD::ItemType::ListItem );
+		auto li = static_cast< MD::ListItem* > ( l->items().at( 0 ).data() );
+
+		REQUIRE( li->items().size() == 1 );
+		REQUIRE( li->listType() == MD::ListItem::Ordered );
+		REQUIRE( li->startNumber() == 1 );
+
+		{
+			REQUIRE( li->items().at( 0 )->type() == MD::ItemType::Blockquote );
+			auto b = static_cast< MD::Blockquote* > ( li->items().at( 0 ).data() );
+			REQUIRE( b->items().size() == 1 );
+			REQUIRE( b->items().at( 0 )->type() == MD::ItemType::Paragraph );
+			auto p = static_cast< MD::Paragraph* > ( b->items().at( 0 ).data() );
+			REQUIRE( p->items().size() == 1 );
+			REQUIRE( p->items().at( 0 )->type() == MD::ItemType::Text );
+			auto t = static_cast< MD::Text* > ( p->items().at( 0 ).data() );
+			REQUIRE( t->text() == QStringLiteral( "Blockquote continued here." ) );
+		}
+	}
+}
