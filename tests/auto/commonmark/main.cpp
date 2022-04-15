@@ -23,19 +23,18 @@
 #define DOCTEST_CONFIG_IMPLEMENT_WITH_MAIN
 #include <doctest/doctest.h>
 
-#include "load.hpp"
-#include "tabs.hpp"
-#include "backslash.hpp"
+#include "tabs.inl"
+#include "backslash.inl"
 
 // Entity and numeric character references
 // Skipped.
 
-#include "blocks.hpp"
+#include "blocks.inl"
 
 // HTML blocks
 // Skipped.
 
-#include "link_ref.hpp"
-#include "paragraphs.hpp"
-#include "blockquote.hpp"
-#include "list_items.hpp"
+#include "link_ref.inl"
+#include "paragraphs.inl"
+#include "blockquote.inl"
+#include "list_items.inl"

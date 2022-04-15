@@ -11,8 +11,9 @@ endif( ENABLE_COVERAGE )
 file( GLOB MD_FILES 0.30/*.md )
 file( COPY ${MD_FILES} DESTINATION ${CMAKE_CURRENT_BINARY_DIR}/0.30 )
 file( GLOB HPP *.hpp )
+file( GLOB INL *.inl )
 
-set( SRC main.cpp ${HPP} )
+set( SRC main.cpp ${HPP} ${INL} )
 
 include_directories( ${CMAKE_CURRENT_SOURCE_DIR}
 	${CMAKE_CURRENT_SOURCE_DIR}/../../..
