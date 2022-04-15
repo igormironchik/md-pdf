@@ -135,15 +135,10 @@ Parser::parseFile( const QString & fileName, bool recursive, QSharedPointer< Doc
 namespace /* anonymous */ {
 
 inline bool
-isOrderedList( const QString & s, int * num = nullptr, int * len = nullptr )
+isOrderedList( const QString & s, int * num = nullptr, int * len = nullptr,
+	bool * isFirstLineEmpty = nullptr )
 {
-	qsizetype p = 0;
-
-	for( ; p < s.size(); ++p )
-	{
-		if( !s[ p ].isSpace() )
-			break;
-	}
+	qsizetype p = skipSpaces( 0, s );
 
 	qsizetype dp = p;
 
@@ -170,7 +165,14 @@ isOrderedList( const QString & s, int * num = nullptr, int * len = nullptr )
 
 		if( s[ p ] == c_46 || s[ p ] == c_41 )
 		{
-			if( ++p < s.size() && s[ p ].isSpace() )
+			++p;
+
+			qsizetype tmp = skipSpaces( p, s );
+
+			if( isFirstLineEmpty )
+				*isFirstLineEmpty = ( tmp == s.size() );
+
+			if( ( p < s.size() && s[ p ].isSpace() ) || p == s.size() )
 				return true;
 		}
 	}
@@ -356,12 +358,16 @@ Parser::whatIsTheLine( QString & str, bool inList, qsizetype * indent, bool calc
 
 		if( inList )
 		{
-			if( ( ( s.startsWith( c_45 ) ||
-				s.startsWith( c_43 ) ||
-				s.startsWith( c_42 ) ) && s.length() > 1 && s[ 1 ].isSpace() ) ||
-					isOrderedList( str ) )
+			bool isFirstLineEmpty = false;
+
+			if( ( ( s.startsWith( c_45 ) || s.startsWith( c_43 ) || s.startsWith( c_42 ) ) &&
+				( ( s.length() > 1 && s[ 1 ].isSpace() ) || s.length() == 1 ) ) ||
+				isOrderedList( str, nullptr, nullptr, &isFirstLineEmpty ) )
 			{
-				return BlockType::List;
+				if( s.length() == 1 || isFirstLineEmpty )
+					return BlockType::ListWithFirstEmptyLine;
+				else
+					return BlockType::List;
 			}
 			else if( str.startsWith( QString( ( indent ? *indent : 4 ), c_32 ) ) )
 			{
@@ -374,17 +380,21 @@ Parser::whatIsTheLine( QString & str, bool inList, qsizetype * indent, bool calc
 		}
 		else
 		{
-			const auto orderedList = isOrderedList( str );
+			bool isFirstLineEmpty = false;
 
-			if( ( ( ( s.startsWith( c_45 ) ||
-				s.startsWith( c_43 ) ||
-				s.startsWith( c_42 ) ) && s.length() > 1 && s[ 1 ].isSpace() ) ||
-					orderedList ) && first < 4 )
+			const auto orderedList = isOrderedList( str, nullptr, nullptr, &isFirstLineEmpty );
+
+			if( ( ( ( s.startsWith( c_45 ) || s.startsWith( c_43 ) || s.startsWith( c_42 ) ) &&
+				( ( s.length() > 1 && s[ 1 ].isSpace() ) || s.length() == 1 ) ) ||
+				orderedList ) && first < 4 )
 			{
 				if( calcIndent && indent )
 					*indent = posOfListItem( str, orderedList );
 
-				return BlockType::List;
+				if( s.length() == 1 || isFirstLineEmpty )
+					return BlockType::ListWithFirstEmptyLine;
+				else
+					return BlockType::List;
 			}
 			else if( str.startsWith( QLatin1String( "    " ) ) ||
 				str.startsWith( c_9 ) )
@@ -446,6 +456,7 @@ Parser::parseFragment( QStringList & fr, QSharedPointer< Block > parent,
 			break;
 
 		case BlockType::List :
+		case BlockType::ListWithFirstEmptyLine :
 			parseList( fr, parent, doc, linksToParse, workingPath, fileName,
 				collectRefLinks );
 			break;
@@ -3116,17 +3127,21 @@ isListItemAndNotNested( const QString & s )
 {
 	qsizetype p = skipSpaces( 0, s );
 
-	if( p > 0 )
+	if( p > 0 || p == s.size() )
 		return false;
+
+	bool space = false;
 
 	if( p + 1 >= s.size() )
-		return false;
+		space = true;
+	else
+		space = s[ p + 1 ].isSpace();
 
-	if( s[ p ] == c_42 && s[ p + 1 ].isSpace() )
+	if( s[ p ] == c_42 && space )
 		return true;
-	else if( s[ p ] == c_45 && s[ p + 1 ].isSpace() )
+	else if( s[ p ] == c_45 && space )
 		return true;
-	else if( s[ p ] == c_43 && s[ p + 1 ].isSpace() )
+	else if( s[ p ] == c_43 && space )
 		return true;
 	else
 		return isOrderedList( s );
@@ -3140,7 +3155,7 @@ Parser::parseList( QStringList & fr, QSharedPointer< Block > parent,
 	const QString & workingPath, const QString & fileName,
 	bool collectRefLinks )
 {
-	for( auto it = fr.begin(), last  = fr.end(); it != last; ++it )
+	for( auto it = fr.begin(), last = fr.end(); it != last; ++it )
 		it->replace( c_9, QLatin1String( "    " ) );
 
 	const auto indent = skipSpaces( 0, fr.first() );
@@ -3205,34 +3220,29 @@ namespace /* anonymous */ {
 inline std::pair< qsizetype, qsizetype >
 calculateIndent( const QString & s, qsizetype p )
 {
-	for( ; p < s.size(); ++p )
-	{
-		if( !s[ p ].isSpace() )
-			break;
-	}
-
-	return { 0, p };
+	return { 0, skipSpaces( p, s ) };
 }
 
 inline std::pair< qsizetype, qsizetype >
 listItemData( const QString & s )
 {
-	qsizetype p = 0;
+	qsizetype p = skipSpaces( 0, s );
 
-	for( ; p < s.size(); ++p )
-	{
-		if( !s[ p ].isSpace() )
-			break;
-	}
-
-	if( p + 1 >= s.size() )
+	if( p == s.size() )
 		return { -1, 0 };
 
-	if( s[ p ] == c_42 && s[ p + 1 ].isSpace() )
+	bool space = false;
+
+	if( p + 1 >= s.size() )
+		space = true;
+	else
+		space = s[ p + 1 ].isSpace();
+
+	if( s[ p ] == c_42 && space )
 		return { 0, p + 2 };
-	else if( s[ p ] == c_45 && s[ p + 1 ].isSpace() )
+	else if( s[ p ] == c_45 && space )
 		return { 0, p + 2 };
-	else if( s[ p ] == c_43 && s[ p + 1 ].isSpace() )
+	else if( s[ p ] == c_43 && space )
 		return { 0, p + 2 };
 	else
 	{
@@ -3280,7 +3290,8 @@ Parser::parseListItem( QStringList & fr, QSharedPointer< Block > parent,
 	const auto firstNonSpacePos = calculateIndent( fr.first(), indent ).second;
 	if( firstNonSpacePos - indent < 4 ) indent = firstNonSpacePos;
 
-	data.append( fr.first().right( fr.first().length() - indent ) );
+	if( indent < fr.first().length() )
+		data.append( fr.first().right( fr.first().length() - indent ) );
 
 	for( auto last = fr.end(); it != last; ++it, ++pos )
 	{

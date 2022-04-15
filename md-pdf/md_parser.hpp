@@ -200,6 +200,7 @@ private:
 		Unknown,
 		Text,
 		List,
+		ListWithFirstEmptyLine,
 		CodeIndentedBySpaces,
 		Code,
 		Blockquote,
@@ -331,6 +332,7 @@ private:
 		qsizetype emptyLinesInCode = 0;
 		bool firstLine = true;
 		qsizetype spaces = 0;
+		qsizetype lineCounter = 0;
 
 		// Parse fragment and clear internal cache.
 		auto pf = [&]()
@@ -342,6 +344,7 @@ private:
 				type = BlockType::Unknown;
 				emptyLineInList = false;
 				emptyLinesInList = 0;
+				lineCounter = 0;
 			};
 
 		bool commentFound = false;
@@ -409,10 +412,24 @@ private:
 			if( type == BlockType::CodeIndentedBySpaces && ns > 3 )
 				lineType = BlockType::CodeIndentedBySpaces;
 
+			if( lineType == BlockType::ListWithFirstEmptyLine )
+			{
+				type = lineType;
+				lineCounter = 1;
+				fragment.append( line );
+
+				continue;
+			}
+
+			if( type == BlockType::ListWithFirstEmptyLine && lineCounter == 2 )
+				type = BlockType::List;
+
 			// First line of the fragment.
 			if( ns != line.length() && type == BlockType::Unknown )
 			{
 				type = lineType;
+
+				++lineCounter;
 
 				if( type == BlockType::Code )
 					startOfCode = startSequence( line );
@@ -426,6 +443,8 @@ private:
 			}
 			else if( ns == line.length() && type == BlockType::Unknown )
 				continue;
+
+			++lineCounter;
 
 			// Got new empty line.
 			if( ns == line.length() )
@@ -471,6 +490,14 @@ private:
 					{
 						emptyLineInList = true;
 						++emptyLinesInList;
+
+						continue;
+					}
+
+					case BlockType::ListWithFirstEmptyLine :
+					{
+						if( lineCounter == 2 )
+							pf();
 
 						continue;
 					}
@@ -532,7 +559,7 @@ private:
 
 			// Something new and this is not a code block or a list, blockquote.
 			if( type != lineType && type != BlockType::Code && type != BlockType::List &&
-				type != BlockType::Blockquote )
+				type != BlockType::Blockquote && type != BlockType::ListWithFirstEmptyLine )
 			{
 				if( type == BlockType::Text && lineType == BlockType::CodeIndentedBySpaces )
 					fragment.append( line );

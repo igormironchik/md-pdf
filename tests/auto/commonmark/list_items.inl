@@ -855,3 +855,282 @@ TEST_CASE( "277" )
 		REQUIRE( t->text() == QStringLiteral( "bar" ) );
 	}
 }
+
+TEST_CASE( "278" )
+{
+	const auto doc = load_test( 278 );
+
+	REQUIRE( doc->items().size() == 2 );
+
+	REQUIRE( doc->items().at( 1 )->type() == MD::ItemType::List );
+	auto l = static_cast< MD::List* > ( doc->items().at( 1 ).data() );
+	REQUIRE( l->items().size() == 3 );
+
+	{
+		REQUIRE( l->items().at( 0 )->type() == MD::ItemType::ListItem );
+		auto li = static_cast< MD::ListItem* > ( l->items().at( 0 ).data() );
+
+		REQUIRE( li->items().size() == 1 );
+		REQUIRE( li->listType() == MD::ListItem::Unordered );
+
+		{
+			REQUIRE( li->items().at( 0 )->type() == MD::ItemType::Paragraph );
+			auto p = static_cast< MD::Paragraph* > ( li->items().at( 0 ).data() );
+			REQUIRE( p->items().size() == 1 );
+			REQUIRE( p->items().at( 0 )->type() == MD::ItemType::Text );
+			auto t = static_cast< MD::Text* > ( p->items().at( 0 ).data() );
+			REQUIRE( t->text() == QStringLiteral( "foo" ) );
+		}
+	}
+
+	{
+		REQUIRE( l->items().at( 1 )->type() == MD::ItemType::ListItem );
+		auto li = static_cast< MD::ListItem* > ( l->items().at( 1 ).data() );
+
+		REQUIRE( li->items().size() == 1 );
+		REQUIRE( li->listType() == MD::ListItem::Unordered );
+
+		{
+			REQUIRE( li->items().at( 0 )->type() == MD::ItemType::Code );
+			auto c = static_cast< MD::Code* > ( li->items().at( 0 ).data() );
+			REQUIRE( c->text() == QStringLiteral( "bar" ) );
+		}
+	}
+
+	{
+		REQUIRE( l->items().at( 2 )->type() == MD::ItemType::ListItem );
+		auto li = static_cast< MD::ListItem* > ( l->items().at( 2 ).data() );
+
+		REQUIRE( li->items().size() == 1 );
+		REQUIRE( li->listType() == MD::ListItem::Unordered );
+
+		{
+			REQUIRE( li->items().at( 0 )->type() == MD::ItemType::Code );
+			auto c = static_cast< MD::Code* > ( li->items().at( 0 ).data() );
+			REQUIRE( c->text() == QStringLiteral( "baz" ) );
+		}
+	}
+}
+
+TEST_CASE( "279" )
+{
+	const auto doc = load_test( 279 );
+
+	REQUIRE( doc->items().size() == 2 );
+
+	REQUIRE( doc->items().at( 1 )->type() == MD::ItemType::List );
+	auto l = static_cast< MD::List* > ( doc->items().at( 1 ).data() );
+	REQUIRE( l->items().size() == 1 );
+
+	{
+		REQUIRE( l->items().at( 0 )->type() == MD::ItemType::ListItem );
+		auto li = static_cast< MD::ListItem* > ( l->items().at( 0 ).data() );
+
+		REQUIRE( li->items().size() == 1 );
+		REQUIRE( li->listType() == MD::ListItem::Unordered );
+
+		{
+			REQUIRE( li->items().at( 0 )->type() == MD::ItemType::Paragraph );
+			auto p = static_cast< MD::Paragraph* > ( li->items().at( 0 ).data() );
+			REQUIRE( p->items().size() == 1 );
+			REQUIRE( p->items().at( 0 )->type() == MD::ItemType::Text );
+			auto t = static_cast< MD::Text* > ( p->items().at( 0 ).data() );
+			REQUIRE( t->text() == QStringLiteral( "foo" ) );
+		}
+	}
+}
+
+TEST_CASE( "280" )
+{
+	const auto doc = load_test( 280 );
+
+	REQUIRE( doc->items().size() == 2 );
+
+	// I don't add empty list.
+
+	{
+		REQUIRE( doc->items().at( 1 )->type() == MD::ItemType::Paragraph );
+		auto p = static_cast< MD::Paragraph* > ( doc->items().at( 1 ).data() );
+		REQUIRE( p->items().size() == 1 );
+		REQUIRE( p->items().at( 0 )->type() == MD::ItemType::Text );
+		auto t = static_cast< MD::Text* > ( p->items().at( 0 ).data() );
+		REQUIRE( t->text() == QStringLiteral( "foo" ) );
+	}
+}
+
+TEST_CASE( "281" )
+{
+	const auto doc = load_test( 281 );
+
+	REQUIRE( doc->items().size() == 2 );
+
+	REQUIRE( doc->items().at( 1 )->type() == MD::ItemType::List );
+	auto l = static_cast< MD::List* > ( doc->items().at( 1 ).data() );
+	REQUIRE( l->items().size() == 2 );
+
+	{
+		REQUIRE( l->items().at( 0 )->type() == MD::ItemType::ListItem );
+		auto li = static_cast< MD::ListItem* > ( l->items().at( 0 ).data() );
+
+		REQUIRE( li->items().size() == 1 );
+		REQUIRE( li->listType() == MD::ListItem::Unordered );
+
+		{
+			REQUIRE( li->items().at( 0 )->type() == MD::ItemType::Paragraph );
+			auto p = static_cast< MD::Paragraph* > ( li->items().at( 0 ).data() );
+			REQUIRE( p->items().size() == 1 );
+			REQUIRE( p->items().at( 0 )->type() == MD::ItemType::Text );
+			auto t = static_cast< MD::Text* > ( p->items().at( 0 ).data() );
+			REQUIRE( t->text() == QStringLiteral( "foo" ) );
+		}
+	}
+
+	// I don't add empty list item.
+
+	{
+		REQUIRE( l->items().at( 1 )->type() == MD::ItemType::ListItem );
+		auto li = static_cast< MD::ListItem* > ( l->items().at( 1 ).data() );
+
+		REQUIRE( li->items().size() == 1 );
+		REQUIRE( li->listType() == MD::ListItem::Unordered );
+
+		{
+			REQUIRE( li->items().at( 0 )->type() == MD::ItemType::Paragraph );
+			auto p = static_cast< MD::Paragraph* > ( li->items().at( 0 ).data() );
+			REQUIRE( p->items().size() == 1 );
+			REQUIRE( p->items().at( 0 )->type() == MD::ItemType::Text );
+			auto t = static_cast< MD::Text* > ( p->items().at( 0 ).data() );
+			REQUIRE( t->text() == QStringLiteral( "bar" ) );
+		}
+	}
+}
+
+TEST_CASE( "282" )
+{
+	const auto doc = load_test( 282 );
+
+	REQUIRE( doc->items().size() == 2 );
+
+	REQUIRE( doc->items().at( 1 )->type() == MD::ItemType::List );
+	auto l = static_cast< MD::List* > ( doc->items().at( 1 ).data() );
+	REQUIRE( l->items().size() == 2 );
+
+	{
+		REQUIRE( l->items().at( 0 )->type() == MD::ItemType::ListItem );
+		auto li = static_cast< MD::ListItem* > ( l->items().at( 0 ).data() );
+
+		REQUIRE( li->items().size() == 1 );
+		REQUIRE( li->listType() == MD::ListItem::Unordered );
+
+		{
+			REQUIRE( li->items().at( 0 )->type() == MD::ItemType::Paragraph );
+			auto p = static_cast< MD::Paragraph* > ( li->items().at( 0 ).data() );
+			REQUIRE( p->items().size() == 1 );
+			REQUIRE( p->items().at( 0 )->type() == MD::ItemType::Text );
+			auto t = static_cast< MD::Text* > ( p->items().at( 0 ).data() );
+			REQUIRE( t->text() == QStringLiteral( "foo" ) );
+		}
+	}
+
+	// I don't add empty list item.
+
+	{
+		REQUIRE( l->items().at( 1 )->type() == MD::ItemType::ListItem );
+		auto li = static_cast< MD::ListItem* > ( l->items().at( 1 ).data() );
+
+		REQUIRE( li->items().size() == 1 );
+		REQUIRE( li->listType() == MD::ListItem::Unordered );
+
+		{
+			REQUIRE( li->items().at( 0 )->type() == MD::ItemType::Paragraph );
+			auto p = static_cast< MD::Paragraph* > ( li->items().at( 0 ).data() );
+			REQUIRE( p->items().size() == 1 );
+			REQUIRE( p->items().at( 0 )->type() == MD::ItemType::Text );
+			auto t = static_cast< MD::Text* > ( p->items().at( 0 ).data() );
+			REQUIRE( t->text() == QStringLiteral( "bar" ) );
+		}
+	}
+}
+
+TEST_CASE( "283" )
+{
+	const auto doc = load_test( 283 );
+
+	REQUIRE( doc->items().size() == 2 );
+
+	REQUIRE( doc->items().at( 1 )->type() == MD::ItemType::List );
+	auto l = static_cast< MD::List* > ( doc->items().at( 1 ).data() );
+	REQUIRE( l->items().size() == 2 );
+
+	{
+		REQUIRE( l->items().at( 0 )->type() == MD::ItemType::ListItem );
+		auto li = static_cast< MD::ListItem* > ( l->items().at( 0 ).data() );
+
+		REQUIRE( li->items().size() == 1 );
+		REQUIRE( li->listType() == MD::ListItem::Ordered );
+		REQUIRE( li->startNumber() == 1 );
+
+		{
+			REQUIRE( li->items().at( 0 )->type() == MD::ItemType::Paragraph );
+			auto p = static_cast< MD::Paragraph* > ( li->items().at( 0 ).data() );
+			REQUIRE( p->items().size() == 1 );
+			REQUIRE( p->items().at( 0 )->type() == MD::ItemType::Text );
+			auto t = static_cast< MD::Text* > ( p->items().at( 0 ).data() );
+			REQUIRE( t->text() == QStringLiteral( "foo" ) );
+		}
+	}
+
+	// I don't add empty list item.
+
+	{
+		REQUIRE( l->items().at( 1 )->type() == MD::ItemType::ListItem );
+		auto li = static_cast< MD::ListItem* > ( l->items().at( 1 ).data() );
+
+		REQUIRE( li->items().size() == 1 );
+		REQUIRE( li->listType() == MD::ListItem::Ordered );
+		REQUIRE( li->startNumber() == 3 );
+
+		{
+			REQUIRE( li->items().at( 0 )->type() == MD::ItemType::Paragraph );
+			auto p = static_cast< MD::Paragraph* > ( li->items().at( 0 ).data() );
+			REQUIRE( p->items().size() == 1 );
+			REQUIRE( p->items().at( 0 )->type() == MD::ItemType::Text );
+			auto t = static_cast< MD::Text* > ( p->items().at( 0 ).data() );
+			REQUIRE( t->text() == QStringLiteral( "bar" ) );
+		}
+	}
+}
+
+TEST_CASE( "284" )
+{
+	const auto doc = load_test( 284 );
+
+	REQUIRE( doc->items().size() == 1 );
+
+	// I don't add  empty list.
+}
+
+TEST_CASE( "285" )
+{
+	const auto doc = load_test( 285 );
+
+	REQUIRE( doc->items().size() == 3 );
+
+	{
+		REQUIRE( doc->items().at( 1 )->type() == MD::ItemType::Paragraph );
+		auto p = static_cast< MD::Paragraph* > ( doc->items().at( 1 ).data() );
+		REQUIRE( p->items().size() == 1 );
+		REQUIRE( p->items().at( 0 )->type() == MD::ItemType::Text );
+		auto t = static_cast< MD::Text* > ( p->items().at( 0 ).data() );
+		REQUIRE( t->text() == QStringLiteral( "foo *" ) );
+	}
+
+	{
+		REQUIRE( doc->items().at( 2 )->type() == MD::ItemType::Paragraph );
+		auto p = static_cast< MD::Paragraph* > ( doc->items().at( 2 ).data() );
+		REQUIRE( p->items().size() == 1 );
+		REQUIRE( p->items().at( 0 )->type() == MD::ItemType::Text );
+		auto t = static_cast< MD::Text* > ( p->items().at( 0 ).data() );
+		REQUIRE( t->text() == QStringLiteral( "foo 1." ) );
+	}
+}
