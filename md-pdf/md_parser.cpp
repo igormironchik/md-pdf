@@ -567,44 +567,6 @@ Parser::parseText( QStringList & fr, QSharedPointer< Block > parent,
 
 namespace /* anonymous */ {
 
-// Read text of the link. I.e. in [...]
-QString readLinkText( int & i, const QString & line )
-{
-	const int length = line.length();
-	QString t;
-	bool first = true;
-	bool skipped = false;
-
-	while( i < length )
-	{
-		if( !first && !skipped && line[ i - 1 ] == c_92 )
-		{
-			t.append( line[ i ] );
-
-			skipped = true;
-			first = false;
-			++i;
-
-			continue;
-		}
-		else if( line[ i ] != c_93 && line[ i ] != c_92 )
-			t.append( line[ i ] );
-		else if( line[ i ] == c_93 )
-			break;
-
-		first = false;
-		skipped = false;
-		++i;
-	}
-
-	++i;
-
-	if( i - 1 < length && line[ i - 1 ] == c_93 )
-		return t;
-	else
-		return QString();
-}; // readLinkText
-
 inline QString
 findAndRemoveHeaderLabel( QString & s )
 {
@@ -767,58 +729,6 @@ Parser::parseHeading( QStringList & fr, QSharedPointer< Block > parent,
 		}
 
 		parent->appendItem( h );
-	}
-}
-
-void
-Parser::parseFootnote( QStringList & fr, QSharedPointer< Block >,
-	QSharedPointer< Document > doc, QStringList & linksToParse,
-	const QString & workingPath, const QString & fileName,
-	bool collectRefLinks )
-{
-	if( !fr.isEmpty() )
-	{
-		QSharedPointer< Footnote > f( new Footnote() );
-
-		QString line = fr.first();
-		fr.removeFirst();
-
-		int pos = skipSpaces( 0, line );
-
-		if( pos > 0 )
-			line = line.sliced( pos );
-
-		if( line.startsWith( QLatin1String( "[^" ) ) )
-		{
-			pos = 1;
-
-			QString id = readLinkText( pos, line );
-
-			if( !id.isEmpty() && line[ pos ] == c_58 )
-			{
-				++pos;
-
-				line = line.sliced( pos );
-
-				for( auto it = fr.begin(), last = fr.end(); it != last; ++it )
-				{
-					if( it->startsWith( QLatin1String( "    " ) ) )
-						*it = it->mid( 4 );
-					else if( it->startsWith( c_9 ) )
-						*it = it->mid( 1 );
-				}
-
-				fr.prepend( line );
-
-				StringListStream stream( fr );
-
-				parse( stream, f, doc, linksToParse, workingPath, fileName, collectRefLinks, false );
-
-				if( !f->isEmpty() )
-					doc->insertFootnote( QString::fromLatin1( "#" ) + id +
-						QStringLiteral( "/" ) + workingPath + fileName, f );
-			}
-		}
 	}
 }
 
@@ -3027,6 +2937,59 @@ Parser::parseFormattedTextLinksImages( QStringList & fr, QSharedPointer< Block >
 {
 	parseFormattedText( fr, parent, doc, linksToParse, workingPath, fileName,
 		collectRefLinks, ignoreLineBreak );
+}
+
+void
+Parser::parseFootnote( QStringList & fr, QSharedPointer< Block >,
+	QSharedPointer< Document > doc, QStringList & linksToParse,
+	const QString & workingPath, const QString & fileName,
+	bool collectRefLinks )
+{
+	if( !fr.isEmpty() )
+	{
+		QSharedPointer< Footnote > f( new Footnote() );
+
+		const auto delims = collectDelimiters( fr );
+
+		TextParsingOpts po = { fr, f, doc, linksToParse, workingPath,
+			fileName, collectRefLinks, false };
+
+		if( !delims.isEmpty() && delims.cbegin()->m_type == Delimiter::SquareBracketsOpen &&
+			!delims.cbegin()->m_isWordBefore )
+		{
+			QString id;
+			Delims::const_iterator it = delims.cend();
+
+			po.line = delims.cbegin()->m_line;
+			po.pos = delims.cbegin()->m_pos;
+
+			std::tie( id, it ) = checkForLinkText( delims.cbegin(), delims.cend(), po );
+
+			if( !id.isEmpty() && id.startsWith( c_94 ) && it != delims.cend() &&
+				fr.at( it->m_line ).size() > it->m_pos + 1 &&
+				fr.at( it->m_line )[ it->m_pos + 1 ] == c_58 )
+			{
+				fr = fr.sliced( it->m_line );
+				fr.first() = fr.first().sliced( it->m_pos + 2 );
+
+				for( auto it = fr.begin(), last = fr.end(); it != last; ++it )
+				{
+					if( it->startsWith( QLatin1String( "    " ) ) )
+						*it = it->mid( 4 );
+					else if( it->startsWith( c_9 ) )
+						*it = it->mid( 1 );
+				}
+
+				StringListStream stream( fr );
+
+				parse( stream, f, doc, linksToParse, workingPath, fileName, collectRefLinks, false );
+
+				if( !f->isEmpty() )
+					doc->insertFootnote( QString::fromLatin1( "#" ) + id +
+						QStringLiteral( "/" ) + workingPath + fileName, f );
+			}
+		}
+	}
 }
 
 void
