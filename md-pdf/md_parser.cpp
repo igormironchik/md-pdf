@@ -136,7 +136,7 @@ namespace /* anonymous */ {
 
 inline bool
 isOrderedList( const QString & s, int * num = nullptr, int * len = nullptr,
-	bool * isFirstLineEmpty = nullptr )
+	QChar * delim = nullptr, bool * isFirstLineEmpty = nullptr )
 {
 	qsizetype p = skipSpaces( 0, s );
 
@@ -165,6 +165,9 @@ isOrderedList( const QString & s, int * num = nullptr, int * len = nullptr,
 
 		if( s[ p ] == c_46 || s[ p ] == c_41 )
 		{
+			if( delim )
+				*delim = s[ p ];
+
 			++p;
 
 			qsizetype tmp = skipSpaces( p, s );
@@ -362,7 +365,7 @@ Parser::whatIsTheLine( QString & str, bool inList, qsizetype * indent, bool calc
 
 			if( ( ( s.startsWith( c_45 ) || s.startsWith( c_43 ) || s.startsWith( c_42 ) ) &&
 				( ( s.length() > 1 && s[ 1 ].isSpace() ) || s.length() == 1 ) ) ||
-				isOrderedList( str, nullptr, nullptr, &isFirstLineEmpty ) )
+				isOrderedList( str, nullptr, nullptr, nullptr, &isFirstLineEmpty ) )
 			{
 				if( s.length() == 1 || isFirstLineEmpty )
 					return BlockType::ListWithFirstEmptyLine;
@@ -382,7 +385,8 @@ Parser::whatIsTheLine( QString & str, bool inList, qsizetype * indent, bool calc
 		{
 			bool isFirstLineEmpty = false;
 
-			const auto orderedList = isOrderedList( str, nullptr, nullptr, &isFirstLineEmpty );
+			const auto orderedList = isOrderedList( str, nullptr, nullptr, nullptr,
+				&isFirstLineEmpty );
 
 			if( ( ( ( s.startsWith( c_45 ) || s.startsWith( c_43 ) || s.startsWith( c_42 ) ) &&
 				( ( s.length() > 1 && s[ 1 ].isSpace() ) || s.length() == 1 ) ) ||
@@ -3116,13 +3120,13 @@ calculateIndent( const QString & s, qsizetype p )
 	return { 0, skipSpaces( p, s ) };
 }
 
-inline std::pair< qsizetype, qsizetype >
+inline std::tuple< bool, qsizetype, QChar >
 listItemData( const QString & s )
 {
 	qsizetype p = skipSpaces( 0, s );
 
 	if( p == s.size() )
-		return { -1, 0 };
+		return { false, 0, QChar() };
 
 	bool space = false;
 
@@ -3132,19 +3136,20 @@ listItemData( const QString & s )
 		space = s[ p + 1 ].isSpace();
 
 	if( s[ p ] == c_42 && space )
-		return { 0, p + 2 };
+		return { true, p + 2, c_42 };
 	else if( s[ p ] == c_45 && space )
-		return { 0, p + 2 };
+		return { true, p + 2, c_45 };
 	else if( s[ p ] == c_43 && space )
-		return { 0, p + 2 };
+		return { true, p + 2, c_43 };
 	else
 	{
 		int d = 0, l = 0;
+		QChar c;
 
-		if( isOrderedList( s, &d, &l ) )
-			return { 0, p + l + 2 };
+		if( isOrderedList( s, &d, &l, &c ) )
+			return { true, p + l + 2, c };
 		else
-			return { -1, 0 };
+			return { false, 0, QChar() };
 	}
 }
 
@@ -3170,14 +3175,19 @@ Parser::parseList( QStringList & fr, QSharedPointer< Block > parent,
 		listItem.append( *it );
 		++it;
 
-		qsizetype indent = indent = listItemData( listItem.first() ).second;;
+		bool ok = false;
+		qsizetype indent = 0;
+		QChar marker;
+
+		std::tie( ok, indent, marker ) = listItemData( listItem.first() );
+
 		bool updateIndent = false;
 
 		for( auto last = fr.end(); it != last; ++it )
 		{
 			if( updateIndent )
 			{
-				indent = listItemData( *it ).second;
+				std::tie( ok, indent, marker ) = listItemData( *it );
 				updateIndent = false;
 			}
 
@@ -3204,7 +3214,7 @@ Parser::parseList( QStringList & fr, QSharedPointer< Block > parent,
 			}
 			else if( isListItemAndNotNested( *it, indent ) && !listItem.isEmpty() )
 			{
-				indent = listItemData( *it ).second;
+				std::tie( ok, indent, marker ) = listItemData( *it );
 
 				parseListItem( listItem, list, doc, linksToParse, workingPath, fileName,
 					collectRefLinks );
@@ -3251,8 +3261,11 @@ Parser::parseListItem( QStringList & fr, QSharedPointer< Block > parent,
 
 	int pos = 1;
 
-	auto indent = listItemData( fr.first() ).second;
-	if( indent < 0 ) indent = 0;
+	qsizetype indent = 0;
+	bool ok = false;
+
+	std::tie( ok, indent, std::ignore ) = listItemData( fr.first() );
+
 	const auto firstNonSpacePos = calculateIndent( fr.first(), indent ).second;
 	if( firstNonSpacePos - indent < 4 ) indent = firstNonSpacePos;
 
@@ -3261,9 +3274,9 @@ Parser::parseListItem( QStringList & fr, QSharedPointer< Block > parent,
 
 	for( auto last = fr.end(); it != last; ++it, ++pos )
 	{
-		const auto i = listItemData( *it ).first;
+		std::tie( ok, std::ignore, std::ignore ) = listItemData( *it );
 
-		if( i > -1 )
+		if( ok )
 		{
 			StringListStream stream( data );
 
