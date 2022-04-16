@@ -3183,7 +3183,8 @@ Parser::parseList( QStringList & fr, QSharedPointer< Block > parent,
 
 			const auto ns = skipSpaces( 0, *it );
 
-			if( isHorizontalLine( it->sliced( ns ) ) && !listItem.isEmpty() )
+			if( isHorizontalLine( it->sliced( ns ) ) && !listItem.isEmpty() &&
+				( ns == indent ? !isH2( it->sliced( ns ) ) : true ) )
 			{
 				updateIndent = true;
 
