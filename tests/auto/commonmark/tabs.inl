@@ -24,7 +24,7 @@
 
 #include <doctest/doctest.h>
 
-// Tabs section.
+// 2.2 Tabs
 
 TEST_CASE( "001" )
 {

@@ -24,7 +24,7 @@
 
 #include <doctest/doctest.h>
 
-// Paragraphs
+// 4.8 Paragraphs
 
 TEST_CASE( "219" )
 {
@@ -210,7 +210,7 @@ TEST_CASE( "226" )
 	}
 }
 
-// Blank lines
+// 4.9 Blank lines
 
 TEST_CASE( "227" )
 {

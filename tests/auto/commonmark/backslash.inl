@@ -24,7 +24,7 @@
 
 #include <doctest/doctest.h>
 
-// Backslash escapes section
+// 2.4 Backslash escapes
 
 TEST_CASE( "012" )
 {

@@ -24,7 +24,9 @@
 
 #include <doctest/doctest.h>
 
-// Blocks and inlines
+// 3 Blocks and inlines
+
+// 3.1Precedence
 
 TEST_CASE( "042" )
 {
@@ -68,7 +70,9 @@ TEST_CASE( "042" )
 	}
 }
 
-// Thematic breaks
+// 4 Leaf blocks
+
+// 4.1 Thematic breaks
 
 TEST_CASE( "043" )
 {
@@ -469,7 +473,7 @@ TEST_CASE( "061" )
 	}
 }
 
-// ATX headings
+// 4.2 ATX headings
 
 TEST_CASE( "062" )
 {
@@ -933,7 +937,7 @@ TEST_CASE( "079" )
 	}
 }
 
-// Setext headings
+// 4.3 Setext headings
 
 TEST_CASE( "080" )
 {
@@ -1648,7 +1652,7 @@ TEST_CASE( "106" )
 	}
 }
 
-// Indented code blocks
+// 4.4 Indented code blocks
 
 TEST_CASE( "107" )
 {
@@ -1922,7 +1926,7 @@ TEST_CASE( "118" )
 	}
 }
 
-// Fenced code blocks
+// 4.5 Fenced code blocks
 
 TEST_CASE( "119" )
 {

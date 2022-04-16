@@ -20,22 +20,8 @@
 	along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-#define DOCTEST_CONFIG_IMPLEMENT_WITH_MAIN
+#include "load.hpp"
+
 #include <doctest/doctest.h>
 
-#include "tabs.inl"
-#include "backslash.inl"
-
-// Entity and numeric character references
-// Skipped.
-
-#include "blocks.inl"
-
-// HTML blocks
-// Skipped.
-
-#include "link_ref.inl"
-#include "paragraphs.inl"
-#include "blockquote.inl"
-#include "list_items.inl"
-#include "lists.inl"
+// 5.3 Lists

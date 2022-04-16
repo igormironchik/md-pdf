@@ -24,9 +24,9 @@
 
 #include <doctest/doctest.h>
 
-// Container blocks
+// 5 Container blocks
 
-// Block quotes
+// 5.1 Block quotes
 
 TEST_CASE( "228" )
 {
