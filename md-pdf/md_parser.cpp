@@ -3214,11 +3214,22 @@ Parser::parseList( QStringList & fr, QSharedPointer< Block > parent,
 			}
 			else if( isListItemAndNotNested( *it, indent ) && !listItem.isEmpty() )
 			{
-				std::tie( ok, indent, marker ) = listItemData( *it );
+				QChar tmpMarker;
+				std::tie( ok, indent, tmpMarker ) = listItemData( *it );
 
 				parseListItem( listItem, list, doc, linksToParse, workingPath, fileName,
 					collectRefLinks );
 				listItem.clear();
+
+				if( tmpMarker != marker )
+				{
+					if( !list->isEmpty() )
+						parent->appendItem( list );
+
+					list.reset( new List );
+
+					marker = tmpMarker;
+				}
 			}
 
 			listItem.append( *it );
