@@ -23,19 +23,37 @@
 #define DOCTEST_CONFIG_IMPLEMENT_WITH_MAIN
 #include <doctest/doctest.h>
 
+//CommonMark 0.30
+
+// 2.2
 #include "tabs.inl"
+
+// 2.3 Insecure characters
+// Skipped.
+
+// 2.4
 #include "backslash.inl"
 
-// Entity and numeric character references
+// 2.5 Entity and numeric character references
 // Skipped.
 
+// 3.1 - 4.5
 #include "blocks.inl"
 
-// HTML blocks
+// 4.6 HTML blocks
 // Skipped.
 
+// 4.7
 #include "link_ref.inl"
+
+// 4.8 - 4.9
 #include "paragraphs.inl"
+
+// 5.1
 #include "blockquote.inl"
+
+// 5.2
 #include "list_items.inl"
+
+// 5.3
 #include "lists.inl"
