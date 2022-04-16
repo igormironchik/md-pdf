@@ -3086,11 +3086,11 @@ Parser::parseBlockquote( QStringList & fr, QSharedPointer< Block > parent,
 namespace /* anonymous */ {
 
 inline bool
-isListItemAndNotNested( const QString & s )
+isListItemAndNotNested( const QString & s, qsizetype indent )
 {
 	qsizetype p = skipSpaces( 0, s );
 
-	if( p > 0 || p == s.size() )
+	if( p >= indent || p == s.size() )
 		return false;
 
 	bool space = false;
@@ -3109,76 +3109,6 @@ isListItemAndNotNested( const QString & s )
 	else
 		return isOrderedList( s );
 }
-
-} /* namespace anonymous */
-
-void
-Parser::parseList( QStringList & fr, QSharedPointer< Block > parent,
-	QSharedPointer< Document > doc, QStringList & linksToParse,
-	const QString & workingPath, const QString & fileName,
-	bool collectRefLinks )
-{
-	for( auto it = fr.begin(), last = fr.end(); it != last; ++it )
-		it->replace( c_9, QLatin1String( "    " ) );
-
-	const auto indent = skipSpaces( 0, fr.first() );
-
-	if( indent != fr.first().length() )
-	{
-		QSharedPointer< List > list( new List );
-
-		QStringList listItem;
-		auto it = fr.begin();
-
-		*it = it->right( it->length() - indent );
-
-		listItem.append( *it );
-
-		++it;
-
-		for( auto last = fr.end(); it != last; ++it )
-		{
-			auto s = skipSpaces( 0, *it );
-			s = ( s > indent ? indent : ( s != (*it).length() ? s : 0 ) );
-
-			*it = it->right( it->length() - s );
-
-			if( isHorizontalLine( *it ) && !listItem.isEmpty() )
-			{
-				parseListItem( listItem, list, doc, linksToParse, workingPath, fileName,
-					collectRefLinks );
-				listItem.clear();
-
-				if( !list->isEmpty() )
-					parent->appendItem( list );
-
-				list.reset( new List );
-
-				if( !collectRefLinks )
-					doc->appendItem( QSharedPointer< Item > ( new HorizontalLine ) );
-
-				continue;
-			}
-			else if( isListItemAndNotNested( *it ) && !listItem.isEmpty() )
-			{
-				parseListItem( listItem, list, doc, linksToParse, workingPath, fileName,
-					collectRefLinks );
-				listItem.clear();
-			}
-
-			listItem.append( *it );
-		}
-
-		if( !listItem.isEmpty() )
-			parseListItem( listItem, list, doc, linksToParse, workingPath, fileName,
-				collectRefLinks );
-
-		if( !list->isEmpty() )
-			parent->appendItem( list );
-	}
-}
-
-namespace /* anonymous */ {
 
 inline std::pair< qsizetype, qsizetype >
 calculateIndent( const QString & s, qsizetype p )
@@ -3219,6 +3149,78 @@ listItemData( const QString & s )
 }
 
 } /* namespace anonymous */
+
+void
+Parser::parseList( QStringList & fr, QSharedPointer< Block > parent,
+	QSharedPointer< Document > doc, QStringList & linksToParse,
+	const QString & workingPath, const QString & fileName,
+	bool collectRefLinks )
+{
+	for( auto it = fr.begin(), last = fr.end(); it != last; ++it )
+		it->replace( c_9, QLatin1String( "    " ) );
+
+	const auto p = skipSpaces( 0, fr.first() );
+
+	if( p != fr.first().length() )
+	{
+		QSharedPointer< List > list( new List );
+
+		QStringList listItem;
+		auto it = fr.begin();
+		listItem.append( *it );
+		++it;
+
+		qsizetype indent = indent = listItemData( listItem.first() ).second;;
+		bool updateIndent = false;
+
+		for( auto last = fr.end(); it != last; ++it )
+		{
+			if( updateIndent )
+			{
+				indent = listItemData( *it ).second;
+				updateIndent = false;
+			}
+
+			const auto ns = skipSpaces( 0, *it );
+
+			if( isHorizontalLine( it->sliced( ns ) ) && !listItem.isEmpty() )
+			{
+				updateIndent = true;
+
+				parseListItem( listItem, list, doc, linksToParse, workingPath, fileName,
+					collectRefLinks );
+				listItem.clear();
+
+				if( !list->isEmpty() )
+					parent->appendItem( list );
+
+				list.reset( new List );
+
+				if( !collectRefLinks )
+					doc->appendItem( QSharedPointer< Item > ( new HorizontalLine ) );
+
+				continue;
+			}
+			else if( isListItemAndNotNested( *it, indent ) && !listItem.isEmpty() )
+			{
+				indent = listItemData( *it ).second;
+
+				parseListItem( listItem, list, doc, linksToParse, workingPath, fileName,
+					collectRefLinks );
+				listItem.clear();
+			}
+
+			listItem.append( *it );
+		}
+
+		if( !listItem.isEmpty() )
+			parseListItem( listItem, list, doc, linksToParse, workingPath, fileName,
+				collectRefLinks );
+
+		if( !list->isEmpty() )
+			parent->appendItem( list );
+	}
+}
 
 void
 Parser::parseListItem( QStringList & fr, QSharedPointer< Block > parent,
