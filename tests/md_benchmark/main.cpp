@@ -332,15 +332,9 @@ int main( int argc, char ** argv )
 	{
 		const auto start = std::chrono::high_resolution_clock::now();
 
-		try {
-			MD::Parser parser;
+		MD::Parser parser;
 
-			const auto doc = parser.parse( QStringLiteral( "complex.md" ), false );
-		}
-		catch( const MD::ParserException & x )
-		{
-			std::cout << "md-pdf parsing failed: " << x.reason().toStdString() << std::endl;
-		}
+		const auto doc = parser.parse( QStringLiteral( "complex.md" ), false );
 
 		const auto end = std::chrono::high_resolution_clock::now();
 
