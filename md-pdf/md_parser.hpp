@@ -29,9 +29,6 @@
 // Qt include.
 #include <QTextStream>
 
-// C++ include.
-#include <stdexcept>
-
 
 namespace MD {
 
@@ -64,118 +61,30 @@ static const QChar c_13 = QLatin1Char( '\r' );
 static const QChar c_39 = QLatin1Char( '\'' );
 
 
-// Skip spaces in line from pos \a i.
+//! Skip spaces in line from pos \a i.
 inline qsizetype
-skipSpaces( qsizetype i, QStringView line )
-{
-	const auto length = line.length();
+skipSpaces( qsizetype i, QStringView line );
 
-	while( i < length && line[ i ].isSpace() )
-		++i;
-
-	return i;
-}; // skipSpaces
-
+//! \return Is string a footnote?
 inline bool
-isFootnote( const QString & s )
-{
-	qsizetype p = 0;
+isFootnote( const QString & s );
 
-	for( ; p < s.size(); ++p )
-	{
-		if( !s[ p ].isSpace() )
-			break;
-	}
-
-	if( s.size() - p < 5 )
-		return false;
-
-	if( s[ p++ ] != c_91 )
-		return false;
-
-	if( s[ p++ ] != c_94 )
-		return false;
-
-	if( s[ p ] == c_93 || s[ p ].isSpace() )
-		return false;
-
-	for( ; p < s.size(); ++p )
-	{
-		if( s[ p ] == c_93 )
-			break;
-		else if( s[ p ].isSpace() )
-			return false;
-	}
-
-	++p;
-
-	if( p < s.size() && s[ p ] == c_58 )
-		return true;
-	else
-		return false;
-}
-
+//! \return Starting sequence of the same characters.
 inline QString
-startSequence( const QString & line )
-{
-	auto pos = skipSpaces( 0, line );
+startSequence( const QString & line );
 
-	const auto sch = ( pos < line.length() ? line[ pos ] : QChar() );
-
-	QString s = sch;
-
-	++pos;
-
-	while( pos < line.length() )
-	{
-		if( line[ pos ] == sch )
-			s.append( sch );
-		else
-			break;
-
-		++pos;
-	}
-
-	return s;
-}
-
+//! \return Is string a code fences?
 inline bool
-isCodeFences( const QString & s, bool closing = false )
-{
-	const auto p = skipSpaces( 0, s );
+isCodeFences( const QString & s, bool closing = false );
 
-	if( p > 3 )
-		return false;
+//! \return Is file exist?
+inline bool
+fileExists( const QString & fileName, const QString & workingPath );
 
-	const auto ch = s[ p ];
-
-	if( ch != c_126 && ch != c_96 )
-		return false;
-
-	bool space = false;
-
-	qsizetype c = 1;
-
-	for( qsizetype i = p + 1; i < s.length(); ++i )
-	{
-		if( s[ i ].isSpace() )
-			space = true;
-		else if( s[ i ] == ch )
-		{
-			if( space && ( closing ? true : ch == c_96 ) )
-				return false;
-
-			if( !space )
-				++c;
-		}
-		else if( closing )
-			return false;
-	}
-
-	return ( c >= 3 );
-}
-
-bool fileExists( const QString & fileName, const QString & workingPath );
+//! \return Is string an ordered list.
+inline bool
+isOrderedList( const QString & s, int * num = nullptr, int * len = nullptr,
+	QChar * delim = nullptr, bool * isFirstLineEmpty = nullptr );
 
 
 //
@@ -189,6 +98,7 @@ public:
 	Parser() = default;
 	~Parser() = default;
 
+	//! \return Parsed Markdown document.
 	QSharedPointer< Document > parse( const QString & fileName, bool recursive = true );
 
 private:
@@ -258,24 +168,24 @@ private:
 
 	// Read line from stream.
 	template< typename STREAM >
-	QString readLine( STREAM & stream, bool & commentFound )
+	QString readLine( STREAM & stream, bool & unfinishedCommentFound )
 	{
 		static const QString c_startComment = QLatin1String( "<!--" );
 		static const QString c_endComment = QLatin1String( "-->" );
 
 		auto line = stream.readLine();
 
-		bool searchEndFromBegining = commentFound;
+		bool searchEndFromBegining = unfinishedCommentFound;
 
 		auto cs = line.indexOf( c_startComment );
 
-		if( !commentFound && cs > -1 )
-			commentFound = true;
+		if( !unfinishedCommentFound && cs > -1 )
+			unfinishedCommentFound = true;
 
 		if( cs == -1 )
 			cs = 0;
 
-		while( commentFound && !stream.atEnd() )
+		while( unfinishedCommentFound && !stream.atEnd() )
 		{
 			auto ce = line.indexOf( c_endComment,
 				( searchEndFromBegining ? 0 : cs + c_startComment.length() ) );
@@ -288,27 +198,27 @@ private:
 				{
 					line.remove( cs, ce + c_endComment.length() - cs );
 
-					commentFound = false;
+					unfinishedCommentFound = false;
 				}
-				else if( commentFound )
+				else if( unfinishedCommentFound )
 				{
 					line.remove( 0, ce + c_endComment.length() );
 
-					commentFound = false;
+					unfinishedCommentFound = false;
 				}
 			}
 			else if( cs > 0 )
 				return line.left( cs );
 			else
-				return readLine( stream, commentFound );
+				return readLine( stream, unfinishedCommentFound );
 
 			cs = line.indexOf( c_startComment );
 
-			if( !commentFound && cs > -1 )
-				commentFound = true;
+			if( !unfinishedCommentFound && cs > -1 )
+				unfinishedCommentFound = true;
 		}
 
-		if( commentFound )
+		if( unfinishedCommentFound )
 			return QString();
 		else
 			return line;
@@ -347,11 +257,11 @@ private:
 				lineCounter = 0;
 			};
 
-		bool commentFound = false;
+		bool unfinishedCommentFound = false;
 
 		auto rl = [&]() -> QString
 		{
-			auto line = readLine( stream, commentFound );
+			auto line = readLine( stream, unfinishedCommentFound );
 
 			if( skipSpacesAtStartOfLine )
 			{
@@ -565,6 +475,23 @@ private:
 					fragment.append( line );
 				else
 				{
+					if( type == BlockType::Text &&
+						( lineType == BlockType::ListWithFirstEmptyLine ||
+							lineType == BlockType::List ) )
+					{
+						int num = 0;
+
+						if( isOrderedList( line, &num ) )
+						{
+							if( num > 1 )
+							{
+								fragment.append( line );
+
+								continue;
+							}
+						}
+					}
+
 					pf();
 
 					type = lineType;

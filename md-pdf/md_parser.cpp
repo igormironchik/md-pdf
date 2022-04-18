@@ -35,6 +35,167 @@
 
 namespace MD {
 
+// Skip spaces in line from pos \a i.
+inline qsizetype
+skipSpaces( qsizetype i, QStringView line )
+{
+	const auto length = line.length();
+
+	while( i < length && line[ i ].isSpace() )
+		++i;
+
+	return i;
+}; // skipSpaces
+
+inline bool
+isFootnote( const QString & s )
+{
+	qsizetype p = 0;
+
+	for( ; p < s.size(); ++p )
+	{
+		if( !s[ p ].isSpace() )
+			break;
+	}
+
+	if( s.size() - p < 5 )
+		return false;
+
+	if( s[ p++ ] != c_91 )
+		return false;
+
+	if( s[ p++ ] != c_94 )
+		return false;
+
+	if( s[ p ] == c_93 || s[ p ].isSpace() )
+		return false;
+
+	for( ; p < s.size(); ++p )
+	{
+		if( s[ p ] == c_93 )
+			break;
+		else if( s[ p ].isSpace() )
+			return false;
+	}
+
+	++p;
+
+	if( p < s.size() && s[ p ] == c_58 )
+		return true;
+	else
+		return false;
+}
+
+inline QString
+startSequence( const QString & line )
+{
+	auto pos = skipSpaces( 0, line );
+
+	const auto sch = ( pos < line.length() ? line[ pos ] : QChar() );
+
+	QString s = sch;
+
+	++pos;
+
+	while( pos < line.length() )
+	{
+		if( line[ pos ] == sch )
+			s.append( sch );
+		else
+			break;
+
+		++pos;
+	}
+
+	return s;
+}
+
+inline bool
+isCodeFences( const QString & s, bool closing )
+{
+	const auto p = skipSpaces( 0, s );
+
+	if( p > 3 )
+		return false;
+
+	const auto ch = s[ p ];
+
+	if( ch != c_126 && ch != c_96 )
+		return false;
+
+	bool space = false;
+
+	qsizetype c = 1;
+
+	for( qsizetype i = p + 1; i < s.length(); ++i )
+	{
+		if( s[ i ].isSpace() )
+			space = true;
+		else if( s[ i ] == ch )
+		{
+			if( space && ( closing ? true : ch == c_96 ) )
+				return false;
+
+			if( !space )
+				++c;
+		}
+		else if( closing )
+			return false;
+	}
+
+	return ( c >= 3 );
+}
+
+inline bool
+isOrderedList( const QString & s, int * num, int * len,
+	QChar * delim, bool * isFirstLineEmpty )
+{
+	qsizetype p = skipSpaces( 0, s );
+
+	qsizetype dp = p;
+
+	for( ; p < s.size(); ++p )
+	{
+		if( !s[ p ].isDigit() )
+			break;
+	}
+
+	if( dp != p && p < s.size() )
+	{
+		const auto digits = s.mid( dp, p - dp );
+
+		if( digits.size() > 9 )
+			return false;
+
+		const auto i = digits.toInt();
+
+		if( num )
+			*num = i;
+
+		if( len )
+			*len = p - dp;
+
+		if( s[ p ] == c_46 || s[ p ] == c_41 )
+		{
+			if( delim )
+				*delim = s[ p ];
+
+			++p;
+
+			qsizetype tmp = skipSpaces( p, s );
+
+			if( isFirstLineEmpty )
+				*isFirstLineEmpty = ( tmp == s.size() );
+
+			if( ( p < s.size() && s[ p ].isSpace() ) || p == s.size() )
+				return true;
+		}
+	}
+
+	return false;
+}
+
+
 //
 // Parser
 //
@@ -133,55 +294,6 @@ Parser::parseFile( const QString & fileName, bool recursive, QSharedPointer< Doc
 }
 
 namespace /* anonymous */ {
-
-inline bool
-isOrderedList( const QString & s, int * num = nullptr, int * len = nullptr,
-	QChar * delim = nullptr, bool * isFirstLineEmpty = nullptr )
-{
-	qsizetype p = skipSpaces( 0, s );
-
-	qsizetype dp = p;
-
-	for( ; p < s.size(); ++p )
-	{
-		if( !s[ p ].isDigit() )
-			break;
-	}
-
-	if( dp != p && p < s.size() )
-	{
-		const auto digits = s.mid( dp, p - dp );
-
-		if( digits.size() > 9 )
-			return false;
-
-		const auto i = digits.toInt();
-
-		if( num )
-			*num = i;
-
-		if( len )
-			*len = p - dp;
-
-		if( s[ p ] == c_46 || s[ p ] == c_41 )
-		{
-			if( delim )
-				*delim = s[ p ];
-
-			++p;
-
-			qsizetype tmp = skipSpaces( p, s );
-
-			if( isFirstLineEmpty )
-				*isFirstLineEmpty = ( tmp == s.size() );
-
-			if( ( p < s.size() && s[ p ].isSpace() ) || p == s.size() )
-				return true;
-		}
-	}
-
-	return false;
-}
 
 inline QString
 readEscapedSequence( qsizetype i, QStringView str )
