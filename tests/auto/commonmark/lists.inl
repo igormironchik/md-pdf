@@ -666,3 +666,29 @@ TEST_CASE( "314" )
 		REQUIRE( t->text() == QString( ( char ) ( 97 + i ) ) );
 	}
 }
+
+TEST_CASE( "315" )
+{
+	const auto doc = load_test( 315 );
+
+	REQUIRE( doc->items().size() == 2 );
+
+	REQUIRE( doc->items().at( 1 )->type() == MD::ItemType::List );
+	auto l = static_cast< MD::List* > ( doc->items().at( 1 ).data() );
+	REQUIRE( l->items().size() == 2 );
+
+	for( int i = 0; i < 2; ++i )
+	{
+		REQUIRE( l->items().at( i )->type() == MD::ItemType::ListItem );
+		auto li = static_cast< MD::ListItem* > ( l->items().at( i ).data() );
+		REQUIRE( li->items().size() == 1 );
+		REQUIRE( li->listType() == MD::ListItem::Unordered );
+		REQUIRE( li->items().at( 0 )->type() == MD::ItemType::Paragraph );
+		auto p = static_cast< MD::Paragraph* > ( li->items().at( 0 ).data() );
+		REQUIRE( p->items().size() == 1 );
+		REQUIRE( p->items().at( 0 )->type() == MD::ItemType::Text );
+		auto t = static_cast< MD::Text* > ( p->items().at( 0 ).data() );
+		REQUIRE( t->opts() == MD::TextWithoutFormat );
+		REQUIRE( t->text() == QString( ( char ) ( 97 + i + ( i % 2 > 0 ? 1 : 0 ) ) ) );
+	}
+}

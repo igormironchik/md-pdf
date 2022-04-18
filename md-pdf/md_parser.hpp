@@ -358,6 +358,28 @@ private:
 			if( type == BlockType::CodeIndentedBySpaces && ns > 3 )
 				lineType = BlockType::CodeIndentedBySpaces;
 
+			if( type == BlockType::ListWithFirstEmptyLine && lineCounter == 2 &&
+				lineType != BlockType::ListWithFirstEmptyLine && lineType != BlockType::List )
+			{
+				if( emptyLinesInList )
+				{
+					pf();
+
+					fragment.append( line );
+					type = lineType;
+
+					continue;
+				}
+				else
+				{
+					emptyLineInList = false;
+					emptyLinesInList = 0;
+				}
+			}
+
+			if( type == BlockType::ListWithFirstEmptyLine && lineCounter == 2 )
+				type = BlockType::List;
+
 			if( lineType == BlockType::ListWithFirstEmptyLine )
 			{
 				type = lineType;
@@ -366,9 +388,6 @@ private:
 
 				continue;
 			}
-
-			if( type == BlockType::ListWithFirstEmptyLine && lineCounter == 2 )
-				type = BlockType::List;
 
 			// First line of the fragment.
 			if( ns != line.length() && type == BlockType::Unknown )
@@ -433,17 +452,10 @@ private:
 					}
 
 					case BlockType::List :
+					case BlockType::ListWithFirstEmptyLine :
 					{
 						emptyLineInList = true;
 						++emptyLinesInList;
-
-						continue;
-					}
-
-					case BlockType::ListWithFirstEmptyLine :
-					{
-						if( lineCounter == 2 )
-							pf();
 
 						continue;
 					}
