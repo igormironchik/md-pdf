@@ -118,7 +118,7 @@ private:
 	}; // enum BlockType
 
 	BlockType whatIsTheLine( QString & str, bool inList = false, qsizetype * indent = nullptr,
-		bool calcIndent = false ) const;
+		bool calcIndent = false, bool wasComment = false ) const;
 	void parseFragment( QStringList & fr, QSharedPointer< Block > parent,
 		QSharedPointer< Document > doc,
 		QStringList & linksToParse, const QString & workingPath,
@@ -331,7 +331,7 @@ private:
 
 			const auto ns = skipSpaces( 0, line );
 
-			BlockType lineType = whatIsTheLine( line, emptyLineInList, &indent, true );
+			BlockType lineType = whatIsTheLine( line, emptyLineInList, &indent, true, split );
 
 			if( ( lineType == BlockType::ListWithFirstEmptyLine ||
 				lineType == BlockType::List || lineType == BlockType::CodeIndentedBySpaces ) &&
@@ -342,6 +342,8 @@ private:
 					if( !fragment.isEmpty() )
 						pf();
 
+					emptyLineInList = false;
+					emptyLinesInList = 0;
 					type = lineType;
 					fragment.append( line );
 					split = false;

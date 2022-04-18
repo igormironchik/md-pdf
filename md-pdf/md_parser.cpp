@@ -443,7 +443,8 @@ isHorizontalLine( QStringView s )
 } /* namespace anonymous */
 
 Parser::BlockType
-Parser::whatIsTheLine( QString & str, bool inList, qsizetype * indent, bool calcIndent ) const
+Parser::whatIsTheLine( QString & str, bool inList, qsizetype * indent, bool calcIndent,
+	bool wasComment ) const
 {
 	str.replace( c_9, QString( 4, c_32 ) );
 
@@ -471,7 +472,7 @@ Parser::whatIsTheLine( QString & str, bool inList, qsizetype * indent, bool calc
 		if( first < 4 && isHorizontalLine( s ) )
 			return BlockType::Text;
 
-		if( inList )
+		if( inList && !wasComment )
 		{
 			bool isFirstLineEmpty = false;
 
