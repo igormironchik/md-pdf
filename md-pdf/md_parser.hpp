@@ -168,7 +168,8 @@ private:
 
 	// Read line from stream.
 	template< typename STREAM >
-	QString readLine( STREAM & stream, bool & unfinishedCommentFound )
+	QPair< QString, bool >
+	readLine( STREAM & stream, bool & unfinishedCommentFound )
 	{
 		static const QString c_startComment = QLatin1String( "<!--" );
 		static const QString c_endComment = QLatin1String( "-->" );
@@ -177,10 +178,15 @@ private:
 
 		bool searchEndFromBegining = unfinishedCommentFound;
 
+		bool wasComment = unfinishedCommentFound;
+
 		auto cs = line.indexOf( c_startComment );
 
 		if( !unfinishedCommentFound && cs > -1 )
+		{
 			unfinishedCommentFound = true;
+			wasComment = true;
+		}
 
 		if( cs == -1 )
 			cs = 0;
@@ -208,7 +214,7 @@ private:
 				}
 			}
 			else if( cs > 0 )
-				return line.left( cs );
+				return { line.left( cs ), false };
 			else
 				return readLine( stream, unfinishedCommentFound );
 
@@ -219,9 +225,9 @@ private:
 		}
 
 		if( unfinishedCommentFound )
-			return QString();
+			return { QString(), wasComment };
 		else
-			return line;
+			return { line, wasComment };
 	};
 
 	template< typename STREAM >
@@ -258,10 +264,13 @@ private:
 			};
 
 		bool unfinishedCommentFound = false;
+		bool wasComment = false;
 
 		auto rl = [&]() -> QString
 		{
-			auto line = readLine( stream, unfinishedCommentFound );
+			QString line;
+
+			std::tie( line, wasComment ) = readLine( stream, unfinishedCommentFound );
 
 			if( skipSpacesAtStartOfLine )
 			{
@@ -311,13 +320,38 @@ private:
 
 		QString startOfCode;
 
+		bool split = false;
+
 		while( !stream.atEnd() )
 		{
 			auto line = rl();
 
+			if( wasComment )
+				split = true;
+
 			const auto ns = skipSpaces( 0, line );
 
 			BlockType lineType = whatIsTheLine( line, emptyLineInList, &indent, true );
+
+			if( ( lineType == BlockType::ListWithFirstEmptyLine ||
+				lineType == BlockType::List || lineType == BlockType::CodeIndentedBySpaces ) &&
+				( type == BlockType::ListWithFirstEmptyLine || type == BlockType::List ) )
+			{
+				if( split )
+				{
+					if( !fragment.isEmpty() )
+						pf();
+
+					type = lineType;
+					fragment.append( line );
+					split = false;
+
+					continue;
+				}
+			}
+
+			if( ns != line.length() )
+				split = false;
 
 			if( type == BlockType::CodeIndentedBySpaces && ns > 3 )
 				lineType = BlockType::CodeIndentedBySpaces;
