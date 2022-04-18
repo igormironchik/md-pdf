@@ -476,9 +476,9 @@ Parser::whatIsTheLine( QString & str, bool inList, qsizetype * indent, bool calc
 		{
 			bool isFirstLineEmpty = false;
 
-			if( ( ( s.startsWith( c_45 ) || s.startsWith( c_43 ) || s.startsWith( c_42 ) ) &&
+			if( ( ( ( s.startsWith( c_45 ) || s.startsWith( c_43 ) || s.startsWith( c_42 ) ) &&
 				( ( s.length() > 1 && s[ 1 ].isSpace() ) || s.length() == 1 ) ) ||
-				isOrderedList( str, nullptr, nullptr, nullptr, &isFirstLineEmpty ) )
+				isOrderedList( str, nullptr, nullptr, nullptr, &isFirstLineEmpty ) ) && first < 4 )
 			{
 				if( s.length() == 1 || isFirstLineEmpty )
 					return BlockType::ListWithFirstEmptyLine;
@@ -3217,14 +3217,19 @@ isListItemAndNotNested( const QString & s, qsizetype indent )
 	else
 		space = s[ p + 1 ].isSpace();
 
-	if( s[ p ] == c_42 && space )
-		return true;
-	else if( s[ p ] == c_45 && space )
-		return true;
-	else if( s[ p ] == c_43 && space )
-		return true;
+	if( p < 4 )
+	{
+		if( s[ p ] == c_42 && space )
+			return true;
+		else if( s[ p ] == c_45 && space )
+			return true;
+		else if( s[ p ] == c_43 && space )
+			return true;
+		else
+			return isOrderedList( s );
+	}
 	else
-		return isOrderedList( s );
+		return false;
 }
 
 inline std::pair< qsizetype, qsizetype >
@@ -3248,22 +3253,27 @@ listItemData( const QString & s )
 	else
 		space = s[ p + 1 ].isSpace();
 
-	if( s[ p ] == c_42 && space )
-		return { true, p + 2, c_42 };
-	else if( s[ p ] == c_45 && space )
-		return { true, p + 2, c_45 };
-	else if( s[ p ] == c_43 && space )
-		return { true, p + 2, c_43 };
-	else
+	if( p < 4 )
 	{
-		int d = 0, l = 0;
-		QChar c;
-
-		if( isOrderedList( s, &d, &l, &c ) )
-			return { true, p + l + 2, c };
+		if( s[ p ] == c_42 && space )
+			return { true, p + 2, c_42 };
+		else if( s[ p ] == c_45 && space )
+			return { true, p + 2, c_45 };
+		else if( s[ p ] == c_43 && space )
+			return { true, p + 2, c_43 };
 		else
-			return { false, 0, QChar() };
+		{
+			int d = 0, l = 0;
+			QChar c;
+
+			if( isOrderedList( s, &d, &l, &c ) )
+				return { true, p + l + 2, c };
+			else
+				return { false, 0, QChar() };
+		}
 	}
+	else
+		return { false, 0, QChar() };
 }
 
 } /* namespace anonymous */
