@@ -329,9 +329,9 @@ private:
 			if( wasComment )
 				split = true;
 
-			const auto ns = skipSpaces( 0, line );
-
 			BlockType lineType = whatIsTheLine( line, emptyLineInList, &indent, true, split );
+
+			const auto ns = skipSpaces( 0, line );
 
 			if( ( lineType == BlockType::ListWithFirstEmptyLine ||
 				lineType == BlockType::List || lineType == BlockType::CodeIndentedBySpaces ) &&
@@ -455,8 +455,7 @@ private:
 			//! Empty new line in list.
 			else if( emptyLineInList )
 			{
-				if( ( indent > 0 && line.startsWith( QString( indent, c_32 ) ) ) ||
-					lineType == BlockType::List )
+				if( ( indent > 0 && ns >= indent ) || lineType == BlockType::List )
 				{
 					for( qsizetype i = 0; i < emptyLinesInList; ++i )
 						fragment.append( QString() );

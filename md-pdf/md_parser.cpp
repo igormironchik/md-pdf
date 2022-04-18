@@ -384,14 +384,21 @@ posOfListItem( const QString & s, bool ordered )
 				break;
 		}
 	}
-	else
-		++p;
+
+	++p;
+
+	qsizetype sc = 0;
 
 	for( ; p < s.size(); ++p )
 	{
 		if( !s[ p ].isSpace() )
 			break;
+		else
+			++sc;
 	}
+
+	if( sc > 4 )
+		p = p - sc + 1;
 
 	return p;
 }
@@ -475,11 +482,16 @@ Parser::whatIsTheLine( QString & str, bool inList, qsizetype * indent, bool calc
 		if( inList && !wasComment )
 		{
 			bool isFirstLineEmpty = false;
+			const auto orderedList = isOrderedList( str, nullptr, nullptr, nullptr,
+				&isFirstLineEmpty );
 
 			if( ( ( ( s.startsWith( c_45 ) || s.startsWith( c_43 ) || s.startsWith( c_42 ) ) &&
 				( ( s.length() > 1 && s[ 1 ].isSpace() ) || s.length() == 1 ) ) ||
-				isOrderedList( str, nullptr, nullptr, nullptr, &isFirstLineEmpty ) ) && first < 4 )
+				orderedList ) && first < 4 )
 			{
+				if( calcIndent && indent )
+					*indent = posOfListItem( str, orderedList );
+
 				if( s.length() == 1 || isFirstLineEmpty )
 					return BlockType::ListWithFirstEmptyLine;
 				else
@@ -487,11 +499,8 @@ Parser::whatIsTheLine( QString & str, bool inList, qsizetype * indent, bool calc
 			}
 			else if( str.startsWith( QString( ( indent ? *indent : 4 ), c_32 ) ) )
 			{
-				if( str.startsWith( QString( ( indent ? *indent : 4 ), c_32 ) +
-					QLatin1String( "    " ) ) )
-				{
+				if( str.startsWith( QStringLiteral( "    " ) ) )
 					return BlockType::CodeIndentedBySpaces;
-				}
 			}
 		}
 		else

@@ -608,3 +608,35 @@ TEST_CASE( "312" )
 	REQUIRE( t->opts() == MD::TextWithoutFormat );
 	REQUIRE( t->text() == QStringLiteral( "d - e" ) );
 }
+
+TEST_CASE( "313" )
+{
+	const auto doc = load_test( 313 );
+
+	REQUIRE( doc->items().size() == 3 );
+
+	REQUIRE( doc->items().at( 1 )->type() == MD::ItemType::List );
+	auto l = static_cast< MD::List* > ( doc->items().at( 1 ).data() );
+	REQUIRE( l->items().size() == 2 );
+
+	for( int i = 0; i < 2; ++i )
+	{
+		REQUIRE( l->items().at( i )->type() == MD::ItemType::ListItem );
+		auto li = static_cast< MD::ListItem* > ( l->items().at( i ).data() );
+		REQUIRE( li->items().size() == 1 );
+		REQUIRE( li->listType() == MD::ListItem::Ordered );
+		REQUIRE( li->startNumber() == i + 1 );
+		REQUIRE( li->items().at( 0 )->type() == MD::ItemType::Paragraph );
+		auto p = static_cast< MD::Paragraph* > ( li->items().at( 0 ).data() );
+		REQUIRE( p->items().size() == 1 );
+		REQUIRE( p->items().at( 0 )->type() == MD::ItemType::Text );
+		auto t = static_cast< MD::Text* > ( p->items().at( 0 ).data() );
+		REQUIRE( t->opts() == MD::TextWithoutFormat );
+		REQUIRE( t->text() == QString( ( char ) ( 97 + i ) ) );
+	}
+
+	REQUIRE( doc->items().at( 2 )->type() == MD::ItemType::Code );
+	auto c = static_cast< MD::Code* > ( doc->items().at( 2 ).data() );
+	REQUIRE( !c->inlined() );
+	REQUIRE( c->text() == QStringLiteral( "3. c" ) );
+}
