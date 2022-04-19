@@ -145,3 +145,29 @@ TEST_CASE( "333" )
 		QChar( 'b' ) + QChar( QChar( (char16_t) 160 ) );
 	REQUIRE( c->text() == s );
 }
+
+TEST_CASE( "334" )
+{
+	const auto doc = load_test( 334 );
+
+	REQUIRE( doc->isEmpty() == false );
+	REQUIRE( doc->items().size() == 2 );
+
+	REQUIRE( doc->items().at( 1 )->type() == MD::ItemType::Paragraph );
+	auto p = static_cast< MD::Paragraph* > ( doc->items().at( 1 ).data() );
+	REQUIRE( p->items().size() == 2 );
+
+	{
+		REQUIRE( p->items().at( 0 )->type() == MD::ItemType::Code );
+		auto c = static_cast< MD::Code* > ( p->items().at( 0 ).data() );
+		REQUIRE( c->inlined() );
+		REQUIRE( c->text() == QString( QChar( (char16_t) 160 ) ) );
+	}
+
+	{
+		REQUIRE( p->items().at( 1 )->type() == MD::ItemType::Code );
+		auto c = static_cast< MD::Code* > ( p->items().at( 1 ).data() );
+		REQUIRE( c->inlined() );
+		REQUIRE( c->text() == QStringLiteral( "  " ) );
+	}
+}
