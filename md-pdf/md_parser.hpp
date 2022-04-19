@@ -29,6 +29,9 @@
 // Qt include.
 #include <QTextStream>
 
+// C++ include.
+#include <set>
+
 
 namespace MD {
 
@@ -86,6 +89,15 @@ inline bool
 isOrderedList( const QString & s, int * num = nullptr, int * len = nullptr,
 	QChar * delim = nullptr, bool * isFirstLineEmpty = nullptr );
 
+inline bool
+indentInList( const std::set< qsizetype > * indents, qsizetype indent )
+{
+	if( indents )
+		return ( indents->find( indent ) != indents->cend() );
+	else
+		return false;
+};
+
 
 //
 // Parser
@@ -118,7 +130,8 @@ private:
 	}; // enum BlockType
 
 	BlockType whatIsTheLine( QString & str, bool inList = false, qsizetype * indent = nullptr,
-		bool calcIndent = false, bool wasComment = false ) const;
+		bool calcIndent = false, bool wasComment = false,
+		const std::set< qsizetype > * indents = nullptr ) const;
 	void parseFragment( QStringList & fr, QSharedPointer< Block > parent,
 		QSharedPointer< Document > doc,
 		QStringList & linksToParse, const QString & workingPath,
@@ -249,6 +262,8 @@ private:
 		bool firstLine = true;
 		qsizetype spaces = 0;
 		qsizetype lineCounter = 0;
+		std::set< qsizetype > indents;
+		qsizetype indent = 0;
 
 		// Parse fragment and clear internal cache.
 		auto pf = [&]()
@@ -261,6 +276,8 @@ private:
 				emptyLineInList = false;
 				emptyLinesInList = 0;
 				lineCounter = 0;
+				indents.clear();
+				indent = 0;
 			};
 
 		bool unfinishedCommentFound = false;
@@ -316,10 +333,7 @@ private:
 					pf();
 			};
 
-		qsizetype indent = 0;
-
 		QString startOfCode;
-
 		bool split = false;
 
 		while( !stream.atEnd() )
@@ -329,7 +343,13 @@ private:
 			if( wasComment )
 				split = true;
 
-			BlockType lineType = whatIsTheLine( line, emptyLineInList, &indent, true, split );
+			const qsizetype prevIndent = indent;
+
+			BlockType lineType = whatIsTheLine( line, emptyLineInList, &indent,
+				true, split, &indents );
+
+			if( prevIndent != indent )
+				indents.insert( indent );
 
 			const auto ns = skipSpaces( 0, line );
 
@@ -467,7 +487,8 @@ private:
 			//! Empty new line in list.
 			else if( emptyLineInList )
 			{
-				if( ( indent > 0 && ns >= indent ) || lineType == BlockType::List )
+				if( indentInList( &indents, ns ) || lineType == BlockType::List ||
+					lineType == BlockType::CodeIndentedBySpaces )
 				{
 					for( qsizetype i = 0; i < emptyLinesInList; ++i )
 						fragment.append( QString() );

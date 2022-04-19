@@ -451,7 +451,7 @@ isHorizontalLine( QStringView s )
 
 Parser::BlockType
 Parser::whatIsTheLine( QString & str, bool inList, qsizetype * indent, bool calcIndent,
-	bool wasComment ) const
+	bool wasComment, const std::set< qsizetype > * indents ) const
 {
 	str.replace( c_9, QString( 4, c_32 ) );
 
@@ -487,7 +487,7 @@ Parser::whatIsTheLine( QString & str, bool inList, qsizetype * indent, bool calc
 
 			if( ( ( ( s.startsWith( c_45 ) || s.startsWith( c_43 ) || s.startsWith( c_42 ) ) &&
 				( ( s.length() > 1 && s[ 1 ].isSpace() ) || s.length() == 1 ) ) ||
-				orderedList ) && first < 4 )
+				orderedList ) && ( first < 4  || indentInList( indents, first ) ) )
 			{
 				if( calcIndent && indent )
 					*indent = posOfListItem( str, orderedList );
@@ -512,7 +512,7 @@ Parser::whatIsTheLine( QString & str, bool inList, qsizetype * indent, bool calc
 
 			if( ( ( ( s.startsWith( c_45 ) || s.startsWith( c_43 ) || s.startsWith( c_42 ) ) &&
 				( ( s.length() > 1 && s[ 1 ].isSpace() ) || s.length() == 1 ) ) ||
-				orderedList ) && first < 4 )
+				orderedList ) && ( first < 4  || indentInList( indents, first ) ) )
 			{
 				if( calcIndent && indent )
 					*indent = posOfListItem( str, orderedList );
@@ -3428,17 +3428,44 @@ Parser::parseListItem( QStringList & fr, QSharedPointer< Block > parent,
 
 			data.clear();
 
-			QStringList nestedList = fr.sliced( pos );
+			QStringList nestedList;
+			nestedList << *it;
+			++it;
+
+			for( ; it != last; ++it )
+			{
+				const auto ns = skipSpaces( 0, *it );
+				std::tie( ok, std::ignore, std::ignore ) = listItemData( *it );
+
+				if( ok || ns > indent || ns == it->length() )
+					nestedList << *it;
+				else
+					break;
+			}
+
+			for( auto it = nestedList.begin(), last = nestedList.end(); it != last; ++it )
+			{
+				if( it->startsWith( QString( indent, c_32 ) ) )
+					*it = it->sliced( indent );
+			}
 
 			parseList( nestedList, item, doc, linksToParse, workingPath, fileName,
 				collectRefLinks );
+
+			for( ; it != last; ++it )
+			{
+				if( it->startsWith( QString( indent, c_32 ) ) )
+					*it = it->sliced( indent );
+
+				data.append( *it );
+			}
 
 			break;
 		}
 		else
 		{
 			if( it->startsWith( QString( indent, c_32 ) ) )
-				*it = it->right( it->length() - indent );
+				*it = it->sliced( indent );
 
 			data.append( *it );
 		}
