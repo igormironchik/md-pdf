@@ -1705,7 +1705,7 @@ makeInlineCode( qsizetype lastLine, qsizetype lastPos,
 
 	po.line = lastLine;
 
-	if( c.front().isSpace() && c.back().isSpace() && skipSpaces( 0, c ) < c.size() )
+	if( c.front() == c_32 && c.back() == c_32 && skipSpaces( 0, c ) < c.size() )
 	{
 		c.remove( 0, 1 );
 		c.remove( c.size() - 1, 1 );
