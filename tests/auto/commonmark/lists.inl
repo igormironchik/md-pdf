@@ -919,3 +919,59 @@ TEST_CASE( "319" )
 		REQUIRE( t->text() == QStringLiteral( "d" ) );
 	}
 }
+
+TEST_CASE( "320" )
+{
+	const auto doc = load_test( 320 );
+
+	REQUIRE( doc->items().size() == 2 );
+
+	REQUIRE( doc->items().at( 1 )->type() == MD::ItemType::List );
+	auto l = static_cast< MD::List* > ( doc->items().at( 1 ).data() );
+	REQUIRE( l->items().size() == 2 );
+
+	{
+		REQUIRE( l->items().at( 0 )->type() == MD::ItemType::ListItem );
+		auto li = static_cast< MD::ListItem* > ( l->items().at( 0 ).data() );
+		REQUIRE( li->items().size() == 2 );
+		REQUIRE( li->listType() == MD::ListItem::Unordered );
+
+		{
+			REQUIRE( li->items().at( 0 )->type() == MD::ItemType::Paragraph );
+			auto p = static_cast< MD::Paragraph* > ( li->items().at( 0 ).data() );
+			REQUIRE( p->items().size() == 1 );
+			REQUIRE( p->items().at( 0 )->type() == MD::ItemType::Text );
+			auto t = static_cast< MD::Text* > ( p->items().at( 0 ).data() );
+			REQUIRE( t->opts() == MD::TextWithoutFormat );
+			REQUIRE( t->text() == QStringLiteral( "a" ) );
+		}
+
+		REQUIRE( li->items().at( 1 )->type() == MD::ItemType::Blockquote );
+		auto b = static_cast< MD::Blockquote* > ( li->items().at( 1 ).data() );
+		REQUIRE( b->items().size() == 1 );
+		REQUIRE( b->items().at( 0 )->type() == MD::ItemType::Paragraph );
+		auto p = static_cast< MD::Paragraph* > ( b->items().at( 0 ).data() );
+		REQUIRE( p->items().size() == 1 );
+		REQUIRE( p->items().at( 0 )->type() == MD::ItemType::Text );
+		auto t = static_cast< MD::Text* > ( p->items().at( 0 ).data() );
+		REQUIRE( t->opts() == MD::TextWithoutFormat );
+		REQUIRE( t->text() == QStringLiteral( "b" ) );
+	}
+
+	{
+		REQUIRE( l->items().at( 1 )->type() == MD::ItemType::ListItem );
+		auto li = static_cast< MD::ListItem* > ( l->items().at( 1 ).data() );
+		REQUIRE( li->items().size() == 1 );
+		REQUIRE( li->listType() == MD::ListItem::Unordered );
+
+		{
+			REQUIRE( li->items().at( 0 )->type() == MD::ItemType::Paragraph );
+			auto p = static_cast< MD::Paragraph* > ( li->items().at( 0 ).data() );
+			REQUIRE( p->items().size() == 1 );
+			REQUIRE( p->items().at( 0 )->type() == MD::ItemType::Text );
+			auto t = static_cast< MD::Text* > ( p->items().at( 0 ).data() );
+			REQUIRE( t->opts() == MD::TextWithoutFormat );
+			REQUIRE( t->text() == QStringLiteral( "c" ) );
+		}
+	}
+}
