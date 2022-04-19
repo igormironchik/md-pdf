@@ -1206,3 +1206,56 @@ TEST_CASE( "325" )
 		}
 	}
 }
+
+TEST_CASE( "326" )
+{
+	const auto doc = load_test( 326 );
+
+	REQUIRE( doc->items().size() == 2 );
+
+	REQUIRE( doc->items().at( 1 )->type() == MD::ItemType::List );
+	auto l = static_cast< MD::List* > ( doc->items().at( 1 ).data() );
+	REQUIRE( l->items().size() == 2 );
+
+	for( int i = 0; i < 2; ++i )
+	{
+		REQUIRE( l->items().at( i )->type() == MD::ItemType::ListItem );
+		auto li = static_cast< MD::ListItem* > ( l->items().at( i ).data() );
+		REQUIRE( li->items().size() == 2 );
+		REQUIRE( li->listType() == MD::ListItem::Unordered );
+
+		{
+			REQUIRE( li->items().at( 0 )->type() == MD::ItemType::Paragraph );
+			auto p = static_cast< MD::Paragraph* > ( li->items().at( 0 ).data() );
+			REQUIRE( p->items().size() == 1 );
+			REQUIRE( p->items().at( 0 )->type() == MD::ItemType::Text );
+			auto t = static_cast< MD::Text* > ( p->items().at( 0 ).data() );
+			REQUIRE( t->opts() == MD::TextWithoutFormat );
+			REQUIRE( t->text() == QString( (char) ( 97 + i * 3 ) ) );
+		}
+
+		{
+			REQUIRE( li->items().at( 1 )->type() == MD::ItemType::List );
+			auto l = static_cast< MD::List* > ( li->items().at( 1 ).data() );
+			REQUIRE( l->items().size() == 2 );
+
+			for( int j = 0; j < 2; ++j )
+			{
+				REQUIRE( l->items().at( j )->type() == MD::ItemType::ListItem );
+				auto li = static_cast< MD::ListItem* > ( l->items().at( j ).data() );
+				REQUIRE( li->items().size() == 1 );
+				REQUIRE( li->listType() == MD::ListItem::Unordered );
+
+				{
+					REQUIRE( li->items().at( 0 )->type() == MD::ItemType::Paragraph );
+					auto p = static_cast< MD::Paragraph* > ( li->items().at( 0 ).data() );
+					REQUIRE( p->items().size() == 1 );
+					REQUIRE( p->items().at( 0 )->type() == MD::ItemType::Text );
+					auto t = static_cast< MD::Text* > ( p->items().at( 0 ).data() );
+					REQUIRE( t->opts() == MD::TextWithoutFormat );
+					REQUIRE( t->text() == QString( (char) ( 98 + i * 3 + j ) ) );
+				}
+			}
+		}
+	}
+}
