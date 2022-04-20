@@ -1397,11 +1397,24 @@ collectDelimiters( const QStringList & fr )
 							++i;
 						}
 
+						if( backslash )
+						{
+							if( i - 2 > 0 )
+							{
+								if( str[ i - 2 ].isSpace() )
+									space = true;
+							}
+							else
+								space = true;
+						}
+
 						const bool spaceAfter =
 							( i < str.length() ? str[ i ] == c_32 : false );
 
-						d.push_back( { Delimiter::InlineCode, line, i - code.length(),
-							code.length(), space, spaceAfter, word, backslash } );
+						d.push_back( { Delimiter::InlineCode,
+							line, i - code.length() - ( backslash ? 1 : 0 ),
+							code.length() + ( backslash ? 1 : 0 ),
+							space, spaceAfter, word, backslash } );
 
 						word = false;
 
@@ -1724,7 +1737,8 @@ checkForInlineCode( Delims::const_iterator it, Delims::const_iterator last,
 
 	for( ; it != last; ++it )
 	{
-		if( it->m_type == Delimiter::InlineCode && it->m_len == len )
+		if( it->m_type == Delimiter::InlineCode &&
+			( it->m_len - ( it->m_backslashed ? 1 : 0 ) ) == len )
 		{
 			if( !po.collectRefLinks )
 			{
@@ -1732,7 +1746,7 @@ checkForInlineCode( Delims::const_iterator it, Delims::const_iterator last,
 
 				po.pos = start->m_pos + start->m_len;
 
-				makeInlineCode( it->m_line, it->m_pos, po );
+				makeInlineCode( it->m_line, it->m_pos + ( it->m_backslashed ? 1 : 0 ), po );
 			}
 
 			po.wasRefLink = false;
@@ -2879,9 +2893,6 @@ concatenateText( Block::Items::const_iterator it, Block::Items::const_iterator l
 	for( ; it != last; ++it )
 	{
 		const auto tt = (*it).staticCast< Text > ();
-
-		if( data.endsWith( c_92 ) && c_canBeEscaped.contains( tt->text()[ 0 ] ) )
-			data.remove( data.size() - 1, 1 );
 
 		if( tt->isSpaceBefore() )
 			data.append( c_32 );
