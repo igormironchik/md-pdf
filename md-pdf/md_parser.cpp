@@ -113,7 +113,7 @@ startSequence( const QString & line )
 inline bool
 isCodeFences( const QString & s, bool closing )
 {
-	const auto p = skipSpaces( 0, s );
+	auto p = skipSpaces( 0, s );
 
 	if( p > 3 )
 		return false;
@@ -126,12 +126,13 @@ isCodeFences( const QString & s, bool closing )
 	bool space = false;
 
 	qsizetype c = 1;
+	++p;
 
-	for( qsizetype i = p + 1; i < s.length(); ++i )
+	for( ; p < s.length(); ++p )
 	{
-		if( s[ i ].isSpace() )
+		if( s[ p ].isSpace() )
 			space = true;
-		else if( s[ i ] == ch )
+		else if( s[ p ] == ch )
 		{
 			if( space && ( closing ? true : ch == c_96 ) )
 				return false;
@@ -141,9 +142,23 @@ isCodeFences( const QString & s, bool closing )
 		}
 		else if( closing )
 			return false;
+		else
+			break;
 	}
 
-	return ( c >= 3 );
+	if( c < 3 )
+		return false;
+
+	if( ch == c_96 )
+	{
+		for( ; p < s.length(); ++p )
+		{
+			if( s[ p ] == c_96 )
+				return false;
+		}
+	}
+
+	return true;
 }
 
 inline bool
