@@ -1747,11 +1747,12 @@ checkForInlineCode( Delims::const_iterator it, Delims::const_iterator last,
 				po.pos = start->m_pos + start->m_len;
 
 				makeInlineCode( it->m_line, it->m_pos + ( it->m_backslashed ? 1 : 0 ), po );
+
+				po.line = it->m_line;
+				po.pos = it->m_pos + it->m_len;
 			}
 
 			po.wasRefLink = false;
-			po.line = it->m_line;
-			po.pos = it->m_pos + it->m_len;
 
 			return it;
 		}
