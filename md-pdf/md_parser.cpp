@@ -1179,14 +1179,16 @@ struct Delimiter {
 		Unknown
 	}; // enum DelimiterType
 
-	DelimiterType m_type;
-	qsizetype m_line;
-	qsizetype m_pos;
-	qsizetype m_len;
-	bool m_spaceBefore;
-	bool m_spaceAfter;
-	bool m_isWordBefore;
-	bool m_backslashed;
+	DelimiterType m_type = Unknown;
+	qsizetype m_line = -1;
+	qsizetype m_pos = -1;
+	qsizetype m_len = 0;
+	bool m_spaceBefore = false;
+	bool m_spaceAfter = false;
+	bool m_isWordBefore = false;
+	bool m_backslashed = false;
+	bool m_leftFlanking = false;
+	bool m_rightFlanking = false;
 }; // struct Delimiter
 
 inline Delimiter::DelimiterType
@@ -1234,7 +1236,7 @@ collectDelimiters( const QStringList & fr )
 		else
 		{
 			bool backslash = false;
-			bool space = false;
+			bool space = true;
 			bool word = false;
 
 			for( qsizetype i = 0; i < str.size(); ++i )
@@ -1258,7 +1260,8 @@ collectDelimiters( const QStringList & fr )
 					{
 						QString style;
 
-						const bool punctBefore = ( i > 0 ? str[ i - 1 ].isPunct() : false );
+						const bool punctBefore = ( i > 0 ? str[ i - 1 ].isPunct() ||
+							str[ i - 1 ] == c_126 : false );
 
 						while( i < str.length() && ( str[ i ] == c_95 || str[ i ] == c_42 ) )
 						{
@@ -1273,16 +1276,22 @@ collectDelimiters( const QStringList & fr )
 							if( dt != Delimiter::Unknown )
 							{
 								const bool spaceAfter =
-									( i < str.length() ? str[ i ].isSpace() : false );
+									( i < str.length() ? str[ i ].isSpace() : true );
 								const bool punctAfter =
-									( i < str.length() ? str[ i ].isPunct() : false );
-
-								if( ( ( space || punctBefore ) && punctAfter ) ||
+									( i < str.length() ? str[ i ].isPunct() ||
+										str[ i ] == c_126 : false );
+								const bool leftFlanking =
+									( ( space || punctBefore ) && punctAfter ) ||
+									( !spaceAfter && !punctAfter );
+								const bool rightFlanking =
 									( punctBefore && ( spaceAfter || punctAfter ) ) ||
-									( !spaceAfter && !punctAfter ) || ( !space && !punctBefore ) )
+									( !space && !punctBefore );
+
+								if( leftFlanking || rightFlanking )
 								{
 									d.push_back( { dt, line, i - style.length(), style.length(),
-										space, spaceAfter, word, false } );
+										space, spaceAfter, word, false,
+										leftFlanking, rightFlanking } );
 
 									word = false;
 								}
@@ -1302,6 +1311,9 @@ collectDelimiters( const QStringList & fr )
 					{
 						QString style;
 
+						const bool punctBefore = ( i > 0 ? str[ i - 1 ].isPunct() ||
+							str[ i - 1 ] == c_126 : false );
+
 						while( i < str.length() && str[ i ] == c_126 )
 						{
 							style.append( str[ i ] );
@@ -1311,12 +1323,27 @@ collectDelimiters( const QStringList & fr )
 						if( style.length() == 2 )
 						{
 							const bool spaceAfter =
-								( i < str.length() ? str[ i ].isSpace() : false );
+								( i < str.length() ? str[ i ].isSpace() : true );
+							const bool punctAfter =
+								( i < str.length() ? str[ i ].isPunct() ||
+									str[ i ] == c_126 : false );
+							const bool leftFlanking =
+								( ( space || punctBefore ) && punctAfter ) ||
+								( !spaceAfter && !punctAfter );
+							const bool rightFlanking =
+								( punctBefore && ( spaceAfter || punctAfter ) ) ||
+								( !space && !punctBefore );
 
-							d.push_back( { Delimiter::Strikethrough, line, i - style.length(),
-								style.length(), space, spaceAfter, word, false } );
+							if( leftFlanking || rightFlanking )
+							{
+								d.push_back( { Delimiter::Strikethrough, line, i - style.length(),
+									style.length(), space, spaceAfter, word, false,
+									leftFlanking, rightFlanking } );
 
-							word = false;
+								word = false;
+							}
+							else
+								word = true;
 						}
 						else
 							word = true;
@@ -1327,7 +1354,7 @@ collectDelimiters( const QStringList & fr )
 					else if( str[ i ] == c_91 && !backslash )
 					{
 						const bool spaceAfter =
-							( i < str.length() ? str[ i ].isSpace() : false );
+							( i < str.length() ? str[ i ].isSpace() : true );
 
 						d.push_back( { Delimiter::SquareBracketsOpen, line, i, 1,
 							space, spaceAfter, word, false } );
@@ -1342,7 +1369,7 @@ collectDelimiters( const QStringList & fr )
 							if( str[ i + 1 ] == c_91 )
 							{
 								const bool spaceAfter =
-									( i < str.length() ? str[ i ].isSpace() : false );
+									( i < str.length() ? str[ i ].isSpace() : true );
 
 								d.push_back( { Delimiter::ImageOpen, line, i, 2,
 									space, spaceAfter, word, false } );
@@ -1361,7 +1388,7 @@ collectDelimiters( const QStringList & fr )
 					else if( str[ i ] == c_40 && !backslash )
 					{
 						const bool spaceAfter =
-							( i < str.length() ? str[ i ].isSpace() : false );
+							( i < str.length() ? str[ i ].isSpace() : true );
 
 						d.push_back( { Delimiter::ParenthesesOpen, line, i, 1,
 							space, spaceAfter, word, false } );
@@ -1372,7 +1399,7 @@ collectDelimiters( const QStringList & fr )
 					else if( str[ i ] == c_93 && !backslash )
 					{
 						const bool spaceAfter =
-							( i < str.length() ? str[ i ].isSpace() : false );
+							( i < str.length() ? str[ i ].isSpace() : true );
 
 						d.push_back( { Delimiter::SquareBracketsClose, line, i, 1,
 							space, spaceAfter, word, false } );
@@ -1383,7 +1410,7 @@ collectDelimiters( const QStringList & fr )
 					else if( str[ i ] == c_41 && !backslash )
 					{
 						const bool spaceAfter =
-							( i < str.length() ? str[ i ].isSpace() : false );
+							( i < str.length() ? str[ i ].isSpace() : true );
 
 						d.push_back( { Delimiter::ParenthesesClose, line, i, 1,
 							space, spaceAfter, word, false } );
@@ -1394,7 +1421,7 @@ collectDelimiters( const QStringList & fr )
 					else if( str[ i ] == c_60 && !backslash )
 					{
 						const bool spaceAfter =
-							( i < str.length() ? str[ i ].isSpace() : false );
+							( i < str.length() ? str[ i ].isSpace() : true );
 
 						d.push_back( { Delimiter::Less, line, i, 1,
 							space, spaceAfter, word, false } );
@@ -1405,7 +1432,7 @@ collectDelimiters( const QStringList & fr )
 					else if( str[ i ] == c_62 && !backslash )
 					{
 						const bool spaceAfter =
-							( i < str.length() ? str[ i ].isSpace() : false );
+							( i < str.length() ? str[ i ].isSpace() : true );
 
 						d.push_back( { Delimiter::Greater, line, i, 1,
 							space, spaceAfter, word, false } );
@@ -1435,7 +1462,7 @@ collectDelimiters( const QStringList & fr )
 						}
 
 						const bool spaceAfter =
-							( i < str.length() ? str[ i ].isSpace() : false );
+							( i < str.length() ? str[ i ].isSpace() : true );
 
 						d.push_back( { Delimiter::InlineCode,
 							line, i - code.length() - ( backslash ? 1 : 0 ),
@@ -2828,7 +2855,7 @@ isStyleClosed( Delims::const_iterator it, Delims::const_iterator last,
 			case Delimiter::BoldItalic3Close :
 			case Delimiter::BoldItalic4Close :
 			{
-				if( isClosingStyle( open, it->m_type ) )
+				if( it->m_rightFlanking && isClosingStyle( open, it->m_type ) )
 				{
 					po.collectRefLinks = collectRefLinks;
 					po.line = line;
@@ -2861,7 +2888,7 @@ checkForStyle( Delims::const_iterator it, Delims::const_iterator last,
 {
 	po.wasRefLink = false;
 
-	if( isClosingStyle( po.styles, it->m_type ) )
+	if( it->m_rightFlanking && isClosingStyle( po.styles, it->m_type ) )
 	{
 		closeStyle( po.styles, it->m_type );
 		setStyle( po.opts, it->m_type, false );
@@ -2869,7 +2896,7 @@ checkForStyle( Delims::const_iterator it, Delims::const_iterator last,
 		po.pos = it->m_pos + it->m_len;
 		po.line = it->m_line;
 	}
-	else
+	else if( it->m_leftFlanking )
 	{
 		switch( it->m_type )
 		{
@@ -3037,7 +3064,7 @@ parseFormattedText( QStringList & fr, QSharedPointer< Block > parent,
 			case Delimiter::BoldItalic4Open :
 			case Delimiter::BoldItalic3Close :
 			case Delimiter::BoldItalic4Close :
-				it = checkForStyle( it, last, po );
+					it = checkForStyle( it, last, po );
 				break;
 
 			case Delimiter::InlineCode :
