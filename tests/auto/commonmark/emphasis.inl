@@ -20,46 +20,25 @@
 	along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-#define DOCTEST_CONFIG_IMPLEMENT_WITH_MAIN
+#include "load.hpp"
+
 #include <doctest/doctest.h>
 
-//CommonMark 0.30
+// 6.2 Emphasis and strong emphasis
 
-// 2.2
-#include "tabs.inl"
+TEST_CASE( "350" )
+{
+	const auto doc = load_test( 350 );
 
-// 2.3 Insecure characters
-// Skipped.
+	REQUIRE( doc->isEmpty() == false );
+	REQUIRE( doc->items().size() == 2 );
 
-// 2.4
-#include "backslash.inl"
+	REQUIRE( doc->items().at( 1 )->type() == MD::ItemType::Paragraph );
+	auto p = static_cast< MD::Paragraph* > ( doc->items().at( 1 ).data() );
+	REQUIRE( p->items().size() == 1 );
 
-// 2.5 Entity and numeric character references
-// Skipped.
-
-// 3.1 - 4.5
-#include "blocks.inl"
-
-// 4.6 HTML blocks
-// Skipped.
-
-// 4.7
-#include "link_ref.inl"
-
-// 4.8 - 4.9
-#include "paragraphs.inl"
-
-// 5.1
-#include "blockquote.inl"
-
-// 5.2
-#include "list_items.inl"
-
-// 5.3
-#include "lists.inl"
-
-// 6.1
-#include "code_spans.inl"
-
-// 6.2
-#include "emphasis.inl"
+	REQUIRE( p->items().at( 0 )->type() == MD::ItemType::Text );
+	auto t = static_cast< MD::Text* > ( p->items().at( 0 ).data() );
+	REQUIRE( t->opts() == MD::ItalicText );
+	REQUIRE( t->text() == QStringLiteral( "foo bar" ) );
+}
