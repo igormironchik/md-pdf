@@ -2012,8 +2012,8 @@ TEST_CASE( "039" )
 
 	auto t = static_cast< MD::Text* > ( p->items().at( 0 ).data() );
 
-	REQUIRE( t->opts() == MD::TextOption::TextWithoutFormat );
-	REQUIRE( t->text() == QStringLiteral( "****text****" ) );
+	REQUIRE( t->opts() == MD::TextOption::BoldText );
+	REQUIRE( t->text() == QStringLiteral( "text" ) );
 }
 
 TEST_CASE( "040" )

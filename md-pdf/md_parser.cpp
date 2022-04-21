@@ -1157,18 +1157,6 @@ struct Delimiter {
 		Bold1,
 		// __
 		Bold2,
-		// ***
-		BoldItalic1,
-		// ___
-		BoldItalic2,
-		// _**
-		BoldItalic3Open,
-		// **_
-		BoldItalic3Close,
-		// __*
-		BoldItalic4Open,
-		// *__
-		BoldItalic4Close,
 		// `
 		InlineCode,
 		// <
@@ -1190,33 +1178,6 @@ struct Delimiter {
 	bool m_leftFlanking = false;
 	bool m_rightFlanking = false;
 }; // struct Delimiter
-
-inline Delimiter::DelimiterType
-styleType( const QString & s )
-{
-	if( s == QStringLiteral( "*" ) )
-		return Delimiter::Italic1;
-	else if( s == QStringLiteral( "_" ) )
-		return Delimiter::Italic2;
-	else if( s == QStringLiteral( "**" ) )
-		return Delimiter::Bold1;
-	else if( s == QStringLiteral( "__" ) )
-		return Delimiter::Bold2;
-	else if( s == QStringLiteral( "***" ) )
-		return Delimiter::BoldItalic1;
-	else if( s == QStringLiteral( "___" ) )
-		return Delimiter::BoldItalic2;
-	else if( s == QStringLiteral( "_**" ) )
-		return Delimiter::BoldItalic3Open;
-	else if( s == QStringLiteral( "**_" ) )
-		return Delimiter::BoldItalic3Close;
-	else if( s == QStringLiteral( "__*" ) )
-		return Delimiter::BoldItalic4Open;
-	else if( s == QStringLiteral( "*__" ) )
-		return Delimiter::BoldItalic4Close;
-	else
-		return Delimiter::Unknown;
-}
 
 using Delims = QList< Delimiter >;
 
@@ -1263,40 +1224,83 @@ collectDelimiters( const QStringList & fr )
 						const bool punctBefore = ( i > 0 ? str[ i - 1 ].isPunct() ||
 							str[ i - 1 ] == c_126 : false );
 
-						while( i < str.length() && ( str[ i ] == c_95 || str[ i ] == c_42 ) )
+						const auto ch = str[ i ];
+
+						while( i < str.length() && str[ i ] == ch )
 						{
 							style.append( str[ i ] );
 							++i;
 						}
 
-						if( style.length() <= 3 )
+						Delimiter::DelimiterType dt = Delimiter::Unknown;
+						Delimiter::DelimiterType sdt = Delimiter::Unknown;
+
+						if( style.length() == 1 )
 						{
-							const auto dt = styleType( style );
-
-							if( dt != Delimiter::Unknown )
+							if( ch == c_42 )
+								dt = Delimiter::Italic1;
+							else
+								dt = Delimiter::Italic2;
+						}
+						else if( style.length() == 2 )
+						{
+							if( ch == c_42 )
+								dt = Delimiter::Bold1;
+							else
+								dt = Delimiter::Bold2;
+						}
+						else if( style.length() % 2 == 0 )
+						{
+							if( ch == c_42 )
+								dt = Delimiter::Bold1;
+							else
+								dt = Delimiter::Bold2;
+						}
+						else
+						{
+							if( ch == c_42 )
 							{
-								const bool spaceAfter =
-									( i < str.length() ? str[ i ].isSpace() : true );
-								const bool punctAfter =
-									( i < str.length() ? str[ i ].isPunct() ||
-										str[ i ] == c_126 : false );
-								const bool leftFlanking =
-									( ( space || punctBefore ) && punctAfter ) ||
-									( !spaceAfter && !punctAfter );
-								const bool rightFlanking =
-									( punctBefore && ( spaceAfter || punctAfter ) ) ||
-									( !space && !punctBefore );
+								dt = Delimiter::Bold1;
+								sdt = Delimiter::Italic1;
+							}
+							else
+							{
+								dt = Delimiter::Bold2;
+								sdt = Delimiter::Italic2;
+							}
+						}
 
-								if( leftFlanking || rightFlanking )
+						if( dt != Delimiter::Unknown )
+						{
+							const bool spaceAfter =
+								( i < str.length() ? str[ i ].isSpace() : true );
+							const bool punctAfter =
+								( i < str.length() ? str[ i ].isPunct() ||
+									str[ i ] == c_126 : false );
+							const bool leftFlanking =
+								( ( space || punctBefore ) && punctAfter ) ||
+								( !spaceAfter && !punctAfter );
+							const bool rightFlanking =
+								( punctBefore && ( spaceAfter || punctAfter ) ) ||
+								( !space && !punctBefore );
+
+							if( leftFlanking || rightFlanking )
+							{
+								auto sl = 0;
+
+								if( sdt != Delimiter::Unknown )
 								{
-									d.push_back( { dt, line, i - style.length(), style.length(),
+									d.push_back( { sdt, line, i - style.length(), 1,
 										space, spaceAfter, word, false,
 										leftFlanking, rightFlanking } );
-
-									word = false;
 								}
-								else
-									word = true;
+
+								d.push_back( { dt, line, i - style.length() + sl,
+									style.length() - sl,
+									space, spaceAfter, word, false,
+									leftFlanking, rightFlanking } );
+
+								word = false;
 							}
 							else
 								word = true;
@@ -2714,15 +2718,7 @@ isClosingStyle( const QVector< Delimiter::DelimiterType > & styles,
 		case Delimiter::Italic2 :
 		case Delimiter::Bold1 :
 		case Delimiter::Bold2 :
-		case Delimiter::BoldItalic1 :
-		case Delimiter::BoldItalic2 :
 			return styles.contains( s );
-
-		case Delimiter::BoldItalic3Close :
-			return styles.contains( Delimiter::BoldItalic3Open );
-
-		case Delimiter::BoldItalic4Close :
-			return styles.contains( Delimiter::BoldItalic4Open );
 
 		default :
 			return false;
@@ -2740,17 +2736,7 @@ closeStyle( QVector< Delimiter::DelimiterType > & styles,
 		case Delimiter::Italic2 :
 		case Delimiter::Bold1 :
 		case Delimiter::Bold2 :
-		case Delimiter::BoldItalic1 :
-		case Delimiter::BoldItalic2 :
 			styles.removeOne( s );
-			break;
-
-		case Delimiter::BoldItalic3Close :
-			styles.removeOne( Delimiter::BoldItalic3Open );
-			break;
-
-		case Delimiter::BoldItalic4Close :
-			styles.removeOne( Delimiter::BoldItalic4Open );
 			break;
 
 		default :
@@ -2777,16 +2763,6 @@ setStyle( TextOptions & opts, Delimiter::DelimiterType s, bool on )
 			opts.setFlag( BoldText, on );
 			break;
 
-		case Delimiter::BoldItalic1 :
-		case Delimiter::BoldItalic2 :
-		case Delimiter::BoldItalic3Open :
-		case Delimiter::BoldItalic4Open :
-		case Delimiter::BoldItalic3Close :
-		case Delimiter::BoldItalic4Close :
-			opts.setFlag( BoldText, on );
-			opts.setFlag( ItalicText, on );
-			break;
-
 		default :
 			break;
 	}
@@ -2803,15 +2779,7 @@ isClosingStyle( Delimiter::DelimiterType open,
 		case Delimiter::Italic2 :
 		case Delimiter::Bold1 :
 		case Delimiter::Bold2 :
-		case Delimiter::BoldItalic1 :
-		case Delimiter::BoldItalic2 :
 			return ( open == close );
-
-		case Delimiter::BoldItalic3Open :
-			return ( close == Delimiter::BoldItalic3Close );
-
-		case Delimiter::BoldItalic4Open :
-			return ( close == Delimiter::BoldItalic4Close );
 
 		default :
 			return false;
@@ -2850,10 +2818,6 @@ isStyleClosed( Delims::const_iterator it, Delims::const_iterator last,
 			case Delimiter::Italic2 :
 			case Delimiter::Bold1 :
 			case Delimiter::Bold2 :
-			case Delimiter::BoldItalic1 :
-			case Delimiter::BoldItalic2 :
-			case Delimiter::BoldItalic3Close :
-			case Delimiter::BoldItalic4Close :
 			{
 				if( it->m_rightFlanking && isClosingStyle( open, it->m_type ) )
 				{
@@ -2905,10 +2869,6 @@ checkForStyle( Delims::const_iterator it, Delims::const_iterator last,
 			case Delimiter::Italic2 :
 			case Delimiter::Bold1 :
 			case Delimiter::Bold2 :
-			case Delimiter::BoldItalic1 :
-			case Delimiter::BoldItalic2 :
-			case Delimiter::BoldItalic3Open :
-			case Delimiter::BoldItalic4Open :
 			{
 				if( isStyleClosed( it, last, po ) )
 				{
@@ -3058,12 +3018,6 @@ parseFormattedText( QStringList & fr, QSharedPointer< Block > parent,
 			case Delimiter::Italic2 :
 			case Delimiter::Bold1 :
 			case Delimiter::Bold2 :
-			case Delimiter::BoldItalic1 :
-			case Delimiter::BoldItalic2 :
-			case Delimiter::BoldItalic3Open :
-			case Delimiter::BoldItalic4Open :
-			case Delimiter::BoldItalic3Close :
-			case Delimiter::BoldItalic4Close :
 					it = checkForStyle( it, last, po );
 				break;
 
