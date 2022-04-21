@@ -238,7 +238,7 @@ TEST_CASE( "054" )
 	REQUIRE( doc->items().at( 1 )->type() == MD::ItemType::HorizontalLine );
 }
 
-TEST_CASE( "055" ) // Not strict to CommonMark. Will be fixed later.
+TEST_CASE( "055" )
 {
 	const auto doc = load_test( 55 );
 
@@ -252,8 +252,7 @@ TEST_CASE( "055" ) // Not strict to CommonMark. Will be fixed later.
 		REQUIRE( p->items().at( 0 )->type() == MD::ItemType::Text );
 		auto t = static_cast< MD::Text* > ( p->items().at( 0 ).data() );
 		REQUIRE( t->opts() == MD::TextWithoutFormat );
-		// I consider "_" as text style here.
-		REQUIRE( t->text() == QStringLiteral( "a" ) );
+		REQUIRE( t->text() == QStringLiteral( "_ _ _ _ a" ) );
 	}
 
 	{
