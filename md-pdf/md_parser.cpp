@@ -202,7 +202,7 @@ isOrderedList( const QString & s, int * num, int * len,
 			if( isFirstLineEmpty )
 				*isFirstLineEmpty = ( tmp == s.size() );
 
-			if( ( p < s.size() && s[ p ].isSpace() ) || p == s.size() )
+			if( ( p < s.size() && s[ p ] == c_32 ) || p == s.size() )
 				return true;
 		}
 	}
@@ -501,7 +501,7 @@ Parser::whatIsTheLine( QString & str, bool inList, qsizetype * indent, bool calc
 				&isFirstLineEmpty );
 
 			if( ( ( ( s.startsWith( c_45 ) || s.startsWith( c_43 ) || s.startsWith( c_42 ) ) &&
-				( ( s.length() > 1 && s[ 1 ].isSpace() ) || s.length() == 1 ) ) ||
+				( ( s.length() > 1 && s[ 1 ] == c_32 ) || s.length() == 1 ) ) ||
 				orderedList ) && ( first < 4  || indentInList( indents, first ) ) )
 			{
 				if( calcIndent && indent )
@@ -526,7 +526,7 @@ Parser::whatIsTheLine( QString & str, bool inList, qsizetype * indent, bool calc
 				&isFirstLineEmpty );
 
 			if( ( ( ( s.startsWith( c_45 ) || s.startsWith( c_43 ) || s.startsWith( c_42 ) ) &&
-				( ( s.length() > 1 && s[ 1 ].isSpace() ) || s.length() == 1 ) ) ||
+				( ( s.length() > 1 && s[ 1 ] == c_32 ) || s.length() == 1 ) ) ||
 				orderedList ) && ( first < 4  || indentInList( indents, first ) ) )
 			{
 				if( calcIndent && indent )
