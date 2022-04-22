@@ -119,3 +119,36 @@ TEST_CASE( "354" )
 		REQUIRE( t->text() == QStringLiteral( "bar" ) );
 	}
 }
+
+TEST_CASE( "355" )
+{
+	const auto doc = load_test( 355 );
+
+	REQUIRE( doc->isEmpty() == false );
+	REQUIRE( doc->items().size() == 2 );
+
+	REQUIRE( doc->items().at( 1 )->type() == MD::ItemType::Paragraph );
+	auto p = static_cast< MD::Paragraph* > ( doc->items().at( 1 ).data() );
+	REQUIRE( p->items().size() == 3 );
+
+	{
+		REQUIRE( p->items().at( 0 )->type() == MD::ItemType::Text );
+		auto t = static_cast< MD::Text* > ( p->items().at( 0 ).data() );
+		REQUIRE( t->opts() == MD::TextWithoutFormat );
+		REQUIRE( t->text() == QStringLiteral( "5" ) );
+	}
+
+	{
+		REQUIRE( p->items().at( 1 )->type() == MD::ItemType::Text );
+		auto t = static_cast< MD::Text* > ( p->items().at( 1 ).data() );
+		REQUIRE( t->opts() == MD::ItalicText );
+		REQUIRE( t->text() == QStringLiteral( "6" ) );
+	}
+
+	{
+		REQUIRE( p->items().at( 2 )->type() == MD::ItemType::Text );
+		auto t = static_cast< MD::Text* > ( p->items().at( 2 ).data() );
+		REQUIRE( t->opts() == MD::TextWithoutFormat );
+		REQUIRE( t->text() == QStringLiteral( "78" ) );
+	}
+}
