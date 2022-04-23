@@ -1223,6 +1223,8 @@ collectDelimiters( const QStringList & fr )
 
 						const bool punctBefore = ( i > 0 ? str[ i - 1 ].isPunct() ||
 							str[ i - 1 ] == c_126 : false );
+						const bool alNumBefore =
+							( i > 0 ? str[ i - 1 ].isLetterOrNumber() : false );
 
 						const auto ch = str[ i ];
 
@@ -1283,8 +1285,11 @@ collectDelimiters( const QStringList & fr )
 							const bool rightFlanking =
 								( punctBefore && ( spaceAfter || punctAfter ) ) ||
 								( !space && !punctBefore );
+							const bool disabledEmphasis =
+								( ( i < str.length() ? str[ i ].isLetterOrNumber() : false ) &&
+								alNumBefore && ch == c_95 );
 
-							if( leftFlanking || rightFlanking )
+							if( ( leftFlanking || rightFlanking ) && !disabledEmphasis )
 							{
 								auto sl = 0;
 
