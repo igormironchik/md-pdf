@@ -2802,6 +2802,8 @@ isStyleClosed( Delims::const_iterator it, Delims::const_iterator last,
 
 	po.collectRefLinks = true;
 
+	auto count = po.styles.count( open );
+
 	for( it = std::next( it ); it != last; ++it )
 	{
 		switch( it->m_type )
@@ -2826,11 +2828,16 @@ isStyleClosed( Delims::const_iterator it, Delims::const_iterator last,
 			{
 				if( it->m_rightFlanking && isClosingStyle( open, it->m_type ) )
 				{
-					po.collectRefLinks = collectRefLinks;
-					po.line = line;
-					po.pos = pos;
+					--count;
 
-					return true;
+					if( count < 0 )
+					{
+						po.collectRefLinks = collectRefLinks;
+						po.line = line;
+						po.pos = pos;
+
+						return true;
+					}
 				}
 			}
 				break;
@@ -2860,7 +2867,9 @@ checkForStyle( Delims::const_iterator it, Delims::const_iterator last,
 	if( it->m_rightFlanking && isClosingStyle( po.styles, it->m_type ) )
 	{
 		closeStyle( po.styles, it->m_type );
-		setStyle( po.opts, it->m_type, false );
+
+		if( !po.styles.contains( it->m_type ) )
+			setStyle( po.opts, it->m_type, false );
 
 		po.pos = it->m_pos + it->m_len;
 		po.line = it->m_line;
