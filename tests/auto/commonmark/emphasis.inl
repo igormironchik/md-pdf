@@ -1092,3 +1092,30 @@ TEST_CASE( "402" )
 		REQUIRE( t->text() == QStringLiteral( "." ) );
 	}
 }
+
+TEST_CASE( "403" )
+{
+	const auto doc = load_test( 403 );
+
+	REQUIRE( doc->isEmpty() == false );
+	REQUIRE( doc->items().size() == 2 );
+
+	REQUIRE( doc->items().at( 1 )->type() == MD::ItemType::Paragraph );
+	auto p = static_cast< MD::Paragraph* > ( doc->items().at( 1 ).data() );
+	REQUIRE( p->items().size() == 2 );
+
+	{
+		REQUIRE( p->items().at( 0 )->type() == MD::ItemType::Text );
+		auto t = static_cast< MD::Text* > ( p->items().at( 0 ).data() );
+		REQUIRE( t->opts() == MD::ItalicText );
+		REQUIRE( t->text() == QStringLiteral( "foo" ) );
+	}
+
+	{
+		REQUIRE( p->items().at( 1 )->type() == MD::ItemType::Link );
+		auto l = static_cast< MD::Link* > ( p->items().at( 1 ).data() );
+		REQUIRE( l->textOptions() == MD::ItalicText );
+		REQUIRE( l->text() == QStringLiteral( "bar" ) );
+		REQUIRE( l->url() == QStringLiteral( "/url" ) );
+	}
+}
