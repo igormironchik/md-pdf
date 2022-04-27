@@ -922,3 +922,29 @@ TEST_CASE( "394" )
 		REQUIRE( t->text() == QStringLiteral( "\" foo" ) );
 	}
 }
+
+TEST_CASE( "395" )
+{
+	const auto doc = load_test( 395 );
+
+	REQUIRE( doc->isEmpty() == false );
+	REQUIRE( doc->items().size() == 2 );
+
+	REQUIRE( doc->items().at( 1 )->type() == MD::ItemType::Paragraph );
+	auto p = static_cast< MD::Paragraph* > ( doc->items().at( 1 ).data() );
+	REQUIRE( p->items().size() == 2 );
+
+	{
+		REQUIRE( p->items().at( 0 )->type() == MD::ItemType::Text );
+		auto t = static_cast< MD::Text* > ( p->items().at( 0 ).data() );
+		REQUIRE( t->opts() == MD::BoldText );
+		REQUIRE( t->text() == QStringLiteral( "foo" ) );
+	}
+
+	{
+		REQUIRE( p->items().at( 1 )->type() == MD::ItemType::Text );
+		auto t = static_cast< MD::Text* > ( p->items().at( 1 ).data() );
+		REQUIRE( t->opts() == MD::TextWithoutFormat );
+		REQUIRE( t->text() == QStringLiteral( "bar" ) );
+	}
+}
