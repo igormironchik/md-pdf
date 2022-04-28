@@ -25,6 +25,7 @@
 
 // C++ include.
 #include <tuple>
+#include <algorithm>
 
 // Qt include.
 #include <QFileInfo>
@@ -1150,13 +1151,9 @@ struct Delimiter {
 		// ~~
 		Strikethrough,
 		// *
-		Italic1,
+		Emphasis1,
 		// _
-		Italic2,
-		// **
-		Bold1,
-		// __
-		Bold2,
+		Emphasis2,
 		// `
 		InlineCode,
 		// <
@@ -1178,6 +1175,15 @@ struct Delimiter {
 	bool m_leftFlanking = false;
 	bool m_rightFlanking = false;
 }; // struct Delimiter
+
+enum class Style {
+	Italic1,
+	Italic2,
+	Bold1,
+	Bold2,
+	Strikethrough,
+	Unknown
+};
 
 using Delims = QList< Delimiter >;
 
@@ -1235,80 +1241,37 @@ collectDelimiters( const QStringList & fr )
 						}
 
 						Delimiter::DelimiterType dt = Delimiter::Unknown;
-						Delimiter::DelimiterType sdt = Delimiter::Unknown;
 
-						if( style.length() == 1 )
-						{
-							if( ch == c_42 )
-								dt = Delimiter::Italic1;
-							else
-								dt = Delimiter::Italic2;
-						}
-						else if( style.length() == 2 )
-						{
-							if( ch == c_42 )
-								dt = Delimiter::Bold1;
-							else
-								dt = Delimiter::Bold2;
-						}
-						else if( style.length() % 2 == 0 )
-						{
-							if( ch == c_42 )
-								dt = Delimiter::Bold1;
-							else
-								dt = Delimiter::Bold2;
-						}
+						if( ch == c_42 )
+							dt = Delimiter::Emphasis1;
 						else
+							dt = Delimiter::Emphasis2;
+
+						const bool spaceAfter =
+							( i < str.length() ? str[ i ].isSpace() : true );
+						const bool punctAfter =
+							( i < str.length() ? str[ i ].isPunct() ||
+								str[ i ] == c_126 : false );
+						const bool leftFlanking =
+							( ( space || punctBefore ) && punctAfter ) ||
+							( !spaceAfter && !punctAfter );
+						const bool rightFlanking =
+							( punctBefore && ( spaceAfter || punctAfter ) ) ||
+							( !space && !punctBefore );
+						const bool disabledEmphasis =
+							( ( i < str.length() ? str[ i ].isLetterOrNumber() : false ) &&
+							alNumBefore && ch == c_95 );
+
+						if( ( leftFlanking || rightFlanking ) && !disabledEmphasis )
 						{
-							if( ch == c_42 )
+							for( auto j = 0; j < style.length(); ++j )
 							{
-								dt = Delimiter::Bold1;
-								sdt = Delimiter::Italic1;
-							}
-							else
-							{
-								dt = Delimiter::Bold2;
-								sdt = Delimiter::Italic2;
-							}
-						}
-
-						if( dt != Delimiter::Unknown )
-						{
-							const bool spaceAfter =
-								( i < str.length() ? str[ i ].isSpace() : true );
-							const bool punctAfter =
-								( i < str.length() ? str[ i ].isPunct() ||
-									str[ i ] == c_126 : false );
-							const bool leftFlanking =
-								( ( space || punctBefore ) && punctAfter ) ||
-								( !spaceAfter && !punctAfter );
-							const bool rightFlanking =
-								( punctBefore && ( spaceAfter || punctAfter ) ) ||
-								( !space && !punctBefore );
-							const bool disabledEmphasis =
-								( ( i < str.length() ? str[ i ].isLetterOrNumber() : false ) &&
-								alNumBefore && ch == c_95 );
-
-							if( ( leftFlanking || rightFlanking ) && !disabledEmphasis )
-							{
-								auto sl = 0;
-
-								if( sdt != Delimiter::Unknown )
-								{
-									d.push_back( { sdt, line, i - style.length(), 1,
-										space, spaceAfter, word, false,
-										leftFlanking, rightFlanking } );
-								}
-
-								d.push_back( { dt, line, i - style.length() + sl,
-									style.length() - sl,
-									space, spaceAfter, word, false,
+								d.push_back( { dt, line, i - style.length() + j,
+									1, space, spaceAfter, word, false,
 									leftFlanking, rightFlanking } );
-
-								word = false;
 							}
-							else
-								word = true;
+
+							word = false;
 						}
 						else
 							word = true;
@@ -1512,7 +1475,7 @@ struct TextParsingOpts {
 	qsizetype line = 0;
 	qsizetype pos = 0;
 	TextOptions opts = TextWithoutFormat;
-	QVector< Delimiter::DelimiterType > styles;
+	QVector< Style > styles;
 }; // struct TextParsingOpts
 
 void
@@ -2713,58 +2676,33 @@ checkForLink( Delims::const_iterator it, Delims::const_iterator last,
 }
 
 inline bool
-isClosingStyle( const QVector< Delimiter::DelimiterType > & styles,
-	Delimiter::DelimiterType s )
+isClosingStyle( const QVector< Style > & styles, Style s )
 {
-	switch( s )
-	{
-		case Delimiter::Strikethrough :
-		case Delimiter::Italic1 :
-		case Delimiter::Italic2 :
-		case Delimiter::Bold1 :
-		case Delimiter::Bold2 :
-			return styles.contains( s );
-
-		default :
-			return false;
-	}
+	return styles.contains( s );
 }
 
 inline void
-closeStyle( QVector< Delimiter::DelimiterType > & styles,
-	Delimiter::DelimiterType s )
+closeStyle( QVector< Style > & styles, Style s )
 {
-	switch( s )
-	{
-		case Delimiter::Strikethrough :
-		case Delimiter::Italic1 :
-		case Delimiter::Italic2 :
-		case Delimiter::Bold1 :
-		case Delimiter::Bold2 :
-			styles.removeOne( s );
-			break;
-
-		default :
-			break;
-	}
+	styles.removeOne( s );
 }
 
 inline void
-setStyle( TextOptions & opts, Delimiter::DelimiterType s, bool on )
+setStyle( TextOptions & opts, Style s, bool on )
 {
 	switch( s )
 	{
-		case Delimiter::Strikethrough :
+		case Style::Strikethrough :
 			opts.setFlag( StrikethroughText, on );
 			break;
 
-		case Delimiter::Italic1 :
-		case Delimiter::Italic2 :
+		case Style::Italic1 :
+		case Style::Italic2 :
 			opts.setFlag( ItalicText, on );
 			break;
 
-		case Delimiter::Bold1 :
-		case Delimiter::Bold2 :
+		case Style::Bold1 :
+		case Style::Bold2 :
 			opts.setFlag( BoldText, on );
 			break;
 
@@ -2774,37 +2712,255 @@ setStyle( TextOptions & opts, Delimiter::DelimiterType s, bool on )
 }
 
 inline bool
-isClosingStyle( Delimiter::DelimiterType open,
-	Delimiter::DelimiterType close )
+isSameDelimiterChar( Delimiter::DelimiterType d1, Delimiter::DelimiterType d2 )
 {
-	switch( open )
-	{
-		case Delimiter::Strikethrough :
-		case Delimiter::Italic1 :
-		case Delimiter::Italic2 :
-		case Delimiter::Bold1 :
-		case Delimiter::Bold2 :
-			return ( open == close );
+	return ( d1 == d2 );
+}
 
-		default :
-			return false;
+inline void
+appendPossibleDelimiter( std::vector< std::vector< qsizetype > > & vars, qsizetype len )
+{
+	for( auto & v : vars )
+		v.push_back( len );
+}
+
+inline void
+removeUnpossibleAndClosedSequences( std::vector< std::vector< qsizetype > > & vars )
+{
+	std::vector< std::vector< qsizetype > > tmp;
+
+	for( const auto & v : vars )
+	{
+		if( std::accumulate( v.cbegin(), v.cend(), 0 ) > 0 )
+			tmp.push_back( v );
+	}
+
+	vars = tmp;
+}
+
+inline std::vector< std::vector< qsizetype > >
+closedSequences( const std::vector< std::vector< qsizetype > > & vars )
+{
+	std::vector< std::vector< qsizetype > > tmp;
+
+	for( const auto & v : vars )
+	{
+		if( std::accumulate( v.cbegin(), v.cend(), 0 ) <= 0 )
+			tmp.push_back( v );
+	}
+
+	return tmp;
+}
+
+inline std::vector< qsizetype >
+longestSequence( const std::vector< std::vector< qsizetype > > & vars )
+{
+	std::vector< size_t > len;
+
+	for( const auto & v : vars )
+		len.push_back( v.size() );
+
+	size_t max = 0;
+	size_t idx = 0, i = 0;
+
+	for( const auto & s : len )
+	{
+		if( s > max )
+		{
+			max = s;
+			idx = i;
+		}
+
+		++i;
+	}
+
+	return vars.at( idx );
+}
+
+inline void
+collectDelimiterVariants( std::vector< std::vector< qsizetype > > & vars, qsizetype itLength,
+	bool leftFlanking, bool rightFlanking )
+{
+	{
+		const auto tmp = vars;
+		auto vars1 = vars;
+		auto vars2 = vars;
+
+		vars.clear();
+
+		if( leftFlanking )
+		{
+			appendPossibleDelimiter( vars1, itLength );
+			std::copy( vars1.cbegin(), vars1.cend(), std::back_inserter( vars ) );
+		}
+
+		if( rightFlanking )
+		{
+			appendPossibleDelimiter( vars2, -itLength );
+			std::copy( vars2.cbegin(), vars2.cend(), std::back_inserter( vars ) );
+		}
+
+		std::copy( tmp.cbegin(), tmp.cend(), std::back_inserter( vars ) );
 	}
 }
 
+inline void
+createStyles( std::vector< std::pair< Style, qsizetype > > & s, qsizetype l,
+	Delimiter::DelimiterType t, qsizetype & count )
+{
+	if( t != Delimiter::Strikethrough )
+	{
+		if( l % 2 == 1 )
+		{
+			s.push_back( { t == Delimiter::Emphasis1 ?
+				Style::Italic1 : Style::Italic2, 1 } );
+			++count;
+		}
+
+		if( l >= 2 )
+		{
+			s.push_back( { t == Delimiter::Emphasis1 ?
+				Style::Bold1 : Style::Bold2, l / 2 } );
+			count += ( l / 2 ) * 2;
+		}
+	}
+	else
+	{
+		s.push_back( { Style::Strikethrough, l / 2 } );
+		count += l / 2;
+	}
+}
+
+inline std::vector< std::pair< Style, qsizetype > >
+createStyles( const std::vector< qsizetype > & s, size_t i, Delimiter::DelimiterType t,
+	qsizetype & count )
+{
+	std::vector< std::pair< Style, qsizetype > > styles;
+
+	qsizetype len = s.at( i );
+	qsizetype tmp = 0;
+
+	for( i = i + 1; i < s.size(); ++i )
+	{
+		auto l = qAbs( s.at( i ) );
+
+		if( s.at( i ) > 0 )
+			tmp += s.at( i );
+		else if( tmp == 0 )
+		{
+			createStyles( styles, qMin( l, len ), t, count );
+
+			len -= l;
+
+			if( !len )
+				break;
+		}
+		else if( l > tmp )
+		{
+			l = l - tmp;
+			tmp = 0;
+			createStyles( styles, qMin( l, len ), t, count );
+
+			len -= l;
+
+			if( !len )
+				break;
+		}
+		else
+			tmp = 0;
+	}
+
+	return styles;
+}
+
 inline bool
+isSequence( Delims::const_iterator it, qsizetype itLine, qsizetype itPos,
+	Delimiter::DelimiterType t )
+{
+	return ( itLine == it->m_line &&
+		itPos + ( it->m_type != Delimiter::Strikethrough ? 1 : 2 ) == it->m_pos &&
+		it->m_type == t );
+}
+
+inline Delims::const_iterator
+readSequence( Delims::const_iterator it, Delims::const_iterator last,
+	qsizetype & line, qsizetype & pos, qsizetype & len,
+	Delims::const_iterator & current )
+{
+	line = it->m_line;
+	pos = it->m_pos;
+	len = ( it->m_type != Delimiter::Strikethrough ? 1 : 2 );
+	current = it;
+	const auto t = it->m_type;
+
+	it = std::next( it );
+
+	while( it != last && isSequence( it, line, pos, t ) )
+	{
+		current = it;
+
+		if( it->m_type != Delimiter::Strikethrough )
+		{
+			++pos;
+			++len;
+		}
+		else
+		{
+			pos += 2;
+			len += 2;
+		}
+
+		++it;
+	}
+
+	return std::prev( it );
+}
+
+inline std::tuple< bool, std::vector< std::pair< Style, qsizetype > >, qsizetype, qsizetype >
 isStyleClosed( Delims::const_iterator it, Delims::const_iterator last,
 	TextParsingOpts & po )
 {
-	const auto open = it->m_type;
+	const auto open = it;
+	auto current =  it;
+
+	std::vector< std::vector< qsizetype > > vars, closed;
+	vars.push_back( {} );
+
+	qsizetype itLine = open->m_line, itPos = open->m_pos,
+		itLength = ( open->m_type != Delimiter::Strikethrough ? 1 : 2 );
 
 	const qsizetype line = po.line, pos = po.pos;
 	const bool collectRefLinks = po.collectRefLinks;
 
 	po.collectRefLinks = true;
 
-	auto count = po.styles.count( open );
+	bool first = true;
 
-	for( it = std::next( it ); it != last; ++it )
+	if( it->m_type == Delimiter::Strikethrough )
+	{
+		const auto c = po.styles.count( Style::Strikethrough );
+
+		if( c )
+			vars.front().push_back( c );
+	}
+	else
+	{
+		const auto c1 = po.styles.count( it->m_type == Delimiter::Emphasis1 ?
+			Style::Italic1 : Style::Italic2 );
+
+		if( c1 )
+			vars.front().push_back( c1 );
+
+		const auto c2 = po.styles.count( it->m_type == Delimiter::Emphasis1 ?
+			Style::Bold1 : Style::Bold2 ) * 2;
+
+		if( c2 )
+			vars.front().push_back( c2 );
+	}
+
+	const auto idx = vars.front().size();
+
+	for( ; it != last; ++it )
 	{
 		switch( it->m_type )
 		{
@@ -2821,22 +2977,28 @@ isStyleClosed( Delims::const_iterator it, Delims::const_iterator last,
 				break;
 
 			case Delimiter::Strikethrough :
-			case Delimiter::Italic1 :
-			case Delimiter::Italic2 :
-			case Delimiter::Bold1 :
-			case Delimiter::Bold2 :
+			case Delimiter::Emphasis1 :
+			case Delimiter::Emphasis2 :
 			{
-				if( it->m_rightFlanking && isClosingStyle( open, it->m_type ) )
+				if( isSameDelimiterChar( open->m_type, it->m_type ) )
 				{
-					--count;
+					it = readSequence( it, last, itLine, itPos, itLength, current );
 
-					if( count < 0 )
+					if( first )
 					{
-						po.collectRefLinks = collectRefLinks;
-						po.line = line;
-						po.pos = pos;
+						vars.front().push_back( itLength );
+						first = false;
+					}
+					else
+					{
+						collectDelimiterVariants( vars, itLength,
+							it->m_leftFlanking, it->m_rightFlanking );
 
-						return true;
+						const auto tmp = closedSequences( vars );
+
+						std::copy( tmp.cbegin(), tmp.cend(), std::back_inserter( closed ) );
+
+						removeUnpossibleAndClosedSequences( vars );
 					}
 				}
 			}
@@ -2851,49 +3013,136 @@ isStyleClosed( Delims::const_iterator it, Delims::const_iterator last,
 		}
 	}
 
-	po.collectRefLinks = collectRefLinks;
 	po.line = line;
 	po.pos = pos;
+	po.collectRefLinks = collectRefLinks;
 
-	return false;
+	if( !closed.empty() )
+	{
+		qsizetype itCount = 0;
+
+		return { true, createStyles( longestSequence( closed ), idx, open->m_type, itCount ),
+			vars.front().at( idx ), itCount };
+	}
+	else
+		return { false, { { Style::Unknown, 0 } }, vars.front().at( idx ),
+			( open->m_type != Delimiter::Strikethrough ? vars.front().at( idx ) :
+				vars.front().at( idx ) / 2 ) };
 }
 
 inline Delims::const_iterator
 checkForStyle( Delims::const_iterator it, Delims::const_iterator last,
 	TextParsingOpts & po )
 {
+	qsizetype count = 1;
+
 	po.wasRefLink = false;
 
-	if( it->m_rightFlanking && isClosingStyle( po.styles, it->m_type ) )
+	if( it->m_rightFlanking )
 	{
-		closeStyle( po.styles, it->m_type );
+		qsizetype line = it->m_line, pos = it->m_pos;
+		const auto t = it->m_type;
 
-		if( !po.styles.contains( it->m_type ) )
-			setStyle( po.opts, it->m_type, false );
+		for( auto j = std::next( it ); j != last; ++j )
+		{
+			if( j->m_line == line && pos + 1 == j->m_pos && j->m_type == t )
+			{
+				++pos;
+				++count;
+			}
+			else
+				break;
+		}
 
-		po.pos = it->m_pos + it->m_len;
-		po.line = it->m_line;
+		qsizetype opened = 0;
+
+		if( it->m_type == Delimiter::Strikethrough )
+			opened = po.styles.count( Style::Strikethrough );
+		else
+		{
+			opened = po.styles.count( it->m_type == Delimiter::Emphasis1 ?
+				Style::Italic1 : Style::Italic2 );
+			opened += po.styles.count( it->m_type == Delimiter::Emphasis1 ?
+				Style::Bold1 : Style::Bold2 ) * 2;
+		}
+
+		if( count && opened && ( count <= opened || ( count % 3 == 0 && opened % 3 == 0 ) ) )
+		{
+			if( count > opened )
+				count = opened;
+
+			if( it->m_type == Delimiter::Strikethrough )
+			{
+				for( auto i = 0; i < count; ++i )
+					closeStyle( po.styles, Style::Strikethrough );
+
+				if( !po.styles.contains( Style::Strikethrough ) )
+					setStyle( po.opts, Style::Strikethrough, false );
+			}
+			else
+			{
+				if( count % 2 == 1 )
+				{
+					const auto st = ( it->m_type == Delimiter::Emphasis1 ?
+						Style::Italic1 : Style::Italic2 );
+
+					closeStyle( po.styles, st );
+
+					if( !po.styles.contains( st ) )
+						setStyle( po.opts, st, false );
+				}
+
+				if( count >= 2 )
+				{
+					const auto st = ( it->m_type == Delimiter::Emphasis1 ?
+						Style::Bold1 : Style::Bold2 );
+
+					for( auto i = 0; i < count / 2; ++i )
+						closeStyle( po.styles, st );
+
+					if( !po.styles.contains( st ) )
+						setStyle( po.opts, st, false );
+				}
+			}
+
+			const auto j = it + ( count - 1 );
+
+			po.pos = j->m_pos + j->m_len;
+			po.line = j->m_line;
+
+			return it + ( count - 1 );
+		}
 	}
-	else if( it->m_leftFlanking )
+
+	if( it->m_leftFlanking )
 	{
 		switch( it->m_type )
 		{
 			case Delimiter::Strikethrough :
-			case Delimiter::Italic1 :
-			case Delimiter::Italic2 :
-			case Delimiter::Bold1 :
-			case Delimiter::Bold2 :
+			case Delimiter::Emphasis1 :
+			case Delimiter::Emphasis2 :
 			{
-				if( isStyleClosed( it, last, po ) )
-				{
-					setStyle( po.opts, it->m_type, true );
-					po.styles.append( it->m_type );
+				bool closed = false;
+				std::vector< std::pair< Style, qsizetype > > styles;
+				qsizetype len = 0;
 
-					po.pos = it->m_pos + it->m_len;
+				std::tie( closed, styles, len, count ) = isStyleClosed( it, last, po );
+
+				if( closed )
+				{
+					for( const auto & p : styles )
+					{
+						setStyle( po.opts, p.first, true );
+
+						for( qsizetype i = 0; i < p.second; ++i )
+							po.styles.append( p.first );
+					}
+
+					po.pos = it->m_pos + len;
 					po.line = it->m_line;
 				}
 				else if( !po.collectRefLinks )
-					makeText( it->m_line, it->m_pos + it->m_len, po );
+					makeText( it->m_line, it->m_pos + len, po );
 			}
 				break;
 
@@ -2906,7 +3155,10 @@ checkForStyle( Delims::const_iterator it, Delims::const_iterator last,
 		}
 	}
 
-	return it;
+	if( !count )
+		count = 1;
+
+	return it + ( count - 1 );
 }
 
 inline QSharedPointer< Text >
@@ -3028,10 +3280,8 @@ parseFormattedText( QStringList & fr, QSharedPointer< Block > parent,
 				break;
 
 			case Delimiter::Strikethrough :
-			case Delimiter::Italic1 :
-			case Delimiter::Italic2 :
-			case Delimiter::Bold1 :
-			case Delimiter::Bold2 :
+			case Delimiter::Emphasis1 :
+			case Delimiter::Emphasis2 :
 					it = checkForStyle( it, last, po );
 				break;
 
