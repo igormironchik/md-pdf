@@ -1480,3 +1480,35 @@ TEST_CASE( "417" )
 		REQUIRE( t->text() == QStringLiteral( "bop" ) );
 	}
 }
+
+TEST_CASE( "418" )
+{
+	const auto doc = load_test( 418 );
+
+	REQUIRE( doc->isEmpty() == false );
+	REQUIRE( doc->items().size() == 2 );
+
+	REQUIRE( doc->items().at( 1 )->type() == MD::ItemType::Paragraph );
+	auto p = static_cast< MD::Paragraph* > ( doc->items().at( 1 ).data() );
+	REQUIRE( p->items().size() == 2 );
+
+	{
+		REQUIRE( p->items().at( 0 )->type() == MD::ItemType::Text );
+		auto t = static_cast< MD::Text* > ( p->items().at( 0 ).data() );
+		REQUIRE( t->opts() == MD::ItalicText );
+		REQUIRE( t->text() == QStringLiteral( "foo" ) );
+	}
+
+	{
+		REQUIRE( p->items().at( 1 )->type() == MD::ItemType::Link );
+		auto l = static_cast< MD::Link* > ( p->items().at( 1 ).data() );
+		REQUIRE( l->textOptions() == MD::ItalicText );
+		REQUIRE( l->text() == QStringLiteral( "*bar*" ) );
+		REQUIRE( l->url() == QStringLiteral( "/url" ) );
+		REQUIRE( l->p()->items().size() == 1 );
+		REQUIRE( l->p()->items().at( 0 )->type() == MD::ItemType::Text );
+		auto t = static_cast< MD::Text* > ( l->p()->items().at( 0 ).data() );
+		REQUIRE( t->opts() == MD::ItalicText );
+		REQUIRE( t->text() == QStringLiteral( "bar" ) );
+	}
+}
