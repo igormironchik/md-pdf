@@ -2687,11 +2687,11 @@ isClosingStyle( const std::vector< std::pair< Style, qsizetype > > & styles, Sty
 inline void
 closeStyle( std::vector< std::pair< Style, qsizetype > > & styles, Style s )
 {
-	const auto it = std::find_if( styles.cbegin(), styles.cend(),
+	const auto it = std::find_if( styles.crbegin(), styles.crend(),
 		[&] ( const auto & p ) { return ( p.first == s ); } );
 
-	if( it != styles.cend() )
-		styles.erase( it );
+	if( it != styles.crend() )
+		styles.erase( it.base() - 1 );
 }
 
 inline void
