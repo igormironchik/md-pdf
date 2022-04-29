@@ -1475,7 +1475,7 @@ struct TextParsingOpts {
 	qsizetype line = 0;
 	qsizetype pos = 0;
 	TextOptions opts = TextWithoutFormat;
-	QVector< Style > styles;
+	std::vector< std::pair< Style, qsizetype > > styles;
 }; // struct TextParsingOpts
 
 void
@@ -2676,15 +2676,22 @@ checkForLink( Delims::const_iterator it, Delims::const_iterator last,
 }
 
 inline bool
-isClosingStyle( const QVector< Style > & styles, Style s )
+isClosingStyle( const std::vector< std::pair< Style, qsizetype > > & styles, Style s )
 {
-	return styles.contains( s );
+	const auto it = std::find_if( styles.cbegin(), styles.cend(),
+		[&] ( const auto & p ) { return ( p.first == s ); } );
+
+	return it != styles.cend();
 }
 
 inline void
-closeStyle( QVector< Style > & styles, Style s )
+closeStyle( std::vector< std::pair< Style, qsizetype > > & styles, Style s )
 {
-	styles.removeOne( s );
+	const auto it = std::find_if( styles.cbegin(), styles.cend(),
+		[&] ( const auto & p ) { return ( p.first == s ); } );
+
+	if( it != styles.cend() )
+		styles.erase( it );
 }
 
 inline void
@@ -2938,21 +2945,24 @@ isStyleClosed( Delims::const_iterator it, Delims::const_iterator last,
 
 	if( it->m_type == Delimiter::Strikethrough )
 	{
-		const auto c = po.styles.count( Style::Strikethrough );
+		const auto c = std::count_if( po.styles.cbegin(), po.styles.cend(),
+			[] ( const auto & p ) { return ( p.first == Style::Strikethrough ); } );
 
 		if( c )
 			vars.front().push_back( c );
 	}
 	else
 	{
-		const auto c1 = po.styles.count( it->m_type == Delimiter::Emphasis1 ?
-			Style::Italic1 : Style::Italic2 );
+		const auto c1 = std::count_if( po.styles.cbegin(), po.styles.cend(),
+			[&] ( const auto & p ) { return ( p.first == ( it->m_type == Delimiter::Emphasis1 ?
+				Style::Italic1 : Style::Italic2 ) ); } );
 
 		if( c1 )
 			vars.front().push_back( c1 );
 
-		const auto c2 = po.styles.count( it->m_type == Delimiter::Emphasis1 ?
-			Style::Bold1 : Style::Bold2 ) * 2;
+		const auto c2 = std::count_if( po.styles.cbegin(), po.styles.cend(),
+			[&] ( const auto & p ) { return ( p.first == ( it->m_type == Delimiter::Emphasis1 ?
+				Style::Bold1 : Style::Bold2 ) ); } ) * 2;
 
 		if( c2 )
 			vars.front().push_back( c2 );
@@ -3040,14 +3050,16 @@ checkForStyle( Delims::const_iterator it, Delims::const_iterator last,
 
 	if( it->m_rightFlanking )
 	{
-		qsizetype line = it->m_line, pos = it->m_pos;
+		qsizetype line = it->m_line, pos = it->m_pos + it->m_len;
 		const auto t = it->m_type;
+		qsizetype len = it->m_len;
 
 		for( auto j = std::next( it ); j != last; ++j )
 		{
-			if( j->m_line == line && pos + 1 == j->m_pos && j->m_type == t )
+			if( j->m_line == line && pos == j->m_pos && j->m_type == t )
 			{
-				++pos;
+				len += j->m_len;
+				pos = j->m_pos + j->m_len;
 				++count;
 			}
 			else
@@ -3056,17 +3068,53 @@ checkForStyle( Delims::const_iterator it, Delims::const_iterator last,
 
 		qsizetype opened = 0;
 
-		if( it->m_type == Delimiter::Strikethrough )
-			opened = po.styles.count( Style::Strikethrough );
-		else
+		for( auto it = po.styles.crbegin(), last = po.styles.crend(); it != last; ++it )
 		{
-			opened = po.styles.count( it->m_type == Delimiter::Emphasis1 ?
-				Style::Italic1 : Style::Italic2 );
-			opened += po.styles.count( it->m_type == Delimiter::Emphasis1 ?
-				Style::Bold1 : Style::Bold2 ) * 2;
+			bool doBreak = false;
+
+			switch( t )
+			{
+				case Delimiter::Emphasis1 :
+				{
+					if( it->first == Style::Italic1 || it->first == Style::Bold1 )
+					{
+						opened = it->second;
+						doBreak = true;
+					}
+				}
+					break;
+
+				case Delimiter::Emphasis2 :
+				{
+					if( it->first == Style::Italic2 || it->first == Style::Bold2 )
+					{
+						opened = it->second;
+						doBreak = true;
+					}
+				}
+					break;
+
+				case Delimiter::Strikethrough :
+				{
+					if( it->first == Style::Strikethrough )
+					{
+						opened = it->second;
+						doBreak = true;
+					}
+				}
+					break;
+
+				default :
+					break;
+			}
+
+			if( doBreak )
+				break;
 		}
 
-		if( count && opened && ( count <= opened || ( count % 3 == 0 && opened % 3 == 0 ) ) )
+		const bool sumMult3 = ( it->m_leftFlanking ? ( ( opened + len ) % 3 == 0 ) : false );
+
+		if( count && opened && ( !sumMult3 || ( count % 3 == 0 && opened % 3 == 0 ) ) )
 		{
 			if( count > opened )
 				count = opened;
@@ -3076,8 +3124,12 @@ checkForStyle( Delims::const_iterator it, Delims::const_iterator last,
 				for( auto i = 0; i < count; ++i )
 					closeStyle( po.styles, Style::Strikethrough );
 
-				if( !po.styles.contains( Style::Strikethrough ) )
+				if( std::find_if( po.styles.cbegin(), po.styles.cend(),
+					[] ( const auto & p ) { return ( p.first == Style::Strikethrough ); } ) ==
+						po.styles.cend() )
+				{
 					setStyle( po.opts, Style::Strikethrough, false );
+				}
 			}
 			else
 			{
@@ -3088,8 +3140,9 @@ checkForStyle( Delims::const_iterator it, Delims::const_iterator last,
 
 					closeStyle( po.styles, st );
 
-					if( !po.styles.contains( st ) )
-						setStyle( po.opts, st, false );
+					if( std::find_if( po.styles.cbegin(), po.styles.cend(),
+						[&] ( const auto & p ) { return ( p.first == st ); } ) == po.styles.cend() )
+							setStyle( po.opts, st, false );
 				}
 
 				if( count >= 2 )
@@ -3100,8 +3153,9 @@ checkForStyle( Delims::const_iterator it, Delims::const_iterator last,
 					for( auto i = 0; i < count / 2; ++i )
 						closeStyle( po.styles, st );
 
-					if( !po.styles.contains( st ) )
-						setStyle( po.opts, st, false );
+					if( std::find_if( po.styles.cbegin(), po.styles.cend(),
+						[&] ( const auto & p ) { return ( p.first == st ); } ) == po.styles.cend() )
+							setStyle( po.opts, st, false );
 				}
 			}
 
@@ -3135,7 +3189,7 @@ checkForStyle( Delims::const_iterator it, Delims::const_iterator last,
 						setStyle( po.opts, p.first, true );
 
 						for( qsizetype i = 0; i < p.second; ++i )
-							po.styles.append( p.first );
+							po.styles.push_back( { p.first, len } );
 					}
 
 					po.pos = it->m_pos + len;
