@@ -2886,7 +2886,7 @@ createStyles( const std::vector< qsizetype > & s, size_t i, Delimiter::Delimiter
 				break;
 		}
 		else
-			tmp = 0;
+			tmp -= l;
 	}
 
 	return styles;
