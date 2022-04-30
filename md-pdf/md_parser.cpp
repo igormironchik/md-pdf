@@ -3197,6 +3197,8 @@ checkForStyle( Delims::const_iterator first, Delims::const_iterator it,
 		}
 	}
 
+	count = 1;
+
 	if( it->m_leftFlanking )
 	{
 		switch( it->m_type )
