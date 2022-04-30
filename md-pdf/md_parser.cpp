@@ -3047,14 +3047,13 @@ isStyleClosed( Delims::const_iterator it, Delims::const_iterator last,
 			vars.front().at( idx ), itCount };
 	}
 	else
-		return { false, { { Style::Unknown, 0 } }, vars.front().at( idx ),
-			( open->m_type != Delimiter::Strikethrough ? vars.front().at( idx ) :
-				vars.front().at( idx ) / 2 ) };
+		return { false, { { Style::Unknown, 0 } },
+			( open->m_type != Delimiter::Strikethrough ? 1 : 2 ), 1 };
 }
 
 inline Delims::const_iterator
-checkForStyle( Delims::const_iterator it, Delims::const_iterator last,
-	TextParsingOpts & po )
+checkForStyle( Delims::const_iterator first, Delims::const_iterator it,
+	Delims::const_iterator last, TextParsingOpts & po )
 {
 	qsizetype count = 1;
 
@@ -3062,7 +3061,7 @@ checkForStyle( Delims::const_iterator it, Delims::const_iterator last,
 
 	if( it->m_rightFlanking )
 	{
-		qsizetype line = it->m_line, pos = it->m_pos + it->m_len;
+		qsizetype line = it->m_line, pos = it->m_pos + it->m_len, ppos = it->m_pos;
 		const auto t = it->m_type;
 		qsizetype len = it->m_len;
 
@@ -3076,6 +3075,24 @@ checkForStyle( Delims::const_iterator it, Delims::const_iterator last,
 			}
 			else
 				break;
+		}
+
+		if( it != first )
+		{
+			for( auto j = std::prev( it ); ; --j )
+			{
+				if( j->m_line == line && ppos - j->m_len == j->m_pos && j->m_type == t )
+				{
+					len += j->m_len;
+					ppos = j->m_pos;
+					++count;
+				}
+				else
+					break;
+
+				if( j == first )
+					break;
+			}
 		}
 
 		qsizetype opened = 0;
@@ -3348,7 +3365,7 @@ parseFormattedText( QStringList & fr, QSharedPointer< Block > parent,
 			case Delimiter::Strikethrough :
 			case Delimiter::Emphasis1 :
 			case Delimiter::Emphasis2 :
-					it = checkForStyle( it, last, po );
+					it = checkForStyle( delims.cbegin(), it, last, po );
 				break;
 
 			case Delimiter::InlineCode :

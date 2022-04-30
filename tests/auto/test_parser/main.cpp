@@ -2822,18 +2822,14 @@ TEST_CASE( "062" )
 
 		auto p = static_cast< MD::Paragraph* > ( doc->items().at( 1 ).data() );
 
-		REQUIRE( p->items().size() == 3 );
+		REQUIRE( p->items().size() == 2 );
 		REQUIRE( p->items().at( 0 )->type() == MD::ItemType::Text );
 		auto t1 = static_cast< MD::Text* > ( p->items().at( 0 ).data() );
-		REQUIRE( t1->text() == QStringLiteral( "**" ) );
+		REQUIRE( t1->text() == QStringLiteral( "*" ) );
 
 		REQUIRE( p->items().at( 1 )->type() == MD::ItemType::Code );
 		auto c1 = static_cast< MD::Code* > ( p->items().at( 1 ).data() );
 		REQUIRE( c1->text() == QStringLiteral( "**" ) );
-
-		REQUIRE( p->items().at( 2 )->type() == MD::ItemType::Text );
-		auto t2 = static_cast< MD::Text* > ( p->items().at( 2 ).data() );
-		REQUIRE( t2->text() == QStringLiteral( "*" ) );
 	}
 
 	{
@@ -2841,18 +2837,14 @@ TEST_CASE( "062" )
 
 		auto p = static_cast< MD::Paragraph* > ( doc->items().at( 2 ).data() );
 
-		REQUIRE( p->items().size() == 3 );
+		REQUIRE( p->items().size() == 2 );
 		REQUIRE( p->items().at( 0 )->type() == MD::ItemType::Text );
 		auto t1 = static_cast< MD::Text* > ( p->items().at( 0 ).data() );
-		REQUIRE( t1->text() == QStringLiteral( "**" ) );
+		REQUIRE( t1->text() == QStringLiteral( "*" ) );
 
 		REQUIRE( p->items().at( 1 )->type() == MD::ItemType::Code );
 		auto c1 = static_cast< MD::Code* > ( p->items().at( 1 ).data() );
 		REQUIRE( c1->text() == QStringLiteral( "**" ) );
-
-		REQUIRE( p->items().at( 2 )->type() == MD::ItemType::Text );
-		auto t2 = static_cast< MD::Text* > ( p->items().at( 2 ).data() );
-		REQUIRE( t2->text() == QStringLiteral( "*" ) );
 	}
 
 	{
@@ -2860,18 +2852,14 @@ TEST_CASE( "062" )
 
 		auto p = static_cast< MD::Paragraph* > ( doc->items().at( 3 ).data() );
 
-		REQUIRE( p->items().size() == 3 );
+		REQUIRE( p->items().size() == 2 );
 		REQUIRE( p->items().at( 0 )->type() == MD::ItemType::Text );
 		auto t1 = static_cast< MD::Text* > ( p->items().at( 0 ).data() );
-		REQUIRE( t1->text() == QStringLiteral( "**" ) );
+		REQUIRE( t1->text() == QStringLiteral( "*" ) );
 
 		REQUIRE( p->items().at( 1 )->type() == MD::ItemType::Code );
 		auto c1 = static_cast< MD::Code* > ( p->items().at( 1 ).data() );
 		REQUIRE( c1->text() == QStringLiteral( "**`**" ) );
-
-		REQUIRE( p->items().at( 2 )->type() == MD::ItemType::Text );
-		auto t2 = static_cast< MD::Text* > ( p->items().at( 2 ).data() );
-		REQUIRE( t2->text() == QStringLiteral( "*" ) );
 	}
 
 	{
