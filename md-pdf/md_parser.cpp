@@ -2760,28 +2760,40 @@ closedSequences( const std::vector< std::vector< qsizetype > > & vars )
 }
 
 inline std::vector< qsizetype >
-longestSequence( const std::vector< std::vector< qsizetype > > & vars )
+longestSequenceWithMoreOpeningsAtStart( const std::vector< std::vector< qsizetype > > & vars )
 {
-	std::vector< size_t > len;
-
-	for( const auto & v : vars )
-		len.push_back( v.size() );
-
 	size_t max = 0;
-	size_t idx = 0, i = 0;
 
-	for( const auto & s : len )
+	for( const auto & s : vars )
 	{
-		if( s > max )
-		{
-			max = s;
-			idx = i;
-		}
-
-		++i;
+		if( s.size() > max )
+			max = s.size();
 	}
 
-	return vars.at( idx );
+	std::vector< qsizetype > ret;
+
+	size_t maxOp = 0;
+
+	for( const auto & s : vars )
+	{
+		if( s.size() == max )
+		{
+			size_t op = 0;
+
+			for( const auto & v : s )
+			{
+				if( v > 0 )
+					++op;
+				else
+					break;
+			}
+
+			if( op > maxOp )
+				ret = s;
+		}
+	}
+
+	return ret;
 }
 
 inline void
@@ -3031,7 +3043,7 @@ isStyleClosed( Delims::const_iterator it, Delims::const_iterator last,
 	{
 		qsizetype itCount = 0;
 
-		return { true, createStyles( longestSequence( closed ), idx, open->m_type, itCount ),
+		return { true, createStyles( longestSequenceWithMoreOpeningsAtStart( closed ), idx, open->m_type, itCount ),
 			vars.front().at( idx ), itCount };
 	}
 	else
