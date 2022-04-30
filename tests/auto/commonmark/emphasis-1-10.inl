@@ -26,6 +26,8 @@
 
 // 6.2 Emphasis and strong emphasis
 
+// Rule 1
+
 TEST_CASE( "350" )
 {
 	const auto doc = load_test( 350 );
@@ -152,6 +154,8 @@ TEST_CASE( "355" )
 		REQUIRE( t->text() == QStringLiteral( "78" ) );
 	}
 }
+
+// Rule 2
 
 TEST_CASE( "356" )
 {
@@ -298,6 +302,8 @@ TEST_CASE( "363" )
 	}
 }
 
+// Rule 3
+
 TEST_CASE( "364" )
 {
 	const auto doc = load_test( 364 );
@@ -408,6 +414,8 @@ TEST_CASE( "369" )
 		REQUIRE( t->text() == QStringLiteral( "bar" ) );
 	}
 }
+
+// Rule 4
 
 TEST_CASE( "370" )
 {
@@ -537,6 +545,8 @@ TEST_CASE( "376" )
 	}
 }
 
+// Rule 5
+
 TEST_CASE( "377" )
 {
 	const auto doc = load_test( 377 );
@@ -613,6 +623,8 @@ TEST_CASE( "380" )
 		REQUIRE( t->text() == QStringLiteral( "bar" ) );
 	}
 }
+
+// Rule 6
 
 TEST_CASE( "381" )
 {
@@ -775,6 +787,8 @@ TEST_CASE( "389" )
 		REQUIRE( t->text() == QStringLiteral( "(bar)" ) );
 	}
 }
+
+// Rule 7
 
 TEST_CASE( "390" )
 {
@@ -949,6 +963,8 @@ TEST_CASE( "395" )
 	}
 }
 
+// Rule 8
+
 TEST_CASE( "396" )
 {
 	const auto doc = load_test( 396 );
@@ -1092,6 +1108,8 @@ TEST_CASE( "402" )
 		REQUIRE( t->text() == QStringLiteral( "." ) );
 	}
 }
+
+// Rule 9
 
 TEST_CASE( "403" )
 {
@@ -1547,6 +1565,8 @@ TEST_CASE( "420" )
 	REQUIRE( t->text() == QStringLiteral( "**** is not an empty strong emphasis" ) );
 }
 
+// Rule 10
+
 TEST_CASE( "421" )
 {
 	const auto doc = load_test( 421 );
@@ -1886,47 +1906,4 @@ TEST_CASE( "434" )
 	auto t = static_cast< MD::Text* > ( p->items().at( 0 ).data() );
 	REQUIRE( t->opts() == MD::TextWithoutFormat );
 	REQUIRE( t->text() == QStringLiteral( "____ is not an empty strong emphasis" ) );
-}
-
-TEST_CASE( "435" )
-{
-	const auto doc = load_test( 435 );
-
-	REQUIRE( doc->isEmpty() == false );
-	REQUIRE( doc->items().size() == 2 );
-
-	REQUIRE( doc->items().at( 1 )->type() == MD::ItemType::Paragraph );
-	auto p = static_cast< MD::Paragraph* > ( doc->items().at( 1 ).data() );
-	REQUIRE( p->items().size() == 1 );
-
-	REQUIRE( p->items().at( 0 )->type() == MD::ItemType::Text );
-	auto t = static_cast< MD::Text* > ( p->items().at( 0 ).data() );
-	REQUIRE( t->opts() == MD::TextWithoutFormat );
-	REQUIRE( t->text() == QStringLiteral( "foo ***" ) );
-}
-
-TEST_CASE( "436" )
-{
-	const auto doc = load_test( 436 );
-
-	REQUIRE( doc->isEmpty() == false );
-	REQUIRE( doc->items().size() == 2 );
-
-	REQUIRE( doc->items().at( 1 )->type() == MD::ItemType::Paragraph );
-	auto p = static_cast< MD::Paragraph* > ( doc->items().at( 1 ).data() );
-	REQUIRE( p->items().size() == 2 );
-
-	{
-		REQUIRE( p->items().at( 0 )->type() == MD::ItemType::Text );
-		auto t = static_cast< MD::Text* > ( p->items().at( 0 ).data() );
-		REQUIRE( t->opts() == MD::TextWithoutFormat );
-		REQUIRE( t->text() == QStringLiteral( "foo" ) );
-	}
-
-	{
-		REQUIRE( p->items().at( 1 )->type() == MD::ItemType::Text );
-		auto t = static_cast< MD::Text* > ( p->items().at( 1 ).data() );
-		REQUIRE( t->opts() == MD::ItalicText );
-		REQUIRE( t->text() == QStringLiteral( "*" ) );
-	}
 }

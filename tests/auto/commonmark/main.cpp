@@ -62,4 +62,5 @@
 #include "code_spans.inl"
 
 // 6.2
-#include "emphasis.inl"
+#include "emphasis-1-10.inl"
+#include "emphasis-11-17.inl"
