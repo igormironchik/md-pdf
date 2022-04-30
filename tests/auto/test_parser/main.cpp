@@ -266,9 +266,8 @@ TEST_CASE( "009" )
 
 		auto dt = static_cast< MD::Text* > ( dp->items().at( 0 ).data() );
 
-		REQUIRE( dt->opts() == ( MD::TextOption::ItalicText | MD::TextOption::BoldText |
-			MD::TextOption::StrikethroughText ) );
-		REQUIRE( dt->text() == QStringLiteral( "Line 1... Line 2..." ) );
+		REQUIRE( dt->opts() == MD::TextOption::StrikethroughText );
+		REQUIRE( dt->text() == QStringLiteral( "__*Line 1... Line 2..." ) );
 	}
 
 	{
@@ -276,8 +275,8 @@ TEST_CASE( "009" )
 
 		auto dt = static_cast< MD::Text* > ( dp->items().at( 1 ).data() );
 
-		REQUIRE( dt->opts() == ( MD::TextOption::ItalicText | MD::TextOption::BoldText ) );
-		REQUIRE( dt->text() == QStringLiteral( "Line 3..." ) );
+		REQUIRE( dt->opts() == MD::TextOption::TextWithoutFormat );
+		REQUIRE( dt->text() == QStringLiteral( "Line 3...*__" ) );
 	}
 }
 

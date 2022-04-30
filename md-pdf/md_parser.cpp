@@ -2718,49 +2718,81 @@ setStyle( TextOptions & opts, Style s, bool on )
 	}
 }
 
-inline bool
-isSameDelimiterChar( Delimiter::DelimiterType d1, Delimiter::DelimiterType d2 )
-{
-	return ( d1 == d2 );
-}
-
 inline void
-appendPossibleDelimiter( std::vector< std::vector< qsizetype > > & vars, qsizetype len )
+appendPossibleDelimiter( std::vector< std::vector< std::pair< qsizetype, int > > > & vars,
+	qsizetype len, int type )
 {
 	for( auto & v : vars )
-		v.push_back( len );
+		v.push_back( { len, type } );
 }
 
-inline void
-removeUnpossibleAndClosedSequences( std::vector< std::vector< qsizetype > > & vars )
+inline bool
+isSequenceClosed( const std::vector< std::pair< qsizetype, int > > & s, size_t idx )
 {
-	std::vector< std::vector< qsizetype > > tmp;
+	qsizetype t0 = 0, t1 = 0, t2 = 0;
 
-	for( const auto & v : vars )
+	for( size_t i = 0; i <= idx; ++i )
 	{
-		if( std::accumulate( v.cbegin(), v.cend(), 0 ) > 0 )
-			tmp.push_back( v );
+		if( s.at( i ).second == 0 )
+			t0 += s.at( i ).first;
+		if( s.at( i ).second == 1 )
+			t1 += s.at( i ).first;
+		else
+			t2 += s.at( i ).first;
 	}
 
-	vars = tmp;
+	const bool check = ( s.at( idx ).second == 0 ? ( t2 > 0 || t1 > 0 ) :
+		( s.at( idx ).second == 1 ? ( t0 > 0 || t2 > 0 ) : ( t0 > 0 || t1 > 0 ) ) );
+	bool idxClosed = false;
+	qsizetype idxVal = s.at( idx ).first;
+
+	for( size_t i = idx + 1; i < s.size(); ++i )
+	{
+		if( check && !idxClosed )
+		{
+			if( s.at( i ).first < 0 )
+			{
+				if( s.at( i ).second == s.at( idx ).second )
+				{
+					if( idxVal + s.at( i ).first <= 0 )
+						idxClosed = true;
+					else
+						idxVal += s.at( i ).first;
+				}
+				else
+					return false;
+			}
+		}
+
+		if( s.at( i ).second == 0 )
+			t0 += s.at( i ).first;
+		if( s.at( i ).second == 1 )
+			t1 += s.at( i ).first;
+		else
+			t2 += s.at( i ).first;
+	}
+
+	return ( s.at( idx ).second == 0 ? t0 <= 0 : ( s.at( idx ).second == 1 ? t1 <= 0 : t2 <= 0 ) );
 }
 
-inline std::vector< std::vector< qsizetype > >
-closedSequences( const std::vector< std::vector< qsizetype > > & vars )
+inline std::vector< std::vector< std::pair< qsizetype, int > > >
+closedSequences( const std::vector< std::vector< std::pair< qsizetype, int > > > & vars,
+	size_t idx )
 {
-	std::vector< std::vector< qsizetype > > tmp;
+	std::vector< std::vector< std::pair< qsizetype, int > > > tmp;
 
 	for( const auto & v : vars )
 	{
-		if( std::accumulate( v.cbegin(), v.cend(), 0 ) <= 0 )
+		if( isSequenceClosed( v, idx ) )
 			tmp.push_back( v );
 	}
 
 	return tmp;
 }
 
-inline std::vector< qsizetype >
-longestSequenceWithMoreOpeningsAtStart( const std::vector< std::vector< qsizetype > > & vars )
+inline std::vector< std::pair< qsizetype, int > >
+longestSequenceWithMoreOpeningsAtStart(
+	const std::vector< std::vector< std::pair< qsizetype, int > > > & vars )
 {
 	size_t max = 0;
 
@@ -2770,7 +2802,7 @@ longestSequenceWithMoreOpeningsAtStart( const std::vector< std::vector< qsizetyp
 			max = s.size();
 	}
 
-	std::vector< qsizetype > ret;
+	std::vector< std::pair< qsizetype, int > > ret;
 
 	size_t maxOp = 0;
 
@@ -2782,14 +2814,17 @@ longestSequenceWithMoreOpeningsAtStart( const std::vector< std::vector< qsizetyp
 
 			for( const auto & v : s )
 			{
-				if( v > 0 )
+				if( v.first > 0 )
 					++op;
 				else
 					break;
 			}
 
 			if( op > maxOp )
+			{
+				maxOp = op;
 				ret = s;
+			}
 		}
 	}
 
@@ -2797,11 +2832,10 @@ longestSequenceWithMoreOpeningsAtStart( const std::vector< std::vector< qsizetyp
 }
 
 inline void
-collectDelimiterVariants( std::vector< std::vector< qsizetype > > & vars, qsizetype itLength,
-	bool leftFlanking, bool rightFlanking )
+collectDelimiterVariants( std::vector< std::vector< std::pair< qsizetype, int > > > & vars,
+	qsizetype itLength, int type, bool leftFlanking, bool rightFlanking )
 {
 	{
-		const auto tmp = vars;
 		auto vars1 = vars;
 		auto vars2 = vars;
 
@@ -2809,17 +2843,15 @@ collectDelimiterVariants( std::vector< std::vector< qsizetype > > & vars, qsizet
 
 		if( leftFlanking )
 		{
-			appendPossibleDelimiter( vars1, itLength );
+			appendPossibleDelimiter( vars1, itLength, type );
 			std::copy( vars1.cbegin(), vars1.cend(), std::back_inserter( vars ) );
 		}
 
 		if( rightFlanking )
 		{
-			appendPossibleDelimiter( vars2, -itLength );
+			appendPossibleDelimiter( vars2, -itLength, type );
 			std::copy( vars2.cbegin(), vars2.cend(), std::back_inserter( vars ) );
 		}
-
-		std::copy( tmp.cbegin(), tmp.cend(), std::back_inserter( vars ) );
 	}
 }
 
@@ -2851,42 +2883,46 @@ createStyles( std::vector< std::pair< Style, qsizetype > > & s, qsizetype l,
 }
 
 inline std::vector< std::pair< Style, qsizetype > >
-createStyles( const std::vector< qsizetype > & s, size_t i, Delimiter::DelimiterType t,
-	qsizetype & count )
+createStyles( const std::vector< std::pair< qsizetype, int > > & s, size_t i,
+	Delimiter::DelimiterType t, qsizetype & count )
 {
 	std::vector< std::pair< Style, qsizetype > > styles;
 
-	qsizetype len = s.at( i );
+	const size_t idx = i;
+	qsizetype len = s.at( i ).first;
 	qsizetype tmp = 0;
 
 	for( i = i + 1; i < s.size(); ++i )
 	{
-		auto l = qAbs( s.at( i ) );
+		auto l = qAbs( s.at( i ).first );
 
-		if( s.at( i ) > 0 )
-			tmp += s.at( i );
-		else if( tmp == 0 )
+		if( s.at( i ).second == s.at( idx ).second )
 		{
-			createStyles( styles, qMin( l, len ), t, count );
+			if( s.at( i ).first > 0 )
+				tmp += s.at( i ).first;
+			else if( tmp == 0 )
+			{
+				createStyles( styles, qMin( l, len ), t, count );
 
-			len -= l;
+				len -= l;
 
-			if( !len )
-				break;
+				if( !len )
+					break;
+			}
+			else if( l > tmp )
+			{
+				l = l - tmp;
+				tmp = 0;
+				createStyles( styles, qMin( l, len ), t, count );
+
+				len -= l;
+
+				if( !len )
+					break;
+			}
+			else
+				tmp -= l;
 		}
-		else if( l > tmp )
-		{
-			l = l - tmp;
-			tmp = 0;
-			createStyles( styles, qMin( l, len ), t, count );
-
-			len -= l;
-
-			if( !len )
-				break;
-		}
-		else
-			tmp -= l;
 	}
 
 	return styles;
@@ -2935,6 +2971,25 @@ readSequence( Delims::const_iterator it, Delims::const_iterator last,
 	return std::prev( it );
 }
 
+inline int
+emphasisToInt( Delimiter::DelimiterType t )
+{
+	switch( t )
+	{
+		case Delimiter::Strikethrough :
+			return 0;
+
+		case Delimiter::Emphasis1 :
+			return 1;
+
+		case Delimiter::Emphasis2 :
+			return 2;
+
+		default :
+			return -1;
+	}
+}
+
 inline std::tuple< bool, std::vector< std::pair< Style, qsizetype > >, qsizetype, qsizetype >
 isStyleClosed( Delims::const_iterator it, Delims::const_iterator last,
 	TextParsingOpts & po )
@@ -2942,7 +2997,7 @@ isStyleClosed( Delims::const_iterator it, Delims::const_iterator last,
 	const auto open = it;
 	auto current =  it;
 
-	std::vector< std::vector< qsizetype > > vars, closed;
+	std::vector< std::vector< std::pair< qsizetype, int > > > vars, closed;
 	vars.push_back( {} );
 
 	qsizetype itLine = open->m_line, itPos = open->m_pos,
@@ -2955,29 +3010,42 @@ isStyleClosed( Delims::const_iterator it, Delims::const_iterator last,
 
 	bool first = true;
 
-	if( it->m_type == Delimiter::Strikethrough )
 	{
 		const auto c = std::count_if( po.styles.cbegin(), po.styles.cend(),
 			[] ( const auto & p ) { return ( p.first == Style::Strikethrough ); } );
 
 		if( c )
-			vars.front().push_back( c );
+			vars.front().push_back( { c, 0 } );
 	}
-	else
+
 	{
-		const auto c1 = std::count_if( po.styles.cbegin(), po.styles.cend(),
-			[&] ( const auto & p ) { return ( p.first == ( it->m_type == Delimiter::Emphasis1 ?
-				Style::Italic1 : Style::Italic2 ) ); } );
+		{
+			const auto c1 = std::count_if( po.styles.cbegin(), po.styles.cend(),
+				[&] ( const auto & p ) { return ( p.first == Style::Italic1 ); } );
 
-		if( c1 )
-			vars.front().push_back( c1 );
+			if( c1 )
+				vars.front().push_back( { c1, 1 } );
 
-		const auto c2 = std::count_if( po.styles.cbegin(), po.styles.cend(),
-			[&] ( const auto & p ) { return ( p.first == ( it->m_type == Delimiter::Emphasis1 ?
-				Style::Bold1 : Style::Bold2 ) ); } ) * 2;
+			const auto c2 = std::count_if( po.styles.cbegin(), po.styles.cend(),
+				[&] ( const auto & p ) { return ( p.first == Style::Bold1 ); } ) * 2;
 
-		if( c2 )
-			vars.front().push_back( c2 );
+			if( c2 )
+				vars.front().push_back( { c2, 1 } );
+		}
+
+		{
+			const auto c1 = std::count_if( po.styles.cbegin(), po.styles.cend(),
+				[&] ( const auto & p ) { return ( p.first == Style::Italic2 ); } );
+
+			if( c1 )
+				vars.front().push_back( { c1, 2 } );
+
+			const auto c2 = std::count_if( po.styles.cbegin(), po.styles.cend(),
+				[&] ( const auto & p ) { return ( p.first == Style::Bold2 ); } ) * 2;
+
+			if( c2 )
+				vars.front().push_back( { c2, 2 } );
+		}
 	}
 
 	const auto idx = vars.front().size();
@@ -3002,26 +3070,17 @@ isStyleClosed( Delims::const_iterator it, Delims::const_iterator last,
 			case Delimiter::Emphasis1 :
 			case Delimiter::Emphasis2 :
 			{
-				if( isSameDelimiterChar( open->m_type, it->m_type ) )
+				it = readSequence( it, last, itLine, itPos, itLength, current );
+
+				if( first )
 				{
-					it = readSequence( it, last, itLine, itPos, itLength, current );
-
-					if( first )
-					{
-						vars.front().push_back( itLength );
-						first = false;
-					}
-					else
-					{
-						collectDelimiterVariants( vars, itLength,
-							it->m_leftFlanking, it->m_rightFlanking );
-
-						const auto tmp = closedSequences( vars );
-
-						std::copy( tmp.cbegin(), tmp.cend(), std::back_inserter( closed ) );
-
-						removeUnpossibleAndClosedSequences( vars );
-					}
+					vars.front().push_back( { itLength, emphasisToInt( open->m_type ) } );
+					first = false;
+				}
+				else
+				{
+					collectDelimiterVariants( vars, itLength, emphasisToInt( it->m_type ),
+						it->m_leftFlanking, it->m_rightFlanking );
 				}
 			}
 				break;
@@ -3039,12 +3098,15 @@ isStyleClosed( Delims::const_iterator it, Delims::const_iterator last,
 	po.pos = pos;
 	po.collectRefLinks = collectRefLinks;
 
+	closed = closedSequences( vars, idx );
+
 	if( !closed.empty() )
 	{
 		qsizetype itCount = 0;
 
-		return { true, createStyles( longestSequenceWithMoreOpeningsAtStart( closed ), idx, open->m_type, itCount ),
-			vars.front().at( idx ), itCount };
+		return { true, createStyles(
+			longestSequenceWithMoreOpeningsAtStart( closed ), idx, open->m_type, itCount ),
+			vars.front().at( idx ).first, itCount };
 	}
 	else
 		return { false, { { Style::Unknown, 0 } },
