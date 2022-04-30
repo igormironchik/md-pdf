@@ -2735,7 +2735,7 @@ isSequenceClosed( const std::vector< std::pair< qsizetype, int > > & s, size_t i
 	{
 		if( s.at( i ).second == 0 )
 			t0 += s.at( i ).first;
-		if( s.at( i ).second == 1 )
+		else if( s.at( i ).second == 1 )
 			t1 += s.at( i ).first;
 		else
 			t2 += s.at( i ).first;
@@ -2766,7 +2766,7 @@ isSequenceClosed( const std::vector< std::pair< qsizetype, int > > & s, size_t i
 
 		if( s.at( i ).second == 0 )
 			t0 += s.at( i ).first;
-		if( s.at( i ).second == 1 )
+		else if( s.at( i ).second == 1 )
 			t1 += s.at( i ).first;
 		else
 			t2 += s.at( i ).first;
