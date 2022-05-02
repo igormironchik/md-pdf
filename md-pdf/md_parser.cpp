@@ -26,6 +26,7 @@
 // C++ include.
 #include <tuple>
 #include <algorithm>
+#include <stack>
 
 // Qt include.
 #include <QFileInfo>
@@ -37,7 +38,7 @@
 namespace MD {
 
 // Skip spaces in line from pos \a i.
-inline qsizetype
+qsizetype
 skipSpaces( qsizetype i, QStringView line )
 {
 	const auto length = line.length();
@@ -48,7 +49,7 @@ skipSpaces( qsizetype i, QStringView line )
 	return i;
 }; // skipSpaces
 
-inline bool
+bool
 isFootnote( const QString & s )
 {
 	qsizetype p = 0;
@@ -87,7 +88,7 @@ isFootnote( const QString & s )
 		return false;
 }
 
-inline QString
+QString
 startSequence( const QString & line )
 {
 	auto pos = skipSpaces( 0, line );
@@ -111,7 +112,7 @@ startSequence( const QString & line )
 	return s;
 }
 
-inline bool
+bool
 isCodeFences( const QString & s, bool closing )
 {
 	auto p = skipSpaces( 0, s );
@@ -162,7 +163,7 @@ isCodeFences( const QString & s, bool closing )
 	return true;
 }
 
-inline bool
+bool
 isOrderedList( const QString & s, int * num, int * len,
 	QChar * delim, bool * isFirstLineEmpty )
 {
@@ -209,6 +210,83 @@ isOrderedList( const QString & s, int * num, int * len,
 	}
 
 	return false;
+}
+
+inline void
+collapseStack( std::stack< std::pair< qsizetype, int > > & st, qsizetype v, int type,
+	qsizetype idx )
+{
+	while( !st.empty() && v > 0 )
+	{
+		if( st.top().second != type )
+			break;
+
+		v -= st.top().first;
+		st.pop();
+
+		if( v )
+		{
+			while( !st.empty() && st.size() > idx + 1 && st.top().second != type )
+				st.pop();
+		}
+	}
+}
+
+std::pair< bool, size_t >
+checkEmphasisSequence( const std::vector< std::pair< qsizetype, int > > & s, size_t idx )
+{
+	std::stack< std::pair< qsizetype, int > > st;
+
+	for( size_t i = 0; i <= idx; ++i )
+		st.push( s[ i ] );
+
+	size_t ret = 0;
+	bool retInit = false;
+	qsizetype ii = idx;
+
+	for( size_t i = idx + 1; i < s.size(); ++i )
+	{
+		if( s[ i ].first > 0 )
+			st.push( s[ i ] );
+		else
+		{
+			if( !st.empty() && st.top().second == s[ i ].second )
+			{
+				auto v = qAbs( s[ i ].first );
+
+				if( st.top().first <= v )
+					collapseStack( st, v, s[ i ].second, ii );
+				else
+					st.top().first += s[ i ].first;
+			}
+			else
+			{
+				while( !st.empty() && st.size() > ii + 1 && st.top().second != s[ i ].second )
+					st.pop();
+
+				if( !st.empty() && st.top().second == s[ i ].second )
+				{
+					auto v = qAbs( s[ i ].first );
+
+					if( st.top().first <= v )
+						collapseStack( st, v, s[ i ].second, ii );
+					else
+						st.top().first += s[ i ].first;
+				}
+			}
+		}
+
+		if( st.size() < ii + 1 )
+			ii = st.size() - 1;
+
+		if( st.size() <= idx && !retInit )
+		{
+			ret = i;
+			retInit = true;
+		}
+	}
+
+	return { st.empty(), ret };
 }
 
 
@@ -2726,70 +2804,6 @@ appendPossibleDelimiter( std::vector< std::vector< std::pair< qsizetype, int > >
 		v.push_back( { len, type } );
 }
 
-inline bool
-isSequenceClosed( const std::vector< std::pair< qsizetype, int > > & s, size_t idx )
-{
-	qsizetype t0 = 0, t1 = 0, t2 = 0;
-
-	for( size_t i = 0; i <= idx; ++i )
-	{
-		if( s.at( i ).second == 0 )
-			t0 += s.at( i ).first;
-		else if( s.at( i ).second == 1 )
-			t1 += s.at( i ).first;
-		else
-			t2 += s.at( i ).first;
-	}
-
-	const bool check = ( s.at( idx ).second == 0 ? ( t2 > 0 || t1 > 0 ) :
-		( s.at( idx ).second == 1 ? ( t0 > 0 || t2 > 0 ) : ( t0 > 0 || t1 > 0 ) ) );
-	bool idxClosed = false;
-	qsizetype idxVal = s.at( idx ).first;
-
-	for( size_t i = idx + 1; i < s.size(); ++i )
-	{
-		if( check && !idxClosed )
-		{
-			if( s.at( i ).first < 0 )
-			{
-				if( s.at( i ).second == s.at( idx ).second )
-				{
-					if( idxVal + s.at( i ).first <= 0 )
-						idxClosed = true;
-					else
-						idxVal += s.at( i ).first;
-				}
-				else
-					return false;
-			}
-		}
-
-		if( s.at( i ).second == 0 )
-			t0 += s.at( i ).first;
-		else if( s.at( i ).second == 1 )
-			t1 += s.at( i ).first;
-		else
-			t2 += s.at( i ).first;
-	}
-
-	return ( t0 <= 0 && t1 <= 0 && t2 <= 0 );
-}
-
-inline std::vector< std::vector< std::pair< qsizetype, int > > >
-closedSequences( const std::vector< std::vector< std::pair< qsizetype, int > > > & vars,
-	size_t idx )
-{
-	std::vector< std::vector< std::pair< qsizetype, int > > > tmp;
-
-	for( const auto & v : vars )
-	{
-		if( isSequenceClosed( v, idx ) )
-			tmp.push_back( v );
-	}
-
-	return tmp;
-}
-
 inline std::vector< std::pair< qsizetype, int > >
 longestSequenceWithMoreOpeningsAtStart(
 	const std::vector< std::vector< std::pair< qsizetype, int > > > & vars )
@@ -2831,6 +2845,29 @@ longestSequenceWithMoreOpeningsAtStart(
 	return ret;
 }
 
+inline std::vector< std::vector< std::pair< qsizetype, int > > >
+closedSequences( const std::vector< std::vector< std::pair< qsizetype, int > > > & vars,
+	size_t idx )
+{
+	std::vector< std::vector< std::pair< qsizetype, int > > > tmp;
+
+	const auto longest = longestSequenceWithMoreOpeningsAtStart( vars );
+
+	for( const auto & v : vars )
+	{
+		if( longest.size() == v.size() )
+		{
+			bool closed = false;
+			std::tie( closed, std::ignore ) = checkEmphasisSequence( v, idx );
+
+			if( closed )
+				tmp.push_back( v );
+		}
+	}
+
+	return tmp;
+}
+
 inline void
 collectDelimiterVariants( std::vector< std::vector< std::pair< qsizetype, int > > > & vars,
 	qsizetype itLength, int type, bool leftFlanking, bool rightFlanking )
@@ -2838,7 +2875,6 @@ collectDelimiterVariants( std::vector< std::vector< std::pair< qsizetype, int > 
 	{
 		auto vars1 = vars;
 		auto vars2 = vars;
-		const auto vars3 = vars;
 
 		vars.clear();
 
@@ -2853,8 +2889,6 @@ collectDelimiterVariants( std::vector< std::vector< std::pair< qsizetype, int > 
 			appendPossibleDelimiter( vars2, -itLength, type );
 			std::copy( vars2.cbegin(), vars2.cend(), std::back_inserter( vars ) );
 		}
-
-		std::copy( vars3.cbegin(), vars3.cend(), std::back_inserter( vars ) );
 	}
 }
 
@@ -2893,42 +2927,22 @@ createStyles( const std::vector< std::pair< qsizetype, int > > & s, size_t i,
 
 	const size_t idx = i;
 	qsizetype len = s.at( i ).first;
-	qsizetype tmp = 0;
 
-	for( i = i + 1; i < s.size(); ++i )
+	size_t closeIdx = 0;
+	std::tie( std::ignore, closeIdx ) = checkEmphasisSequence( s, i );
+
+	for( i = closeIdx; i >= 0; --i )
 	{
-		if( s.at( i ).second == s.at( idx ).second )
+		if( s[ i ].second == s[ idx ].second && s[ i ].first < 0 )
 		{
-			auto l = qAbs( s.at( i ).first );
+			auto l = qAbs( s[ i ].first );
 
-			if( s.at( i ).first > 0 )
-				tmp += s.at( i ).first;
-			else if( tmp == 0 )
-			{
-				createStyles( styles, qMin( l, len ), t, count );
+			createStyles( styles, qMin( l, len ), t, count );
 
-				len -= qMin( l, len );
+			len -= qMin( l, len );
 
-				if( !len )
-					break;
-			}
-			else
-			{
-				if( l < tmp )
-					tmp -= l;
-				else
-				{
-					l = l - tmp;
-					tmp = 0;
-
-					createStyles( styles, qMin( l, len ), t, count );
-
-					len -= qMin( l, len );
-
-					if( !len )
-						break;
-				}
-			}
+			if( !len )
+				break;
 		}
 	}
 
@@ -3022,7 +3036,7 @@ isStyleClosed( Delims::const_iterator it, Delims::const_iterator last,
 			[] ( const auto & p ) { return ( p.first == Style::Strikethrough ); } );
 
 		if( c )
-			vars.front().push_back( { c, 0 } );
+			vars.front().push_back( { c * 2, 0 } );
 	}
 
 	{

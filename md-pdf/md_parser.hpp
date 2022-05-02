@@ -31,6 +31,7 @@
 
 // C++ include.
 #include <set>
+#include <vector>
 
 
 namespace MD {
@@ -97,6 +98,10 @@ indentInList( const std::set< qsizetype > * indents, qsizetype indent )
 	else
 		return false;
 };
+
+// \return Is sequence of emphasis closed?
+std::pair< bool, size_t >
+checkEmphasisSequence( const std::vector< std::pair< qsizetype, int > > & s, size_t idx );
 
 
 //
