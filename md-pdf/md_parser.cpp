@@ -2772,7 +2772,7 @@ isSequenceClosed( const std::vector< std::pair< qsizetype, int > > & s, size_t i
 			t2 += s.at( i ).first;
 	}
 
-	return ( s.at( idx ).second == 0 ? t0 <= 0 : ( s.at( idx ).second == 1 ? t1 <= 0 : t2 <= 0 ) );
+	return ( t0 <= 0 && t1 <= 0 && t2 <= 0 );
 }
 
 inline std::vector< std::vector< std::pair< qsizetype, int > > >
@@ -2838,6 +2838,7 @@ collectDelimiterVariants( std::vector< std::vector< std::pair< qsizetype, int > 
 	{
 		auto vars1 = vars;
 		auto vars2 = vars;
+		const auto vars3 = vars;
 
 		vars.clear();
 
@@ -2852,6 +2853,8 @@ collectDelimiterVariants( std::vector< std::vector< std::pair< qsizetype, int > 
 			appendPossibleDelimiter( vars2, -itLength, type );
 			std::copy( vars2.cbegin(), vars2.cend(), std::back_inserter( vars ) );
 		}
+
+		std::copy( vars3.cbegin(), vars3.cend(), std::back_inserter( vars ) );
 	}
 }
 
@@ -2894,34 +2897,38 @@ createStyles( const std::vector< std::pair< qsizetype, int > > & s, size_t i,
 
 	for( i = i + 1; i < s.size(); ++i )
 	{
-		auto l = qAbs( s.at( i ).first );
-
 		if( s.at( i ).second == s.at( idx ).second )
 		{
+			auto l = qAbs( s.at( i ).first );
+
 			if( s.at( i ).first > 0 )
 				tmp += s.at( i ).first;
 			else if( tmp == 0 )
 			{
 				createStyles( styles, qMin( l, len ), t, count );
 
-				len -= l;
-
-				if( !len )
-					break;
-			}
-			else if( l > tmp )
-			{
-				l = l - tmp;
-				tmp = 0;
-				createStyles( styles, qMin( l, len ), t, count );
-
-				len -= l;
+				len -= qMin( l, len );
 
 				if( !len )
 					break;
 			}
 			else
-				tmp -= l;
+			{
+				if( l < tmp )
+					tmp -= l;
+				else
+				{
+					l = l - tmp;
+					tmp = 0;
+
+					createStyles( styles, qMin( l, len ), t, count );
+
+					len -= qMin( l, len );
+
+					if( !len )
+						break;
+				}
+			}
 		}
 	}
 
