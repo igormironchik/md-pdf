@@ -392,6 +392,8 @@ TEST_CASE( "345" )
 
 TEST_CASE( "346" ) // Not strict to CommonMark as URL is not valid.
 {
+	MESSAGE( "This test is not strict to CommonMark 0.30." );
+
 	const auto doc = load_test( 346 );
 
 	REQUIRE( doc->isEmpty() == false );

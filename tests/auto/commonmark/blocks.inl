@@ -1777,6 +1777,8 @@ TEST_CASE( "111" )
 
 TEST_CASE( "112" ) // Not strict to CommonMark.
 {
+	MESSAGE( "This test is not strict to CommonMark 0.30." );
+
 	const auto doc = load_test( 112 );
 
 	REQUIRE( doc->isEmpty() == false );

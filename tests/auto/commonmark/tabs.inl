@@ -42,6 +42,8 @@ TEST_CASE( "001" )
 
 TEST_CASE( "002" ) // Not strict to CommonMark.
 {
+	MESSAGE( "This test is not strict to CommonMark 0.30." );
+
 	const auto doc = load_test( 2 );
 
 	REQUIRE( doc->isEmpty() == false );
@@ -133,6 +135,8 @@ TEST_CASE( "005" )
 
 TEST_CASE( "006" ) // Not strict to CommonMark.
 {
+	MESSAGE( "This test is not strict to CommonMark 0.30." );
+
 	const auto doc = load_test( 6 );
 
 	REQUIRE( doc->isEmpty() == false );
@@ -152,6 +156,8 @@ TEST_CASE( "006" ) // Not strict to CommonMark.
 
 TEST_CASE( "007" ) // Not strict to CommonMark.
 {
+	MESSAGE( "This test is not strict to CommonMark 0.30." );
+
 	const auto doc = load_test( 7 );
 
 	REQUIRE( doc->isEmpty() == false );
