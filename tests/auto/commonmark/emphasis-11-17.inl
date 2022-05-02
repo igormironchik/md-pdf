@@ -793,6 +793,8 @@ TEST_CASE( "467" )
 	}
 }
 
+// Rule 15
+
 TEST_CASE( "468" )
 {
 	const auto doc = load_test( 468 );
