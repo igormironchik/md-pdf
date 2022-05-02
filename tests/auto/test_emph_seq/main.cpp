@@ -147,4 +147,25 @@ TEST_CASE( "1" )
 		REQUIRE( closed );
 		REQUIRE( idx == 2 );
 	}
+
+	{
+		const data_t d = { { 2, 1 }, { -1, 1 }, { -1, 1 } };
+
+		bool closed = false;
+		size_t idx = 0;
+		std::tie( closed, idx ) = MD::checkEmphasisSequence( d, 0 );
+
+		REQUIRE( closed );
+		REQUIRE( idx == 2 );
+	}
+
+	{
+		const data_t d = { { 2, 1 } };
+
+		bool closed = false;
+		size_t idx = 0;
+		std::tie( closed, idx ) = MD::checkEmphasisSequence( d, 0 );
+
+		REQUIRE( !closed );
+	}
 }
