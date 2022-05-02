@@ -99,7 +99,7 @@ indentInList( const std::set< qsizetype > * indents, qsizetype indent )
 		return false;
 };
 
-// \return Is sequence of emphasis closed?
+// \return Is sequence of emphasis closed, and closing index of the sequence?
 std::pair< bool, size_t >
 checkEmphasisSequence( const std::vector< std::pair< qsizetype, int > > & s, size_t idx );
 
