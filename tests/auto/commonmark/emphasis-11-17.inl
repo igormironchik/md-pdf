@@ -905,3 +905,32 @@ TEST_CASE( "471" )
 		REQUIRE( t->text() == QStringLiteral( "bar baz" ) );
 	}
 }
+
+// Rule 17
+
+TEST_CASE( "472" )
+{
+	const auto doc = load_test( 472 );
+
+	REQUIRE( doc->isEmpty() == false );
+	REQUIRE( doc->items().size() == 2 );
+
+	REQUIRE( doc->items().at( 1 )->type() == MD::ItemType::Paragraph );
+	auto p = static_cast< MD::Paragraph* > ( doc->items().at( 1 ).data() );
+	REQUIRE( p->items().size() == 2 );
+
+	{
+		REQUIRE( p->items().at( 0 )->type() == MD::ItemType::Text );
+		auto t = static_cast< MD::Text* > ( p->items().at( 0 ).data() );
+		REQUIRE( t->opts() == MD::TextWithoutFormat );
+		REQUIRE( t->text() == QStringLiteral( "*" ) );
+	}
+
+	{
+		REQUIRE( p->items().at( 1 )->type() == MD::ItemType::Link );
+		auto l = static_cast< MD::Link* > ( p->items().at( 1 ).data() );
+		REQUIRE( l->textOptions() == MD::TextWithoutFormat );
+		REQUIRE( l->text() == QStringLiteral( "bar*" ) );
+		REQUIRE( l->url() == QStringLiteral( "/url" ) );
+	}
+}
