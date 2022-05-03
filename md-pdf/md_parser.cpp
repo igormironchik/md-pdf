@@ -2022,20 +2022,23 @@ makeLink( const QString & url, const QString & text,
 {
 	QString u = removeBackslashes( url );
 
-	if( !u.startsWith( c_35 ) )
+	if( !u.isEmpty() )
 	{
-		if( QUrl( u ).isRelative() )
+		if( !u.startsWith( c_35 ) )
 		{
-			if( fileExists( u, po.workingPath ) )
+			if( QUrl( u ).isRelative() )
 			{
-				u = QFileInfo( po.workingPath + u ).absoluteFilePath();
+				if( fileExists( u, po.workingPath ) )
+				{
+					u = QFileInfo( po.workingPath + u ).absoluteFilePath();
 
-				po.linksToParse.append( u );
+					po.linksToParse.append( u );
+				}
 			}
 		}
+		else
+			u = u + QStringLiteral( "/" ) + po.workingPath + po.fileName;
 	}
-	else
-		u = u + QStringLiteral( "/" ) + po.workingPath + po.fileName;
 
 	QSharedPointer< Link > link( new Link );
 	link->setUrl( u );
