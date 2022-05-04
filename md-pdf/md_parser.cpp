@@ -328,7 +328,7 @@ Parser::parseFile( const QString & fileName, bool recursive, QSharedPointer< Doc
 			TextStream stream( s );
 
 			parse( stream, doc, doc, linksToParse,
-				fi.absolutePath() + QStringLiteral( "/" ), fi.fileName(), true, false, true );
+				fi.absolutePath() + QStringLiteral( "/" ), fi.fileName(), true, true );
 
 			f.close();
 
@@ -1194,7 +1194,7 @@ Parser::parseParagraph( QStringList & fr, QSharedPointer< Block > parent,
 		{
 			StringListStream stream( fr );
 			parse( stream, parent, doc, linksToParse, workingPath, fileName,
-				collectRefLinks, false );
+				collectRefLinks );
 		}
 		else
 		{
@@ -3564,7 +3564,7 @@ Parser::parseFootnote( QStringList & fr, QSharedPointer< Block >,
 
 				StringListStream stream( fr );
 
-				parse( stream, f, doc, linksToParse, workingPath, fileName, collectRefLinks, false );
+				parse( stream, f, doc, linksToParse, workingPath, fileName, collectRefLinks );
 
 				if( !f->isEmpty() )
 					doc->insertFootnote( QString::fromLatin1( "#" ) + id +
@@ -3648,7 +3648,7 @@ Parser::parseBlockquote( QStringList & fr, QSharedPointer< Block > parent,
 
 		QSharedPointer< Blockquote > bq( new Blockquote() );
 
-		parse( stream, bq, doc, linksToParse, workingPath, fileName, collectRefLinks, false );
+		parse( stream, bq, doc, linksToParse, workingPath, fileName, collectRefLinks );
 
 		if( !bq->isEmpty() )
 			parent->appendItem( bq );
@@ -3660,7 +3660,7 @@ Parser::parseBlockquote( QStringList & fr, QSharedPointer< Block > parent,
 			StringListStream stream( tmp );
 
 			parse( stream, parent, doc, linksToParse, workingPath, fileName,
-				collectRefLinks, false );
+				collectRefLinks );
 		}
 	}
 }
@@ -3880,7 +3880,7 @@ Parser::parseListItem( QStringList & fr, QSharedPointer< Block > parent,
 			StringListStream stream( data );
 
 			parse( stream, item, doc, linksToParse, workingPath, fileName,
-				collectRefLinks, false );
+				collectRefLinks );
 
 			data.clear();
 
@@ -3931,7 +3931,7 @@ Parser::parseListItem( QStringList & fr, QSharedPointer< Block > parent,
 	{
 		StringListStream stream( data );
 
-		parse( stream, item, doc, linksToParse, workingPath, fileName, collectRefLinks, false );
+		parse( stream, item, doc, linksToParse, workingPath, fileName, collectRefLinks );
 	}
 
 	if( !item->isEmpty() )

@@ -253,7 +253,6 @@ private:
 		QSharedPointer< Document > doc, QStringList & linksToParse,
 		const QString & workingPath, const QString & fileName,
 		bool collectRefLinks,
-		bool skipSpacesAtStartOfLine,
 		bool top = false )
 	{
 		QVector< QStringList > splitted;
@@ -293,20 +292,6 @@ private:
 			QString line;
 
 			std::tie( line, wasComment ) = readLine( stream, unfinishedCommentFound );
-
-			if( skipSpacesAtStartOfLine )
-			{
-				line.replace( c_9, QLatin1String( "    " ) );
-
-				if( firstLine )
-				{				
-					spaces = skipSpaces( 0, line );
-
-					firstLine = false;
-				}
-
-				line = line.right( line.length() - spaces );
-			}
 
 			return line;
 		};
