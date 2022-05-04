@@ -805,3 +805,25 @@ TEST_CASE( "518" )
 		REQUIRE( t->text() == QStringLiteral( "](/uri)" ) );
 	}
 }
+
+TEST_CASE( "519" )
+{
+	MESSAGE( "This test is not strict to CommonMark 0.30." );
+
+	const auto doc = load_test( 519 );
+
+	REQUIRE( doc->isEmpty() == false );
+	REQUIRE( doc->items().size() == 2 );
+
+	REQUIRE( doc->items().at( 1 )->type() == MD::ItemType::Paragraph );
+	auto p = static_cast< MD::Paragraph* > ( doc->items().at( 1 ).data() );
+	REQUIRE( p->items().size() == 1 );
+
+	REQUIRE( p->items().at( 0 )->type() == MD::ItemType::Image );
+	auto i = static_cast< MD::Image* > ( p->items().at( 0 ).data() );
+	REQUIRE( !i->isEmpty() );
+
+	// I don't parse alt text of the image.
+	REQUIRE( i->text() == QStringLiteral( "[[foo](uri1)](uri2)" ) );
+	REQUIRE( i->url() == QStringLiteral( "uri3" ) );
+}
