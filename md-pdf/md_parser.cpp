@@ -1734,7 +1734,7 @@ makeText(
 
 inline Delims::const_iterator
 checkForAutolinkHtml( Delims::const_iterator it, Delims::const_iterator last,
-	TextParsingOpts & po )
+	TextParsingOpts & po, bool updatePos )
 {
 	const auto nit = std::find_if( std::next( it ), last,
 		[] ( const auto & d ) { return ( d.m_type == Delimiter::Greater ); } );
@@ -1743,7 +1743,8 @@ checkForAutolinkHtml( Delims::const_iterator it, Delims::const_iterator last,
 	{
 		if( !po.collectRefLinks )
 		{
-			const auto url = po.fr.at( po.line ).sliced( po.pos + 1, nit->m_pos - po.pos - 1 );
+			const auto url = po.fr.at( it->m_line ).sliced( it->m_pos + 1,
+				nit->m_pos - it->m_pos - 1 );
 
 			const auto sit = std::find_if( url.cbegin(), url.cend(),
 				[] ( const auto & c ) { return c.isSpace(); } );
@@ -1783,16 +1784,23 @@ checkForAutolinkHtml( Delims::const_iterator it, Delims::const_iterator last,
 		}
 
 		po.wasRefLink = false;
-		po.pos = nit->m_pos + nit->m_len;
-		po.line = nit->m_line;
+
+		if( updatePos )
+		{
+			po.pos = nit->m_pos + nit->m_len;
+			po.line = nit->m_line;
+		}
 
 		return nit;
 	}
 	else if( !po.collectRefLinks )
 		makeText( it->m_line, it->m_pos + it->m_len, po );
 
-	po.pos = it->m_pos + it->m_len;
-	po.line = it->m_line;
+	if( updatePos )
+	{
+		po.pos = it->m_pos + it->m_len;
+		po.line = it->m_line;
+	}
 
 	return it;
 }
@@ -1959,7 +1967,7 @@ checkForLinkText( Delims::const_iterator it, Delims::const_iterator last,
 				break;
 
 			case Delimiter::Less :
-				it = checkForAutolinkHtml( it, last, po );
+				it = checkForAutolinkHtml( it, last, po, false );
 				break;
 
 			default :
@@ -3082,7 +3090,7 @@ isStyleClosed( Delims::const_iterator it, Delims::const_iterator last,
 				break;
 
 			case Delimiter::Less :
-				it = checkForAutolinkHtml( it, last, po );
+				it = checkForAutolinkHtml( it, last, po, false );
 				break;
 
 			case Delimiter::Strikethrough :
@@ -3442,7 +3450,7 @@ parseFormattedText( QStringList & fr, QSharedPointer< Block > parent,
 				break;
 
 			case Delimiter::Less :
-				it = checkForAutolinkHtml( it, last, po );
+				it = checkForAutolinkHtml( it, last, po, true );
 				break;
 
 			case Delimiter::Strikethrough :
