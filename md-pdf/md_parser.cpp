@@ -2066,13 +2066,7 @@ makeLink( const QString & url, const QString & text,
 				switch( (*it)->type() )
 				{
 					case ItemType::Link :
-					{
-//						if( !po.collectRefLinks && !doNotCreateTextOnFail )
-//							makeText( lastLine, lastPos, po );
-
 						return {};
-					}
-						break;
 
 					case ItemType::Image :
 					{
