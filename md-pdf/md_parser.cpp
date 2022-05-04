@@ -2409,7 +2409,7 @@ checkForInlineLink( Delims::const_iterator it, Delims::const_iterator last,
 
 	skipSpacesUpTo1Line( l, p, po.fr );
 
-	if( !ok || po.fr.at( l )[ p ] != c_41 )
+	if( !ok || ( l >= po.fr.size() || p >= po.fr.at( l ).size() ||  po.fr.at( l )[ p ] != c_41 ) )
 		return { {}, {}, it, false };
 
 	for( ; it != last; ++it )
