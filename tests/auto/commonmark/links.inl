@@ -518,3 +518,22 @@ TEST_CASE( "505" )
 	REQUIRE( l->text() == QStringLiteral( "link" ) );
 	REQUIRE( l->url() == QStringLiteral( "/url" ) );
 }
+
+TEST_CASE( "506" )
+{
+	const auto doc = load_test( 506 );
+
+	REQUIRE( doc->isEmpty() == false );
+	REQUIRE( doc->items().size() == 2 );
+
+	REQUIRE( doc->items().at( 1 )->type() == MD::ItemType::Paragraph );
+	auto p = static_cast< MD::Paragraph* > ( doc->items().at( 1 ).data() );
+	REQUIRE( p->items().size() == 1 );
+
+	REQUIRE( p->items().at( 0 )->type() == MD::ItemType::Link );
+	auto l = static_cast< MD::Link* > ( p->items().at( 0 ).data() );
+	REQUIRE( l->img()->isEmpty() );
+	REQUIRE( l->textOptions() == MD::TextWithoutFormat );
+	REQUIRE( l->text() == QStringLiteral( "link" ) );
+	REQUIRE( l->url() == QStringLiteral( "/url" ) + QChar( 160 ) + QStringLiteral( "\"title\"" ) );
+}

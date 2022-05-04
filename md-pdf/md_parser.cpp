@@ -2283,7 +2283,7 @@ readLinkDestination( qsizetype line, qsizetype pos, const QStringList & fr )
 					backslash = true;
 					now = true;
 				}
-				else if( !backslash && s[ pos ].isSpace() )
+				else if( !backslash && ( s[ pos ] == c_32 || s[ pos ] == c_9 ) )
 				{
 					if( !pc )
 						return { line, pos, true, dest, destLine };
