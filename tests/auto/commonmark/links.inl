@@ -355,3 +355,51 @@ TEST_CASE( "499" )
 	REQUIRE( l->text() == QStringLiteral( "link" ) );
 	REQUIRE( l->url() == QStringLiteral( "foo):" ) );
 }
+
+TEST_CASE( "500" )
+{
+	const auto doc = load_test( 500 );
+
+	REQUIRE( doc->isEmpty() == false );
+	REQUIRE( doc->items().size() == 4 );
+
+	{
+		REQUIRE( doc->items().at( 1 )->type() == MD::ItemType::Paragraph );
+		auto p = static_cast< MD::Paragraph* > ( doc->items().at( 1 ).data() );
+		REQUIRE( p->items().size() == 1 );
+		REQUIRE( p->items().at( 0 )->type() == MD::ItemType::Link );
+		auto l = static_cast< MD::Link* > ( p->items().at( 0 ).data() );
+		REQUIRE( l->img()->isEmpty() );
+		REQUIRE( l->textOptions() == MD::TextWithoutFormat );
+		REQUIRE( l->text() == QStringLiteral( "link" ) );
+
+		const QString fn = QStringLiteral( "/" ) + QDir().absolutePath() +
+			QStringLiteral( "/0.30/500.md" );
+
+		REQUIRE( l->url() == QStringLiteral( "#fragment" ) + fn );
+	}
+
+	{
+		REQUIRE( doc->items().at( 2 )->type() == MD::ItemType::Paragraph );
+		auto p = static_cast< MD::Paragraph* > ( doc->items().at( 2 ).data() );
+		REQUIRE( p->items().size() == 1 );
+		REQUIRE( p->items().at( 0 )->type() == MD::ItemType::Link );
+		auto l = static_cast< MD::Link* > ( p->items().at( 0 ).data() );
+		REQUIRE( l->img()->isEmpty() );
+		REQUIRE( l->textOptions() == MD::TextWithoutFormat );
+		REQUIRE( l->text() == QStringLiteral( "link" ) );
+		REQUIRE( l->url() == QStringLiteral( "http://example.com#fragment" ) );
+	}
+
+	{
+		REQUIRE( doc->items().at( 3 )->type() == MD::ItemType::Paragraph );
+		auto p = static_cast< MD::Paragraph* > ( doc->items().at( 3 ).data() );
+		REQUIRE( p->items().size() == 1 );
+		REQUIRE( p->items().at( 0 )->type() == MD::ItemType::Link );
+		auto l = static_cast< MD::Link* > ( p->items().at( 0 ).data() );
+		REQUIRE( l->img()->isEmpty() );
+		REQUIRE( l->textOptions() == MD::TextWithoutFormat );
+		REQUIRE( l->text() == QStringLiteral( "link" ) );
+		REQUIRE( l->url() == QStringLiteral( "http://example.com?foo=3#frag" ) );
+	}
+}
