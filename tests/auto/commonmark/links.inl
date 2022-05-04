@@ -827,3 +827,26 @@ TEST_CASE( "519" )
 	REQUIRE( i->text() == QStringLiteral( "[[foo](uri1)](uri2)" ) );
 	REQUIRE( i->url() == QStringLiteral( "uri3" ) );
 }
+
+TEST_CASE( "520" )
+{
+	const auto doc = load_test( 520 );
+
+	REQUIRE( doc->isEmpty() == false );
+	REQUIRE( doc->items().size() == 2 );
+
+	REQUIRE( doc->items().at( 1 )->type() == MD::ItemType::Paragraph );
+	auto p = static_cast< MD::Paragraph* > ( doc->items().at( 1 ).data() );
+	REQUIRE( p->items().size() == 2 );
+	REQUIRE( p->items().at( 0 )->type() == MD::ItemType::Text );
+	auto t = static_cast< MD::Text* > ( p->items().at( 0 ).data() );
+	REQUIRE( t->opts() == MD::TextWithoutFormat );
+	REQUIRE( t->text() == QStringLiteral( "*" ) );
+
+	REQUIRE( p->items().at( 1 )->type() == MD::ItemType::Link );
+	auto l = static_cast< MD::Link* > ( p->items().at( 1 ).data() );
+	REQUIRE( l->img()->isEmpty() );
+	REQUIRE( l->textOptions() == MD::TextWithoutFormat );
+	REQUIRE( l->text() == QStringLiteral( "foo*" ) );
+	REQUIRE( l->url() == QStringLiteral( "/uri" ) );
+}
