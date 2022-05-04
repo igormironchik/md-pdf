@@ -2067,8 +2067,8 @@ makeLink( const QString & url, const QString & text,
 				{
 					case ItemType::Link :
 					{
-						if( !po.collectRefLinks && !doNotCreateTextOnFail )
-							makeText( lastLine, lastPos, po );
+//						if( !po.collectRefLinks && !doNotCreateTextOnFail )
+//							makeText( lastLine, lastPos, po );
 
 						return {};
 					}
@@ -2415,12 +2415,7 @@ checkForInlineLink( Delims::const_iterator it, Delims::const_iterator last,
 	for( ; it != last; ++it )
 	{
 		if( it->m_line == l && it->m_pos == p )
-		{
-			po.line = it->m_line;
-			po.pos = it->m_pos + it->m_len;
-
 			return { dest, title, it, true };
-		}
 	}
 
 	return { {}, {}, it, false };
@@ -2687,10 +2682,13 @@ checkForLink( Delims::const_iterator it, Delims::const_iterator last,
 						if( !po.collectRefLinks )
 							po.parent->appendItem( link );
 
+						po.line = iit->m_line;
+						po.pos = iit->m_pos + iit->m_len;
+
 						return iit;
 					}
 					else
-						return it;
+						return start;
 				}
 				else if( createShortcutLink( text.simplified(),
 							po, start->m_line, start->m_pos + start->m_len,
