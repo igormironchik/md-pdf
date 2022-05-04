@@ -758,3 +758,50 @@ TEST_CASE( "517" )
 		REQUIRE( t->text() == QStringLiteral( "](/uri)" ) );
 	}
 }
+
+TEST_CASE( "518" )
+{
+	const auto doc = load_test( 518 );
+
+	REQUIRE( doc->isEmpty() == false );
+	REQUIRE( doc->items().size() == 2 );
+
+	REQUIRE( doc->items().at( 1 )->type() == MD::ItemType::Paragraph );
+	auto p = static_cast< MD::Paragraph* > ( doc->items().at( 1 ).data() );
+	REQUIRE( p->items().size() == 5 );
+
+	{
+		REQUIRE( p->items().at( 0 )->type() == MD::ItemType::Text );
+		auto t = static_cast< MD::Text* > ( p->items().at( 0 ).data() );
+		REQUIRE( t->opts() == MD::TextWithoutFormat );
+		REQUIRE( t->text() == QStringLiteral( "[foo" ) );
+	}
+
+	{
+		REQUIRE( p->items().at( 1 )->type() == MD::ItemType::Text );
+		auto t = static_cast< MD::Text* > ( p->items().at( 1 ).data() );
+		REQUIRE( t->opts() == MD::ItalicText );
+		REQUIRE( t->text() == QStringLiteral( "[bar" ) );
+	}
+
+	REQUIRE( p->items().at( 2 )->type() == MD::ItemType::Link );
+	auto l = static_cast< MD::Link* > ( p->items().at( 2 ).data() );
+	REQUIRE( l->img()->isEmpty() );
+	REQUIRE( l->textOptions() == MD::ItalicText );
+	REQUIRE( l->text() == QStringLiteral( "baz" ) );
+	REQUIRE( l->url() == QStringLiteral( "/uri" ) );
+
+	{
+		REQUIRE( p->items().at( 3 )->type() == MD::ItemType::Text );
+		auto t = static_cast< MD::Text* > ( p->items().at( 3 ).data() );
+		REQUIRE( t->opts() == MD::ItalicText );
+		REQUIRE( t->text() == QStringLiteral( "](/uri)" ) );
+	}
+
+	{
+		REQUIRE( p->items().at( 4 )->type() == MD::ItemType::Text );
+		auto t = static_cast< MD::Text* > ( p->items().at( 4 ).data() );
+		REQUIRE( t->opts() == MD::TextWithoutFormat );
+		REQUIRE( t->text() == QStringLiteral( "](/uri)" ) );
+	}
+}
