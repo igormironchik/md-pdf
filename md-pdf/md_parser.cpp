@@ -2250,10 +2250,7 @@ readLinkDestination( qsizetype line, qsizetype pos, const QStringList & fr )
 				else if( !backslash && s[ pos ] == c_60 )
 					return { line, pos, false, {}, destLine };
 				else if( !backslash && s[ pos ] == c_62 )
-				{
-					++pos;
 					break;
-				}
 				else
 				{
 					if( backslash )
@@ -2268,7 +2265,10 @@ readLinkDestination( qsizetype line, qsizetype pos, const QStringList & fr )
 				++pos;
 			}
 
-			return { line, pos, true, dest, destLine };
+			if( pos < s.size() && s[ pos ] == c_62 )
+				return { line, ++pos, true, dest, destLine };
+			else
+				return { line, pos, false, {}, destLine };
 		}
 		else
 		{
@@ -2340,10 +2340,13 @@ readLinkTitle( qsizetype line, qsizetype pos, const QStringList & fr )
 
 	const auto sc = fr.at( line )[ pos ];
 
-	if( sc != c_34 && sc != c_39 && sc != c_40 )
+	if( sc != c_34 && sc != c_39 && sc != c_40 && sc != c_41 )
 		return { line, pos, ( firstLine != line ), {}, firstLine };
-	else if( !space )
+	else if( !space && sc != c_41 )
 		return { line, pos, false, {}, firstLine };
+
+	if( sc == c_41 )
+		return { line, pos, true, {}, firstLine };
 
 	const auto startLine = line;
 
@@ -2406,7 +2409,7 @@ checkForInlineLink( Delims::const_iterator it, Delims::const_iterator last,
 
 	skipSpacesUpTo1Line( l, p, po.fr );
 
-	if( !ok && po.fr.at( l )[ p ] != c_41 )
+	if( !ok || po.fr.at( l )[ p ] != c_41 )
 		return { {}, {}, it, false };
 
 	for( ; it != last; ++it )
