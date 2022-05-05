@@ -66,4 +66,5 @@
 #include "emphasis-11-17.inl"
 
 // 6.3
-#include "links.inl"
+#include "links-1.inl"
+#include "links-2.inl"
