@@ -2107,7 +2107,7 @@ createShortcutLink( const QString & text,
 	const QString & linkText,
 	bool doNotCreateTextOnFail )
 {
-	const auto u = QString::fromLatin1( "#" ) + text.simplified().toLower();
+	const auto u = QString::fromLatin1( "#" ) + text.simplified().toCaseFolded();
 	const auto url = u + QStringLiteral( "/" ) + po.workingPath + po.fileName;
 
 	po.wasRefLink = false;
@@ -2185,7 +2185,7 @@ createShortcutImage( const QString & text,
 	const QString & linkText,
 	bool doNotCreateTextOnFail )
 {
-	const auto url = QString::fromLatin1( "#" ) + text.simplified().toLower() +
+	const auto url = QString::fromLatin1( "#" ) + text.simplified().toCaseFolded() +
 		QStringLiteral( "/" ) + po.workingPath + po.fileName;
 
 	po.wasRefLink = false;
@@ -2508,7 +2508,7 @@ checkForImage( Delims::const_iterator it, Delims::const_iterator last,
 
 					return iit;
 				}
-				else if( createShortcutImage( text.simplified().toLower(),
+				else if( createShortcutImage( text.simplified().toCaseFolded(),
 							po, start->m_line, start->m_pos + start->m_len,
 							it, {}, false ) )
 				{
@@ -2525,13 +2525,13 @@ checkForImage( Delims::const_iterator it, Delims::const_iterator last,
 
 				if( lit != std::next( it ) )
 				{
-					if( createShortcutImage( label.simplified().toLower(),
+					if( createShortcutImage( label.simplified().toCaseFolded(),
 							po, start->m_line, start->m_pos + start->m_len,
 							lit, text, true ) )
 					{
 						return lit;
 					}
-					else if( createShortcutImage( text.simplified().toLower(),
+					else if( createShortcutImage( text.simplified().toCaseFolded(),
 								po, start->m_line, start->m_pos + start->m_len,
 								it, {}, false ) )
 					{
@@ -2546,7 +2546,7 @@ checkForImage( Delims::const_iterator it, Delims::const_iterator last,
 							return it;
 					}
 				}
-				else if( createShortcutImage( text.simplified().toLower(),
+				else if( createShortcutImage( text.simplified().toCaseFolded(),
 							po, start->m_line, start->m_pos + start->m_len,
 							it, {}, false ) )
 				{
@@ -2554,7 +2554,7 @@ checkForImage( Delims::const_iterator it, Delims::const_iterator last,
 				}
 			}
 			// Shortcut
-			else if( createShortcutImage( text.simplified().toLower(),
+			else if( createShortcutImage( text.simplified().toCaseFolded(),
 						po, start->m_line, start->m_pos + start->m_len,
 						it, {}, false ) )
 			{
@@ -2562,7 +2562,7 @@ checkForImage( Delims::const_iterator it, Delims::const_iterator last,
 			}
 		}
 		// Shortcut
-		else if( createShortcutImage( text.simplified().toLower(),
+		else if( createShortcutImage( text.simplified().toCaseFolded(),
 					po, start->m_line, start->m_pos + start->m_len,
 					it, {}, false ) )
 		{
@@ -2598,7 +2598,8 @@ checkForLink( Delims::const_iterator it, Delims::const_iterator last,
 			if( !po.collectRefLinks )
 			{
 				QSharedPointer< FootnoteRef > fnr(
-					new FootnoteRef( QStringLiteral( "#" ) + text.simplified().toLower() +
+					new FootnoteRef( QStringLiteral( "#" ) +
+						text.simplified().toCaseFolded() +
 						QStringLiteral( "/" ) + po.workingPath + po.fileName ) );
 
 				po.parent->appendItem( fnr );
@@ -2625,7 +2626,8 @@ checkForLink( Delims::const_iterator it, Delims::const_iterator last,
 
 					if( ok )
 					{
-						const auto label = QString::fromLatin1( "#" ) + text.simplified().toLower() +
+						const auto label = QString::fromLatin1( "#" ) +
+							text.simplified().toCaseFolded() +
 							QStringLiteral( "/" ) + po.workingPath + po.fileName;
 
 						QSharedPointer< Link > link( new Link );
