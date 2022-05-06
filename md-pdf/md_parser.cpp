@@ -2524,9 +2524,10 @@ checkForImage( Delims::const_iterator it, Delims::const_iterator last,
 
 				std::tie( label, lit ) = checkForLinkLabel( std::next( it ), last, po );
 
-				if( lit != std::next( it ) && !label.simplified().isEmpty() )
+				if( lit != std::next( it ) )
 				{
-					if( createShortcutImage( label.simplified().toCaseFolded(),
+					if( !label.simplified().isEmpty() &&
+						createShortcutImage( label.simplified().toCaseFolded(),
 							po, start->m_line, start->m_pos + start->m_len,
 							lit, text, true ) )
 					{
@@ -2737,9 +2738,9 @@ checkForLink( Delims::const_iterator it, Delims::const_iterator last,
 
 				std::tie( label, lit ) = checkForLinkLabel( std::next( it ), last, po );
 
-				if( lit != std::next( it ) && !label.simplified().isEmpty() )
+				if( lit != std::next( it ) )
 				{
-					if( createShortcutLink( label.simplified(),
+					if( !label.simplified().isEmpty() && createShortcutLink( label.simplified(),
 							po, start->m_line, start->m_pos + start->m_len,
 							lit, text, true ) )
 					{
@@ -2752,7 +2753,7 @@ checkForLink( Delims::const_iterator it, Delims::const_iterator last,
 						if( label.isEmpty() )
 						{
 							po.line = lit->m_line;
-							po.pos = lit->m_pos + lit->m_line;
+							po.pos = lit->m_pos + lit->m_len;
 
 							return lit;
 						}
