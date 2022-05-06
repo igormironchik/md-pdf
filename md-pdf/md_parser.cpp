@@ -1890,7 +1890,7 @@ readTextBetweenSquareBrackets( Delims::const_iterator start,
 			const auto p = start->m_pos + start->m_len;
 			const auto n = it->m_pos - p;
 
-			return { removeBackslashes( po.fr.at( start->m_line ).sliced( p, n ).simplified() ),
+			return { po.fr.at( start->m_line ).sliced( p, n ).simplified(),
 				it };
 		}
 		else
@@ -1911,7 +1911,7 @@ readTextBetweenSquareBrackets( Delims::const_iterator start,
 						text.append( po.fr.at( i ) );
 				}
 
-				return { removeBackslashes( text.simplified() ), it };
+				return { text.simplified(), it };
 			}
 			else
 			{
@@ -2028,7 +2028,7 @@ makeLink( const QString & url, const QString & text,
 	bool doNotCreateTextOnFail,
 	qsizetype lastLine, qsizetype lastPos )
 {
-	QString u = removeBackslashes( url );
+	QString u = ( url.startsWith( c_35 ) ? url : removeBackslashes( url ) );
 
 	if( !u.isEmpty() )
 	{
@@ -2116,7 +2116,8 @@ createShortcutLink( const QString & text,
 	{
 		if( !po.collectRefLinks )
 		{
-			const auto link = makeLink( u, ( linkText.isEmpty() ? text : linkText ), po,
+			const auto link = makeLink( u,
+				removeBackslashes( linkText.isEmpty() ? text : linkText ), po,
 				doNotCreateTextOnFail, lastLine, lastPos );
 
 			if( !link.isNull() )
@@ -2172,7 +2173,7 @@ makeImage( const QString & url, const QString & text,
 			img->setP( p->items().at( 0 ).staticCast< Paragraph > () );
 	}
 
-	img->setText( text );
+	img->setText( removeBackslashes( text ) );
 
 	return img;
 }
@@ -2678,7 +2679,7 @@ checkForLink( Delims::const_iterator it, Delims::const_iterator last,
 
 				if( ok )
 				{
-					const auto link = makeLink( url, text, po, false,
+					const auto link = makeLink( url, removeBackslashes( text ), po, false,
 						start->m_line, start->m_pos + start->m_len );
 
 					if( !link.isNull() )
