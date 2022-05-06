@@ -2746,19 +2746,14 @@ checkForLink( Delims::const_iterator it, Delims::const_iterator last,
 					{
 						return lit;
 					}
-					else if( createShortcutLink( text.simplified(),
+					else if( label.simplified().isEmpty() && createShortcutLink( text.simplified(),
 								po, start->m_line, start->m_pos + start->m_len,
 								it, {}, false ) )
 					{
-						if( label.isEmpty() )
-						{
-							po.line = lit->m_line;
-							po.pos = lit->m_pos + lit->m_len;
+						po.line = lit->m_line;
+						po.pos = lit->m_pos + lit->m_len;
 
-							return lit;
-						}
-						else
-							return it;
+						return lit;
 					}
 				}
 				else if( createShortcutLink( text.simplified(),
