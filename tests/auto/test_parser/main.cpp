@@ -1369,7 +1369,7 @@ TEST_CASE( "031" )
 
 	REQUIRE( l3->text() == QStringLiteral( "link 3" ) );
 
-	const QString label = QString::fromLatin1( "#label" ) + QStringLiteral( "/" ) +
+	const QString label = QString::fromLatin1( "#LABEL" ) + QStringLiteral( "/" ) +
 		wd + QStringLiteral( "/" ) + QStringLiteral( "031.md" );
 
 	REQUIRE( l3->url() == label );
@@ -1379,7 +1379,7 @@ TEST_CASE( "031" )
 	auto f1 = static_cast< MD::FootnoteRef* > ( p->items().at( 4 ).data() );
 
 	REQUIRE( f1->id() ==
-		QString::fromLatin1( "#^ref" ) + QStringLiteral( "/" ) + wd +
+		QString::fromLatin1( "#^REF" ) + QStringLiteral( "/" ) + wd +
 		QStringLiteral( "/" ) + QStringLiteral( "031.md" ) );
 
 	REQUIRE( !doc->labeledLinks().isEmpty() );
@@ -1399,7 +1399,7 @@ TEST_CASE( "031" )
 		f1 = static_cast< MD::FootnoteRef* > ( p->items().at( 0 ).data() );
 
 		REQUIRE( f1->id() ==
-			QString::fromLatin1( "#^ref" ) + QStringLiteral( "/" ) + wd +
+			QString::fromLatin1( "#^REF" ) + QStringLiteral( "/" ) + wd +
 			QStringLiteral( "/" ) + QStringLiteral( "031.md" ) );
 
 		auto t = static_cast< MD::Text* > ( p->items().at( 1 ).data() );
