@@ -2554,20 +2554,35 @@ checkForImage( Delims::const_iterator it, Delims::const_iterator last,
 					return it;
 				}
 			}
-			// Shortcut
-			else if( createShortcutImage( text.simplified().toCaseFolded(),
+			else
+			{
+				std::tie( text, it ) = checkForLinkLabel( start, last, po );
+
+				if( it != start )
+				{
+					if( createShortcutImage( text.simplified().toCaseFolded(),
 						po, start->m_line, start->m_pos + start->m_len,
 						it, {}, false ) )
-			{
-				return it;
+					{
+						return it;
+					}
+				}
 			}
 		}
 		// Shortcut
-		else if( createShortcutImage( text.simplified().toCaseFolded(),
+		else
+		{
+			std::tie( text, it ) = checkForLinkLabel( start, last, po );
+
+			if( it != start )
+			{
+				if( createShortcutImage( text.simplified().toCaseFolded(),
 					po, start->m_line, start->m_pos + start->m_len,
 					it, {}, false ) )
-		{
-			return it;
+				{
+					return it;
+				}
+			}
 		}
 	}
 	else if( !po.collectRefLinks )
@@ -2623,35 +2638,47 @@ checkForLink( Delims::const_iterator it, Delims::const_iterator last,
 					Delims::const_iterator iit;
 					bool ok;
 
-					std::tie( url, title, iit, ok ) = checkForRefLink( it, last, po );
+					std::tie( text, it ) = checkForLinkLabel( start, last, po );
 
-					if( ok )
+					if( it != start )
 					{
-						const auto label = QString::fromLatin1( "#" ) +
-							text.simplified().toCaseFolded() +
-							QStringLiteral( "/" ) + po.workingPath + po.fileName;
+						std::tie( url, title, iit, ok ) = checkForRefLink( it, last, po );
 
-						QSharedPointer< Link > link( new Link );
-
-						url = removeBackslashes( url );
-
-						if( !url.isEmpty() )
+						if( ok )
 						{
-							if( QUrl( url ).isRelative() )
+							const auto label = QString::fromLatin1( "#" ) +
+								text.simplified().toCaseFolded() +
+								QStringLiteral( "/" ) + po.workingPath + po.fileName;
+
+							QSharedPointer< Link > link( new Link );
+
+							url = removeBackslashes( url );
+
+							if( !url.isEmpty() )
 							{
-								if( fileExists( url, po.workingPath ) )
-									url = QFileInfo( po.workingPath + url ).absoluteFilePath();
+								if( QUrl( url ).isRelative() )
+								{
+									if( fileExists( url, po.workingPath ) )
+										url = QFileInfo( po.workingPath + url ).absoluteFilePath();
+								}
 							}
+
+							link->setUrl( url );
+
+							po.wasRefLink = true;
+
+							if( !po.doc->labeledLinks().contains( label ) )
+								po.doc->insertLabeledLink( label, link );
+
+							return iit;
 						}
+						else
+						{
+							if( !po.collectRefLinks )
+								makeText( start->m_line, start->m_pos + start->m_len, po );
 
-						link->setUrl( url );
-
-						po.wasRefLink = true;
-
-						if( !po.doc->labeledLinks().contains( label ) )
-							po.doc->insertLabeledLink( label, link );
-
-						return iit;
+							return start;
+						}
 					}
 					else
 					{
@@ -2741,19 +2768,35 @@ checkForLink( Delims::const_iterator it, Delims::const_iterator last,
 				}
 			}
 			// Shortcut
-			else if( createShortcutLink( text.simplified(),
-						po, start->m_line, start->m_pos + start->m_len,
-						it, {}, false ) )
+			else
 			{
-				return it;
+				std::tie( text, it ) = checkForLinkLabel( start, last, po );
+
+				if( it != start )
+				{
+					if( createShortcutLink( text.simplified(),
+							po, start->m_line, start->m_pos + start->m_len,
+							it, {}, false ) )
+					{
+						return it;
+					}
+				}
 			}
 		}
 		// Shortcut
-		else if( createShortcutLink( text.simplified(),
-					po, start->m_line, start->m_pos + start->m_len,
-					it, {}, false ) )
+		else
 		{
-			return it;
+			std::tie( text, it ) = checkForLinkLabel( start, last, po );
+
+			if( it != start )
+			{
+				if( createShortcutLink( text.simplified(),
+						po, start->m_line, start->m_pos + start->m_len,
+						it, {}, false ) )
+				{
+					return it;
+				}
+			}
 		}
 	}
 	else if( !po.collectRefLinks )
