@@ -2524,7 +2524,7 @@ checkForImage( Delims::const_iterator it, Delims::const_iterator last,
 
 				std::tie( label, lit ) = checkForLinkLabel( std::next( it ), last, po );
 
-				if( lit != std::next( it ) )
+				if( lit != std::next( it ) && !label.simplified().isEmpty() )
 				{
 					if( createShortcutImage( label.simplified().toCaseFolded(),
 							po, start->m_line, start->m_pos + start->m_len,
@@ -2558,7 +2558,7 @@ checkForImage( Delims::const_iterator it, Delims::const_iterator last,
 			{
 				std::tie( text, it ) = checkForLinkLabel( start, last, po );
 
-				if( it != start )
+				if( it != start && !text.simplified().isEmpty() )
 				{
 					if( createShortcutImage( text.simplified().toCaseFolded(),
 						po, start->m_line, start->m_pos + start->m_len,
@@ -2574,7 +2574,7 @@ checkForImage( Delims::const_iterator it, Delims::const_iterator last,
 		{
 			std::tie( text, it ) = checkForLinkLabel( start, last, po );
 
-			if( it != start )
+			if( it != start && !text.simplified().isEmpty() )
 			{
 				if( createShortcutImage( text.simplified().toCaseFolded(),
 					po, start->m_line, start->m_pos + start->m_len,
@@ -2640,7 +2640,7 @@ checkForLink( Delims::const_iterator it, Delims::const_iterator last,
 
 					std::tie( text, it ) = checkForLinkLabel( start, last, po );
 
-					if( it != start )
+					if( it != start && !text.simplified().isEmpty() )
 					{
 						std::tie( url, title, iit, ok ) = checkForRefLink( it, last, po );
 
@@ -2737,7 +2737,7 @@ checkForLink( Delims::const_iterator it, Delims::const_iterator last,
 
 				std::tie( label, lit ) = checkForLinkLabel( std::next( it ), last, po );
 
-				if( lit != std::next( it ) )
+				if( lit != std::next( it ) && !label.simplified().isEmpty() )
 				{
 					if( createShortcutLink( label.simplified(),
 							po, start->m_line, start->m_pos + start->m_len,
@@ -2772,7 +2772,7 @@ checkForLink( Delims::const_iterator it, Delims::const_iterator last,
 			{
 				std::tie( text, it ) = checkForLinkLabel( start, last, po );
 
-				if( it != start )
+				if( it != start && !text.simplified().isEmpty() )
 				{
 					if( createShortcutLink( text.simplified(),
 							po, start->m_line, start->m_pos + start->m_len,
@@ -2788,7 +2788,7 @@ checkForLink( Delims::const_iterator it, Delims::const_iterator last,
 		{
 			std::tie( text, it ) = checkForLinkLabel( start, last, po );
 
-			if( it != start )
+			if( it != start && !text.simplified().isEmpty() )
 			{
 				if( createShortcutLink( text.simplified(),
 						po, start->m_line, start->m_pos + start->m_len,
