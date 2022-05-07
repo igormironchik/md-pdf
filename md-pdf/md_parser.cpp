@@ -2533,19 +2533,12 @@ checkForImage( Delims::const_iterator it, Delims::const_iterator last,
 					{
 						return lit;
 					}
-					else if( createShortcutImage( text.simplified(),
-								po, start->m_line, start->m_pos + start->m_len,
-								it, {}, false ) )
+					else if( label.simplified().isEmpty() &&
+						createShortcutImage( text.simplified(),
+							po, start->m_line, start->m_pos + start->m_len,
+							lit, {}, false ) )
 					{
-						if( label.isEmpty() )
-						{
-							po.line = lit->m_line;
-							po.pos = lit->m_pos + lit->m_line;
-
-							return lit;
-						}
-						else
-							return it;
+						return lit;
 					}
 				}
 				else if( createShortcutImage( text.simplified(),
