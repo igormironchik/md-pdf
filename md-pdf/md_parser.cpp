@@ -2509,7 +2509,7 @@ checkForImage( Delims::const_iterator it, Delims::const_iterator last,
 
 					return iit;
 				}
-				else if( createShortcutImage( text.simplified().toCaseFolded().toUpper(),
+				else if( createShortcutImage( text.simplified(),
 							po, start->m_line, start->m_pos + start->m_len,
 							it, {}, false ) )
 				{
@@ -2527,13 +2527,13 @@ checkForImage( Delims::const_iterator it, Delims::const_iterator last,
 				if( lit != std::next( it ) )
 				{
 					if( !label.simplified().isEmpty() &&
-						createShortcutImage( label.simplified().toCaseFolded().toUpper(),
+						createShortcutImage( label.simplified(),
 							po, start->m_line, start->m_pos + start->m_len,
 							lit, text, true ) )
 					{
 						return lit;
 					}
-					else if( createShortcutImage( text.simplified().toCaseFolded().toUpper(),
+					else if( createShortcutImage( text.simplified(),
 								po, start->m_line, start->m_pos + start->m_len,
 								it, {}, false ) )
 					{
@@ -2548,7 +2548,7 @@ checkForImage( Delims::const_iterator it, Delims::const_iterator last,
 							return it;
 					}
 				}
-				else if( createShortcutImage( text.simplified().toCaseFolded().toUpper(),
+				else if( createShortcutImage( text.simplified(),
 							po, start->m_line, start->m_pos + start->m_len,
 							it, {}, false ) )
 				{
@@ -2561,7 +2561,7 @@ checkForImage( Delims::const_iterator it, Delims::const_iterator last,
 
 				if( it != start && !text.simplified().isEmpty() )
 				{
-					if( createShortcutImage( text.simplified().toCaseFolded().toUpper(),
+					if( createShortcutImage( text.simplified(),
 						po, start->m_line, start->m_pos + start->m_len,
 						it, {}, false ) )
 					{
@@ -2577,7 +2577,7 @@ checkForImage( Delims::const_iterator it, Delims::const_iterator last,
 
 			if( it != start && !text.simplified().isEmpty() )
 			{
-				if( createShortcutImage( text.simplified().toCaseFolded().toUpper(),
+				if( createShortcutImage( text.simplified(),
 					po, start->m_line, start->m_pos + start->m_len,
 					it, {}, false ) )
 				{
