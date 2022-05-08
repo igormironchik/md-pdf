@@ -74,3 +74,6 @@
 
 // 6.5
 #include "autolinks.inl"
+
+// 6.6 Raw HTML
+// Skipped.
