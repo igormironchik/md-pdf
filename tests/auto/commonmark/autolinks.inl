@@ -161,3 +161,27 @@ TEST_CASE( "601" )
 	REQUIRE( t->opts() == MD::TextWithoutFormat );
 	REQUIRE( t->text() == QStringLiteral( "<http://foo.bar/baz bim>" ) );
 }
+
+TEST_CASE( "602" )
+{
+	MESSAGE( "This test is not strict to CommonMark 0.30." );
+	MESSAGE( "Skip for now." );
+}
+
+TEST_CASE( "603" )
+{
+	const auto doc = load_test( 603 );
+
+	REQUIRE( doc->isEmpty() == false );
+	REQUIRE( doc->items().size() == 2 );
+
+	REQUIRE( doc->items().at( 1 )->type() == MD::ItemType::Paragraph );
+	auto p = static_cast< MD::Paragraph* > ( doc->items().at( 1 ).data() );
+	REQUIRE( p->items().size() == 1 );
+	REQUIRE( p->items().at( 0 )->type() == MD::ItemType::Link );
+	auto l = static_cast< MD::Link* > ( p->items().at( 0 ).data() );
+	REQUIRE( l->img()->isEmpty() );
+	REQUIRE( l->textOptions() == MD::TextWithoutFormat );
+	REQUIRE( l->text().isEmpty() );
+	REQUIRE( l->url() == QStringLiteral( "foo@bar.example.com" ) );
+}
