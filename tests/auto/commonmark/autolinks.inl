@@ -203,3 +203,22 @@ TEST_CASE( "604" )
 	REQUIRE( l->text().isEmpty() );
 	REQUIRE( l->url() == QStringLiteral( "foo+special@Bar.baz-bar0.com" ) );
 }
+
+TEST_CASE( "605" )
+{
+	MESSAGE( "This test is not strict to CommonMark 0.30." );
+
+	const auto doc = load_test( 605 );
+
+	REQUIRE( doc->isEmpty() == false );
+	REQUIRE( doc->items().size() == 2 );
+
+	REQUIRE( doc->items().at( 1 )->type() == MD::ItemType::Paragraph );
+	auto p = static_cast< MD::Paragraph* > ( doc->items().at( 1 ).data() );
+	REQUIRE( p->items().size() == 1 );
+	REQUIRE( p->items().at( 0 )->type() == MD::ItemType::Text );
+	auto t = static_cast< MD::Text* > ( p->items().at( 0 ).data() );
+	REQUIRE( t->opts() == MD::TextWithoutFormat );
+	// I keep backslash here...
+	REQUIRE( t->text() == QStringLiteral( "<foo\\+@bar.example.com>" ) );
+}
