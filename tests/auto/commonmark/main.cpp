@@ -77,3 +77,6 @@
 
 // 6.6 Raw HTML
 // Skipped.
+
+// 6.7
+#include "hard_line_breaks.inl"
