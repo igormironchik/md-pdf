@@ -97,3 +97,21 @@ TEST_CASE( "596" )
 	REQUIRE( l->text().isEmpty() );
 	REQUIRE( l->url() == QStringLiteral( "MAILTO:FOO@BAR.BAZ" ) );
 }
+
+TEST_CASE( "597" )
+{
+	const auto doc = load_test( 597 );
+
+	REQUIRE( doc->isEmpty() == false );
+	REQUIRE( doc->items().size() == 2 );
+
+	REQUIRE( doc->items().at( 1 )->type() == MD::ItemType::Paragraph );
+	auto p = static_cast< MD::Paragraph* > ( doc->items().at( 1 ).data() );
+	REQUIRE( p->items().size() == 1 );
+	REQUIRE( p->items().at( 0 )->type() == MD::ItemType::Link );
+	auto l = static_cast< MD::Link* > ( p->items().at( 0 ).data() );
+	REQUIRE( l->img()->isEmpty() );
+	REQUIRE( l->textOptions() == MD::TextWithoutFormat );
+	REQUIRE( l->text().isEmpty() );
+	REQUIRE( l->url() == QStringLiteral( "a+b+c:d" ) );
+}
