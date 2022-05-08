@@ -61,3 +61,21 @@ TEST_CASE( "594" )
 	REQUIRE( l->text().isEmpty() );
 	REQUIRE( l->url() == QStringLiteral( "http://foo.bar.baz/test?q=hello&id=22&boolean" ) );
 }
+
+TEST_CASE( "595" )
+{
+	const auto doc = load_test( 595 );
+
+	REQUIRE( doc->isEmpty() == false );
+	REQUIRE( doc->items().size() == 2 );
+
+	REQUIRE( doc->items().at( 1 )->type() == MD::ItemType::Paragraph );
+	auto p = static_cast< MD::Paragraph* > ( doc->items().at( 1 ).data() );
+	REQUIRE( p->items().size() == 1 );
+	REQUIRE( p->items().at( 0 )->type() == MD::ItemType::Link );
+	auto l = static_cast< MD::Link* > ( p->items().at( 0 ).data() );
+	REQUIRE( l->img()->isEmpty() );
+	REQUIRE( l->textOptions() == MD::TextWithoutFormat );
+	REQUIRE( l->text().isEmpty() );
+	REQUIRE( l->url() == QStringLiteral( "irc://foo.bar:2233/baz" ) );
+}
