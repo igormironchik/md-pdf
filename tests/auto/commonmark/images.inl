@@ -184,3 +184,20 @@ TEST_CASE( "579" )
 	REQUIRE( i->text() == QStringLiteral( "foo" ) );
 	REQUIRE( i->url() == QStringLiteral( "url" ) );
 }
+
+TEST_CASE( "580" )
+{
+	const auto doc = load_test( 580 );
+
+	REQUIRE( doc->isEmpty() == false );
+	REQUIRE( doc->items().size() == 2 );
+
+	REQUIRE( doc->items().at( 1 )->type() == MD::ItemType::Paragraph );
+	auto p = static_cast< MD::Paragraph* > ( doc->items().at( 1 ).data() );
+	REQUIRE( p->items().size() == 1 );
+	REQUIRE( p->items().at( 0 )->type() == MD::ItemType::Image );
+	auto i = static_cast< MD::Image* > ( p->items().at( 0 ).data() );
+	REQUIRE( !i->isEmpty() );
+	REQUIRE( i->text().isEmpty() );
+	REQUIRE( i->url() == QStringLiteral( "/url" ) );
+}
