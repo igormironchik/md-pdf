@@ -45,7 +45,7 @@ TEST_CASE( "253" )
 	{
 		REQUIRE( doc->items().at( 2 )->type() == MD::ItemType::Code );
 		auto c = static_cast< MD::Code* > ( doc->items().at( 2 ).data() );
-		REQUIRE( !c->inlined() );
+		REQUIRE( !c->isInlined() );
 		REQUIRE( c->text() == QStringLiteral( "indented code" ) );
 	}
 
@@ -91,7 +91,7 @@ TEST_CASE( "254" )
 	{
 		REQUIRE( li->items().at( 1 )->type() == MD::ItemType::Code );
 		auto c = static_cast< MD::Code* > ( li->items().at( 1 ).data() );
-		REQUIRE( !c->inlined() );
+		REQUIRE( !c->isInlined() );
 		REQUIRE( c->text() == QStringLiteral( "indented code" ) );
 	}
 
@@ -204,7 +204,7 @@ TEST_CASE( "257" )
 
 	REQUIRE( doc->items().at( 2 )->type() == MD::ItemType::Code );
 	auto c = static_cast< MD::Code* > ( doc->items().at( 2 ).data() );
-	REQUIRE( !c->inlined() );
+	REQUIRE( !c->isInlined() );
 	REQUIRE( c->text() == QStringLiteral( " two" ) );
 }
 
@@ -416,7 +416,7 @@ TEST_CASE( "263" )
 	{
 		REQUIRE( li->items().at( 1 )->type() == MD::ItemType::Code );
 		auto c = static_cast< MD::Code* > ( li->items().at( 1 ).data() );
-		REQUIRE( !c->inlined() );
+		REQUIRE( !c->isInlined() );
 		REQUIRE( c->text() == QStringLiteral( "bar" ) );
 	}
 
@@ -471,7 +471,7 @@ TEST_CASE( "264" )
 	{
 		REQUIRE( li->items().at( 1 )->type() == MD::ItemType::Code );
 		auto c = static_cast< MD::Code* > ( li->items().at( 1 ).data() );
-		REQUIRE( !c->inlined() );
+		REQUIRE( !c->isInlined() );
 		REQUIRE( c->text() == QStringLiteral( "bar\n\n\nbaz" ) );
 	}
 }
@@ -620,7 +620,7 @@ TEST_CASE( "270" )
 	{
 		REQUIRE( li->items().at( 1 )->type() == MD::ItemType::Code );
 		auto c = static_cast< MD::Code* > ( li->items().at( 1 ).data() );
-		REQUIRE( !c->inlined() );
+		REQUIRE( !c->isInlined() );
 		REQUIRE( c->text() == QStringLiteral( "bar" ) );
 	}
 }
@@ -654,7 +654,7 @@ TEST_CASE( "271" )
 	{
 		REQUIRE( li->items().at( 1 )->type() == MD::ItemType::Code );
 		auto c = static_cast< MD::Code* > ( li->items().at( 1 ).data() );
-		REQUIRE( !c->inlined() );
+		REQUIRE( !c->isInlined() );
 		REQUIRE( c->text() == QStringLiteral( "bar" ) );
 	}
 }

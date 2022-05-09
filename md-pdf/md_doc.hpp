@@ -449,8 +449,8 @@ public:
 	const QString & text() const;
 	void setText( const QString & t );
 
-	TextOptions textOptions() const;
-	void setTextOptions( const TextOptions & o );
+	TextOptions opts() const;
+	void setOpts( const TextOptions & o );
 
 	QSharedPointer< Image > img() const;
 	void setImg( QSharedPointer< Image > i );
@@ -485,7 +485,7 @@ public:
 
 	const QString & text() const;
 
-	bool inlined() const;
+	bool isInlined() const;
 
 	const QString & syntax() const;
 	void setSyntax( const QString & s );

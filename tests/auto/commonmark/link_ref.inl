@@ -39,7 +39,7 @@ TEST_CASE( "192" )
 	REQUIRE( p->items().at( 0 )->type() == MD::ItemType::Link );
 	auto l = static_cast< MD::Link* > ( p->items().at( 0 ).data() );
 	REQUIRE( l->img()->isEmpty() );
-	REQUIRE( l->textOptions() == MD::TextWithoutFormat );
+	REQUIRE( l->opts() == MD::TextWithoutFormat );
 	REQUIRE( l->text() == QStringLiteral( "foo" ) );
 	REQUIRE( doc->labeledLinks().contains( l->url() ) );
 	REQUIRE( doc->labeledLinks()[ l->url() ]->url() == QStringLiteral( "/url" ) );
@@ -58,7 +58,7 @@ TEST_CASE( "193" )
 	REQUIRE( p->items().at( 0 )->type() == MD::ItemType::Link );
 	auto l = static_cast< MD::Link* > ( p->items().at( 0 ).data() );
 	REQUIRE( l->img()->isEmpty() );
-	REQUIRE( l->textOptions() == MD::TextWithoutFormat );
+	REQUIRE( l->opts() == MD::TextWithoutFormat );
 	REQUIRE( l->text() == QStringLiteral( "foo" ) );
 	REQUIRE( doc->labeledLinks().contains( l->url() ) );
 	REQUIRE( doc->labeledLinks()[ l->url() ]->url() == QStringLiteral( "/url" ) );
@@ -77,7 +77,7 @@ TEST_CASE( "194" )
 	REQUIRE( p->items().at( 0 )->type() == MD::ItemType::Link );
 	auto l = static_cast< MD::Link* > ( p->items().at( 0 ).data() );
 	REQUIRE( l->img()->isEmpty() );
-	REQUIRE( l->textOptions() == MD::TextWithoutFormat );
+	REQUIRE( l->opts() == MD::TextWithoutFormat );
 	REQUIRE( l->text() == QStringLiteral( "Foo*bar]" ) );
 	REQUIRE( doc->labeledLinks().contains( l->url() ) );
 	REQUIRE( doc->labeledLinks()[ l->url() ]->url() == QStringLiteral( "my_(url)" ) );
@@ -96,7 +96,7 @@ TEST_CASE( "195" )
 	REQUIRE( p->items().at( 0 )->type() == MD::ItemType::Link );
 	auto l = static_cast< MD::Link* > ( p->items().at( 0 ).data() );
 	REQUIRE( l->img()->isEmpty() );
-	REQUIRE( l->textOptions() == MD::TextWithoutFormat );
+	REQUIRE( l->opts() == MD::TextWithoutFormat );
 	REQUIRE( l->text() == QStringLiteral( "Foo bar" ) );
 	REQUIRE( doc->labeledLinks().contains( l->url() ) );
 	REQUIRE( doc->labeledLinks()[ l->url() ]->url() == QStringLiteral( "my url" ) );
@@ -115,7 +115,7 @@ TEST_CASE( "196" )
 	REQUIRE( p->items().at( 0 )->type() == MD::ItemType::Link );
 	auto l = static_cast< MD::Link* > ( p->items().at( 0 ).data() );
 	REQUIRE( l->img()->isEmpty() );
-	REQUIRE( l->textOptions() == MD::TextWithoutFormat );
+	REQUIRE( l->opts() == MD::TextWithoutFormat );
 	REQUIRE( l->text() == QStringLiteral( "foo" ) );
 	REQUIRE( doc->labeledLinks().contains( l->url() ) );
 	REQUIRE( doc->labeledLinks()[ l->url() ]->url() == QStringLiteral( "/url" ) );
@@ -172,7 +172,7 @@ TEST_CASE( "198" )
 	REQUIRE( p->items().at( 0 )->type() == MD::ItemType::Link );
 	auto l = static_cast< MD::Link* > ( p->items().at( 0 ).data() );
 	REQUIRE( l->img()->isEmpty() );
-	REQUIRE( l->textOptions() == MD::TextWithoutFormat );
+	REQUIRE( l->opts() == MD::TextWithoutFormat );
 	REQUIRE( l->text() == QStringLiteral( "foo" ) );
 	REQUIRE( doc->labeledLinks().contains( l->url() ) );
 	REQUIRE( doc->labeledLinks()[ l->url() ]->url() == QStringLiteral( "/url" ) );
@@ -219,7 +219,7 @@ TEST_CASE( "200" )
 	REQUIRE( p->items().at( 0 )->type() == MD::ItemType::Link );
 	auto l = static_cast< MD::Link* > ( p->items().at( 0 ).data() );
 	REQUIRE( l->img()->isEmpty() );
-	REQUIRE( l->textOptions() == MD::TextWithoutFormat );
+	REQUIRE( l->opts() == MD::TextWithoutFormat );
 	REQUIRE( l->text() == QStringLiteral( "foo" ) );
 	REQUIRE( doc->labeledLinks().contains( l->url() ) );
 	REQUIRE( doc->labeledLinks()[ l->url() ]->url() == QStringLiteral( "" ) );
@@ -266,7 +266,7 @@ TEST_CASE( "202" )
 	REQUIRE( p->items().at( 0 )->type() == MD::ItemType::Link );
 	auto l = static_cast< MD::Link* > ( p->items().at( 0 ).data() );
 	REQUIRE( l->img()->isEmpty() );
-	REQUIRE( l->textOptions() == MD::TextWithoutFormat );
+	REQUIRE( l->opts() == MD::TextWithoutFormat );
 	REQUIRE( l->text() == QStringLiteral( "foo" ) );
 	REQUIRE( doc->labeledLinks().contains( l->url() ) );
 	REQUIRE( doc->labeledLinks()[ l->url() ]->url() == QStringLiteral( "/url\\bar*baz" ) );
@@ -285,7 +285,7 @@ TEST_CASE( "203" )
 	REQUIRE( p->items().at( 0 )->type() == MD::ItemType::Link );
 	auto l = static_cast< MD::Link* > ( p->items().at( 0 ).data() );
 	REQUIRE( l->img()->isEmpty() );
-	REQUIRE( l->textOptions() == MD::TextWithoutFormat );
+	REQUIRE( l->opts() == MD::TextWithoutFormat );
 	REQUIRE( l->text() == QStringLiteral( "foo" ) );
 	REQUIRE( doc->labeledLinks().contains( l->url() ) );
 	REQUIRE( doc->labeledLinks()[ l->url() ]->url() == QStringLiteral( "url" ) );
@@ -304,7 +304,7 @@ TEST_CASE( "204" )
 	REQUIRE( p->items().at( 0 )->type() == MD::ItemType::Link );
 	auto l = static_cast< MD::Link* > ( p->items().at( 0 ).data() );
 	REQUIRE( l->img()->isEmpty() );
-	REQUIRE( l->textOptions() == MD::TextWithoutFormat );
+	REQUIRE( l->opts() == MD::TextWithoutFormat );
 	REQUIRE( l->text() == QStringLiteral( "foo" ) );
 	REQUIRE( doc->labeledLinks().contains( l->url() ) );
 	REQUIRE( doc->labeledLinks()[ l->url() ]->url() == QStringLiteral( "first" ) );
@@ -323,7 +323,7 @@ TEST_CASE( "205" )
 	REQUIRE( p->items().at( 0 )->type() == MD::ItemType::Link );
 	auto l = static_cast< MD::Link* > ( p->items().at( 0 ).data() );
 	REQUIRE( l->img()->isEmpty() );
-	REQUIRE( l->textOptions() == MD::TextWithoutFormat );
+	REQUIRE( l->opts() == MD::TextWithoutFormat );
 	REQUIRE( l->text() == QStringLiteral( "Foo" ) );
 	REQUIRE( doc->labeledLinks().contains( l->url() ) );
 	REQUIRE( doc->labeledLinks()[ l->url() ]->url() == QStringLiteral( "/url" ) );
@@ -342,7 +342,7 @@ TEST_CASE( "206" )
 	REQUIRE( p->items().at( 0 )->type() == MD::ItemType::Link );
 	auto l = static_cast< MD::Link* > ( p->items().at( 0 ).data() );
 	REQUIRE( l->img()->isEmpty() );
-	REQUIRE( l->textOptions() == MD::TextWithoutFormat );
+	REQUIRE( l->opts() == MD::TextWithoutFormat );
 	REQUIRE( l->text() == QStringLiteral( u"αγω" ) );
 	REQUIRE( doc->labeledLinks().contains( l->url() ) );
 	REQUIRE( doc->labeledLinks()[ l->url() ]->url() == QStringLiteral( u"/φου" ) );
@@ -418,7 +418,7 @@ TEST_CASE( "211" )
 
 	REQUIRE( doc->items().at( 1 )->type() == MD::ItemType::Code );
 	auto c = static_cast< MD::Code* > ( doc->items().at( 1 ).data() );
-	REQUIRE( !c->inlined() );
+	REQUIRE( !c->isInlined() );
 	REQUIRE( c->text() == QStringLiteral( "[foo]: /url \"title\"" ) );
 
 	REQUIRE( doc->items().at( 2 )->type() == MD::ItemType::Paragraph );
@@ -439,7 +439,7 @@ TEST_CASE( "212" )
 
 	REQUIRE( doc->items().at( 1 )->type() == MD::ItemType::Code );
 	auto c = static_cast< MD::Code* > ( doc->items().at( 1 ).data() );
-	REQUIRE( !c->inlined() );
+	REQUIRE( !c->isInlined() );
 	REQUIRE( c->text() == QStringLiteral( "[foo]: /url" ) );
 
 	REQUIRE( doc->items().at( 2 )->type() == MD::ItemType::Paragraph );

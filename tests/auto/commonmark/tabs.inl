@@ -35,7 +35,7 @@ TEST_CASE( "001" )
 	REQUIRE( doc->items().at( 1 )->type() == MD::ItemType::Code );
 
 	auto c = static_cast< MD::Code* > ( doc->items().at( 1 ).data() );
-	REQUIRE( c->inlined() == false );
+	REQUIRE( c->isInlined() == false );
 	REQUIRE( c->syntax().isEmpty() );
 	REQUIRE( c->text() == QStringLiteral( "foo    baz        bim" ) );
 }
@@ -51,7 +51,7 @@ TEST_CASE( "002" ) // Not strict to CommonMark.
 	REQUIRE( doc->items().at( 1 )->type() == MD::ItemType::Code );
 
 	auto c = static_cast< MD::Code* > ( doc->items().at( 1 ).data() );
-	REQUIRE( c->inlined() == false );
+	REQUIRE( c->isInlined() == false );
 	REQUIRE( c->syntax().isEmpty() );
 	// Extra spaces.
 	REQUIRE( c->text() == QStringLiteral( "  foo    baz        bim" ) );
@@ -66,7 +66,7 @@ TEST_CASE( "003" )
 	REQUIRE( doc->items().at( 1 )->type() == MD::ItemType::Code );
 
 	auto c = static_cast< MD::Code* > ( doc->items().at( 1 ).data() );
-	REQUIRE( c->inlined() == false );
+	REQUIRE( c->isInlined() == false );
 	REQUIRE( c->syntax().isEmpty() );
 	REQUIRE( c->text() == QStringLiteral( "a    a\nὐ    a" ) );
 }
@@ -128,7 +128,7 @@ TEST_CASE( "005" )
 
 	REQUIRE( li->items().at( 1 )->type() == MD::ItemType::Code );
 	auto c2 = static_cast< MD::Code* > ( li->items().at( 1 ).data() );
-	REQUIRE( c2->inlined() == false );
+	REQUIRE( c2->isInlined() == false );
 	REQUIRE( c2->syntax().isEmpty() );
 	REQUIRE( c2->text() == QStringLiteral( "  bar" ) );
 }
@@ -148,7 +148,7 @@ TEST_CASE( "006" ) // Not strict to CommonMark.
 
 	REQUIRE( q->items().at( 0 )->type() == MD::ItemType::Code );
 	auto c = static_cast< MD::Code* > ( q->items().at( 0 ).data() );
-	REQUIRE( c->inlined() == false );
+	REQUIRE( c->isInlined() == false );
 	REQUIRE( c->syntax().isEmpty() );
 	// Extra spaces.
 	REQUIRE( c->text() == QStringLiteral( "   foo" ) );
@@ -173,7 +173,7 @@ TEST_CASE( "007" ) // Not strict to CommonMark.
 
 	REQUIRE( li->items().at( 0 )->type() == MD::ItemType::Code );
 	auto c = static_cast< MD::Code* > ( li->items().at( 0 ).data() );
-	REQUIRE( c->inlined() == false );
+	REQUIRE( c->isInlined() == false );
 	REQUIRE( c->syntax().isEmpty() );
 	// Extra spaces.
 	REQUIRE( c->text() == QStringLiteral( "   foo" ) );
@@ -188,7 +188,7 @@ TEST_CASE( "008" )
 	REQUIRE( doc->items().at( 1 )->type() == MD::ItemType::Code );
 
 	auto c = static_cast< MD::Code* > ( doc->items().at( 1 ).data() );
-	REQUIRE( c->inlined() == false );
+	REQUIRE( c->isInlined() == false );
 	REQUIRE( c->syntax().isEmpty() );
 	REQUIRE( c->text() == QStringLiteral( "foo\nbar" ) );
 }

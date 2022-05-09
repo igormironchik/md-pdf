@@ -39,7 +39,7 @@ TEST_CASE( "593" )
 	REQUIRE( p->items().at( 0 )->type() == MD::ItemType::Link );
 	auto l = static_cast< MD::Link* > ( p->items().at( 0 ).data() );
 	REQUIRE( l->img()->isEmpty() );
-	REQUIRE( l->textOptions() == MD::TextWithoutFormat );
+	REQUIRE( l->opts() == MD::TextWithoutFormat );
 	REQUIRE( l->text().isEmpty() );
 	REQUIRE( l->url() == QStringLiteral( "http://foo.bar.baz" ) );
 }
@@ -57,7 +57,7 @@ TEST_CASE( "594" )
 	REQUIRE( p->items().at( 0 )->type() == MD::ItemType::Link );
 	auto l = static_cast< MD::Link* > ( p->items().at( 0 ).data() );
 	REQUIRE( l->img()->isEmpty() );
-	REQUIRE( l->textOptions() == MD::TextWithoutFormat );
+	REQUIRE( l->opts() == MD::TextWithoutFormat );
 	REQUIRE( l->text().isEmpty() );
 	REQUIRE( l->url() == QStringLiteral( "http://foo.bar.baz/test?q=hello&id=22&boolean" ) );
 }
@@ -75,7 +75,7 @@ TEST_CASE( "595" )
 	REQUIRE( p->items().at( 0 )->type() == MD::ItemType::Link );
 	auto l = static_cast< MD::Link* > ( p->items().at( 0 ).data() );
 	REQUIRE( l->img()->isEmpty() );
-	REQUIRE( l->textOptions() == MD::TextWithoutFormat );
+	REQUIRE( l->opts() == MD::TextWithoutFormat );
 	REQUIRE( l->text().isEmpty() );
 	REQUIRE( l->url() == QStringLiteral( "irc://foo.bar:2233/baz" ) );
 }
@@ -93,7 +93,7 @@ TEST_CASE( "596" )
 	REQUIRE( p->items().at( 0 )->type() == MD::ItemType::Link );
 	auto l = static_cast< MD::Link* > ( p->items().at( 0 ).data() );
 	REQUIRE( l->img()->isEmpty() );
-	REQUIRE( l->textOptions() == MD::TextWithoutFormat );
+	REQUIRE( l->opts() == MD::TextWithoutFormat );
 	REQUIRE( l->text().isEmpty() );
 	REQUIRE( l->url() == QStringLiteral( "MAILTO:FOO@BAR.BAZ" ) );
 }
@@ -111,7 +111,7 @@ TEST_CASE( "597" )
 	REQUIRE( p->items().at( 0 )->type() == MD::ItemType::Link );
 	auto l = static_cast< MD::Link* > ( p->items().at( 0 ).data() );
 	REQUIRE( l->img()->isEmpty() );
-	REQUIRE( l->textOptions() == MD::TextWithoutFormat );
+	REQUIRE( l->opts() == MD::TextWithoutFormat );
 	REQUIRE( l->text().isEmpty() );
 	REQUIRE( l->url() == QStringLiteral( "a+b+c:d" ) );
 }
@@ -141,7 +141,7 @@ TEST_CASE( "600" )
 	REQUIRE( p->items().at( 0 )->type() == MD::ItemType::Link );
 	auto l = static_cast< MD::Link* > ( p->items().at( 0 ).data() );
 	REQUIRE( l->img()->isEmpty() );
-	REQUIRE( l->textOptions() == MD::TextWithoutFormat );
+	REQUIRE( l->opts() == MD::TextWithoutFormat );
 	REQUIRE( l->text().isEmpty() );
 	REQUIRE( l->url() == QStringLiteral( "localhost:5001/foo" ) );
 }
@@ -181,7 +181,7 @@ TEST_CASE( "603" )
 	REQUIRE( p->items().at( 0 )->type() == MD::ItemType::Link );
 	auto l = static_cast< MD::Link* > ( p->items().at( 0 ).data() );
 	REQUIRE( l->img()->isEmpty() );
-	REQUIRE( l->textOptions() == MD::TextWithoutFormat );
+	REQUIRE( l->opts() == MD::TextWithoutFormat );
 	REQUIRE( l->text().isEmpty() );
 	REQUIRE( l->url() == QStringLiteral( "foo@bar.example.com" ) );
 }
@@ -199,7 +199,7 @@ TEST_CASE( "604" )
 	REQUIRE( p->items().at( 0 )->type() == MD::ItemType::Link );
 	auto l = static_cast< MD::Link* > ( p->items().at( 0 ).data() );
 	REQUIRE( l->img()->isEmpty() );
-	REQUIRE( l->textOptions() == MD::TextWithoutFormat );
+	REQUIRE( l->opts() == MD::TextWithoutFormat );
 	REQUIRE( l->text().isEmpty() );
 	REQUIRE( l->url() == QStringLiteral( "foo+special@Bar.baz-bar0.com" ) );
 }

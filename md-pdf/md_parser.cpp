@@ -1779,7 +1779,7 @@ checkForAutolinkHtml( Delims::const_iterator it, Delims::const_iterator last,
 				{
 					QSharedPointer< Link > lnk( new Link );
 					lnk->setUrl( url.simplified() );
-					lnk->setTextOptions( po.opts );
+					lnk->setOpts( po.opts );
 					po.parent->appendItem( lnk );
 				}
 				else
@@ -2063,7 +2063,7 @@ makeLink( const QString & url, const QString & text,
 
 	QSharedPointer< Link > link( new Link );
 	link->setUrl( u );
-	link->setTextOptions( po.opts );
+	link->setOpts( po.opts );
 
 	QStringList tmp;
 	tmp << text;

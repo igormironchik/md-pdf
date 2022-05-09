@@ -135,7 +135,7 @@ TEST_CASE( "231" )
 
 	REQUIRE( doc->items().at( 1 )->type() == MD::ItemType::Code );
 	auto c = static_cast< MD::Code* > ( doc->items().at( 1 ).data() );
-	REQUIRE( !c->inlined() );
+	REQUIRE( !c->isInlined() );
 	REQUIRE( c->text() == QStringLiteral( "> # Foo\n> bar\n> baz" ) );
 }
 
@@ -270,14 +270,14 @@ TEST_CASE( "236" )
 		REQUIRE( b->items().size() == 1 );
 		REQUIRE( b->items().at( 0 )->type() == MD::ItemType::Code );
 		auto c = static_cast< MD::Code* > ( b->items().at( 0 ).data() );
-		REQUIRE( !c->inlined() );
+		REQUIRE( !c->isInlined() );
 		REQUIRE( c->text() == QStringLiteral( "foo" ) );
 	}
 
 	{
 		REQUIRE( doc->items().at( 2 )->type() == MD::ItemType::Code );
 		auto c = static_cast< MD::Code* > ( doc->items().at( 2 ).data() );
-		REQUIRE( !c->inlined() );
+		REQUIRE( !c->isInlined() );
 		REQUIRE( c->text() == QStringLiteral( "bar" ) );
 	}
 }
@@ -294,7 +294,7 @@ TEST_CASE( "237" )
 		REQUIRE( b->items().size() == 1 );
 		REQUIRE( b->items().at( 0 )->type() == MD::ItemType::Code );
 		auto c = static_cast< MD::Code* > ( b->items().at( 0 ).data() );
-		REQUIRE( !c->inlined() );
+		REQUIRE( !c->isInlined() );
 		REQUIRE( c->text().isEmpty() );
 	}
 
@@ -311,7 +311,7 @@ TEST_CASE( "237" )
 	{
 		REQUIRE( doc->items().at( 3 )->type() == MD::ItemType::Code );
 		auto c = static_cast< MD::Code* > ( doc->items().at( 3 ).data() );
-		REQUIRE( !c->inlined() );
+		REQUIRE( !c->isInlined() );
 		REQUIRE( c->text().isEmpty() );
 	}
 }
@@ -709,7 +709,7 @@ TEST_CASE( "252" )
 
 		REQUIRE( b->items().at( 0 )->type() == MD::ItemType::Code );
 		auto c = static_cast< MD::Code* > ( b->items().at( 0 ).data() );
-		REQUIRE( !c->inlined() );
+		REQUIRE( !c->isInlined() );
 		REQUIRE( c->text() == QStringLiteral( "code" ) );
 	}
 

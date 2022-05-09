@@ -396,13 +396,13 @@ Link::setText( const QString & t )
 }
 
 TextOptions
-Link::textOptions() const
+Link::opts() const
 {
 	return m_opts;
 }
 
 void
-Link::setTextOptions( const TextOptions & o )
+Link::setOpts( const TextOptions & o )
 {
 	m_opts = o;
 }
@@ -455,7 +455,7 @@ Code::text() const
 }
 
 bool
-Code::inlined() const
+Code::isInlined() const
 {
 	return m_inlined;
 }

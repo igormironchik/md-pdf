@@ -1132,7 +1132,7 @@ TEST_CASE( "403" )
 	{
 		REQUIRE( p->items().at( 1 )->type() == MD::ItemType::Link );
 		auto l = static_cast< MD::Link* > ( p->items().at( 1 ).data() );
-		REQUIRE( l->textOptions() == MD::ItalicText );
+		REQUIRE( l->opts() == MD::ItalicText );
 		REQUIRE( l->text() == QStringLiteral( "bar" ) );
 		REQUIRE( l->url() == QStringLiteral( "/url" ) );
 	}
@@ -1520,7 +1520,7 @@ TEST_CASE( "418" )
 	{
 		REQUIRE( p->items().at( 1 )->type() == MD::ItemType::Link );
 		auto l = static_cast< MD::Link* > ( p->items().at( 1 ).data() );
-		REQUIRE( l->textOptions() == MD::ItalicText );
+		REQUIRE( l->opts() == MD::ItalicText );
 		REQUIRE( l->text() == QStringLiteral( "*bar*" ) );
 		REQUIRE( l->url() == QStringLiteral( "/url" ) );
 		REQUIRE( l->p()->items().size() == 1 );
@@ -1588,7 +1588,7 @@ TEST_CASE( "421" )
 	{
 		REQUIRE( p->items().at( 1 )->type() == MD::ItemType::Link );
 		auto l = static_cast< MD::Link* > ( p->items().at( 1 ).data() );
-		REQUIRE( l->textOptions() == MD::BoldText );
+		REQUIRE( l->opts() == MD::BoldText );
 		REQUIRE( l->text() == QStringLiteral( "bar" ) );
 		REQUIRE( l->url() == QStringLiteral( "/url" ) );
 	}
@@ -1870,7 +1870,7 @@ TEST_CASE( "432" )
 
 	REQUIRE( p->items().at( 1 )->type() == MD::ItemType::Link );
 	auto l = static_cast< MD::Link* > ( p->items().at( 1 ).data() );
-	REQUIRE( l->textOptions() == MD::BoldText );
+	REQUIRE( l->opts() == MD::BoldText );
 	REQUIRE( l->text() == QStringLiteral( "*bar*" ) );
 }
 

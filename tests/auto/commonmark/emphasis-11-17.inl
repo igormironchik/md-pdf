@@ -931,7 +931,7 @@ TEST_CASE( "472" )
 	{
 		REQUIRE( p->items().at( 1 )->type() == MD::ItemType::Link );
 		auto l = static_cast< MD::Link* > ( p->items().at( 1 ).data() );
-		REQUIRE( l->textOptions() == MD::TextWithoutFormat );
+		REQUIRE( l->opts() == MD::TextWithoutFormat );
 		REQUIRE( l->text() == QStringLiteral( "bar*" ) );
 		REQUIRE( l->url() == QStringLiteral( "/url" ) );
 	}
@@ -958,7 +958,7 @@ TEST_CASE( "473" )
 	{
 		REQUIRE( p->items().at( 1 )->type() == MD::ItemType::Link );
 		auto l = static_cast< MD::Link* > ( p->items().at( 1 ).data() );
-		REQUIRE( l->textOptions() == MD::TextWithoutFormat );
+		REQUIRE( l->opts() == MD::TextWithoutFormat );
 		REQUIRE( l->text() == QStringLiteral( "bar_" ) );
 		REQUIRE( l->url() == QStringLiteral( "/url" ) );
 	}
@@ -1092,7 +1092,7 @@ TEST_CASE( "479" )
 	{
 		REQUIRE( p->items().at( 1 )->type() == MD::ItemType::Link );
 		auto l = static_cast< MD::Link* > ( p->items().at( 1 ).data() );
-		REQUIRE( l->textOptions() == MD::TextWithoutFormat );
+		REQUIRE( l->opts() == MD::TextWithoutFormat );
 		REQUIRE( l->url() == QStringLiteral( "http://foo.bar/?q=**" ) );
 	}
 }
@@ -1118,7 +1118,7 @@ TEST_CASE( "480" )
 	{
 		REQUIRE( p->items().at( 1 )->type() == MD::ItemType::Link );
 		auto l = static_cast< MD::Link* > ( p->items().at( 1 ).data() );
-		REQUIRE( l->textOptions() == MD::TextWithoutFormat );
+		REQUIRE( l->opts() == MD::TextWithoutFormat );
 		REQUIRE( l->url() == QStringLiteral( "http://foo.bar/?q=__" ) );
 	}
 }

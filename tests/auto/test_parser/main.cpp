@@ -324,7 +324,7 @@ TEST_CASE( "011" )
 
 	auto c = static_cast< MD::Code* > ( dp->items().at( 0 ).data() );
 
-	REQUIRE( c->inlined() == true );
+	REQUIRE( c->isInlined() == true );
 	REQUIRE( c->text() == QStringLiteral( "code" ) );
 }
 
@@ -353,7 +353,7 @@ TEST_CASE( "012" )
 
 	auto c = static_cast< MD::Code* > ( dp->items().at( 1 ).data() );
 
-	REQUIRE( c->inlined() == true );
+	REQUIRE( c->isInlined() == true );
 	REQUIRE( c->text() == QStringLiteral( "text" ) );
 
 	REQUIRE( dp->items().at( 2 )->type() == MD::ItemType::Text );
@@ -382,7 +382,7 @@ TEST_CASE( "013" )
 
 	auto c = static_cast< MD::Code* > ( dp->items().at( 0 ).data() );
 
-	REQUIRE( c->inlined() == true );
+	REQUIRE( c->isInlined() == true );
 	REQUIRE( c->text() == QStringLiteral( "Use this `code` in the code" ) );
 }
 
@@ -747,7 +747,7 @@ TEST_CASE( "020" )
 
 	auto c = static_cast< MD::Code* > ( doc->items().at( 1 ).data() );
 
-	REQUIRE( c->inlined() == false );
+	REQUIRE( c->isInlined() == false );
 	REQUIRE( c->text() ==
 		QStringLiteral( "if( a > b )\n  do_something();\nelse\n  dont_do_anything();" ) );
 	REQUIRE( c->syntax() == QStringLiteral( "cpp" ) );
@@ -766,7 +766,7 @@ TEST_CASE( "021" )
 
 	auto c = static_cast< MD::Code* > ( doc->items().at( 1 ).data() );
 
-	REQUIRE( c->inlined() == false );
+	REQUIRE( c->isInlined() == false );
 	REQUIRE( c->text() ==
 		QStringLiteral( "if( a > b )\n  do_something();\nelse\n  dont_do_anything();" ) );
 }
@@ -784,7 +784,7 @@ TEST_CASE( "022" )
 
 	auto c = static_cast< MD::Code* > ( doc->items().at( 1 ).data() );
 
-	REQUIRE( c->inlined() == false );
+	REQUIRE( c->isInlined() == false );
 	REQUIRE( c->text() ==
 		QStringLiteral( "if( a > b )\n  do_something();\nelse\n  dont_do_anything();" ) );
 }
@@ -1092,7 +1092,7 @@ TEST_CASE( "027" )
 
 			auto c = static_cast< MD::Code* > ( item->items().at( 1 ).data() );
 
-			REQUIRE( c->inlined() == false );
+			REQUIRE( c->isInlined() == false );
 			REQUIRE( c->text() == ( QStringLiteral( "code" ) ) );
 		}
 	}
@@ -1143,7 +1143,7 @@ TEST_CASE( "028" )
 
 			auto c = static_cast< MD::Code* > ( item->items().at( 1 ).data() );
 
-			REQUIRE( c->inlined() == false );
+			REQUIRE( c->isInlined() == false );
 			REQUIRE( c->text() == ( QStringLiteral( "code" ) ) );
 		}
 	}
@@ -1356,7 +1356,7 @@ TEST_CASE( "031" )
 	auto l2 = static_cast< MD::Link* > ( p->items().at( 2 ).data() );
 
 	REQUIRE( l2->url() == wd + QStringLiteral( "/b.md" ) );
-	REQUIRE( l2->textOptions() == MD::TextOption::TextWithoutFormat );
+	REQUIRE( l2->opts() == MD::TextOption::TextWithoutFormat );
 
 	REQUIRE( !l2->img().isNull() );
 	REQUIRE( l2->img()->text() == QStringLiteral( "image 1" ) );
@@ -1451,7 +1451,7 @@ TEST_CASE( "032" )
 
 	auto c = static_cast< MD::Code* > ( q->items().at( 0 ).data() );
 
-	REQUIRE( c->inlined() == false );
+	REQUIRE( c->isInlined() == false );
 	REQUIRE( c->text() == QStringLiteral( "if( a < b )\n  do_something();" ) );
 }
 
@@ -1499,7 +1499,7 @@ TEST_CASE( "034" )
 
 	REQUIRE( l->url() == QStringLiteral( "https://www.google.com" ) );
 	REQUIRE( l->text() == QStringLiteral( "Google" ) );
-	REQUIRE( l->textOptions() == MD::TextOption::BoldText );
+	REQUIRE( l->opts() == MD::TextOption::BoldText );
 }
 
 TEST_CASE( "035" )
@@ -2577,7 +2577,7 @@ TEST_CASE( "052" )
 
 		auto c = static_cast< MD::Code* > ( doc->items().at( 1 ).data() );
 
-		REQUIRE( c->inlined() == false );
+		REQUIRE( c->isInlined() == false );
 		REQUIRE( c->text() == QStringLiteral( "_```` *bold* _italic" ) );
 		REQUIRE( c->syntax() == QStringLiteral( "code" ) );
 	}
@@ -2595,7 +2595,7 @@ TEST_CASE( "053" )
 	{
 		REQUIRE( doc->items().at( 1 )->type() == MD::ItemType::Code );
 		auto c = static_cast< MD::Code* > ( doc->items().at( 1 ).data() );
-		REQUIRE( !c->inlined() );
+		REQUIRE( !c->isInlined() );
 		REQUIRE( c->text().isEmpty() );
 	}
 }
@@ -2612,7 +2612,7 @@ TEST_CASE( "054" )
 	{
 		REQUIRE( doc->items().at( 1 )->type() == MD::ItemType::Code );
 		auto c = static_cast< MD::Code* > ( doc->items().at( 1 ).data() );
-		REQUIRE( !c->inlined() );
+		REQUIRE( !c->isInlined() );
 		REQUIRE( c->text().isEmpty() );
 	}
 }
@@ -2685,7 +2685,7 @@ TEST_CASE( "056" )
 
 	auto c = static_cast< MD::Code* > ( doc->items().at( 1 ).data() );
 
-	REQUIRE( c->inlined() == false );
+	REQUIRE( c->isInlined() == false );
 	REQUIRE( c->text() ==
 		QStringLiteral( "if( a > b )\n\n  do_something();\n\nelse\n\n  dont_do_anything();" ) );
 }
@@ -2703,7 +2703,7 @@ TEST_CASE( "057" )
 
 	auto c = static_cast< MD::Code* > ( doc->items().at( 1 ).data() );
 
-	REQUIRE( c->inlined() == false );
+	REQUIRE( c->isInlined() == false );
 	REQUIRE( c->text() == QStringLiteral( "code\n\ncode" ) );
 }
 
@@ -2809,7 +2809,7 @@ TEST_CASE( "061" )
 
 	REQUIRE( li->items().at( 1 )->type() == MD::ItemType::Code );
 	auto c = static_cast< MD::Code* > ( li->items().at( 1 ).data() );
-	REQUIRE( c->inlined() == false );
+	REQUIRE( c->isInlined() == false );
 	REQUIRE( c->syntax().isEmpty() );
 	REQUIRE( c->text() == QStringLiteral( "<code goes here>" ) );
 }

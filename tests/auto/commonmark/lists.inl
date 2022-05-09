@@ -514,7 +514,7 @@ TEST_CASE( "309" )
 
 	REQUIRE( doc->items().at( 2 )->type() == MD::ItemType::Code );
 	auto c = static_cast< MD::Code* > ( doc->items().at( 2 ).data() );
-	REQUIRE( !c->inlined() );
+	REQUIRE( !c->isInlined() );
 	REQUIRE( c->text() == QStringLiteral( "code" ) );
 }
 
@@ -637,7 +637,7 @@ TEST_CASE( "313" )
 
 	REQUIRE( doc->items().at( 2 )->type() == MD::ItemType::Code );
 	auto c = static_cast< MD::Code* > ( doc->items().at( 2 ).data() );
-	REQUIRE( !c->inlined() );
+	REQUIRE( !c->isInlined() );
 	REQUIRE( c->text() == QStringLiteral( "3. c" ) );
 }
 

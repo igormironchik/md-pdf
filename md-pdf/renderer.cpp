@@ -1080,11 +1080,11 @@ PdfRenderer::drawLink( PdfAuxData & pdfData, const RenderOpts & renderOpts,
 	{
 		pdfData.setColor( renderOpts.m_linkColor );
 
-		auto * font = createFont( renderOpts.m_textFont, item->textOptions() & MD::TextOption::BoldText,
-			item->textOptions() & MD::TextOption::ItalicText, renderOpts.m_textFontSize,
+		auto * font = createFont( renderOpts.m_textFont, item->opts() & MD::TextOption::BoldText,
+			item->opts() & MD::TextOption::ItalicText, renderOpts.m_textFontSize,
 			pdfData.doc, scale, pdfData );
 
-		if( item->textOptions() & MD::TextOption::StrikethroughText )
+		if( item->opts() & MD::TextOption::StrikethroughText )
 			font->SetStrikeOut( true );
 		else
 			font->SetStrikeOut( false );
@@ -2810,9 +2810,9 @@ PdfRenderer::createAuxTable( PdfAuxData & pdfData, const RenderOpts & renderOpts
 							item.image = loadImage( l->img().data() );
 							item.url = url;
 							item.font = { renderOpts.m_textFont,
-								(bool) ( l->textOptions() & MD::TextOption::BoldText ),
-								(bool) ( l->textOptions() & MD::TextOption::ItalicText ),
-								(bool) ( l->textOptions() & MD::TextOption::StrikethroughText ),
+								(bool) ( l->opts() & MD::TextOption::BoldText ),
+								(bool) ( l->opts() & MD::TextOption::ItalicText ),
+								(bool) ( l->opts() & MD::TextOption::StrikethroughText ),
 								renderOpts.m_textFontSize };
 
 							data.items.append( item );
@@ -2827,9 +2827,9 @@ PdfRenderer::createAuxTable( PdfAuxData & pdfData, const RenderOpts & renderOpts
 								CellItem item;
 								item.word = w;
 								item.font = { renderOpts.m_textFont,
-									(bool) ( l->textOptions() & MD::TextOption::BoldText ),
-									(bool) ( l->textOptions() & MD::TextOption::ItalicText ),
-									(bool) ( l->textOptions() & MD::TextOption::StrikethroughText ),
+									(bool) ( l->opts() & MD::TextOption::BoldText ),
+									(bool) ( l->opts() & MD::TextOption::ItalicText ),
+									(bool) ( l->opts() & MD::TextOption::StrikethroughText ),
 									renderOpts.m_textFontSize };
 								item.url = url;
 								item.color = renderOpts.m_linkColor;
@@ -2841,9 +2841,9 @@ PdfRenderer::createAuxTable( PdfAuxData & pdfData, const RenderOpts & renderOpts
 						{
 							CellItem item;
 							item.font = { renderOpts.m_textFont,
-								(bool) ( l->textOptions() & MD::TextOption::BoldText ),
-								(bool) ( l->textOptions() & MD::TextOption::ItalicText ),
-								(bool) ( l->textOptions() & MD::TextOption::StrikethroughText ),
+								(bool) ( l->opts() & MD::TextOption::BoldText ),
+								(bool) ( l->opts() & MD::TextOption::ItalicText ),
+								(bool) ( l->opts() & MD::TextOption::StrikethroughText ),
 								renderOpts.m_textFontSize };
 							item.url = url;
 							item.color = renderOpts.m_linkColor;
