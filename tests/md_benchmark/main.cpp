@@ -13,7 +13,7 @@
 
 struct DATA {
 	QSharedPointer< MD::Document > * doc;
-	std::vector< MD::Item* > elems;
+	std::vector< QSharedPointer< MD::Item > > elems;
 };
 
 
@@ -99,7 +99,7 @@ int enter_block( MD_BLOCKTYPE type, void * data, void * doc )
 				case MD::ItemType::ListItem :
 				case MD::ItemType::List :
 				{
-					auto * b = static_cast< MD::Block* > ( d->elems.back() );
+					auto * b = static_cast< MD::Block* > ( d->elems.back().data() );
 
 					b->appendItem( item );
 				}
@@ -107,7 +107,7 @@ int enter_block( MD_BLOCKTYPE type, void * data, void * doc )
 
 				case MD::ItemType::Table :
 				{
-					auto * t = static_cast< MD::Table* > ( d->elems.back() );
+					auto * t = static_cast< MD::Table* > ( d->elems.back().data() );
 
 					t->appendRow( qSharedPointerCast< MD::TableRow > ( item ) );
 				}
@@ -115,7 +115,7 @@ int enter_block( MD_BLOCKTYPE type, void * data, void * doc )
 
 				case MD::ItemType::TableRow :
 				{
-					auto * t = static_cast< MD::TableRow* > ( d->elems.back() );
+					auto * t = static_cast< MD::TableRow* > ( d->elems.back().data() );
 
 					t->appendCell( qSharedPointerCast< MD::TableCell > ( item ) );
 				}
@@ -127,7 +127,7 @@ int enter_block( MD_BLOCKTYPE type, void * data, void * doc )
 			}
 		}
 
-		d->elems.push_back( item.data() );
+		d->elems.push_back( item );
 	}
 
 	return 0;
@@ -182,7 +182,7 @@ int enter_span( MD_SPANTYPE type, void * data, void * doc )
 					case MD::ItemType::ListItem :
 					case MD::ItemType::List :
 					{
-						auto * b = static_cast< MD::Block* > ( d->elems.back() );
+						auto * b = static_cast< MD::Block* > ( d->elems.back().data() );
 
 						b->appendItem( item );
 					}
@@ -210,7 +210,7 @@ int enter_span( MD_SPANTYPE type, void * data, void * doc )
 					case MD::ItemType::ListItem :
 					case MD::ItemType::List :
 					{
-						auto * b = static_cast< MD::Block* > ( d->elems.back() );
+						auto * b = static_cast< MD::Block* > ( d->elems.back().data() );
 
 						b->appendItem( item );
 					}
@@ -251,14 +251,15 @@ int text( MD_TEXTTYPE type, const MD_CHAR * data, MD_SIZE size, void * doc )
 	{
 		case MD::ItemType::Code :
 		{
-			auto * c = static_cast< MD::Code* > ( d->elems.back() );
-			c->setText( txt );
+			// I removed setText() method from MD::Code.
+			// Creation of MD::DOcument in this benchamrk with md4c
+			// is just for approximate comparison...
 		}
 			break;
 
 		case MD::ItemType::Paragraph :
 		{
-			auto * p = static_cast< MD::Paragraph* > ( d->elems.back() );
+			auto * p = static_cast< MD::Paragraph* > ( d->elems.back().data() );
 			QSharedPointer< MD::Text > t( new MD::Text );
 			t->setText( txt );
 			p->appendItem( t );
@@ -267,7 +268,7 @@ int text( MD_TEXTTYPE type, const MD_CHAR * data, MD_SIZE size, void * doc )
 
 		case MD::ItemType::Heading :
 		{
-			auto * h = static_cast< MD::Heading* > ( d->elems.back() );
+			auto * h = static_cast< MD::Heading* > ( d->elems.back().data() );
 			QSharedPointer< MD::Paragraph > p( new MD::Paragraph );
 			QSharedPointer< MD::Text > t( new MD::Text );
 			t->setText( txt );
