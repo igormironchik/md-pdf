@@ -1786,24 +1786,12 @@ checkForAutolinkHtml( Delims::const_iterator it, Delims::const_iterator last,
 			}
 			else
 			{
-				QString tag = po.fr.at( it->m_line ).sliced( it->m_pos );
+				const auto lb = po.ignoreLineBreak;
+				po.ignoreLineBreak = true;
 
-				for( qsizetype i = it->m_line + 1; i < nit->m_line; ++i )
-				{
-					tag += c_32;
-					tag += po.fr.at( i );
-				}
+				makeText( nit->m_line, nit->m_pos + nit->m_len, po, true );
 
-				tag += c_32;
-				tag += po.fr.at( nit->m_line ).sliced( 0, nit->m_pos + 1 );
-
-				tag = tag.simplified();
-
-				makeTextObject( tag,
-					( it->m_pos > 0 ? po.fr.at( it->m_line )[ it->m_pos - 1 ].isSpace() : true ),
-					( nit->m_pos + 1 < po.fr.at( nit->m_line ).size() ?
-						po.fr.at( nit->m_line )[ nit->m_pos + 1 ].isSpace() : true ),
-					po );
+				po.ignoreLineBreak = lb;
 			}
 		}
 
