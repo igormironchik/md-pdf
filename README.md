@@ -50,9 +50,6 @@ Good example of work of this application is
 ![](mdpdf.png)
 
 # Known issues
-
- * Internal Markdown parser does not correspond strictly to CommonMark 0.30,
- work on this is in progress.
  
  * I do not support HTML tags in Markdown, as for PDF rendering HTML is unuseful.
 
