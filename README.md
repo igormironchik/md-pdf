@@ -12,8 +12,9 @@ such ready tool, but my search was unsuccessful.
 
 # Status
 
-Markdown parser is in active developemnt. Common Markdown syntax is implemented,
-however some niceties may fail. Rendering is alomost done, however inlines in links
+Markdown parser is almost compatible with CommonMark 0.30.
+
+Rendering is alomost done, however inlines in links
 is not rendered still, but will be implemented soon.
 
 # Testing
