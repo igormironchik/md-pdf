@@ -1661,7 +1661,7 @@ makeText(
 			po.fr.at( po.line )[ po.pos ].isSpace() :
 		true );
 
-	bool lineBreak = ( !po.ignoreLineBreak && ( po.line == lastLine ?
+	bool lineBreak = ( !po.ignoreLineBreak && po.line != po.fr.size() - 1 && ( po.line == lastLine ?
 		( lastPos == po.fr.at( po.line ).size() && isLineBreak( po.fr.at( po.line ) ) ) :
 		isLineBreak( po.fr.at( po.line ) ) ) );
 
@@ -1698,7 +1698,8 @@ makeText(
 
 		for( ; po.line < lastLine; ++po.line )
 		{
-			lineBreak = ( !po.ignoreLineBreak && isLineBreak( po.fr.at( po.line ) ) );
+			lineBreak = ( !po.ignoreLineBreak && po.line != po.fr.size() - 1 &&
+				isLineBreak( po.fr.at( po.line ) ) );
 
 			const auto s = ( lineBreak ?
 				removeLineBreak( po.fr.at( po.line ) ) : po.fr.at( po.line ) );
@@ -1710,8 +1711,8 @@ makeText(
 				makeTOWLB();
 		}
 
-		lineBreak = ( !po.ignoreLineBreak && lastPos == po.fr.at( po.line ).size() &&
-			isLineBreak( po.fr.at( po.line ) ) );
+		lineBreak = ( !po.ignoreLineBreak && po.line != po.fr.size() - 1 &&
+			lastPos == po.fr.at( po.line ).size() && isLineBreak( po.fr.at( po.line ) ) );
 
 		auto s = po.fr.at( po.line ).sliced( 0, lastPos );
 
