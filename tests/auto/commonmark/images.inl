@@ -41,6 +41,13 @@ TEST_CASE( "571" )
 	REQUIRE( !i->isEmpty() );
 	REQUIRE( i->text() == QStringLiteral( "foo" ) );
 	REQUIRE( i->url() == QStringLiteral( "/url" ) );
+
+	REQUIRE( !i->p().isNull() );
+	REQUIRE( i->p()->items().size() == 1 );
+	REQUIRE( i->p()->items().at( 0 )->type() == MD::ItemType::Text );
+	auto t  = static_cast< MD::Text* > ( i->p()->items().at( 0 ).data() );
+	REQUIRE( t->opts() == MD::TextWithoutFormat );
+	REQUIRE( t->text() == QStringLiteral( "foo" ) );
 }
 
 TEST_CASE( "572" )

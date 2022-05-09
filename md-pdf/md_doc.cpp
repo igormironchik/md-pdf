@@ -26,18 +26,6 @@
 
 namespace MD {
 
-
-//
-// Item
-//
-
-ItemType
-Item::type() const
-{
-	return ItemType::Unknown;
-}
-
-
 //
 // PageBreak
 //
@@ -219,12 +207,6 @@ const Block::Items &
 Block::items() const
 {
 	return m_items;
-}
-
-void
-Block::setItems( const Items & i )
-{
-	m_items = i;
 }
 
 void
@@ -472,22 +454,10 @@ Code::text() const
 	return m_text;
 }
 
-void
-Code::setText( const QString & t )
-{
-	m_text = t;
-}
-
 bool
 Code::inlined() const
 {
 	return m_inlined;
-}
-
-void
-Code::setInlined( bool on )
-{
-	m_inlined = on;
 }
 
 const QString &
@@ -531,12 +501,6 @@ TableRow::cells() const
 }
 
 void
-TableRow::setCells( const Cells & c )
-{
-	m_cells = c;
-}
-
-void
 TableRow::appendCell( QSharedPointer< TableCell > c )
 {
 	m_cells.append( c );
@@ -563,12 +527,6 @@ const Table::Rows &
 Table::rows() const
 {
 	return m_rows;
-}
-
-void
-Table::setRows( const Rows & r )
-{
-	m_rows = r;
 }
 
 void
@@ -624,12 +582,6 @@ const QString &
 FootnoteRef::id() const
 {
 	return m_id;
-}
-
-void
-FootnoteRef::setId( const QString & i )
-{
-	m_id = i;
 }
 
 

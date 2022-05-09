@@ -2376,9 +2376,12 @@ TEST_CASE( "047" )
 
 		auto r0 = t->rows().at( 0 );
 
+		REQUIRE( r0->type() == MD::ItemType::TableRow );
+
 		REQUIRE( r0->cells().size() == 2 );
 
 		{
+			REQUIRE( r0->cells().at( 0 )->type() == MD::ItemType::TableCell );
 			auto c0 = static_cast< MD::TableCell* > ( r0->cells().at( 0 ).data() );
 
 			REQUIRE( c0->items().size() == 1 );
@@ -2620,6 +2623,8 @@ TEST_CASE( "055" )
 
 	auto doc = parser.parse( QStringLiteral( "data/055.md" ), false );
 
+	REQUIRE( doc->type() == MD::ItemType::Document );
+
 	REQUIRE( !doc->isEmpty() );
 	REQUIRE( doc->items().size() == 2 );
 	REQUIRE( doc->items().at( 0 )->type() == MD::ItemType::Anchor );
@@ -2634,6 +2639,8 @@ TEST_CASE( "055" )
 	REQUIRE( doc->footnotesMap().contains( label ) );
 
 	auto f = doc->footnotesMap()[ label ];
+
+	REQUIRE( f->type() == MD::ItemType::Footnote );
 
 	REQUIRE( f->items().size() == 3 );
 

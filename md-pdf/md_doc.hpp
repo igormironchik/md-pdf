@@ -42,8 +42,6 @@ namespace MD {
 
 //! Enumeration of item types.
 enum class ItemType {
-	//! Unknown.
-	Unknown,
 	//! Heading.
 	Heading,
 	//! Text.
@@ -97,7 +95,7 @@ protected:
 public:
 	virtual ~Item() = default;
 
-	virtual ItemType type() const;
+	virtual ItemType type() const = 0;
 
 private:
 	Q_DISABLE_COPY( Item )
@@ -253,7 +251,6 @@ public:
 	typedef QVector< QSharedPointer< Item > > Items;
 
 	const Items & items() const;
-	void setItems( const Items & i );
 	void appendItem( QSharedPointer< Item > i );
 
 	bool isEmpty() const;
@@ -487,10 +484,8 @@ public:
 	ItemType type() const override;
 
 	const QString & text() const;
-	void setText( const QString & t );
 
 	bool inlined() const;
-	void setInlined( bool on = true );
 
 	const QString & syntax() const;
 	void setSyntax( const QString & s );
@@ -540,7 +535,6 @@ public:
 	typedef QVector< QSharedPointer< TableCell > > Cells;
 
 	const Cells & cells() const;
-	void setCells( const Cells & c );
 	void appendCell( QSharedPointer< TableCell > c );
 
 	bool isEmpty() const;
@@ -569,7 +563,6 @@ public:
 	typedef QVector< QSharedPointer< TableRow > > Rows;
 
 	const Rows & rows() const;
-	void setRows( const Rows & r );
 	void appendRow( QSharedPointer< TableRow > r );
 
 	//! Alignment.
@@ -611,7 +604,6 @@ public:
 	ItemType type() const override;
 
 	const QString & id() const;
-	void setId( const QString & i );
 
 private:
 	QString m_id;
