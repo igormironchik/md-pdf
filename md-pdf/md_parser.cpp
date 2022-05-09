@@ -1739,48 +1739,72 @@ checkForAutolinkHtml( Delims::const_iterator it, Delims::const_iterator last,
 	const auto nit = std::find_if( std::next( it ), last,
 		[] ( const auto & d ) { return ( d.m_type == Delimiter::Greater ); } );
 
-	if( nit != last && nit->m_line == it->m_line )
+	if( nit != last )
 	{
 		if( !po.collectRefLinks )
 		{
-			const auto url = po.fr.at( it->m_line ).sliced( it->m_pos + 1,
-				nit->m_pos - it->m_pos - 1 );
-
-			const auto sit = std::find_if( url.cbegin(), url.cend(),
-				[] ( const auto & c ) { return c.isSpace(); } );
-
-			bool isUrl = true;
-
-			if( sit != url.cend() )
-				isUrl = false;
-			else
+			if( nit->m_line == it->m_line )
 			{
-				static const QRegularExpression er(
-					"^[a-zA-Z0-9.!#$%&'*+/=?^_`{|}~-]+@[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?"
-					"(?:\\.[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?)*$" );
+				const auto url = po.fr.at( it->m_line ).sliced( it->m_pos + 1,
+					nit->m_pos - it->m_pos - 1 );
 
-				QRegularExpressionMatch erm;
+				const auto sit = std::find_if( url.cbegin(), url.cend(),
+					[] ( const auto & c ) { return c.isSpace(); } );
 
-				if( url.startsWith( QStringLiteral( "mailto:" ), Qt::CaseInsensitive ) )
-					erm = er.match( url.right( url.length() - 7 ) );
-				else
-					erm = er.match( url );
+				bool isUrl = true;
 
-				const QUrl u( url );
-
-				if( ( !u.isValid() || u.isRelative() ) && !erm.hasMatch() )
+				if( sit != url.cend() )
 					isUrl = false;
-			}
+				else
+				{
+					static const QRegularExpression er(
+						"^[a-zA-Z0-9.!#$%&'*+/=?^_`{|}~-]+@[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?"
+						"(?:\\.[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?)*$" );
 
-			if( isUrl )
-			{
-				QSharedPointer< Link > lnk( new Link );
-				lnk->setUrl( url.simplified() );
-				lnk->setTextOptions( po.opts );
-				po.parent->appendItem( lnk );
+					QRegularExpressionMatch erm;
+
+					if( url.startsWith( QStringLiteral( "mailto:" ), Qt::CaseInsensitive ) )
+						erm = er.match( url.right( url.length() - 7 ) );
+					else
+						erm = er.match( url );
+
+					const QUrl u( url );
+
+					if( ( !u.isValid() || u.isRelative() ) && !erm.hasMatch() )
+						isUrl = false;
+				}
+
+				if( isUrl )
+				{
+					QSharedPointer< Link > lnk( new Link );
+					lnk->setUrl( url.simplified() );
+					lnk->setTextOptions( po.opts );
+					po.parent->appendItem( lnk );
+				}
+				else
+					makeText( nit->m_line, nit->m_pos + nit->m_len, po, true );
 			}
 			else
-				makeText( nit->m_line, nit->m_pos + nit->m_len, po, true );
+			{
+				QString tag = po.fr.at( it->m_line ).sliced( it->m_pos );
+
+				for( qsizetype i = it->m_line + 1; i < nit->m_line; ++i )
+				{
+					tag += c_32;
+					tag += po.fr.at( i );
+				}
+
+				tag += c_32;
+				tag += po.fr.at( nit->m_line ).sliced( 0, nit->m_pos + 1 );
+
+				tag = tag.simplified();
+
+				makeTextObject( tag,
+					( it->m_pos > 0 ? po.fr.at( it->m_line )[ it->m_pos - 1 ].isSpace() : true ),
+					( nit->m_pos + 1 < po.fr.at( nit->m_line ).size() ?
+						po.fr.at( nit->m_line )[ nit->m_pos + 1 ].isSpace() : true ),
+					po );
+			}
 		}
 
 		po.wasRefLink = false;
