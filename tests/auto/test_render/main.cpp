@@ -83,6 +83,11 @@ private slots:
 	void testCode();
 	//! Test complex 2.
 	void testComplex2();
+
+	//! Test link with inline content.
+	void testLinks();
+	//! Test link with inline content.
+	void testLinksBigFont();
 }; // class TestRender
 
 //! Prepare test data or do actual test?
@@ -350,6 +355,18 @@ void
 TestRender::testComplex2()
 {
 	doTest( QStringLiteral( "complex2.md" ), QStringLiteral( "_big" ), 16.0, 14.0 );
+}
+
+void
+TestRender::testLinks()
+{
+	doTest( QStringLiteral( "links.md" ), QString(), 8.0, 8.0 );
+}
+
+void
+TestRender::testLinksBigFont()
+{
+	doTest( QStringLiteral( "links.md" ), QStringLiteral( "_big" ), 16.0, 14.0 );
 }
 
 

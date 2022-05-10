@@ -1100,11 +1100,13 @@ PdfRenderer::drawLink( PdfAuxData & pdfData, const RenderOpts & renderOpts,
 					{
 						auto * text = it->staticCast< MD::Text>().data();
 
+						auto * spaceFont = createFont( renderOpts.m_textFont, false, false,
+							renderOpts.m_textFontSize, pdfData.doc, scale, pdfData );
+
 						auto * font = createFont( renderOpts.m_textFont,
 							text->opts() & MD::BoldText || item->opts() & MD::BoldText,
 							text->opts() & MD::ItalicText || item->opts() & MD::ItalicText,
-							renderOpts.m_textFontSize,
-							pdfData.doc, scale, pdfData );
+							renderOpts.m_textFontSize, pdfData.doc, scale, pdfData );
 
 						if( text->opts() & MD::StrikethroughText ||
 							item->opts() & MD::StrikethroughText )
@@ -1113,10 +1115,7 @@ PdfRenderer::drawLink( PdfAuxData & pdfData, const RenderOpts & renderOpts,
 							font->SetStrikeOut( false );
 
 						rects.append( drawString( pdfData, renderOpts,
-							text->text(),
-							createFont( renderOpts.m_textFont, false, false,
-								renderOpts.m_textFontSize, pdfData.doc, scale, pdfData ),
-							font, font->GetFontMetrics()->GetLineSpacing(),
+							text->text(), spaceFont, font, font->GetFontMetrics()->GetLineSpacing(),
 							doc, newLine, footnoteFont, footnoteFontScale,
 							( it == std::prev( last ) ? nextItem : nullptr ), footnoteNum, offset,
 							( it == item->p()->items().begin() && firstInParagraph ),
@@ -1248,6 +1247,8 @@ PdfRenderer::drawString( PdfAuxData & pdfData, const RenderOpts & renderOpts,
 	if( !firstInParagraph && !newLine && !words.isEmpty() &&
 		!charsWithoutSpaceBefore.contains( words.first() ) )
 	{
+		const auto strike = spaceFont->IsStrikeOut();
+		spaceFont->SetStrikeOut( false );
 		pdfData.painter->SetFont( spaceFont );
 
 		const auto w = spaceFont->GetFontMetrics()->StringWidth( " " );
@@ -1281,6 +1282,8 @@ PdfRenderer::drawString( PdfAuxData & pdfData, const RenderOpts & renderOpts,
 		}
 		else
 			newLineFn();
+
+		spaceFont->SetStrikeOut( strike );
 	}
 
 	pdfData.painter->SetFont( font );
