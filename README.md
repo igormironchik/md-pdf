@@ -10,13 +10,6 @@ Because I want to feed root Markdown file to the application and get
 complete PDF with all subpages that linked in root file. I tried to find
 such ready tool, but my search was unsuccessful.
 
-# Status
-
-Markdown parser is almost compatible with CommonMark 0.30.
-
-Rendering is alomost done, however inlines in links
-is not rendered still, but will be implemented soon.
-
 # Testing
 
 If you will find a bug of rendering, please, try to localize the issue in
