@@ -1089,13 +1089,61 @@ PdfRenderer::drawLink( PdfAuxData & pdfData, const RenderOpts & renderOpts,
 		else
 			font->SetStrikeOut( false );
 
-		rects = normalizeRects( drawString( pdfData, renderOpts,
-			( !item->text().isEmpty() ? item->text() : url ),
-			createFont( renderOpts.m_textFont, false, false, renderOpts.m_textFontSize,
-				pdfData.doc, scale, pdfData ),
-			font, font->GetFontMetrics()->GetLineSpacing(),
-			doc, newLine, footnoteFont, footnoteFontScale, nextItem, footnoteNum, offset,
-			firstInParagraph, cw, QColor(), inFootnote ) );
+		if( !item->p()->isEmpty() )
+		{
+			for( auto it = item->p()->items().begin(), last = item->p()->items().end();
+				it != last; ++it )
+			{
+				switch( (*it)->type() )
+				{
+					case MD::ItemType::Text :
+					{
+						auto * text = it->staticCast< MD::Text>().data();
+
+						auto * font = createFont( renderOpts.m_textFont,
+							text->opts() & MD::BoldText || item->opts() & MD::BoldText,
+							text->opts() & MD::ItalicText || item->opts() & MD::ItalicText,
+							renderOpts.m_textFontSize,
+							pdfData.doc, scale, pdfData );
+
+						if( text->opts() & MD::StrikethroughText ||
+							item->opts() & MD::StrikethroughText )
+								font->SetStrikeOut( true );
+						else
+							font->SetStrikeOut( false );
+
+						rects.append( drawString( pdfData, renderOpts,
+							text->text(),
+							createFont( renderOpts.m_textFont, false, false,
+								renderOpts.m_textFontSize, pdfData.doc, scale, pdfData ),
+							font, font->GetFontMetrics()->GetLineSpacing(),
+							doc, newLine, footnoteFont, footnoteFontScale,
+							( it == std::prev( last ) ? nextItem : nullptr ), footnoteNum, offset,
+							( it == item->p()->items().begin() && firstInParagraph ),
+							cw, QColor(), inFootnote ) );
+					}
+						break;
+
+					case MD::ItemType::Code :
+						rects.append( drawInlinedCode( pdfData, renderOpts,
+							static_cast< MD::Code* > ( it->data() ),
+							doc, newLine, offset,
+							( it == item->p()->items().begin() && firstInParagraph ), cw, scale,
+							inFootnote ) );
+						break;
+
+					default :
+						break;
+				}
+			}
+		}
+		else
+			rects = drawString( pdfData, renderOpts,
+				url, createFont( renderOpts.m_textFont, false, false, renderOpts.m_textFontSize,
+					pdfData.doc, scale, pdfData ),
+				font, font->GetFontMetrics()->GetLineSpacing(),
+				doc, newLine, footnoteFont, footnoteFontScale, nextItem, footnoteNum, offset,
+				firstInParagraph, cw, QColor(), inFootnote );
 
 		pdfData.restoreColor();
 	}
@@ -1103,6 +1151,8 @@ PdfRenderer::drawLink( PdfAuxData & pdfData, const RenderOpts & renderOpts,
 	else
 		rects.append( drawImage( pdfData, renderOpts, item->img().data(), doc, newLine, offset,
 			firstInParagraph, cw, scale ) );
+
+	rects = normalizeRects( rects );
 
 	if( draw )
 	{
@@ -1194,7 +1244,7 @@ PdfRenderer::drawString( PdfAuxData & pdfData, const RenderOpts & renderOpts,
 
 	const auto wv = pdfData.coords.pageWidth - pdfData.coords.margins.right;
 
-	// We need to draw space char if previous word with comma.
+	// We need to draw space char if first word is a word.
 	if( !firstInParagraph && !newLine && !words.isEmpty() &&
 		!charsWithoutSpaceBefore.contains( words.first() ) )
 	{
