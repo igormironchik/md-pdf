@@ -1274,9 +1274,9 @@ collectDelimiters( const QStringList & fr )
 	{
 		const QString & str = fr.at( line );
 		const auto p = skipSpaces( 0, str );
-		const QStringView s( str.sliced( p ) );
+		const auto withoutSpaces = str.sliced( p );
 
-		if( isHorizontalLine( s ) && p < 4 )
+		if( isHorizontalLine( withoutSpaces ) && p < 4 )
 			d.push_back( { Delimiter::HorizontalLine, line, 0, str.length(), false, false, false } );
 		else
 		{
