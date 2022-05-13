@@ -289,6 +289,79 @@ checkEmphasisSequence( const std::vector< std::pair< qsizetype, int > > & s, siz
 	return { st.empty(), ret };
 }
 
+namespace /* anonymous */ {
+
+inline QString
+readEscapedSequence( qsizetype i, QStringView str )
+{
+	QString ret;
+	bool backslash = false;
+
+	while( i < str.length() )
+	{
+		bool now = false;
+
+		if( str[ i ] == c_92 && !backslash )
+		{
+			backslash = true;
+			now = true;
+		}
+		else if( str[ i ].isSpace() && !backslash )
+			break;
+		else
+			ret.append( str[ i ] );
+
+		if( !now )
+			backslash = false;
+
+		++i;
+	}
+
+	return ret;
+}
+
+}
+
+bool
+isStartOfCode( QStringView str, QString * syntax )
+{
+	if( str.size() < 3 )
+		return false;
+
+	const bool c96 = str[ 0 ] == c_96;
+	const bool c126 = str[ 0 ] == c_126;
+
+	if( c96 || c126 )
+	{
+		qsizetype p = 1;
+		qsizetype c = 1;
+
+		while( p < str.length() )
+		{
+			if( str[ p ] != ( c96 ? c_96 : c_126 ) )
+				break;
+
+			++c;
+			++p;
+		}
+
+		if( c < 3 )
+			return false;
+
+		if( syntax )
+		{
+			p = skipSpaces( p, str );
+
+			if( p < str.size() )
+				*syntax = readEscapedSequence( p, str );
+		}
+
+		return true;
+	}
+
+	return false;
+}
+
 
 //
 // Parser
@@ -388,76 +461,6 @@ Parser::parseFile( const QString & fileName, bool recursive, QSharedPointer< Doc
 }
 
 namespace /* anonymous */ {
-
-inline QString
-readEscapedSequence( qsizetype i, QStringView str )
-{
-	QString ret;
-	bool backslash = false;
-
-	while( i < str.length() )
-	{
-		bool now = false;
-
-		if( str[ i ] == c_92 && !backslash )
-		{
-			backslash = true;
-			now = true;
-		}
-		else if( str[ i ].isSpace() && !backslash )
-			break;
-		else
-			ret.append( str[ i ] );
-
-		if( !now )
-			backslash = false;
-
-		++i;
-	}
-
-	return ret;
-}
-
-
-inline bool
-isStartOfCode( QStringView str, QString * syntax = nullptr )
-{
-	if( str.size() < 3 )
-		return false;
-
-	const bool c96 = str[ 0 ] == c_96;
-	const bool c126 = str[ 0 ] == c_126;
-
-	if( c96 || c126 )
-	{
-		qsizetype p = 1;
-		qsizetype c = 1;
-
-		while( p < str.length() )
-		{
-			if( str[ p ] != ( c96 ? c_96 : c_126 ) )
-				break;
-
-			++c;
-			++p;
-		}
-
-		if( c < 3 )
-			return false;
-
-		if( syntax )
-		{
-			p = skipSpaces( p, str );
-
-			if( p < str.size() )
-				*syntax = readEscapedSequence( p, str );
-		}
-
-		return true;
-	}
-
-	return false;
-}
 
 inline qsizetype
 posOfListItem( const QString & s, bool ordered )

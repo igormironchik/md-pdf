@@ -207,3 +207,9 @@ TEST_CASE( "is_code_fences" )
 	REQUIRE( !MD::isCodeFences( QStringLiteral( "aaa" ) ) );
 	REQUIRE( !MD::isCodeFences( QStringLiteral( "~~" ) ) );
 }
+
+TEST_CASE( "is_start_of_code" )
+{
+	REQUIRE( !MD::isStartOfCode( QStringLiteral( "~~" ) ) );
+	REQUIRE( !MD::isStartOfCode( QStringLiteral( "~~`" ) ) );
+}

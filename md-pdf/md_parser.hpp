@@ -103,6 +103,10 @@ indentInList( const std::set< qsizetype > * indents, qsizetype indent )
 std::pair< bool, size_t >
 checkEmphasisSequence( const std::vector< std::pair< qsizetype, int > > & s, size_t idx );
 
+//! \return Is string a start of code?
+bool
+isStartOfCode( QStringView str, QString * syntax = nullptr );
+
 
 //
 // Parser
