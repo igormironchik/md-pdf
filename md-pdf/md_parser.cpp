@@ -1499,9 +1499,9 @@ collectDelimiters( const QStringList & fr )
 
 						if( backslash )
 						{
-							if( i - 2 > 0 )
+							if( i - code.length() - 2 >= 0 )
 							{
-								if( str[ i - 2 ].isSpace() )
+								if( str[ i - code.length() - 2 ].isSpace() )
 									space = true;
 							}
 							else
