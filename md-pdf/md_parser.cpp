@@ -362,6 +362,50 @@ isStartOfCode( QStringView str, QString * syntax )
 	return false;
 }
 
+bool
+isHorizontalLine( QStringView s )
+{
+
+	if( s.size() < 3 )
+		return false;
+
+	QChar c;
+
+	if( s[ 0 ] == c_42 )
+		c = c_42;
+	else if( s[ 0 ] == c_45 )
+		c = c_45;
+	else if( s[ 0 ] == c_95 )
+		c = c_95;
+	else
+		return false;
+
+	qsizetype p = 1;
+	qsizetype count = 1;
+
+	for( ; p < s.size(); ++p )
+	{
+		if( s[ p ] != c && !s[ p ].isSpace() )
+			break;
+		else if( s[ p ] == c )
+			++count;
+	}
+
+	if( count < 3 )
+		return false;
+
+	if( p == s.size() )
+		return true;
+
+	for( ; p < s.size(); ++p )
+	{
+		if( !s[ p ].isSpace() )
+			return false;
+	}
+
+	return true;
+}
+
 
 //
 // Parser
@@ -498,50 +542,6 @@ posOfListItem( const QString & s, bool ordered )
 		p = p - sc + 1;
 
 	return p;
-}
-
-inline bool
-isHorizontalLine( QStringView s )
-{
-
-	if( s.size() < 3 )
-		return false;
-
-	QChar c;
-
-	if( s[ 0 ] == c_42 )
-		c = c_42;
-	else if( s[ 0 ] == c_45 )
-		c = c_45;
-	else if( s[ 0 ] == c_95 )
-		c = c_95;
-	else
-		return false;
-
-	qsizetype p = 1;
-	qsizetype count = 1;
-
-	for( ; p < s.size(); ++p )
-	{
-		if( s[ p ] != c && !s[ p ].isSpace() )
-			break;
-		else if( s[ p ] == c )
-			++count;
-	}
-
-	if( count < 3 )
-		return false;
-
-	if( p == s.size() )
-		return true;
-
-	for( ; p < s.size(); ++p )
-	{
-		if( !s[ p ].isSpace() )
-			return false;
-	}
-
-	return true;
 }
 
 } /* namespace anonymous */

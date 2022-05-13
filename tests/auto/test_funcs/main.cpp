@@ -213,3 +213,8 @@ TEST_CASE( "is_start_of_code" )
 	REQUIRE( !MD::isStartOfCode( QStringLiteral( "~~" ) ) );
 	REQUIRE( !MD::isStartOfCode( QStringLiteral( "~~`" ) ) );
 }
+
+TEST_CASE( "is_horizontal_line" )
+{
+	REQUIRE( MD::isHorizontalLine( QStringLiteral( "---   " ) ) );
+}

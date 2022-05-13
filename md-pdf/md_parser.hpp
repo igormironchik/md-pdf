@@ -107,6 +107,10 @@ checkEmphasisSequence( const std::vector< std::pair< qsizetype, int > > & s, siz
 bool
 isStartOfCode( QStringView str, QString * syntax = nullptr );
 
+//! \return Is string a horizontal line?
+bool
+isHorizontalLine( QStringView s );
+
 
 //
 // Parser
