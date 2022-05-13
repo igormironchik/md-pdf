@@ -226,3 +226,8 @@ TEST_CASE( "is_column_alignment" )
 	REQUIRE( !MD::isColumnAlignment( QStringLiteral( ":---a" ) ) );
 	REQUIRE( !MD::isColumnAlignment( QStringLiteral( ":--- a" ) ) );
 }
+
+TEST_CASE( "is_table_alignmnet" )
+{
+	REQUIRE( !MD::isTableAlignment( QStringLiteral( "|aaa|bbb|" ) ) );
+}
