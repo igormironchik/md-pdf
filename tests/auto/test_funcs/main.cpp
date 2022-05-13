@@ -176,3 +176,10 @@ TEST_CASE( "is_footnote" )
 	REQUIRE( !MD::isFootnote( QStringLiteral( "[^ a]" ) ) );
 	REQUIRE( !MD::isFootnote( QStringLiteral( "[^  a]" ) ) );
 }
+
+TEST_CASE( "is_code_fences" )
+{
+	REQUIRE( !MD::isCodeFences( QStringLiteral( "    ~~~" ) ) );
+	REQUIRE( !MD::isCodeFences( QStringLiteral( "aaa" ) ) );
+	REQUIRE( !MD::isCodeFences( QStringLiteral( "~~" ) ) );
+}
