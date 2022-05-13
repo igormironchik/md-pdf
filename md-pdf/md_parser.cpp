@@ -224,7 +224,7 @@ collapseStack( std::stack< std::pair< qsizetype, int > > & st, qsizetype v, int 
 		v -= st.top().first;
 		st.pop();
 
-		if( v )
+		if( v > 0 )
 		{
 			while( !st.empty() && st.size() > idx + 1 && st.top().second != type )
 				st.pop();

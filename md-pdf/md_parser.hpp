@@ -66,27 +66,27 @@ static const QChar c_39 = QLatin1Char( '\'' );
 
 
 //! Skip spaces in line from pos \a i.
-inline qsizetype
+qsizetype
 skipSpaces( qsizetype i, QStringView line );
 
 //! \return Is string a footnote?
-inline bool
+bool
 isFootnote( const QString & s );
 
 //! \return Starting sequence of the same characters.
-inline QString
+QString
 startSequence( const QString & line );
 
 //! \return Is string a code fences?
-inline bool
+bool
 isCodeFences( const QString & s, bool closing = false );
 
 //! \return Is file exist?
-inline bool
+bool
 fileExists( const QString & fileName, const QString & workingPath );
 
 //! \return Is string an ordered list.
-inline bool
+bool
 isOrderedList( const QString & s, int * num = nullptr, int * len = nullptr,
 	QChar * delim = nullptr, bool * isFirstLineEmpty = nullptr );
 

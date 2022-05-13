@@ -31,7 +31,7 @@
 
 using data_t = std::vector< std::pair< qsizetype, int > >;
 
-TEST_CASE( "1" )
+TEST_CASE( "emphasis_sequence" )
 {
 	{
 		const data_t d = { { 2, 0 }, { 2, 2 }, { 1, 1 }, { -1, 1 }, { 2, 2 }, { -2, 0 } };
@@ -168,4 +168,11 @@ TEST_CASE( "1" )
 
 		REQUIRE( !closed );
 	}
+}
+
+TEST_CASE( "is_footnote" )
+{
+	REQUIRE( !MD::isFootnote( QStringLiteral( "[^]" ) ) );
+	REQUIRE( !MD::isFootnote( QStringLiteral( "[^ a]" ) ) );
+	REQUIRE( !MD::isFootnote( QStringLiteral( "[^  a]" ) ) );
 }

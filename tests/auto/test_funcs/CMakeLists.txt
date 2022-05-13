@@ -1,5 +1,5 @@
 
-project( test.emph_seq )
+project( test.funcs )
 
 find_package( Qt6Core REQUIRED )
 
@@ -16,10 +16,10 @@ include_directories( ${CMAKE_CURRENT_SOURCE_DIR}
 
 link_directories( ${CMAKE_CURRENT_SOURCE_DIR}/../../../lib )
 
-add_executable( test.emph_seq ${SRC} )
+add_executable( test.funcs ${SRC} )
 
-target_link_libraries( test.emph_seq md-parser Qt6::Core )
+target_link_libraries( test.funcs md-parser Qt6::Core )
 
-add_test( NAME test.emph_seq
-	COMMAND ${CMAKE_CURRENT_BINARY_DIR}/test.emph_seq
+add_test( NAME test.funcs
+	COMMAND ${CMAKE_CURRENT_BINARY_DIR}/test.funcs
 	WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR} )
