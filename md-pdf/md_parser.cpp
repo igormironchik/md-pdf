@@ -406,6 +406,64 @@ isHorizontalLine( QStringView s )
 	return true;
 }
 
+bool
+isColumnAlignment( const QString & s )
+{
+	qsizetype p = skipSpaces( 0, s );
+
+	if( p == s.size() )
+		return true;
+
+	static const auto c_legitime = QStringLiteral( ":-" );
+
+	if( !c_legitime.contains( s[ p ] ) )
+		return false;
+
+	if( s[ p ] == c_58 )
+		++p;
+
+	const auto a = p;
+
+	for( ; p < s.size(); ++p )
+	{
+		if( s[ p ] != c_45 )
+			break;
+	}
+
+	if( a != p && p - a < 3 )
+		return false;
+
+	if( p == s.size() )
+		return true;
+
+	if( s[ p ] != c_58 && !s[ p ].isSpace() )
+		return false;
+
+	++p;
+
+	for( ; p < s.size(); ++p )
+	{
+		if( !s[ p ].isSpace() )
+			return false;
+	}
+
+	return true;
+}
+
+bool
+isTableAlignment( const QString & s )
+{
+	const auto columns = s.split( c_124, Qt::SkipEmptyParts );
+
+	for( const auto & c : columns )
+	{
+		if( !isColumnAlignment( c ) )
+			return false;
+	}
+
+	return true;
+}
+
 
 //
 // Parser
@@ -704,70 +762,6 @@ isTableHeader( const QString & s )
 		return true;
 	else
 		return false;
-}
-
-inline bool
-isColumnAlignment( const QString & s )
-{
-	qsizetype p = 0;
-
-	for( ; p < s.size(); ++p )
-	{
-		if( !s[ p ].isSpace() )
-			break;
-	}
-
-	if( p == s.size() )
-		return true;
-
-	static const auto c_legitime = QStringLiteral( ":-" );
-
-	if( !c_legitime.contains( s[ p ] ) )
-		return false;
-
-	if( s[ p ] == c_58 )
-		++p;
-
-	const auto a = p;
-
-	for( ; p < s.size(); ++p )
-	{
-		if( s[ p ] != c_45 )
-			break;
-	}
-
-	if( a != p && p - a < 3 )
-		return false;
-
-	if( p == s.size() )
-		return true;
-
-	if( s[ p ] != c_58 && !s[ p ].isSpace() )
-		return false;
-
-	++p;
-
-	for( ; p < s.size(); ++p )
-	{
-		if( !s[ p ].isSpace() )
-			return false;
-	}
-
-	return true;
-}
-
-inline bool
-isTableAlignment( const QString & s )
-{
-	const auto columns = s.split( c_124, Qt::SkipEmptyParts );
-
-	for( const auto & c : columns )
-	{
-		if( !isColumnAlignment( c ) )
-			return false;
-	}
-
-	return true;
 }
 
 } /* namespace anonymous */

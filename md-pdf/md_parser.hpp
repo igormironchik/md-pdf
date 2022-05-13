@@ -111,6 +111,14 @@ isStartOfCode( QStringView str, QString * syntax = nullptr );
 bool
 isHorizontalLine( QStringView s );
 
+//! \return Is string a column alignment?
+bool
+isColumnAlignment( const QString & s );
+
+//! \return Is string a table alignment?
+bool
+isTableAlignment( const QString & s );
+
 
 //
 // Parser
