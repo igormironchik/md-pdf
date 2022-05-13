@@ -182,9 +182,10 @@ TEST_CASE( "emphasis_sequence" )
 
 TEST_CASE( "is_footnote" )
 {
-	REQUIRE( !MD::isFootnote( QStringLiteral( "[^]" ) ) );
-	REQUIRE( !MD::isFootnote( QStringLiteral( "[^ a]" ) ) );
-	REQUIRE( !MD::isFootnote( QStringLiteral( "[^  a]" ) ) );
+	REQUIRE( !MD::isFootnote( QStringLiteral( "[^]:" ) ) );
+	REQUIRE( !MD::isFootnote( QStringLiteral( "[^ a]:" ) ) );
+	REQUIRE( !MD::isFootnote( QStringLiteral( "[^  a]:" ) ) );
+	REQUIRE( !MD::isFootnote( QStringLiteral( "[^ a a]:" ) ) );
 }
 
 TEST_CASE( "is_code_fences" )
