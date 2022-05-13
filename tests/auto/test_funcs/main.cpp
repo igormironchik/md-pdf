@@ -168,6 +168,16 @@ TEST_CASE( "emphasis_sequence" )
 
 		REQUIRE( !closed );
 	}
+
+	{
+		const data_t d = { { 2, 1 }, { 1, 0 }, { 2, 1 }, { -4, 1 } };
+		bool closed = false;
+		size_t idx = 0;
+		std::tie( closed, idx ) = MD::checkEmphasisSequence( d, 0 );
+
+		REQUIRE( closed );
+		REQUIRE( idx == 3 );
+	}
 }
 
 TEST_CASE( "is_footnote" )
