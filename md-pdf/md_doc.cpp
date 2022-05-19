@@ -124,6 +124,29 @@ Heading::setLabel( const QString & l )
 
 
 //
+// RawHtml
+//
+
+ItemType
+RawHtml::type() const
+{
+	return ItemType::RawHtml;
+}
+
+const QString &
+RawHtml::text() const
+{
+	return m_text;
+}
+
+void
+RawHtml::setText( const QString & t )
+{
+	m_text = t;
+}
+
+
+//
 // Text
 //
 

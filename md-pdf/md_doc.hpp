@@ -79,7 +79,9 @@ enum class ItemType {
 	//! Anchor.
 	Anchor,
 	//! Horizontal line.
-	HorizontalLine
+	HorizontalLine,
+	//! Raw HTML.
+	RawHtml
 }; // enum class ItemType
 
 
@@ -177,6 +179,30 @@ enum TextOption {
 
 Q_DECLARE_FLAGS( TextOptions, TextOption )
 Q_DECLARE_OPERATORS_FOR_FLAGS( TextOptions )
+
+
+//
+// RawHtml
+//
+
+//! Raw HTML.
+class RawHtml final
+	:	public Item
+{
+public:
+	RawHtml() = default;
+	~RawHtml() override = default;
+
+	ItemType type() const override;
+
+	const QString & text() const;
+	void setText( const QString & t );
+
+private:
+	QString m_text;
+
+	Q_DISABLE_COPY( RawHtml )
+}; // class RawHtml
 
 
 //

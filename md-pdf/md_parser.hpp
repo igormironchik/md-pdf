@@ -63,6 +63,10 @@ static const QChar c_60 = QLatin1Char( '<' );
 static const QChar c_10 = QLatin1Char( '\n' );
 static const QChar c_13 = QLatin1Char( '\r' );
 static const QChar c_39 = QLatin1Char( '\'' );
+static const QChar c_47 = QLatin1Char( '/' );
+
+static const QString c_startComment = QLatin1String( "<!--" );
+static const QString c_endComment = QLatin1String( "-->" );
 
 
 //! Skip spaces in line from pos \a i.
@@ -119,6 +123,11 @@ isColumnAlignment( const QString & s );
 bool
 isTableAlignment( const QString & s );
 
+struct RawHtmlBlock {
+	QSharedPointer< RawHtml > html = {};
+	int htmlBlockType = -1;
+}; // struct RawHtmlBlock
+
 
 //
 // Parser
@@ -151,24 +160,27 @@ private:
 	}; // enum BlockType
 
 	BlockType whatIsTheLine( QString & str, bool inList = false, qsizetype * indent = nullptr,
-		bool calcIndent = false, bool wasComment = false,
-		const std::set< qsizetype > * indents = nullptr ) const;
+		bool calcIndent = false, const std::set< qsizetype > * indents = nullptr ) const;
 	void parseFragment( QStringList & fr, QSharedPointer< Block > parent,
 		QSharedPointer< Document > doc,
 		QStringList & linksToParse, const QString & workingPath,
-		const QString & fileName, bool collectRefLinks );
+		const QString & fileName, bool collectRefLinks,
+		RawHtmlBlock & html );
 	void parseText( QStringList & fr, QSharedPointer< Block > parent,
 		QSharedPointer< Document > doc,
 		QStringList & linksToParse, const QString & workingPath,
-		const QString & fileName, bool collectRefLinks );
+		const QString & fileName, bool collectRefLinks,
+		RawHtmlBlock & html );
 	void parseBlockquote( QStringList & fr, QSharedPointer< Block > parent,
 		QSharedPointer< Document > doc,
 		QStringList & linksToParse, const QString & workingPath,
-		const QString & fileName, bool collectRefLinks );
+		const QString & fileName, bool collectRefLinks,
+		RawHtmlBlock & html );
 	void parseList( QStringList & fr, QSharedPointer< Block > parent,
 		QSharedPointer< Document > doc,
 		QStringList & linksToParse, const QString & workingPath,
-		const QString & fileName, bool collectRefLinks );
+		const QString & fileName, bool collectRefLinks,
+		RawHtmlBlock & html );
 	void parseCode( QStringList & fr, QSharedPointer< Block > parent,
 		bool collectRefLinks, int indent = 0 );
 	void parseCodeIndentedBySpaces( QStringList & fr, QSharedPointer< Block > parent,
@@ -177,7 +189,8 @@ private:
 	void parseListItem( QStringList & fr, QSharedPointer< Block > parent,
 		QSharedPointer< Document > doc,
 		QStringList & linksToParse, const QString & workingPath,
-		const QString & fileName, bool collectRefLinks );
+		const QString & fileName, bool collectRefLinks,
+		RawHtmlBlock & html );
 	void parseHeading( QStringList & fr, QSharedPointer< Block > parent,
 		QSharedPointer< Document > doc,
 		QStringList & linksToParse, const QString & workingPath,
@@ -194,75 +207,13 @@ private:
 	void parseParagraph( QStringList & fr, QSharedPointer< Block > parent,
 		QSharedPointer< Document > doc,
 		QStringList & linksToParse, const QString & workingPath,
-		const QString & fileName, bool collectRefLinks );
+		const QString & fileName, bool collectRefLinks,
+		RawHtmlBlock & html );
 	void parseFormattedTextLinksImages( QStringList & fr, QSharedPointer< Block > parent,
 		QSharedPointer< Document > doc,
 		QStringList & linksToParse, const QString & workingPath,
-		const QString & fileName, bool collectRefLinks, bool ignoreLineBreak );
-
-	// Read line from stream.
-	template< typename STREAM >
-	QPair< QString, bool >
-	readLine( STREAM & stream, bool & unfinishedCommentFound )
-	{
-		static const QString c_startComment = QLatin1String( "<!--" );
-		static const QString c_endComment = QLatin1String( "-->" );
-
-		auto line = stream.readLine();
-
-		bool searchEndFromBegining = unfinishedCommentFound;
-
-		bool wasComment = unfinishedCommentFound;
-
-		auto cs = line.indexOf( c_startComment );
-
-		if( !unfinishedCommentFound && cs > -1 )
-		{
-			unfinishedCommentFound = true;
-			wasComment = true;
-		}
-
-		if( cs == -1 )
-			cs = 0;
-
-		while( unfinishedCommentFound && !stream.atEnd() )
-		{
-			auto ce = line.indexOf( c_endComment,
-				( searchEndFromBegining ? 0 : cs + c_startComment.length() ) );
-
-			searchEndFromBegining = false;
-
-			if( ce > -1 )
-			{
-				if( cs + c_startComment.length() < ce )
-				{
-					line.remove( cs, ce + c_endComment.length() - cs );
-
-					unfinishedCommentFound = false;
-				}
-				else if( unfinishedCommentFound )
-				{
-					line.remove( 0, ce + c_endComment.length() );
-
-					unfinishedCommentFound = false;
-				}
-			}
-			else if( cs > 0 )
-				return { line.left( cs ), false };
-			else
-				return readLine( stream, unfinishedCommentFound );
-
-			cs = line.indexOf( c_startComment );
-
-			if( !unfinishedCommentFound && cs > -1 )
-				unfinishedCommentFound = true;
-		}
-
-		if( unfinishedCommentFound )
-			return { QString(), wasComment };
-		else
-			return { line, wasComment };
-	};
+		const QString & fileName, bool collectRefLinks, bool ignoreLineBreak,
+		RawHtmlBlock & html );
 
 	template< typename STREAM >
 	void parse( STREAM & stream, QSharedPointer< Block > parent,
@@ -284,13 +235,14 @@ private:
 		qsizetype lineCounter = 0;
 		std::set< qsizetype > indents;
 		qsizetype indent = 0;
+		RawHtmlBlock html;
 
 		// Parse fragment and clear internal cache.
 		auto pf = [&]()
 			{
 				splitted.append( fragment );
 				parseFragment( fragment, parent, doc, linksToParse,
-					workingPath, fileName, collectRefLinks );
+					workingPath, fileName, collectRefLinks, html );
 				fragment.clear();
 				type = BlockType::Unknown;
 				emptyLineInList = false;
@@ -300,24 +252,12 @@ private:
 				indent = 0;
 			};
 
-		bool unfinishedCommentFound = false;
-		bool wasComment = false;
-
-		auto rl = [&]() -> QString
-		{
-			QString line;
-
-			std::tie( line, wasComment ) = readLine( stream, unfinishedCommentFound );
-
-			return line;
-		};
-
 		// Eat footnote.
 		auto eatFootnote = [&]()
 			{
 				while( !stream.atEnd() )
 				{
-					auto line = rl();
+					auto line = stream.readLine();
 
 					if( line.isEmpty() || line.startsWith( QLatin1String( "    " ) ) ||
 						line.startsWith( c_9 ) )
@@ -340,46 +280,20 @@ private:
 			};
 
 		QString startOfCode;
-		bool split = false;
 
 		while( !stream.atEnd() )
 		{
-			auto line = rl();
-
-			if( wasComment )
-				split = true;
+			auto line = stream.readLine();
 
 			const qsizetype prevIndent = indent;
 
 			BlockType lineType = whatIsTheLine( line, emptyLineInList, &indent,
-				true, split, &indents );
+				true, &indents );
 
 			if( prevIndent != indent )
 				indents.insert( indent );
 
 			const auto ns = skipSpaces( 0, line );
-
-			if( ( lineType == BlockType::ListWithFirstEmptyLine ||
-				lineType == BlockType::List || lineType == BlockType::CodeIndentedBySpaces ) &&
-				( type == BlockType::ListWithFirstEmptyLine || type == BlockType::List ) )
-			{
-				if( split )
-				{
-					if( !fragment.isEmpty() )
-						pf();
-
-					emptyLineInList = false;
-					emptyLinesInList = 0;
-					type = lineType;
-					fragment.append( line );
-					split = false;
-
-					continue;
-				}
-			}
-
-			if( ns != line.length() )
-				split = false;
 
 			if( type == BlockType::CodeIndentedBySpaces && ns > 3 )
 				lineType = BlockType::CodeIndentedBySpaces;
@@ -600,7 +514,7 @@ private:
 			for( qsizetype i = 0; i < splitted.size(); ++i )
 			{
 				parseFragment( splitted[ i ], parent, doc, linksToParse,
-					workingPath, fileName, false );
+					workingPath, fileName, false, html );
 			}
 		}
 	}
