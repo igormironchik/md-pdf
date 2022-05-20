@@ -1883,7 +1883,30 @@ inline void
 finishRule3HtmlTag( Delims::const_iterator it, Delims::const_iterator last,
 	TextParsingOpts & po )
 {
+	auto start = it;
 
+	for( ; it != last; ++it )
+	{
+		if( it->m_type == Delimiter::Greater )
+		{
+			if( it->m_pos > 0 && po.fr[ it->m_line ][ it->m_pos - 1 ] == c_63 )
+			{
+				qsizetype i = it->m_pos + 1;
+
+				for( ; i < po.fr[ it->m_line ].size(); ++i )
+				{
+					if( po.fr[ it->m_line ][ i ] == c_60 )
+						break;
+				}
+
+				eatRawHtml( start->m_line, start->m_pos, it->m_line, i , po, true );
+
+				return;
+			}
+		}
+	}
+
+	eatRawHtml( start->m_line, start->m_pos, po.fr.size() - 1, -1, po, false );
 }
 
 inline void

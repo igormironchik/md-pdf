@@ -64,6 +64,7 @@ static const QChar c_10 = QLatin1Char( '\n' );
 static const QChar c_13 = QLatin1Char( '\r' );
 static const QChar c_39 = QLatin1Char( '\'' );
 static const QChar c_47 = QLatin1Char( '/' );
+static const QChar c_63 = QLatin1Char( '?' );
 
 static const QString c_startComment = QLatin1String( "<!--" );
 static const QString c_endComment = QLatin1String( "-->" );
