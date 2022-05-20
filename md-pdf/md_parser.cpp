@@ -1794,7 +1794,7 @@ findIt( Delims::const_iterator it, Delims::const_iterator last,
 
 	for( ; it != last; ++it )
 	{
-		if( ( it->m_line == po.line && it->m_pos <= po.pos ) || it->m_line < po.line )
+		if( ( it->m_line == po.line && it->m_pos < po.pos ) || it->m_line < po.line )
 			ret = it;
 	}
 
@@ -1807,7 +1807,8 @@ eatRawHtml( qsizetype line, qsizetype pos, qsizetype toLine, qsizetype toPos,
 {
 	QString h = po.html.html->text();
 	if( !h.isEmpty() ) h.append( c_10 );
-	h.append( po.fr[ line ].sliced( pos ) );
+	h.append( po.fr[ line ].sliced( pos,
+		( toPos >= 0 ? toPos - pos : po.fr[ line ].size() - pos ) ) );
 
 	++line;
 
