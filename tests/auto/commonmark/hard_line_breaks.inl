@@ -265,10 +265,9 @@ TEST_CASE( "642" )
 	auto p = static_cast< MD::Paragraph* > ( doc->items().at( 1 ).data() );
 	REQUIRE( p->items().size() == 1 );
 
-	REQUIRE( p->items().at( 0 )->type() == MD::ItemType::Text );
-	auto t = static_cast< MD::Text* > ( p->items().at( 0 ).data() );
-	REQUIRE( t->opts() == MD::TextWithoutFormat );
-	REQUIRE( t->text() == QStringLiteral( "<a href=\"foo bar\">" ) );
+	REQUIRE( p->items().at( 0 )->type() == MD::ItemType::RawHtml );
+	auto h = static_cast< MD::Text* > ( p->items().at( 0 ).data() );
+	REQUIRE( h->text() == QStringLiteral( "<a href=\"foo  \nbar\">" ) );
 }
 
 TEST_CASE( "643" )
@@ -282,10 +281,9 @@ TEST_CASE( "643" )
 	auto p = static_cast< MD::Paragraph* > ( doc->items().at( 1 ).data() );
 	REQUIRE( p->items().size() == 1 );
 
-	REQUIRE( p->items().at( 0 )->type() == MD::ItemType::Text );
-	auto t = static_cast< MD::Text* > ( p->items().at( 0 ).data() );
-	REQUIRE( t->opts() == MD::TextWithoutFormat );
-	REQUIRE( t->text() == QStringLiteral( "<a href=\"foo\\ bar\">" ) );
+	REQUIRE( p->items().at( 0 )->type() == MD::ItemType::RawHtml );
+	auto h = static_cast< MD::RawHtml* > ( p->items().at( 0 ).data() );
+	REQUIRE( h->text() == QStringLiteral( "<a href=\"foo\\\nbar\">" ) );
 }
 
 TEST_CASE( "644" )

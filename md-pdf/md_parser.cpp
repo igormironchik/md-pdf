@@ -1779,18 +1779,20 @@ eatRawHtml( qsizetype line, qsizetype pos, qsizetype toLine, qsizetype toPos,
 	QString h = po.html.html->text();
 	if( !h.isEmpty() ) h.append( c_10 );
 	h.append( po.fr[ line ].sliced( pos ) );
-	h.append( c_10 );
 
 	++line;
 
 	for( ; line < toLine; ++line )
 	{
-		h.append( po.fr[ line ] );
 		h.append( c_10 );
+		h.append( po.fr[ line ] );
 	}
 
 	if( line == toLine )
+	{
+		h.append( c_10 );
 		h.append( po.fr[ line ].sliced( 0, toPos >= 0 ? toPos : po.fr[ line ].size() ) );
+	}
 
 	po.line = ( toPos >= 0 ? toLine : toLine + 1 );
 	po.pos = ( toPos >= 0 ? toPos : 0 );
@@ -2072,23 +2074,42 @@ readHtmlAttr( qsizetype & l, qsizetype & p, const QStringList & fr )
 	if( p < fr[ l ].size() && fr[ l ][ p ] != c_34 && fr[ l ][ p ] != c_39 )
 		return { false, false };
 
+	const auto s = fr[ l ][ p ];
+
 	++p;
 
 	if( p >= fr[ l ].size() )
 		return { false, false };
 
-	for( ; p < fr[ l ].size(); ++p )
+	for( ; l < fr.size(); ++l )
 	{
-		const auto ch = fr[ l ][ p ];
+		bool doBreak = false;
 
-		if( ch == c_39 )
+		for( ; p < fr[ l ].size(); ++p )
+		{
+			const auto ch = fr[ l ][ p ];
+
+			if( ch == s )
+			{
+				doBreak = true;
+
+				break;
+			}
+		}
+
+		if( doBreak )
 			break;
+
+		p = 0;
 	}
+
+	if( l >= fr.size() )
+		return { false, false };
 
 	if( p >= fr[ l ].size() )
 		return { false, false };
 
-	if( fr[ l ][ p ] != c_39 )
+	if( fr[ l ][ p ] != s )
 		return { false, false };
 
 	++p;

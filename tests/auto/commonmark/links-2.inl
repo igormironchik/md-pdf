@@ -293,14 +293,16 @@ TEST_CASE( "535" )
 
 	REQUIRE( doc->items().at( 1 )->type() == MD::ItemType::Paragraph );
 	auto p = static_cast< MD::Paragraph* > ( doc->items().at( 1 ).data() );
-	REQUIRE( p->items().size() == 1 );
+	REQUIRE( p->items().size() == 2 );
 
-	{
-		REQUIRE( p->items().at( 0 )->type() == MD::ItemType::Text );
-		auto t = static_cast< MD::Text* > ( p->items().at( 0 ).data() );
-		REQUIRE( t->opts() == MD::TextWithoutFormat );
-		REQUIRE( t->text() == QStringLiteral( "[foo <bar attr=\"][ref]\">" ) );
-	}
+	REQUIRE( p->items().at( 0 )->type() == MD::ItemType::Text );
+	auto t = static_cast< MD::Text* > ( p->items().at( 0 ).data() );
+	REQUIRE( t->opts() == MD::TextWithoutFormat );
+	REQUIRE( t->text() == QStringLiteral( "[foo" ) );
+
+	REQUIRE( p->items().at( 1 )->type() == MD::ItemType::RawHtml );
+	auto h = static_cast< MD::RawHtml* > ( p->items().at( 1 ).data() );
+	REQUIRE( h->text() == QStringLiteral( "<bar attr=\"][ref]\">" ) );
 }
 
 TEST_CASE( "536" )
