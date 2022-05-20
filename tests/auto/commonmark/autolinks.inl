@@ -206,8 +206,6 @@ TEST_CASE( "604" )
 
 TEST_CASE( "605" )
 {
-	MESSAGE( "This test is not strict to CommonMark 0.30." );
-
 	const auto doc = load_test( 605 );
 
 	REQUIRE( doc->isEmpty() == false );
@@ -219,8 +217,7 @@ TEST_CASE( "605" )
 	REQUIRE( p->items().at( 0 )->type() == MD::ItemType::Text );
 	auto t = static_cast< MD::Text* > ( p->items().at( 0 ).data() );
 	REQUIRE( t->opts() == MD::TextWithoutFormat );
-	// I keep backslash here...
-	REQUIRE( t->text() == QStringLiteral( "<foo\\+@bar.example.com>" ) );
+	REQUIRE( t->text() == QStringLiteral( "<foo+@bar.example.com>" ) );
 }
 
 TEST_CASE( "606" )

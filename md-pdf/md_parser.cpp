@@ -1754,7 +1754,7 @@ readHtmlTag( Delims::const_iterator it, TextParsingOpts & po )
 			break;
 	}
 
-	return { tag, po.fr[ it->m_line ][ i ] == c_62 };
+	return { tag, i < po.fr[ it->m_line ].size() ? po.fr[ it->m_line ][ i ] == c_62 : false };
 }
 
 inline Delims::const_iterator
@@ -1789,13 +1789,16 @@ eatRawHtml( qsizetype line, qsizetype pos, qsizetype toLine, qsizetype toPos,
 		h.append( c_10 );
 	}
 
-	h.append( po.fr[ line ].sliced( 0, toPos >= 0 ? toPos : po.fr[ line ].size() ) );
+	if( line == toLine )
+		h.append( po.fr[ line ].sliced( 0, toPos >= 0 ? toPos : po.fr[ line ].size() ) );
 
-	po.line = ( toPos >= 0 ? line : line + 1 );
+	po.line = ( toPos >= 0 ? toLine : toLine + 1 );
 	po.pos = ( toPos >= 0 ? toPos : 0 );
 
 	if( finish )
 	{
+		po.html.html->setText( h );
+
 		if( !po.collectRefLinks )
 			po.parent->appendItem( po.html.html );
 
@@ -2011,6 +2014,142 @@ finishRawHtmlTag( Delims::const_iterator it, Delims::const_iterator last,
 	return findIt( it, last, po );
 }
 
+inline void
+skipSpacesInHtml( qsizetype & l, qsizetype & p, const QStringList & fr )
+{
+	while( l < fr.size() )
+	{
+		while( p < fr[ l ].size() )
+		{
+			if( !fr[ l ][ p ].isSpace() )
+				return;
+
+			++p;
+		}
+
+		p = 0;
+		++l;
+	}
+}
+
+inline std::pair< bool, bool >
+readHtmlAttr( qsizetype & l, qsizetype & p, const QStringList & fr )
+{
+	skipSpacesInHtml( l, p, fr );
+
+	if( l >= fr.size() )
+		return { false, false };
+
+	if( p < fr[ l ].size() && fr[ l ][ p ] == c_62 )
+		return { false, true };
+
+	for( ; p < fr[ l ].size(); ++p )
+	{
+		const auto ch = fr[ l ][ p ];
+
+		if( ch.isSpace() || ch == c_62 || ch == c_61 )
+			break;
+	}
+
+	if( p < fr[ l ].size() && fr[ l ][ p ] == c_62 )
+		return { false, false };
+
+	skipSpacesInHtml( l, p, fr );
+
+	if( l >= fr.size() )
+		return { false, false };
+
+	if( p < fr[ l ].size() && fr[ l ][ p ] != c_61 )
+		return { false, false };
+
+	++p;
+
+	skipSpacesInHtml( l, p, fr );
+
+	if( l >= fr.size() )
+		return { false, false };
+
+	if( p < fr[ l ].size() && fr[ l ][ p ] != c_34 && fr[ l ][ p ] != c_39 )
+		return { false, false };
+
+	++p;
+
+	if( p >= fr[ l ].size() )
+		return { false, false };
+
+	for( ; p < fr[ l ].size(); ++p )
+	{
+		const auto ch = fr[ l ][ p ];
+
+		if( ch == c_39 )
+			break;
+	}
+
+	if( p >= fr[ l ].size() )
+		return { false, false };
+
+	if( fr[ l ][ p ] != c_39 )
+		return { false, false };
+
+	++p;
+
+	return { true, true };
+}
+
+inline bool
+isHtmlTag( Delims::const_iterator it, TextParsingOpts & po )
+{
+	if( it->m_type == Delimiter::Less )
+	{
+		qsizetype l = it->m_line;
+		qsizetype p = it->m_pos + 1;
+
+		if( p >= po.fr[ l ].size() )
+			return false;
+
+		for( ; p < po.fr[ l ].size(); ++p )
+		{
+			const auto ch = po.fr[ l ][ p ];
+
+			if( ch.isSpace() || ch == c_62 )
+				break;
+		}
+
+		if( p < po.fr[ l ].size() && po.fr[ l ][ p ] == c_62 )
+			return true;
+
+		skipSpacesInHtml( l, p, po.fr );
+
+		if( l >= po.fr.size() )
+			return false;
+
+		if( po.fr[ l ][ p ] == c_62 )
+			return true;
+
+		bool attr = true;
+
+		while( attr )
+		{
+			bool ok = false;
+
+			std::tie( attr, ok ) = readHtmlAttr( l, p, po.fr );
+
+			if( !ok )
+				return false;
+		}
+
+		skipSpacesInHtml( l, p, po.fr );
+
+		if( l >= po.fr.size() )
+			return false;
+
+		if( po.fr[ l ][ p ] == c_62 )
+			return true;
+	}
+
+	return false;
+}
+
 inline Delims::const_iterator
 checkForRawHtml( Delims::const_iterator it, Delims::const_iterator last,
 	TextParsingOpts & po )
@@ -2020,6 +2159,28 @@ checkForRawHtml( Delims::const_iterator it, Delims::const_iterator last,
 	std::tie( tag, std::ignore ) = readHtmlTag( it, po );
 
 	tag = tag.toLower();
+
+	if( tag.isEmpty() )
+	{
+		po.html.htmlBlockType = -1;
+		po.html.html.reset( nullptr );
+
+		return it;
+	}
+
+	static const QString c_validHtmlTagLetters =
+		QStringLiteral( "abcdefghijklmnopqrstuvwxyz0123456789/" );
+
+	for( qsizetype i = 0; i < tag.size(); ++i )
+	{
+		if( !c_validHtmlTagLetters.contains( tag[ i ] ) )
+		{
+			po.html.htmlBlockType = -1;
+			po.html.html.reset( nullptr );
+
+			return it;
+		}
+	}
 
 	po.html.html.reset( new RawHtml );
 
@@ -2074,7 +2235,17 @@ checkForRawHtml( Delims::const_iterator it, Delims::const_iterator last,
 		if( rule6.find( tag ) != rule6.cend() )
 			po.html.htmlBlockType = 6;
 		else
-			po.html.htmlBlockType = 7;
+		{
+			if( isHtmlTag( it, po ) )
+				po.html.htmlBlockType = 7;
+			else
+			{
+				po.html.html.reset( nullptr );
+				po.html.htmlBlockType = -1;
+
+				return it;
+			}
+		}
 	}
 
 	return finishRawHtmlTag( it, last, po );
