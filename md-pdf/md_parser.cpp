@@ -1774,7 +1774,7 @@ findIt( Delims::const_iterator it, Delims::const_iterator last,
 
 inline void
 eatRawHtml( qsizetype line, qsizetype pos, qsizetype toLine, qsizetype toPos,
-	TextParsingOpts & po )
+	TextParsingOpts & po, bool finish )
 {
 	QString h = po.html.html->text();
 	if( !h.isEmpty() ) h.append( c_10 );
@@ -1794,11 +1794,14 @@ eatRawHtml( qsizetype line, qsizetype pos, qsizetype toLine, qsizetype toPos,
 	po.line = ( toPos >= 0 ? line : line + 1 );
 	po.pos = ( toPos >= 0 ? toPos : 0 );
 
-	if( !po.collectRefLinks )
-		po.parent->appendItem( po.html.html );
+	if( finish )
+	{
+		if( !po.collectRefLinks )
+			po.parent->appendItem( po.html.html );
 
-	po.html.html.reset( nullptr );
-	po.html.htmlBlockType = -1;
+		po.html.html.reset( nullptr );
+		po.html.htmlBlockType = -1;
+	}
 }
 
 inline void
@@ -1834,7 +1837,7 @@ finishRule1HtmlTag( Delims::const_iterator it, Delims::const_iterator last,
 
 				if( finish.find( tag ) != finish.cend() )
 				{
-					eatRawHtml( start->m_line, start->m_pos, it->m_line, -1, po );
+					eatRawHtml( start->m_line, start->m_pos, it->m_line, -1, po, true );
 
 					return;
 				}
@@ -1842,14 +1845,38 @@ finishRule1HtmlTag( Delims::const_iterator it, Delims::const_iterator last,
 		}
 	}
 
-	eatRawHtml( start->m_line, start->m_pos, po.fr.size() - 1, -1, po );
+	eatRawHtml( start->m_line, start->m_pos, po.fr.size() - 1, -1, po, false );
 }
 
 inline void
 finishRule2HtmlTag( Delims::const_iterator it, Delims::const_iterator last,
 	TextParsingOpts & po )
 {
+	auto start = it;
 
+	for( ; it != last; ++it )
+	{
+		if( it->m_type == Delimiter::Greater )
+		{
+			if( it->m_pos > 1 && po.fr[ it->m_line ][ it->m_pos - 1 ] == c_45 &&
+				po.fr[ it->m_line ][ it->m_pos - 2 ] == c_45 )
+			{
+				qsizetype i = it->m_pos + 1;
+
+				for( ; i < po.fr[ it->m_line ].size(); ++i )
+				{
+					if( po.fr[ it->m_line ][ i ] == c_60 )
+						break;
+				}
+
+				eatRawHtml( start->m_line, start->m_pos, it->m_line, i , po, true );
+
+				return;
+			}
+		}
+	}
+
+	eatRawHtml( start->m_line, start->m_pos, po.fr.size() - 1, -1, po, false );
 }
 
 inline void
@@ -1877,28 +1904,7 @@ inline void
 finishRule67HtmlTag( Delims::const_iterator it, Delims::const_iterator last,
 	TextParsingOpts & po )
 {
-	QString h = po.html.html->text();
-	if( !h.isEmpty() ) h.append( c_10 );
-	h.append( po.fr[ po.line ].sliced( po.pos ) );
-
-	++po.line;
-
-	while( po.line < po.fr.size() && !po.fr[ po.line ].simplified().isEmpty() )
-	{
-		h.append( c_10 );
-		h.append( po.fr[ po.line ] );
-		++po.line;
-	}
-
-	po.pos = 0;
-
-	po.html.html->setText( h );
-
-	if( !po.collectRefLinks )
-		po.parent->appendItem( po.html.html );
-
-	po.html.html.reset( nullptr );
-	po.html.htmlBlockType = -1;
+	eatRawHtml( po.line, po.pos, po.fr.size() - 1, -1, po, true );
 }
 
 inline Delims::const_iterator
