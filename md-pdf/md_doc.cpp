@@ -145,6 +145,18 @@ RawHtml::setText( const QString & t )
 	m_text = t;
 }
 
+bool
+RawHtml::isFreeTag() const
+{
+	return m_isFreeTag;
+}
+
+void
+RawHtml::setFreeTag( bool on )
+{
+	m_isFreeTag = on;
+}
+
 
 //
 // Text

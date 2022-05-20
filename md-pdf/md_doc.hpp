@@ -198,8 +198,12 @@ public:
 	const QString & text() const;
 	void setText( const QString & t );
 
+	bool isFreeTag() const;
+	void setFreeTag( bool on = true );
+
 private:
 	QString m_text;
+	bool m_isFreeTag;
 
 	Q_DISABLE_COPY( RawHtml )
 }; // class RawHtml

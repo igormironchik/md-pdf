@@ -388,7 +388,7 @@ TEST_CASE( "308" )
 {
 	const auto doc = load_test( 308 );
 
-	REQUIRE( doc->items().size() == 3 );
+	REQUIRE( doc->items().size() == 4 );
 
 	{
 		REQUIRE( doc->items().at( 1 )->type() == MD::ItemType::List );
@@ -424,9 +424,13 @@ TEST_CASE( "308" )
 		}
 	}
 
+	REQUIRE( doc->items().at( 2 )->type() == MD::ItemType::RawHtml );
+	auto h = static_cast< MD::RawHtml* > ( doc->items().at( 2 ).data() );
+	REQUIRE( h->text() == QStringLiteral( "<!-- -->" ) );
+
 	{
-		REQUIRE( doc->items().at( 2 )->type() == MD::ItemType::List );
-		auto l = static_cast< MD::List* > ( doc->items().at( 2 ).data() );
+		REQUIRE( doc->items().at( 3 )->type() == MD::ItemType::List );
+		auto l = static_cast< MD::List* > ( doc->items().at( 3 ).data() );
 		REQUIRE( l->items().size() == 2 );
 
 		{
@@ -463,7 +467,7 @@ TEST_CASE( "309" )
 {
 	const auto doc = load_test( 309 );
 
-	REQUIRE( doc->items().size() == 3 );
+	REQUIRE( doc->items().size() == 4 );
 
 	{
 		REQUIRE( doc->items().at( 1 )->type() == MD::ItemType::List );
@@ -512,8 +516,12 @@ TEST_CASE( "309" )
 		}
 	}
 
-	REQUIRE( doc->items().at( 2 )->type() == MD::ItemType::Code );
-	auto c = static_cast< MD::Code* > ( doc->items().at( 2 ).data() );
+	REQUIRE( doc->items().at( 2 )->type() == MD::ItemType::RawHtml );
+	auto h = static_cast< MD::RawHtml* > ( doc->items().at( 2 ).data() );
+	REQUIRE( h->text() == QStringLiteral( "<!-- -->" ) );
+
+	REQUIRE( doc->items().at( 3 )->type() == MD::ItemType::Code );
+	auto c = static_cast< MD::Code* > ( doc->items().at( 3 ).data() );
 	REQUIRE( !c->isInlined() );
 	REQUIRE( c->text() == QStringLiteral( "code" ) );
 }
