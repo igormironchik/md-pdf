@@ -41,7 +41,7 @@
 #include "blocks.inl"
 
 // 4.6 HTML blocks
-// Skipped.
+#include "html_blocks.inl"
 
 // 4.7
 #include "link_ref.inl"

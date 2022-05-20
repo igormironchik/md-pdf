@@ -1803,12 +1803,19 @@ findIt( Delims::const_iterator it, Delims::const_iterator last,
 
 inline void
 eatRawHtml( qsizetype line, qsizetype pos, qsizetype toLine, qsizetype toPos,
-	TextParsingOpts & po, bool finish, int htmlRule )
+	TextParsingOpts & po, bool finish, int htmlRule, bool skipLineEnds = false )
 {
 	QString h = po.html.html->text();
-	if( !h.isEmpty() ) h.append( c_10 );
-	h.append( po.fr[ line ].sliced( pos,
-		( toPos >= 0 ? toPos - pos : po.fr[ line ].size() - pos ) ) );
+
+	const auto first = po.fr[ line ].sliced( pos,
+		( line == toLine ? ( toPos >= 0 ? toPos - pos : po.fr[ line ].size() - pos ) :
+			po.fr[ line ].size() - pos ) );
+
+	if( !h.isEmpty() && !first.isEmpty() && !skipLineEnds )
+		h.append( c_10 );
+
+	if( !first.isEmpty() )
+		h.append( first );
 
 	++line;
 
@@ -1818,20 +1825,20 @@ eatRawHtml( qsizetype line, qsizetype pos, qsizetype toLine, qsizetype toPos,
 		h.append( po.fr[ line ] );
 	}
 
-	if( line == toLine )
+	if( line == toLine && toPos != 0 )
 	{
 		h.append( c_10 );
-		h.append( po.fr[ line ].sliced( 0, toPos >= 0 ? toPos : po.fr[ line ].size() ) );
+		h.append( po.fr[ line ].sliced( 0, toPos > 0 ? toPos : po.fr[ line ].size() ) );
 	}
 
 	po.line = ( toPos >= 0 ? toLine : toLine + 1 );
 	po.pos = ( toPos >= 0 ? toPos : 0 );
 
+	po.html.html->setText( h );
+	po.html.html->setFreeTag( htmlRule != 7 );
+
 	if( finish )
 	{
-		po.html.html->setText( h );
-		po.html.html->setFreeTag( htmlRule != 7 );
-
 		if( !po.collectRefLinks )
 			po.parent->appendItem( po.html.html );
 
@@ -2004,11 +2011,15 @@ finishRule5HtmlTag( Delims::const_iterator it, Delims::const_iterator last,
 }
 
 inline void
-finishRule67HtmlTag( Delims::const_iterator it, Delims::const_iterator last,
-	TextParsingOpts & po, int htmlRule )
+finishRule6HtmlTag( Delims::const_iterator it, Delims::const_iterator last,
+	TextParsingOpts & po )
 {
-	eatRawHtml( po.line, po.pos, po.fr.size() - 1, -1, po, true, htmlRule );
+	eatRawHtml( po.line, po.pos, po.fr.size() - 1, -1, po, true, 6 );
 }
+
+inline Delims::const_iterator
+finishRule7HtmlTag( Delims::const_iterator it, Delims::const_iterator last,
+	TextParsingOpts & po );
 
 inline Delims::const_iterator
 finishRawHtmlTag( Delims::const_iterator it, Delims::const_iterator last,
@@ -2016,9 +2027,6 @@ finishRawHtmlTag( Delims::const_iterator it, Delims::const_iterator last,
 {
 	switch( po.html.htmlBlockType )
 	{
-		case -1 :
-			break;
-
 		case 1 :
 			finishRule1HtmlTag( it, last, po );
 			break;
@@ -2039,8 +2047,14 @@ finishRawHtmlTag( Delims::const_iterator it, Delims::const_iterator last,
 			finishRule5HtmlTag( it, last, po );
 			break;
 
+		case 6 :
+			finishRule6HtmlTag( it, last, po );
+			break;
+
+		case 7 :
+			return finishRule7HtmlTag( it, last, po );
+
 		default :
-			finishRule67HtmlTag( it, last, po , po.html.htmlBlockType );
 			break;
 	}
 
@@ -2148,7 +2162,7 @@ readHtmlAttr( qsizetype & l, qsizetype & p, const QStringList & fr )
 	return { true, true };
 }
 
-inline bool
+inline std::tuple< bool, qsizetype, qsizetype >
 isHtmlTag( Delims::const_iterator it, TextParsingOpts & po )
 {
 	if( it->m_type == Delimiter::Less )
@@ -2157,7 +2171,7 @@ isHtmlTag( Delims::const_iterator it, TextParsingOpts & po )
 		qsizetype p = it->m_pos + 1;
 
 		if( p >= po.fr[ l ].size() )
-			return false;
+			return { false, -1, -1 };
 
 		for( ; p < po.fr[ l ].size(); ++p )
 		{
@@ -2168,15 +2182,15 @@ isHtmlTag( Delims::const_iterator it, TextParsingOpts & po )
 		}
 
 		if( p < po.fr[ l ].size() && po.fr[ l ][ p ] == c_62 )
-			return true;
+			return { true, l, p };
 
 		skipSpacesInHtml( l, p, po.fr );
 
 		if( l >= po.fr.size() )
-			return false;
+			return { false, -1, -1 };
 
 		if( po.fr[ l ][ p ] == c_62 )
-			return true;
+			return { true, l, p };
 
 		bool attr = true;
 
@@ -2187,23 +2201,23 @@ isHtmlTag( Delims::const_iterator it, TextParsingOpts & po )
 			std::tie( attr, ok ) = readHtmlAttr( l, p, po.fr );
 
 			if( !ok )
-				return false;
+				return { false, -1, -1 };
 		}
 
 		skipSpacesInHtml( l, p, po.fr );
 
 		if( l >= po.fr.size() )
-			return false;
+			return { false, -1, -1 };
 
 		if( po.fr[ l ][ p ] == c_62 )
-			return true;
+			return { true, l, p };
 	}
 
-	return false;
+	return { false, -1, -1 };
 }
 
-inline Delims::const_iterator
-checkForRawHtml( Delims::const_iterator it, Delims::const_iterator last,
+inline int
+htmlTagRule( Delims::const_iterator it, Delims::const_iterator last,
 	TextParsingOpts & po )
 {
 	QString tag;
@@ -2213,12 +2227,7 @@ checkForRawHtml( Delims::const_iterator it, Delims::const_iterator last,
 	tag = tag.toLower();
 
 	if( tag.isEmpty() )
-	{
-		po.html.htmlBlockType = -1;
-		po.html.html.reset( nullptr );
-
-		return it;
-	}
+		return -1;
 
 	static const QString c_validHtmlTagLetters =
 		QStringLiteral( "abcdefghijklmnopqrstuvwxyz0123456789/-!?[" );
@@ -2226,15 +2235,8 @@ checkForRawHtml( Delims::const_iterator it, Delims::const_iterator last,
 	for( qsizetype i = 0; i < tag.size(); ++i )
 	{
 		if( !c_validHtmlTagLetters.contains( tag[ i ] ) )
-		{
-			po.html.htmlBlockType = -1;
-			po.html.html.reset( nullptr );
-
-			return it;
-		}
+			return -1;
 	}
-
-	po.html.html.reset( new RawHtml );
 
 	static const std::set< QString > rule1 = {
 		QStringLiteral( "pre" ), QStringLiteral( "script" ),
@@ -2242,19 +2244,19 @@ checkForRawHtml( Delims::const_iterator it, Delims::const_iterator last,
 	};
 
 	if( rule1.find( tag ) != rule1.cend() )
-		po.html.htmlBlockType = 1;
+		return 1;
 	else if( tag == QStringLiteral( "!--" ) )
-		po.html.htmlBlockType = 2;
+		return 2;
 	else if( tag == QStringLiteral( "?" ) )
-		po.html.htmlBlockType = 3;
+		return 3;
 	else if( tag.startsWith( QLatin1Char( '!' ) ) && tag.size() > 1 &&
 		( ( tag[ 1 ].unicode() >= 65 && tag[ 1 ].unicode() <= 90 ) ||
 			tag[ 1 ].unicode() >= 97 && tag[ 1 ].unicode() <= 122 ) )
 	{
-		po.html.htmlBlockType = 4;
+		return 4;
 	}
 	else if( tag == QStringLiteral( "![cdata[" ) )
-		po.html.htmlBlockType = 5;
+		return 5;
 	else
 	{
 		if( tag.startsWith( c_47 ) )
@@ -2285,22 +2287,71 @@ checkForRawHtml( Delims::const_iterator it, Delims::const_iterator last,
 		};
 
 		if( rule6.find( tag ) != rule6.cend() )
-			po.html.htmlBlockType = 6;
+			return 6;
 		else
 		{
-			if( isHtmlTag( it, po ) )
-				po.html.htmlBlockType = 7;
-			else
-			{
-				po.html.html.reset( nullptr );
-				po.html.htmlBlockType = -1;
+			bool tag = false;
 
-				return it;
+			std::tie( tag, std::ignore, std::ignore ) = isHtmlTag( it, po );
+
+			if( tag )
+				return 7;
+		}
+	}
+
+	return -1;
+}
+
+inline Delims::const_iterator
+checkForRawHtml( Delims::const_iterator it, Delims::const_iterator last,
+	TextParsingOpts & po )
+{
+	const auto rule = htmlTagRule( it, last, po );
+
+	if( rule == -1 )
+	{
+		po.html.htmlBlockType = -1;
+		po.html.html.reset( nullptr );
+
+		return it;
+	}
+
+	po.html.htmlBlockType = rule;
+	po.html.html.reset( new RawHtml );
+
+	return finishRawHtmlTag( it, last, po );
+}
+
+inline Delims::const_iterator
+finishRule7HtmlTag( Delims::const_iterator it, Delims::const_iterator last,
+	TextParsingOpts & po )
+{
+	qsizetype l = -1, p = -1;
+
+	std::tie( std::ignore, l, p ) = isHtmlTag( it, po );
+
+	eatRawHtml( po.line, po.pos, l, ++p, po, false, 7 );
+
+	it = findIt( it, last, po );
+
+	for( ; it != last; ++it )
+	{
+		if( it->m_type == Delimiter::Less )
+		{
+			const auto rule = htmlTagRule( it, last, po );
+
+			if( rule != -1 && rule != 7 )
+			{
+				eatRawHtml( po.line, po.pos, it->m_line, it->m_pos, po, true, 7, true );
+
+				return std::prev( it );
 			}
 		}
 	}
 
-	return finishRawHtmlTag( it, last, po );
+	eatRawHtml( po.line, po.pos, po.fr.size() - 1, -1, po, true, 7, true );
+
+	return std::prev( last );
 }
 
 inline Delims::const_iterator
