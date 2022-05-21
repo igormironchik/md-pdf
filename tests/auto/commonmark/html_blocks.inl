@@ -107,3 +107,17 @@ TEST_CASE( "150" )
 		REQUIRE( h->text() == QStringLiteral( "<div>\n  *hello*\n         <foo><a>" ) );
 	}
 }
+
+TEST_CASE( "151" )
+{
+	const auto doc = load_test( 151 );
+
+	REQUIRE( doc->isEmpty() == false );
+	REQUIRE( doc->items().size() == 2 );
+
+	{
+		REQUIRE( doc->items().at( 1 )->type() == MD::ItemType::RawHtml );
+		auto h = static_cast< MD::RawHtml* > ( doc->items().at( 1 ).data() );
+		REQUIRE( h->text() == QStringLiteral( "</div>\n*foo*" ) );
+	}
+}
