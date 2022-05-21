@@ -1243,6 +1243,13 @@ Parser::parseParagraph( QStringList & fr, QSharedPointer< Block > parent,
 	}
 }
 
+struct UnprotectedRawHtmlMethods {
+	static void setFreeTag( QSharedPointer< RawHtml > html, bool on )
+	{
+		html->setFreeTag( on );
+	}
+};
+
 namespace /* anoymous*/ {
 
 struct Delimiter {
@@ -1835,7 +1842,7 @@ eatRawHtml( qsizetype line, qsizetype pos, qsizetype toLine, qsizetype toPos,
 	po.pos = ( toPos >= 0 ? toPos : 0 );
 
 	po.html.html->setText( h );
-	po.html.html->setFreeTag( htmlRule != 7 );
+	UnprotectedRawHtmlMethods::setFreeTag( po.html.html, htmlRule != 7 );
 
 	if( finish )
 	{

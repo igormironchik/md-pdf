@@ -198,6 +198,10 @@ public:
 	const QString & text() const;
 	void setText( const QString & t );
 
+protected:
+	friend class Parser;
+	friend struct UnprotectedRawHtmlMethods;
+
 	bool isFreeTag() const;
 	void setFreeTag( bool on = true );
 
