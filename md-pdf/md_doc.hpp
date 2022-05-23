@@ -200,7 +200,7 @@ public:
 
 protected:
 	friend class Parser;
-	friend struct UnprotectedRawHtmlMethods;
+	friend struct UnprotectedDocsMethods;
 
 	bool isFreeTag() const;
 	void setFreeTag( bool on = true );
@@ -310,7 +310,16 @@ public:
 
 	ItemType type() const override;
 
+protected:
+	friend class Parser;
+	friend struct UnprotectedDocsMethods;
+
+	bool isDirty() const;
+	void setDirty( bool on = true );
+
 private:
+	bool m_dirty = false;
+
 	Q_DISABLE_COPY( Paragraph )
 }; // class Paragraph
 

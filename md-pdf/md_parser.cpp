@@ -705,46 +705,52 @@ Parser::parseFragment( QStringList & fr, QSharedPointer< Block > parent,
 	const QString & workingPath, const QString & fileName, bool collectRefLinks,
 	RawHtmlBlock & html )
 {
-	switch( whatIsTheLine( fr.first() ) )
+	if( html.continueHtml )
+		parseText( fr, parent, doc, linksToParse,
+			workingPath, fileName, collectRefLinks, html );
+	else
 	{
-		case BlockType::Text :
-			parseText( fr, parent, doc, linksToParse,
-				workingPath, fileName, collectRefLinks, html );
-			break;
-
-		case BlockType::Blockquote :
-			parseBlockquote( fr, parent, doc, linksToParse, workingPath, fileName,
-				collectRefLinks, html );
-			break;
-
-		case BlockType::Code :
-			parseCode( fr, parent, collectRefLinks );
-			break;
-
-		case BlockType::CodeIndentedBySpaces :
+		switch( whatIsTheLine( fr.first() ) )
 		{
-			int indent = 1;
+			case BlockType::Text :
+				parseText( fr, parent, doc, linksToParse,
+					workingPath, fileName, collectRefLinks, html );
+				break;
 
-			if( fr.first().startsWith( QLatin1String( "    " ) ) )
-				indent = 4;
+			case BlockType::Blockquote :
+				parseBlockquote( fr, parent, doc, linksToParse, workingPath, fileName,
+					collectRefLinks, html );
+				break;
 
-			parseCodeIndentedBySpaces( fr, parent, collectRefLinks, indent );
+			case BlockType::Code :
+				parseCode( fr, parent, collectRefLinks );
+				break;
+
+			case BlockType::CodeIndentedBySpaces :
+			{
+				int indent = 1;
+
+				if( fr.first().startsWith( QLatin1String( "    " ) ) )
+					indent = 4;
+
+				parseCodeIndentedBySpaces( fr, parent, collectRefLinks, indent );
+			}
+				break;
+
+			case BlockType::Heading :
+				parseHeading( fr, parent, doc, linksToParse, workingPath, fileName,
+					collectRefLinks );
+				break;
+
+			case BlockType::List :
+			case BlockType::ListWithFirstEmptyLine :
+				parseList( fr, parent, doc, linksToParse, workingPath, fileName,
+					collectRefLinks, html );
+				break;
+
+			default :
+				break;
 		}
-			break;
-
-		case BlockType::Heading :
-			parseHeading( fr, parent, doc, linksToParse, workingPath, fileName,
-				collectRefLinks );
-			break;
-
-		case BlockType::List :
-		case BlockType::ListWithFirstEmptyLine :
-			parseList( fr, parent, doc, linksToParse, workingPath, fileName,
-				collectRefLinks, html );
-			break;
-
-		default :
-			break;
 	}
 }
 
@@ -1214,6 +1220,7 @@ Parser::parseParagraph( QStringList & fr, QSharedPointer< Block > parent,
 						auto p = static_cast< MD::Paragraph* > ( (*it).data() );
 
 						QSharedPointer< Paragraph > pp( new Paragraph );
+						pp->setDirty( p->isDirty() );
 
 						for( auto it = p->items().cbegin(), last = p->items().cend(); it != last; ++it )
 						{
@@ -1224,6 +1231,7 @@ Parser::parseParagraph( QStringList & fr, QSharedPointer< Block > parent,
 								{
 									parent->appendItem( pp );
 									pp.reset( new Paragraph );
+									pp->setDirty( p->isDirty() );
 								}
 
 								parent->appendItem( (*it) );
@@ -1243,10 +1251,15 @@ Parser::parseParagraph( QStringList & fr, QSharedPointer< Block > parent,
 	}
 }
 
-struct UnprotectedRawHtmlMethods {
+struct UnprotectedDocsMethods {
 	static void setFreeTag( QSharedPointer< RawHtml > html, bool on )
 	{
 		html->setFreeTag( on );
+	}
+
+	static void setDirty( QSharedPointer< Paragraph > p )
+	{
+		p->setDirty( true );
 	}
 };
 
@@ -1842,7 +1855,7 @@ eatRawHtml( qsizetype line, qsizetype pos, qsizetype toLine, qsizetype toPos,
 	po.pos = ( toPos >= 0 ? toPos : 0 );
 
 	po.html.html->setText( h );
-	UnprotectedRawHtmlMethods::setFreeTag( po.html.html, htmlRule != 7 );
+	UnprotectedDocsMethods::setFreeTag( po.html.html, htmlRule != 7 );
 
 	if( finish )
 	{
@@ -1851,7 +1864,10 @@ eatRawHtml( qsizetype line, qsizetype pos, qsizetype toLine, qsizetype toPos,
 
 		po.html.html.reset( nullptr );
 		po.html.htmlBlockType = -1;
+		po.html.continueHtml = false;
 	}
+	else
+		po.html.continueHtml = true;
 }
 
 inline void
@@ -2021,7 +2037,7 @@ inline void
 finishRule6HtmlTag( Delims::const_iterator it, Delims::const_iterator last,
 	TextParsingOpts & po )
 {
-	eatRawHtml( po.line, po.pos, po.fr.size() - 1, -1, po, true, 6 );
+	eatRawHtml( po.line, po.pos, po.fr.size() - 1, -1, po, false, 6 );
 }
 
 inline Delims::const_iterator
@@ -2356,7 +2372,7 @@ finishRule7HtmlTag( Delims::const_iterator it, Delims::const_iterator last,
 		}
 	}
 
-	eatRawHtml( po.line, po.pos, po.fr.size() - 1, -1, po, true, 7, true );
+	eatRawHtml( po.line, po.pos, po.fr.size() - 1, -1, po, false, 7, true );
 
 	return std::prev( last );
 }
@@ -4094,10 +4110,19 @@ parseFormattedText( QStringList & fr, QSharedPointer< Block > parent,
 
 	for( auto it = delims.cbegin(), last = delims.cend(); it != last; ++it )
 	{
-		if( !html.html.isNull() )
+		if( !html.html.isNull() && html.continueHtml )
 			it = finishRawHtmlTag( it, last, po );
 		else
 		{
+			if( !html.html.isNull() )
+			{
+				if( !collectRefLinks )
+					p->appendItem( html.html );
+
+				html.html.reset( nullptr );
+				html.htmlBlockType = -1;
+			}
+
 			if( it->m_line > po.line || it->m_pos > po.pos )
 			{
 				if( !collectRefLinks )
@@ -4174,11 +4199,25 @@ parseFormattedText( QStringList & fr, QSharedPointer< Block > parent,
 	}
 
 	if( !collectRefLinks )
+	{
+		if( !html.html.isNull() && !html.continueHtml )
+		{
+			p->appendItem( html.html );
+
+			html.html.reset( nullptr );
+			html.htmlBlockType = -1;
+		}
+
 		makeText( fr.size() - 1, fr.back().length(), po );
+	}
 
 	if( !p->isEmpty() )
 	{
 		optimizeParagraph( p );
+
+		if( !html.html.isNull() && html.htmlBlockType == 7 )
+			UnprotectedDocsMethods::setDirty( p );
+
 		parent->appendItem( p );
 	}
 }

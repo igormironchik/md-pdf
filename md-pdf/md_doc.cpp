@@ -267,6 +267,18 @@ Paragraph::type() const
 	return ItemType::Paragraph;
 }
 
+bool
+Paragraph::isDirty() const
+{
+	return m_dirty;
+}
+
+void
+Paragraph::setDirty( bool on )
+{
+	m_dirty = on;
+}
+
 
 //
 // Blockquote

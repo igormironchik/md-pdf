@@ -127,6 +127,7 @@ isTableAlignment( const QString & s );
 struct RawHtmlBlock {
 	QSharedPointer< RawHtml > html = {};
 	int htmlBlockType = -1;
+	bool continueHtml = false;
 }; // struct RawHtmlBlock
 
 
@@ -223,7 +224,7 @@ private:
 		bool collectRefLinks,
 		bool top = false )
 	{
-		QVector< QStringList > splitted;
+		QVector< QPair< QStringList, bool > > splitted;
 
 		QStringList fragment;
 
@@ -237,14 +238,21 @@ private:
 		std::set< qsizetype > indents;
 		qsizetype indent = 0;
 		RawHtmlBlock html;
+		bool wasEmptyLine = false;
 
 		// Parse fragment and clear internal cache.
 		auto pf = [&]()
 			{
-				splitted.append( fragment );
-				parseFragment( fragment, parent, doc, linksToParse,
-					workingPath, fileName, collectRefLinks, html );
-				fragment.clear();
+				if( !fragment.isEmpty() )
+				{
+					splitted.append( { fragment, wasEmptyLine } );
+
+					parseFragment( fragment, parent, doc, linksToParse,
+						workingPath, fileName, collectRefLinks, html );
+
+					fragment.clear();
+				}
+
 				type = BlockType::Unknown;
 				emptyLineInList = false;
 				emptyLinesInList = 0;
@@ -355,6 +363,8 @@ private:
 			// Got new empty line.
 			if( ns == line.length() )
 			{
+				wasEmptyLine = true;
+
 				switch( type )
 				{
 					case BlockType::Text :
@@ -418,6 +428,7 @@ private:
 
 					emptyLineInList = false;
 					emptyLinesInList = 0;
+					wasEmptyLine = false;
 
 					continue;
 				}
@@ -427,6 +438,7 @@ private:
 
 					type = lineType;
 					fragment.append( line );
+					wasEmptyLine = false;
 
 					continue;
 				}
@@ -441,14 +453,15 @@ private:
 						fragment.append( QString( indent, c_32 ) );
 
 					fragment.append( line );
+					wasEmptyLine = false;
 				}
 				else
 				{
 					pf();
 
 					type = lineType;
-
 					fragment.append( line );
+					wasEmptyLine = false;
 				}
 
 				emptyLinesInCode = 0;
@@ -483,6 +496,9 @@ private:
 
 					pf();
 
+					if( html.htmlBlockType >= 6 )
+						html.continueHtml = ( !wasEmptyLine );
+
 					type = lineType;
 
 					if( !line.isEmpty() )
@@ -500,6 +516,8 @@ private:
 			}
 			else
 				fragment.append( line );
+
+			wasEmptyLine = false;
 		}
 
 		if( !fragment.isEmpty() )
@@ -510,13 +528,56 @@ private:
 			pf();
 		}
 
+		auto finishHtml = [&] ()
+		{
+			if( html.htmlBlockType <= 6 )
+				doc->appendItem( html.html );
+			else
+			{
+				if( doc->items().back()->type() == ItemType::Paragraph )
+				{
+					auto p = static_cast< Paragraph* > ( doc->items().back().data() );
+
+					if( p->isDirty() )
+						p->appendItem( html.html );
+					else
+					{
+						QSharedPointer< Paragraph > p( new Paragraph );
+						p->appendItem( html.html );
+						doc->appendItem( p );
+					}
+				}
+				else
+				{
+					QSharedPointer< Paragraph > p( new Paragraph );
+					p->appendItem( html.html );
+					doc->appendItem( p );
+				}
+			}
+
+			html.html.reset( nullptr );
+		};
+
 		if( top )
 		{
+			html.html.reset( nullptr );
+			html.htmlBlockType = -1;
+			html.continueHtml = false;
+
 			for( qsizetype i = 0; i < splitted.size(); ++i )
 			{
-				parseFragment( splitted[ i ], parent, doc, linksToParse,
+				parseFragment( splitted[ i ].first, parent, doc, linksToParse,
 					workingPath, fileName, false, html );
+
+				if( html.htmlBlockType >= 6 )
+					html.continueHtml = ( !splitted[ i ].second );
+
+				if( !html.html.isNull() && !html.continueHtml )
+					finishHtml();
 			}
+
+			if( !html.html.isNull() )
+				finishHtml();
 		}
 	}
 
