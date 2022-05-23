@@ -164,3 +164,17 @@ TEST_CASE( "153" )
 		REQUIRE( h->text() == QStringLiteral( "<div id=\"foo\"\n  class=\"bar\">\n</div>" ) );
 	}
 }
+
+TEST_CASE( "154" )
+{
+	const auto doc = load_test( 154 );
+
+	REQUIRE( doc->isEmpty() == false );
+	REQUIRE( doc->items().size() == 2 );
+
+	{
+		REQUIRE( doc->items().at( 1 )->type() == MD::ItemType::RawHtml );
+		auto h = static_cast< MD::RawHtml* > ( doc->items().at( 1 ).data() );
+		REQUIRE( h->text() == QStringLiteral( "<div id=\"foo\" class=\"bar\n  baz\">\n</div>" ) );
+	}
+}
