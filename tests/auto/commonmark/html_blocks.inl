@@ -243,3 +243,17 @@ TEST_CASE( "158" )
 		REQUIRE( h->text() == QStringLiteral( "<div *?\?\?-&&&-<---\n*foo*" ) );
 	}
 }
+
+TEST_CASE( "159" )
+{
+	const auto doc = load_test( 159 );
+
+	REQUIRE( doc->isEmpty() == false );
+	REQUIRE( doc->items().size() == 2 );
+
+	{
+		REQUIRE( doc->items().at( 1 )->type() == MD::ItemType::RawHtml );
+		auto h = static_cast< MD::RawHtml* > ( doc->items().at( 1 ).data() );
+		REQUIRE( h->text() == QStringLiteral( "<div><a href=\"bar\">*foo*</a></div>" ) );
+	}
+}
