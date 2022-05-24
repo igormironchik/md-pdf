@@ -1823,7 +1823,8 @@ findIt( Delims::const_iterator it, Delims::const_iterator last,
 
 inline void
 eatRawHtml( qsizetype line, qsizetype pos, qsizetype toLine, qsizetype toPos,
-	TextParsingOpts & po, bool finish, int htmlRule, bool skipLineEnds = false )
+	TextParsingOpts & po, bool finish, int htmlRule, bool skipLineEnds = false,
+	bool onLine = true )
 {
 	QString h = po.html.html->text();
 
@@ -1855,7 +1856,7 @@ eatRawHtml( qsizetype line, qsizetype pos, qsizetype toLine, qsizetype toPos,
 	po.pos = ( toPos >= 0 ? toPos : 0 );
 
 	po.html.html->setText( h );
-	UnprotectedDocsMethods::setFreeTag( po.html.html, htmlRule != 7 );
+	UnprotectedDocsMethods::setFreeTag( po.html.html, htmlRule != 7 || onLine );
 
 	if( finish )
 	{
@@ -2185,16 +2186,22 @@ readHtmlAttr( qsizetype & l, qsizetype & p, const QStringList & fr )
 	return { true, true };
 }
 
-inline std::tuple< bool, qsizetype, qsizetype >
+inline std::tuple< bool, qsizetype, qsizetype, bool >
 isHtmlTag( Delims::const_iterator it, TextParsingOpts & po )
 {
 	if( it->m_type == Delimiter::Less )
 	{
 		qsizetype l = it->m_line;
 		qsizetype p = it->m_pos + 1;
+		bool first = false;
+
+		{
+			const auto tmp = skipSpaces( 0, po.fr[ l ] );
+			first = ( tmp == it->m_pos && l == 0 );
+		}
 
 		if( p >= po.fr[ l ].size() )
-			return { false, -1, -1 };
+			return { false, -1, -1, false };
 
 		for( ; p < po.fr[ l ].size(); ++p )
 		{
@@ -2205,15 +2212,23 @@ isHtmlTag( Delims::const_iterator it, TextParsingOpts & po )
 		}
 
 		if( p < po.fr[ l ].size() && po.fr[ l ][ p ] == c_62 )
-			return { true, l, p };
+		{
+			const auto tmp = skipSpaces( p + 1, po.fr[ l ] );
+
+			return { true, l, p, tmp == po.fr[ l ].size() && first };
+		}
 
 		skipSpacesInHtml( l, p, po.fr );
 
 		if( l >= po.fr.size() )
-			return { false, -1, -1 };
+			return { false, -1, -1, false };
 
 		if( po.fr[ l ][ p ] == c_62 )
-			return { true, l, p };
+		{
+			const auto tmp = skipSpaces( p + 1, po.fr[ l ] );
+
+			return { true, l, p, l == it->m_line && tmp == po.fr[ l ].size() && first };
+		}
 
 		bool attr = true;
 
@@ -2224,19 +2239,23 @@ isHtmlTag( Delims::const_iterator it, TextParsingOpts & po )
 			std::tie( attr, ok ) = readHtmlAttr( l, p, po.fr );
 
 			if( !ok )
-				return { false, -1, -1 };
+				return { false, -1, -1, false };
 		}
 
 		skipSpacesInHtml( l, p, po.fr );
 
 		if( l >= po.fr.size() )
-			return { false, -1, -1 };
+			return { false, -1, -1, false };
 
 		if( po.fr[ l ][ p ] == c_62 )
-			return { true, l, p };
+		{
+			const auto tmp = skipSpaces( p + 1, po.fr[ l ] );
+
+			return { true, l, p, l == it->m_line && tmp == po.fr[ l ].size() && first };
+		}
 	}
 
-	return { false, -1, -1 };
+	return { false, -1, -1, false };
 }
 
 inline int
@@ -2315,7 +2334,7 @@ htmlTagRule( Delims::const_iterator it, Delims::const_iterator last,
 		{
 			bool tag = false;
 
-			std::tie( tag, std::ignore, std::ignore ) = isHtmlTag( it, po );
+			std::tie( tag, std::ignore, std::ignore, std::ignore ) = isHtmlTag( it, po );
 
 			if( tag )
 				return 7;
@@ -2350,31 +2369,44 @@ finishRule7HtmlTag( Delims::const_iterator it, Delims::const_iterator last,
 	TextParsingOpts & po )
 {
 	qsizetype l = -1, p = -1;
+	bool onLine = false;
 
-	std::tie( std::ignore, l, p ) = isHtmlTag( it, po );
+	std::tie( std::ignore, l, p, onLine ) = isHtmlTag( it, po );
 
-	eatRawHtml( po.line, po.pos, l, ++p, po, false, 7 );
-
-	it = findIt( it, last, po );
-
-	for( ; it != last; ++it )
+	if( l != -1 )
 	{
-		if( it->m_type == Delimiter::Less )
+		eatRawHtml( po.line, po.pos, l, ++p, po, !onLine, 7, false, onLine );
+
+		po.html.onLine = onLine;
+
+		it = findIt( it, last, po );
+
+		if( onLine )
 		{
-			const auto rule = htmlTagRule( it, last, po );
-
-			if( rule != -1 && rule != 7 )
+			for( ; it != last; ++it )
 			{
-				eatRawHtml( po.line, po.pos, it->m_line, it->m_pos, po, true, 7, true );
+				if( it->m_type == Delimiter::Less )
+				{
+					const auto rule = htmlTagRule( it, last, po );
 
-				return std::prev( it );
+					if( rule != -1 && rule != 7 )
+					{
+						eatRawHtml( po.line, po.pos, it->m_line, it->m_pos, po, true, 7, onLine );
+
+						return std::prev( it );
+					}
+				}
 			}
+
+			eatRawHtml( po.line, po.pos, po.fr.size() - 1, -1, po, false, 7, onLine );
+
+			return std::prev( last );
 		}
+		else
+			return it;
 	}
-
-	eatRawHtml( po.line, po.pos, po.fr.size() - 1, -1, po, false, 7, true );
-
-	return std::prev( last );
+	else
+		return it;
 }
 
 inline Delims::const_iterator
@@ -4215,7 +4247,7 @@ parseFormattedText( QStringList & fr, QSharedPointer< Block > parent,
 	{
 		optimizeParagraph( p );
 
-		if( !html.html.isNull() && html.htmlBlockType == 7 )
+		if( !html.html.isNull() && html.htmlBlockType == 7 && !html.onLine )
 			UnprotectedDocsMethods::setDirty( p );
 
 		parent->appendItem( p );

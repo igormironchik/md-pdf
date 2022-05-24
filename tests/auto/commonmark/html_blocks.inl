@@ -293,15 +293,9 @@ TEST_CASE( "162" )
 	REQUIRE( doc->isEmpty() == false );
 	REQUIRE( doc->items().size() == 2 );
 
-	REQUIRE( doc->items().at( 1 )->type() == MD::ItemType::Paragraph );
-	auto p = static_cast< MD::Paragraph* > ( doc->items().at( 1 ).data() );
-	REQUIRE( p->items().size() == 1 );
-
-	{
-		REQUIRE( p->items().at( 0 )->type() == MD::ItemType::RawHtml );
-		auto h = static_cast< MD::RawHtml* > ( p->items().at( 0 ).data() );
-		REQUIRE( h->text() == QStringLiteral( "<a href=\"foo\">\n*bar*\n</a>" ) );
-	}
+	REQUIRE( doc->items().at( 1 )->type() == MD::ItemType::RawHtml );
+	auto h = static_cast< MD::RawHtml* > ( doc->items().at( 1 ).data() );
+	REQUIRE( h->text() == QStringLiteral( "<a href=\"foo\">\n*bar*\n</a>" ) );
 }
 
 TEST_CASE( "163" )
@@ -311,15 +305,9 @@ TEST_CASE( "163" )
 	REQUIRE( doc->isEmpty() == false );
 	REQUIRE( doc->items().size() == 2 );
 
-	REQUIRE( doc->items().at( 1 )->type() == MD::ItemType::Paragraph );
-	auto p = static_cast< MD::Paragraph* > ( doc->items().at( 1 ).data() );
-	REQUIRE( p->items().size() == 1 );
-
-	{
-		REQUIRE( p->items().at( 0 )->type() == MD::ItemType::RawHtml );
-		auto h = static_cast< MD::RawHtml* > ( p->items().at( 0 ).data() );
-		REQUIRE( h->text() == QStringLiteral( "<Warning>\n*bar*\n</Warning>" ) );
-	}
+	REQUIRE( doc->items().at( 1 )->type() == MD::ItemType::RawHtml );
+	auto h = static_cast< MD::RawHtml* > ( doc->items().at( 1 ).data() );
+	REQUIRE( h->text() == QStringLiteral( "<Warning>\n*bar*\n</Warning>" ) );
 }
 
 TEST_CASE( "164" )
@@ -329,15 +317,9 @@ TEST_CASE( "164" )
 	REQUIRE( doc->isEmpty() == false );
 	REQUIRE( doc->items().size() == 2 );
 
-	REQUIRE( doc->items().at( 1 )->type() == MD::ItemType::Paragraph );
-	auto p = static_cast< MD::Paragraph* > ( doc->items().at( 1 ).data() );
-	REQUIRE( p->items().size() == 1 );
-
-	{
-		REQUIRE( p->items().at( 0 )->type() == MD::ItemType::RawHtml );
-		auto h = static_cast< MD::RawHtml* > ( p->items().at( 0 ).data() );
-		REQUIRE( h->text() == QStringLiteral( "<i class=\"foo\">\n*bar*\n</i>" ) );
-	}
+	REQUIRE( doc->items().at( 1 )->type() == MD::ItemType::RawHtml );
+	auto h = static_cast< MD::RawHtml* > ( doc->items().at( 1 ).data() );
+	REQUIRE( h->text() == QStringLiteral( "<i class=\"foo\">\n*bar*\n</i>" ) );
 }
 
 TEST_CASE( "165" )
@@ -347,15 +329,9 @@ TEST_CASE( "165" )
 	REQUIRE( doc->isEmpty() == false );
 	REQUIRE( doc->items().size() == 2 );
 
-	REQUIRE( doc->items().at( 1 )->type() == MD::ItemType::Paragraph );
-	auto p = static_cast< MD::Paragraph* > ( doc->items().at( 1 ).data() );
-	REQUIRE( p->items().size() == 1 );
-
-	{
-		REQUIRE( p->items().at( 0 )->type() == MD::ItemType::RawHtml );
-		auto h = static_cast< MD::RawHtml* > ( p->items().at( 0 ).data() );
-		REQUIRE( h->text() == QStringLiteral( "</ins>\n*bar*" ) );
-	}
+	REQUIRE( doc->items().at( 1 )->type() == MD::ItemType::RawHtml );
+	auto h = static_cast< MD::RawHtml* > ( doc->items().at( 1 ).data() );
+	REQUIRE( h->text() == QStringLiteral( "</ins>\n*bar*" ) );
 }
 
 TEST_CASE( "166" )
@@ -365,15 +341,9 @@ TEST_CASE( "166" )
 	REQUIRE( doc->isEmpty() == false );
 	REQUIRE( doc->items().size() == 2 );
 
-	REQUIRE( doc->items().at( 1 )->type() == MD::ItemType::Paragraph );
-	auto p = static_cast< MD::Paragraph* > ( doc->items().at( 1 ).data() );
-	REQUIRE( p->items().size() == 1 );
-
-	{
-		REQUIRE( p->items().at( 0 )->type() == MD::ItemType::RawHtml );
-		auto h = static_cast< MD::RawHtml* > ( p->items().at( 0 ).data() );
-		REQUIRE( h->text() == QStringLiteral( "<del>\n*foo*\n</del>" ) );
-	}
+	REQUIRE( doc->items().at( 1 )->type() == MD::ItemType::RawHtml );
+	auto h = static_cast< MD::RawHtml* > ( doc->items().at( 1 ).data() );
+	REQUIRE( h->text() == QStringLiteral( "<del>\n*foo*\n</del>" ) );
 }
 
 TEST_CASE( "167" )
@@ -384,12 +354,8 @@ TEST_CASE( "167" )
 	REQUIRE( doc->items().size() == 4 );
 
 	{
-		REQUIRE( doc->items().at( 1 )->type() == MD::ItemType::Paragraph );
-		auto p = static_cast< MD::Paragraph* > ( doc->items().at( 1 ).data() );
-		REQUIRE( p->items().size() == 1 );
-
-		REQUIRE( p->items().at( 0 )->type() == MD::ItemType::RawHtml );
-		auto h = static_cast< MD::RawHtml* > ( p->items().at( 0 ).data() );
+		REQUIRE( doc->items().at( 1 )->type() == MD::ItemType::RawHtml );
+		auto h = static_cast< MD::RawHtml* > ( doc->items().at( 1 ).data() );
 		REQUIRE( h->text() == QStringLiteral( "<del>" ) );
 	}
 
@@ -405,12 +371,39 @@ TEST_CASE( "167" )
 	}
 
 	{
-		REQUIRE( doc->items().at( 3 )->type() == MD::ItemType::Paragraph );
-		auto p = static_cast< MD::Paragraph* > ( doc->items().at( 3 ).data() );
-		REQUIRE( p->items().size() == 1 );
-
-		REQUIRE( p->items().at( 0 )->type() == MD::ItemType::RawHtml );
-		auto h = static_cast< MD::RawHtml* > ( p->items().at( 0 ).data() );
+		REQUIRE( doc->items().at( 3 )->type() == MD::ItemType::RawHtml );
+		auto h = static_cast< MD::RawHtml* > ( doc->items().at( 3 ).data() );
 		REQUIRE( h->text() == QStringLiteral( "</del>" ) );
+	}
+}
+
+TEST_CASE( "168" )
+{
+	const auto doc = load_test( 168 );
+
+	REQUIRE( doc->isEmpty() == false );
+	REQUIRE( doc->items().size() == 2 );
+
+	{
+		REQUIRE( doc->items().at( 1 )->type() == MD::ItemType::Paragraph );
+		auto p = static_cast< MD::Paragraph* > ( doc->items().at( 1 ).data() );
+		REQUIRE( p->items().size() == 3 );
+
+		{
+			REQUIRE( p->items().at( 0 )->type() == MD::ItemType::RawHtml );
+			auto h = static_cast< MD::RawHtml* > ( p->items().at( 0 ).data() );
+			REQUIRE( h->text() == QStringLiteral( "<del>" ) );
+		}
+
+		REQUIRE( p->items().at( 1 )->type() == MD::ItemType::Text );
+		auto t = static_cast< MD::Text* > ( p->items().at( 1 ).data() );
+		REQUIRE( t->opts() == MD::ItalicText );
+		REQUIRE( t->text() == QStringLiteral( "foo" ) );
+
+		{
+			REQUIRE( p->items().at( 2 )->type() == MD::ItemType::RawHtml );
+			auto h = static_cast< MD::RawHtml* > ( p->items().at( 2 ).data() );
+			REQUIRE( h->text() == QStringLiteral( "</del>" ) );
+		}
 	}
 }

@@ -243,15 +243,25 @@ TEST_CASE( "493" )
 
 	REQUIRE( doc->items().at( 1 )->type() == MD::ItemType::Paragraph );
 	auto p = static_cast< MD::Paragraph* > ( doc->items().at( 1 ).data() );
-	REQUIRE( p->items().size() == 2 );
-	REQUIRE( p->items().at( 0 )->type() == MD::ItemType::Text );
-	auto t = static_cast< MD::Text* > ( p->items().at( 0 ).data() );
-	REQUIRE( t->opts() == MD::TextWithoutFormat );
-	REQUIRE( t->text() == QStringLiteral( "[a](<b)c [a](<b)c> [a](" ) );
+	REQUIRE( p->items().size() == 3 );
+
+	{
+		REQUIRE( p->items().at( 0 )->type() == MD::ItemType::Text );
+		auto t = static_cast< MD::Text* > ( p->items().at( 0 ).data() );
+		REQUIRE( t->opts() == MD::TextWithoutFormat );
+		REQUIRE( t->text() == QStringLiteral( "[a](<b)c [a](<b)c> [a](" ) );
+	}
 
 	REQUIRE( p->items().at( 1 )->type() == MD::ItemType::RawHtml );
 	auto h = static_cast< MD::RawHtml* > ( p->items().at( 1 ).data() );
-	REQUIRE( h->text() == QStringLiteral( "<b>c)" ) );
+	REQUIRE( h->text() == QStringLiteral( "<b>" ) );
+
+	{
+		REQUIRE( p->items().at( 2 )->type() == MD::ItemType::Text );
+		auto t = static_cast< MD::Text* > ( p->items().at( 2 ).data() );
+		REQUIRE( t->opts() == MD::TextWithoutFormat );
+		REQUIRE( t->text() == QStringLiteral( "c)" ) );
+	}
 }
 
 TEST_CASE( "494" )

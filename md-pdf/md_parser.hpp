@@ -128,6 +128,7 @@ struct RawHtmlBlock {
 	QSharedPointer< RawHtml > html = {};
 	int htmlBlockType = -1;
 	bool continueHtml = false;
+	bool onLine = false;
 }; // struct RawHtmlBlock
 
 
@@ -530,7 +531,7 @@ private:
 
 		auto finishHtml = [&] ()
 		{
-			if( html.htmlBlockType <= 6 )
+			if( html.html->isFreeTag() )
 				doc->appendItem( html.html );
 			else
 			{
