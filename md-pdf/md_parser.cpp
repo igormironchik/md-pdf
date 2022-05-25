@@ -1882,8 +1882,6 @@ finishRule1HtmlTag( Delims::const_iterator it, Delims::const_iterator last,
 		QStringLiteral( "</textarea>" )
 	};
 
-	const auto start = it;
-
 	for( it = std::next( it ); it != last; ++it )
 	{
 		bool doBreak = false;
@@ -1904,7 +1902,7 @@ finishRule1HtmlTag( Delims::const_iterator it, Delims::const_iterator last,
 
 				if( finish.find( tag ) != finish.cend() )
 				{
-					eatRawHtml( start->m_line, start->m_pos, it->m_line, -1, po, true, 1 );
+					eatRawHtml( po.line, po.pos, it->m_line, -1, po, true, 1 );
 
 					return;
 				}
@@ -1912,15 +1910,13 @@ finishRule1HtmlTag( Delims::const_iterator it, Delims::const_iterator last,
 		}
 	}
 
-	eatRawHtml( start->m_line, start->m_pos, po.fr.size() - 1, -1, po, false, 1 );
+	eatRawHtml( po.line, po.pos, po.fr.size() - 1, -1, po, false, 1 );
 }
 
 inline void
 finishRule2HtmlTag( Delims::const_iterator it, Delims::const_iterator last,
 	TextParsingOpts & po )
 {
-	auto start = it;
-
 	for( ; it != last; ++it )
 	{
 		if( it->m_type == Delimiter::Greater )
@@ -1936,22 +1932,20 @@ finishRule2HtmlTag( Delims::const_iterator it, Delims::const_iterator last,
 						break;
 				}
 
-				eatRawHtml( start->m_line, start->m_pos, it->m_line, i , po, true, 2 );
+				eatRawHtml( po.line, po.pos, it->m_line, i , po, true, 2 );
 
 				return;
 			}
 		}
 	}
 
-	eatRawHtml( start->m_line, start->m_pos, po.fr.size() - 1, -1, po, false, 2 );
+	eatRawHtml( po.line, po.pos, po.fr.size() - 1, -1, po, false, 2 );
 }
 
 inline void
 finishRule3HtmlTag( Delims::const_iterator it, Delims::const_iterator last,
 	TextParsingOpts & po )
 {
-	auto start = it;
-
 	for( ; it != last; ++it )
 	{
 		if( it->m_type == Delimiter::Greater )
@@ -1966,22 +1960,20 @@ finishRule3HtmlTag( Delims::const_iterator it, Delims::const_iterator last,
 						break;
 				}
 
-				eatRawHtml( start->m_line, start->m_pos, it->m_line, i , po, true, 3 );
+				eatRawHtml( po.line, po.pos, it->m_line, i , po, true, 3 );
 
 				return;
 			}
 		}
 	}
 
-	eatRawHtml( start->m_line, start->m_pos, po.fr.size() - 1, -1, po, false, 3 );
+	eatRawHtml( po.line, po.pos, po.fr.size() - 1, -1, po, false, 3 );
 }
 
 inline void
 finishRule4HtmlTag( Delims::const_iterator it, Delims::const_iterator last,
 	TextParsingOpts & po )
 {
-	auto start = it;
-
 	for( ; it != last; ++it )
 	{
 		if( it->m_type == Delimiter::Greater )
@@ -1994,21 +1986,19 @@ finishRule4HtmlTag( Delims::const_iterator it, Delims::const_iterator last,
 					break;
 			}
 
-			eatRawHtml( start->m_line, start->m_pos, it->m_line, i , po, true, 4 );
+			eatRawHtml( po.line, po.pos, it->m_line, i , po, true, 4 );
 
 			return;
 		}
 	}
 
-	eatRawHtml( start->m_line, start->m_pos, po.fr.size() - 1, -1, po, false, 4 );
+	eatRawHtml( po.line, po.pos, po.fr.size() - 1, -1, po, false, 4 );
 }
 
 inline void
 finishRule5HtmlTag( Delims::const_iterator it, Delims::const_iterator last,
 	TextParsingOpts & po )
 {
-	auto start = it;
-
 	for( ; it != last; ++it )
 	{
 		if( it->m_type == Delimiter::Greater )
@@ -2024,14 +2014,14 @@ finishRule5HtmlTag( Delims::const_iterator it, Delims::const_iterator last,
 						break;
 				}
 
-				eatRawHtml( start->m_line, start->m_pos, it->m_line, i , po, true, 5 );
+				eatRawHtml( po.line, po.pos, it->m_line, i , po, true, 5 );
 
 				return;
 			}
 		}
 	}
 
-	eatRawHtml( start->m_line, start->m_pos, po.fr.size() - 1, -1, po, false, 5 );
+	eatRawHtml( po.line, po.pos, po.fr.size() - 1, -1, po, false, 5 );
 }
 
 inline void
@@ -2110,6 +2100,13 @@ readHtmlAttr( qsizetype & l, qsizetype & p, const QStringList & fr )
 
 	if( l >= fr.size() )
 		return { false, false };
+
+	if( p < fr[ l ].size() && fr[ l ][ p ] == c_47 )
+	{
+		++p;
+
+		return { false, true };
+	}
 
 	if( p < fr[ l ].size() && fr[ l ][ p ] == c_62 )
 		return { false, true };
@@ -2350,6 +2347,8 @@ checkForRawHtml( Delims::const_iterator it, Delims::const_iterator last,
 {
 	const auto rule = htmlTagRule( it, last, po );
 
+	po.wasRefLink = false;
+
 	if( rule == -1 )
 	{
 		po.html.htmlBlockType = -1;
@@ -2418,62 +2417,62 @@ checkForAutolinkHtml( Delims::const_iterator it, Delims::const_iterator last,
 
 	if( nit != last )
 	{
-		if( !po.collectRefLinks )
+		if( nit->m_line == it->m_line )
 		{
-			if( nit->m_line == it->m_line )
+			const auto url = po.fr.at( it->m_line ).sliced( it->m_pos + 1,
+				nit->m_pos - it->m_pos - 1 );
+
+			const auto sit = std::find_if( url.cbegin(), url.cend(),
+				[] ( const auto & c ) { return c.isSpace(); } );
+
+			bool isUrl = true;
+
+			if( sit != url.cend() )
+				isUrl = false;
+			else
 			{
-				const auto url = po.fr.at( it->m_line ).sliced( it->m_pos + 1,
-					nit->m_pos - it->m_pos - 1 );
+				static const QRegularExpression er(
+					"^[a-zA-Z0-9.!#$%&'*+/=?^_`{|}~-]+@[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?"
+					"(?:\\.[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?)*$" );
 
-				const auto sit = std::find_if( url.cbegin(), url.cend(),
-					[] ( const auto & c ) { return c.isSpace(); } );
+				QRegularExpressionMatch erm;
 
-				bool isUrl = true;
-
-				if( sit != url.cend() )
-					isUrl = false;
+				if( url.startsWith( QStringLiteral( "mailto:" ), Qt::CaseInsensitive ) )
+					erm = er.match( url.right( url.length() - 7 ) );
 				else
-				{
-					static const QRegularExpression er(
-						"^[a-zA-Z0-9.!#$%&'*+/=?^_`{|}~-]+@[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?"
-						"(?:\\.[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?)*$" );
+					erm = er.match( url );
 
-					QRegularExpressionMatch erm;
+				const QUrl u( url );
 
-					if( url.startsWith( QStringLiteral( "mailto:" ), Qt::CaseInsensitive ) )
-						erm = er.match( url.right( url.length() - 7 ) );
-					else
-						erm = er.match( url );
+				if( ( !u.isValid() || u.isRelative() ) && !erm.hasMatch() )
+					isUrl = false;
+			}
 
-					const QUrl u( url );
-
-					if( ( !u.isValid() || u.isRelative() ) && !erm.hasMatch() )
-						isUrl = false;
-				}
-
-				if( isUrl )
+			if( isUrl )
+			{
+				if( !po.collectRefLinks )
 				{
 					QSharedPointer< Link > lnk( new Link );
 					lnk->setUrl( url.simplified() );
 					lnk->setOpts( po.opts );
 					po.parent->appendItem( lnk );
 				}
-				else
-					return checkForRawHtml( it, last, po );
+
+				po.wasRefLink = false;
+
+				if( updatePos )
+				{
+					po.pos = nit->m_pos + nit->m_len;
+					po.line = nit->m_line;
+				}
+
+				return nit;
 			}
 			else
 				return checkForRawHtml( it, last, po );
 		}
-
-		po.wasRefLink = false;
-
-		if( updatePos )
-		{
-			po.pos = nit->m_pos + nit->m_len;
-			po.line = nit->m_line;
-		}
-
-		return nit;
+		else
+			return checkForRawHtml( it, last, po );
 	}
 	else
 		return checkForRawHtml( it, last, po );
@@ -2615,6 +2614,7 @@ checkForLinkText( Delims::const_iterator it, Delims::const_iterator last,
 
 	const bool collectRefLinks = po.collectRefLinks;
 	po.collectRefLinks = true;
+	qsizetype l = po.line, p = po.pos;
 
 	for( it = std::next( it ); it != last; ++it )
 	{
@@ -2655,6 +2655,12 @@ checkForLinkText( Delims::const_iterator it, Delims::const_iterator last,
 	const auto r =  readTextBetweenSquareBrackets( start, it, last, po, false );
 
 	po.collectRefLinks = collectRefLinks;
+	po.html.html.reset( nullptr );
+	po.html.htmlBlockType = -1;
+	po.html.continueHtml = false;
+	po.html.onLine = false;
+	po.line = l;
+	po.pos = p;
 
 	return r;
 }
@@ -4045,6 +4051,11 @@ checkForStyle( Delims::const_iterator first, Delims::const_iterator it,
 	if( !count )
 		count = 1;
 
+	po.html.html.reset( nullptr );
+	po.html.htmlBlockType = -1;
+	po.html.continueHtml = false;
+	po.html.onLine = false;
+
 	return it + ( count - 1 );
 }
 
@@ -4153,6 +4164,8 @@ parseFormattedText( QStringList & fr, QSharedPointer< Block > parent,
 
 				html.html.reset( nullptr );
 				html.htmlBlockType = -1;
+				html.continueHtml = false;
+				html.onLine = false;
 			}
 
 			if( it->m_line > po.line || it->m_pos > po.pos )
@@ -4238,6 +4251,8 @@ parseFormattedText( QStringList & fr, QSharedPointer< Block > parent,
 
 			html.html.reset( nullptr );
 			html.htmlBlockType = -1;
+			html.continueHtml = false;
+			html.onLine = false;
 		}
 
 		makeText( fr.size() - 1, fr.back().length(), po );

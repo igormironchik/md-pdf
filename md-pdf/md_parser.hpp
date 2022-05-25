@@ -231,22 +231,20 @@ private:
 
 		BlockType type = BlockType::Unknown;
 		bool emptyLineInList = false;
-		qsizetype emptyLinesInList = 0;
-		qsizetype emptyLinesInCode = 0;
+		qsizetype emptyLinesCount = 0;
 		bool firstLine = true;
 		qsizetype spaces = 0;
 		qsizetype lineCounter = 0;
 		std::set< qsizetype > indents;
 		qsizetype indent = 0;
 		RawHtmlBlock html;
-		bool wasEmptyLine = false;
 
 		// Parse fragment and clear internal cache.
 		auto pf = [&]()
 			{
 				if( !fragment.isEmpty() )
 				{
-					splitted.append( { fragment, wasEmptyLine } );
+					splitted.append( { fragment, emptyLinesCount > 0 } );
 
 					parseFragment( fragment, parent, doc, linksToParse,
 						workingPath, fileName, collectRefLinks, html );
@@ -256,7 +254,7 @@ private:
 
 				type = BlockType::Unknown;
 				emptyLineInList = false;
-				emptyLinesInList = 0;
+				emptyLinesCount = 0;
 				lineCounter = 0;
 				indents.clear();
 				indent = 0;
@@ -311,7 +309,7 @@ private:
 			if( type == BlockType::ListWithFirstEmptyLine && lineCounter == 2 &&
 				lineType != BlockType::ListWithFirstEmptyLine && lineType != BlockType::List )
 			{
-				if( emptyLinesInList )
+				if( emptyLinesCount > 0 )
 				{
 					pf();
 
@@ -323,7 +321,7 @@ private:
 				else
 				{
 					emptyLineInList = false;
-					emptyLinesInList = 0;
+					emptyLinesCount = 0;
 				}
 			}
 
@@ -364,7 +362,7 @@ private:
 			// Got new empty line.
 			if( ns == line.length() )
 			{
-				wasEmptyLine = true;
+				++emptyLinesCount;
 
 				switch( type )
 				{
@@ -377,7 +375,12 @@ private:
 							eatFootnote();
 						}
 						else
+						{
 							pf();
+
+							if( html.htmlBlockType >= 6 )
+								html.continueHtml = ( emptyLinesCount <= 0 );
+						}
 
 						continue;
 					}
@@ -390,15 +393,13 @@ private:
 					}
 
 					case BlockType::CodeIndentedBySpaces :
-					{
-						++emptyLinesInCode;
-
 						continue;
-					}
+						break;
 
 					case BlockType::Code :
 					{
 						fragment.append( line );
+						emptyLinesCount = 0;
 
 						continue;
 					}
@@ -407,7 +408,6 @@ private:
 					case BlockType::ListWithFirstEmptyLine :
 					{
 						emptyLineInList = true;
-						++emptyLinesInList;
 
 						continue;
 					}
@@ -422,14 +422,13 @@ private:
 				if( indentInList( &indents, ns ) || lineType == BlockType::List ||
 					lineType == BlockType::CodeIndentedBySpaces )
 				{
-					for( qsizetype i = 0; i < emptyLinesInList; ++i )
+					for( qsizetype i = 0; i < emptyLinesCount; ++i )
 						fragment.append( QString() );
 
 					fragment.append( line );
 
 					emptyLineInList = false;
-					emptyLinesInList = 0;
-					wasEmptyLine = false;
+					emptyLinesCount = 0;
 
 					continue;
 				}
@@ -439,22 +438,21 @@ private:
 
 					type = lineType;
 					fragment.append( line );
-					wasEmptyLine = false;
+					emptyLinesCount = 0;
 
 					continue;
 				}
 			}
-			else if( emptyLinesInCode )
+			else if( emptyLinesCount > 0 )
 			{
 				if( lineType == BlockType::CodeIndentedBySpaces )
 				{
 					const auto indent = skipSpaces( 0, fragment.first() );
 
-					for( qsizetype i = 0; i < emptyLinesInCode; ++i )
+					for( qsizetype i = 0; i < emptyLinesCount; ++i )
 						fragment.append( QString( indent, c_32 ) );
 
 					fragment.append( line );
-					wasEmptyLine = false;
 				}
 				else
 				{
@@ -462,10 +460,9 @@ private:
 
 					type = lineType;
 					fragment.append( line );
-					wasEmptyLine = false;
 				}
 
-				emptyLinesInCode = 0;
+				emptyLinesCount = 0;
 
 				continue;
 			}
@@ -498,7 +495,7 @@ private:
 					pf();
 
 					if( html.htmlBlockType >= 6 )
-						html.continueHtml = ( !wasEmptyLine );
+						html.continueHtml = ( emptyLinesCount <= 0 );
 
 					type = lineType;
 
@@ -518,7 +515,7 @@ private:
 			else
 				fragment.append( line );
 
-			wasEmptyLine = false;
+			emptyLinesCount = 0;
 		}
 
 		if( !fragment.isEmpty() )
