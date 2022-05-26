@@ -385,13 +385,6 @@ private:
 
 							eatFootnote();
 						}
-						else
-						{
-							pf();
-
-							if( html.htmlBlockType >= 6 )
-								html.continueHtml = ( emptyLinesCount <= 0 );
-						}
 
 						continue;
 					}
@@ -456,23 +449,25 @@ private:
 			}
 			else if( emptyLinesCount > 0 )
 			{
-				if( lineType == BlockType::CodeIndentedBySpaces )
+				if( type == BlockType::CodeIndentedBySpaces &&
+					lineType == BlockType::CodeIndentedBySpaces )
 				{
 					const auto indent = skipSpaces( 0, fragment.first() );
 
 					for( qsizetype i = 0; i < emptyLinesCount; ++i )
 						fragment.append( QString( indent, c_32 ) );
-
-					fragment.append( line );
 				}
 				else
 				{
 					pf();
 
+					if( html.htmlBlockType >= 6 )
+						html.continueHtml = ( emptyLinesCount <= 0 );
+
 					type = lineType;
-					fragment.append( line );
 				}
 
+				fragment.append( line );
 				emptyLinesCount = 0;
 
 				continue;
