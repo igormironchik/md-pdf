@@ -131,6 +131,11 @@ struct RawHtmlBlock {
 	bool onLine = false;
 }; // struct RawHtmlBlock
 
+struct MdBlock {
+	QStringList data;
+	qsizetype emptyLinesBefore = 0;
+}; // struct MdBlock
+
 
 //
 // Parser
@@ -164,55 +169,55 @@ private:
 
 	BlockType whatIsTheLine( QString & str, bool inList = false, qsizetype * indent = nullptr,
 		bool calcIndent = false, const std::set< qsizetype > * indents = nullptr ) const;
-	void parseFragment( QStringList & fr, QSharedPointer< Block > parent,
+	void parseFragment( MdBlock & fr, QSharedPointer< Block > parent,
 		QSharedPointer< Document > doc,
 		QStringList & linksToParse, const QString & workingPath,
 		const QString & fileName, bool collectRefLinks,
 		RawHtmlBlock & html );
-	void parseText( QStringList & fr, QSharedPointer< Block > parent,
+	void parseText( MdBlock & fr, QSharedPointer< Block > parent,
 		QSharedPointer< Document > doc,
 		QStringList & linksToParse, const QString & workingPath,
 		const QString & fileName, bool collectRefLinks,
 		RawHtmlBlock & html );
-	void parseBlockquote( QStringList & fr, QSharedPointer< Block > parent,
+	void parseBlockquote( MdBlock & fr, QSharedPointer< Block > parent,
 		QSharedPointer< Document > doc,
 		QStringList & linksToParse, const QString & workingPath,
 		const QString & fileName, bool collectRefLinks,
 		RawHtmlBlock & html );
-	void parseList( QStringList & fr, QSharedPointer< Block > parent,
+	void parseList( MdBlock & fr, QSharedPointer< Block > parent,
 		QSharedPointer< Document > doc,
 		QStringList & linksToParse, const QString & workingPath,
 		const QString & fileName, bool collectRefLinks,
 		RawHtmlBlock & html );
-	void parseCode( QStringList & fr, QSharedPointer< Block > parent,
+	void parseCode( MdBlock & fr, QSharedPointer< Block > parent,
 		bool collectRefLinks, int indent = 0 );
-	void parseCodeIndentedBySpaces( QStringList & fr, QSharedPointer< Block > parent,
+	void parseCodeIndentedBySpaces( MdBlock & fr, QSharedPointer< Block > parent,
 		bool collectRefLinks,
 		int indent = 4, const QString & syntax = QString() );
-	void parseListItem( QStringList & fr, QSharedPointer< Block > parent,
+	void parseListItem( MdBlock & fr, QSharedPointer< Block > parent,
 		QSharedPointer< Document > doc,
 		QStringList & linksToParse, const QString & workingPath,
 		const QString & fileName, bool collectRefLinks,
 		RawHtmlBlock & html );
-	void parseHeading( QStringList & fr, QSharedPointer< Block > parent,
+	void parseHeading( MdBlock & fr, QSharedPointer< Block > parent,
 		QSharedPointer< Document > doc,
 		QStringList & linksToParse, const QString & workingPath,
 		const QString & fileName,
 		bool collectRefLinks );
-	void parseFootnote( QStringList & fr, QSharedPointer< Block > parent,
+	void parseFootnote( MdBlock & fr, QSharedPointer< Block > parent,
 		QSharedPointer< Document > doc,
 		QStringList & linksToParse, const QString & workingPath,
 		const QString & fileName, bool collectRefLinks );
-	void parseTable( QStringList & fr, QSharedPointer< Block > parent,
+	void parseTable( MdBlock & fr, QSharedPointer< Block > parent,
 		QSharedPointer< Document > doc,
 		QStringList & linksToParse, const QString & workingPath,
 		const QString & fileName, bool collectRefLinks );
-	void parseParagraph( QStringList & fr, QSharedPointer< Block > parent,
+	void parseParagraph( MdBlock & fr, QSharedPointer< Block > parent,
 		QSharedPointer< Document > doc,
 		QStringList & linksToParse, const QString & workingPath,
 		const QString & fileName, bool collectRefLinks,
 		RawHtmlBlock & html );
-	void parseFormattedTextLinksImages( QStringList & fr, QSharedPointer< Block > parent,
+	void parseFormattedTextLinksImages( MdBlock & fr, QSharedPointer< Block > parent,
 		QSharedPointer< Document > doc,
 		QStringList & linksToParse, const QString & workingPath,
 		const QString & fileName, bool collectRefLinks, bool ignoreLineBreak,
@@ -225,7 +230,7 @@ private:
 		bool collectRefLinks,
 		bool top = false )
 	{
-		QVector< QPair< QStringList, bool > > splitted;
+		QVector< MdBlock > splitted;
 
 		QStringList fragment;
 
@@ -244,9 +249,11 @@ private:
 			{
 				if( !fragment.isEmpty() )
 				{
-					splitted.append( { fragment, emptyLinesCount > 0 } );
+					MdBlock block = { fragment, emptyLinesCount };
 
-					parseFragment( fragment, parent, doc, linksToParse,
+					splitted.append( block );
+
+					parseFragment( block, parent, doc, linksToParse,
 						workingPath, fileName, collectRefLinks, html );
 
 					fragment.clear();
@@ -564,11 +571,11 @@ private:
 
 			for( qsizetype i = 0; i < splitted.size(); ++i )
 			{
-				parseFragment( splitted[ i ].first, parent, doc, linksToParse,
+				parseFragment( splitted[ i ], parent, doc, linksToParse,
 					workingPath, fileName, false, html );
 
 				if( html.htmlBlockType >= 6 )
-					html.continueHtml = ( !splitted[ i ].second );
+					html.continueHtml = ( splitted[ i ].emptyLinesBefore <= 0 );
 
 				if( !html.html.isNull() && !html.continueHtml )
 					finishHtml();

@@ -700,7 +700,7 @@ Parser::whatIsTheLine( QString & str, bool inList, qsizetype * indent, bool calc
 }
 
 void
-Parser::parseFragment( QStringList & fr, QSharedPointer< Block > parent,
+Parser::parseFragment( MdBlock & fr, QSharedPointer< Block > parent,
 	QSharedPointer< Document > doc, QStringList & linksToParse,
 	const QString & workingPath, const QString & fileName, bool collectRefLinks,
 	RawHtmlBlock & html )
@@ -710,7 +710,7 @@ Parser::parseFragment( QStringList & fr, QSharedPointer< Block > parent,
 			workingPath, fileName, collectRefLinks, html );
 	else
 	{
-		switch( whatIsTheLine( fr.first() ) )
+		switch( whatIsTheLine( fr.data.first() ) )
 		{
 			case BlockType::Text :
 				parseText( fr, parent, doc, linksToParse,
@@ -730,7 +730,7 @@ Parser::parseFragment( QStringList & fr, QSharedPointer< Block > parent,
 			{
 				int indent = 1;
 
-				if( fr.first().startsWith( QLatin1String( "    " ) ) )
+				if( fr.data.first().startsWith( QLatin1String( "    " ) ) )
 					indent = 4;
 
 				parseCodeIndentedBySpaces( fr, parent, collectRefLinks, indent );
@@ -774,16 +774,17 @@ isTableHeader( const QString & s )
 } /* namespace anonymous */
 
 void
-Parser::parseText( QStringList & fr, QSharedPointer< Block > parent,
+Parser::parseText( MdBlock & fr, QSharedPointer< Block > parent,
 	QSharedPointer< Document > doc, QStringList & linksToParse,
 	const QString & workingPath, const QString & fileName,
 	bool collectRefLinks, RawHtmlBlock & html )
 {
-	if( isFootnote( fr.first() ) )
+	if( isFootnote( fr.data.first() ) )
 		parseFootnote( fr, parent, doc, linksToParse, workingPath, fileName,
 			collectRefLinks );
-	else if( isTableHeader( fr.first() ) && fr.size() > 1 && isTableAlignment( fr[ 1 ] ) )
-		parseTable( fr, parent, doc, linksToParse, workingPath, fileName, collectRefLinks );
+	else if( isTableHeader( fr.data.first() ) && fr.data.size() > 1 &&
+		isTableAlignment( fr.data[ 1 ] ) )
+			parseTable( fr, parent, doc, linksToParse, workingPath, fileName, collectRefLinks );
 	else
 		parseParagraph( fr, parent, doc, linksToParse,
 			workingPath, fileName, collectRefLinks, html );
@@ -885,14 +886,14 @@ findAndRemoveClosingSequence( QString & s )
 } /* namespace anonymous */
 
 void
-Parser::parseHeading( QStringList & fr, QSharedPointer< Block > parent,
+Parser::parseHeading( MdBlock & fr, QSharedPointer< Block > parent,
 	QSharedPointer< Document > doc, QStringList & linksToParse,
 	const QString & workingPath, const QString & fileName,
 	bool collectRefLinks )
 {
-	if( !fr.isEmpty() && !collectRefLinks )
+	if( !fr.data.isEmpty() && !collectRefLinks )
 	{
-		auto line = fr.first();
+		auto line = fr.data.first();
 		qsizetype pos = 0;
 		pos = skipSpaces( pos, line );
 
@@ -911,11 +912,11 @@ Parser::parseHeading( QStringList & fr, QSharedPointer< Block > parent,
 		pos = skipSpaces( pos, line );
 
 		if( pos > 0 )
-			fr.first() = line.sliced( pos );
+			fr.data.first() = line.sliced( pos );
 
-		const auto label = findAndRemoveHeaderLabel( fr.first() );
+		const auto label = findAndRemoveHeaderLabel( fr.data.first() );
 
-		findAndRemoveClosingSequence( fr.first() );
+		findAndRemoveClosingSequence( fr.data.first() );
 
 		QSharedPointer< Heading > h( new Heading() );
 		h->setLevel( lvl );
@@ -927,14 +928,15 @@ Parser::parseHeading( QStringList & fr, QSharedPointer< Block > parent,
 		QSharedPointer< Paragraph > p( new Paragraph );
 
 		QStringList tmp;
-		tmp << fr.first().simplified();
+		tmp << fr.data.first().simplified();
+		MdBlock block = { tmp, 0 };
 
 		RawHtmlBlock html;
 
-		parseFormattedTextLinksImages( tmp, p, doc, linksToParse, workingPath, fileName,
+		parseFormattedTextLinksImages( block, p, doc, linksToParse, workingPath, fileName,
 			false, false, html );
 
-		fr.removeFirst();
+		fr.data.removeFirst();
 
 		if( p->items().size() && p->items().at( 0 )->type() == ItemType::Paragraph )
 			h->setText( p->items().at( 0 ).staticCast< Paragraph > () );
@@ -959,14 +961,14 @@ Parser::parseHeading( QStringList & fr, QSharedPointer< Block > parent,
 }
 
 void
-Parser::parseTable( QStringList & fr, QSharedPointer< Block > parent,
+Parser::parseTable( MdBlock & fr, QSharedPointer< Block > parent,
 	QSharedPointer< Document > doc, QStringList & linksToParse,
 	const QString & workingPath, const QString & fileName,
 	bool collectRefLinks )
 {
 	static const QChar sep( '|' );
 
-	if( fr.size() >= 2 )
+	if( fr.data.size() >= 2 )
 	{
 		QSharedPointer< Table > table( new Table );
 
@@ -994,12 +996,13 @@ Parser::parseTable( QStringList & fr, QSharedPointer< Block > parent,
 
 					QStringList fragment;
 					fragment.append( *it );
+					MdBlock block = { fragment, 0 };
 
 					QSharedPointer< Paragraph > p( new Paragraph );
 
 					RawHtmlBlock html;
 
-					parseFormattedTextLinksImages( fragment, p, doc,
+					parseFormattedTextLinksImages( block, p, doc,
 						linksToParse, workingPath, fileName, collectRefLinks, false, html );
 
 					if( !p->isEmpty() && p->items().at( 0 )->type() == ItemType::Paragraph )
@@ -1022,7 +1025,7 @@ Parser::parseTable( QStringList & fr, QSharedPointer< Block > parent,
 		};
 
 		{
-			auto fmt = fr.at( 1 );
+			auto fmt = fr.data.at( 1 );
 
 			auto columns = fmt.split( sep, Qt::SkipEmptyParts );
 
@@ -1044,9 +1047,9 @@ Parser::parseTable( QStringList & fr, QSharedPointer< Block > parent,
 			}
 		}
 
-		fr.removeAt( 1 );
+		fr.data.removeAt( 1 );
 
-		for( const auto & line : qAsConst( fr ) )
+		for( const auto & line : qAsConst( fr.data ) )
 			parseTableRow( line );
 
 		if( !table->isEmpty() && !collectRefLinks )
@@ -1099,7 +1102,7 @@ isH2( const QString & s )
 } /* namespace anonymous */
 
 void
-Parser::parseParagraph( QStringList & fr, QSharedPointer< Block > parent,
+Parser::parseParagraph( MdBlock & fr, QSharedPointer< Block > parent,
 	QSharedPointer< Document > doc, QStringList & linksToParse,
 	const QString & workingPath, const QString & fileName,
 	bool collectRefLinks, RawHtmlBlock & html )
@@ -1107,30 +1110,32 @@ Parser::parseParagraph( QStringList & fr, QSharedPointer< Block > parent,
 	bool heading = false;
 
 	// Check for alternative syntax of H1 and H2 headings.
-	if( fr.size() >= 2 )
+	if( fr.data.size() >= 2 )
 	{
 		qsizetype i = 1;
 		int lvl = 0;
 		qsizetype horLines = 0;
 
-		for( ; i < fr.size(); ++i )
+		for( ; i < fr.data.size(); ++i )
 		{
-			const auto first = skipSpaces( 0, fr.at( i - 1 ) );
+			const auto first = skipSpaces( 0, fr.data.at( i - 1 ) );
 
-			auto s = QStringView( fr.at( i - 1 ) ).sliced( first );
+			auto s = QStringView( fr.data.at( i - 1 ) ).sliced( first );
 
 			const bool prevHorLine = ( first < 4 && isHorizontalLine( s ) );
 
 			if( prevHorLine )
 				++horLines;
 
-			if( isH1( fr.at( i ) ) && !prevHorLine && !fr.at( i - 1 ).simplified().isEmpty() )
+			if( isH1( fr.data.at( i ) ) && !prevHorLine &&
+				!fr.data.at( i - 1 ).simplified().isEmpty() )
 			{
 				lvl = 1;
 				heading = true;
 				break;
 			}
-			else if( isH2( fr.at( i ) ) && !prevHorLine && !fr.at( i - 1 ).simplified().isEmpty() )
+			else if( isH2( fr.data.at( i ) ) && !prevHorLine &&
+				!fr.data.at( i - 1 ).simplified().isEmpty() )
 			{
 				lvl = 2;
 				heading = true;
@@ -1144,14 +1149,14 @@ Parser::parseParagraph( QStringList & fr, QSharedPointer< Block > parent,
 				for( qsizetype j = 0; j < horLines; ++j )
 					parent->appendItem( QSharedPointer< Item > ( new HorizontalLine ) );
 
-			fr.remove( 0, horLines );
+			fr.data.remove( 0, horLines );
 
 			QSharedPointer< Heading > h( new Heading );
 			QSharedPointer< Paragraph > p( new Paragraph );
 
 			h->setLevel( lvl );
 
-			QStringList tmp = fr.sliced( 0, i - horLines );
+			QStringList tmp = fr.data.sliced( 0, i - horLines );
 
 			const auto ns1 = skipSpaces( 0, tmp.first() );
 
@@ -1171,12 +1176,14 @@ Parser::parseParagraph( QStringList & fr, QSharedPointer< Block > parent,
 			if( ns2 < tmp.back().length() )
 				tmp.back() = tmp.back().sliced( 0, ns2 );
 
-			parseFormattedTextLinksImages( tmp, p, doc, linksToParse,
+			MdBlock block = { tmp, 0 };
+
+			parseFormattedTextLinksImages( block, p, doc, linksToParse,
 				workingPath, fileName, collectRefLinks, true, html );
 
 			const bool keepHeadingLine = p->isEmpty();
 
-			fr.remove( 0, i - horLines + ( keepHeadingLine ? 0 : 1 ) );
+			fr.data.remove( 0, i - horLines + ( keepHeadingLine ? 0 : 1 ) );
 
 			if( !collectRefLinks && !keepHeadingLine )
 			{
@@ -1196,11 +1203,11 @@ Parser::parseParagraph( QStringList & fr, QSharedPointer< Block > parent,
 		}
 	}
 
-	if( !fr.isEmpty() )
+	if( !fr.data.isEmpty() )
 	{
 		if( heading )
 		{
-			StringListStream stream( fr );
+			StringListStream stream( fr.data );
 			parse( stream, parent, doc, linksToParse, workingPath, fileName,
 				collectRefLinks );
 		}
@@ -1591,7 +1598,7 @@ collectDelimiters( const QStringList & fr )
 }
 
 struct TextParsingOpts {
-	QStringList & fr;
+	MdBlock & fr;
 	QSharedPointer< Block > parent;
 	QSharedPointer< Document > doc;
 	QStringList & linksToParse;
@@ -1609,7 +1616,7 @@ struct TextParsingOpts {
 }; // struct TextParsingOpts
 
 void
-parseFormattedText( QStringList & fr, QSharedPointer< Block > parent,
+parseFormattedText( MdBlock & fr, QSharedPointer< Block > parent,
 	QSharedPointer< Document > doc, QStringList & linksToParse, const QString & workingPath,
 	const QString & fileName, bool collectRefLinks, bool ignoreLineBreak,
 	RawHtmlBlock & html );
@@ -1709,18 +1716,18 @@ makeText(
 
 	QString text;
 
-	bool spaceBefore = ( po.pos > 0 && po.pos < po.fr.at( po.line ).size() ?
-		po.fr.at( po.line )[ po.pos - 1 ].isSpace() ||
-			po.fr.at( po.line )[ po.pos ].isSpace() :
+	bool spaceBefore = ( po.pos > 0 && po.pos < po.fr.data.at( po.line ).size() ?
+		po.fr.data.at( po.line )[ po.pos - 1 ].isSpace() ||
+			po.fr.data.at( po.line )[ po.pos ].isSpace() :
 		true );
 
-	bool lineBreak = ( !po.ignoreLineBreak && po.line != po.fr.size() - 1 && ( po.line == lastLine ?
-		( lastPos == po.fr.at( po.line ).size() && isLineBreak( po.fr.at( po.line ) ) ) :
-		isLineBreak( po.fr.at( po.line ) ) ) );
+	bool lineBreak = ( !po.ignoreLineBreak && po.line != po.fr.data.size() - 1 && ( po.line == lastLine ?
+		( lastPos == po.fr.data.at( po.line ).size() && isLineBreak( po.fr.data.at( po.line ) ) ) :
+		isLineBreak( po.fr.data.at( po.line ) ) ) );
 
 	// makeTOWLB
 	auto makeTOWLB = [&] () {
-		if( po.line != po.fr.size() - 1 )
+		if( po.line != po.fr.data.size() - 1 )
 		{
 			makeTextObjectWithLineBreak( text, spaceBefore, true, po );
 
@@ -1732,15 +1739,15 @@ makeText(
 
 	if( lineBreak )
 	{
-		const auto s = removeLineBreak( po.fr.at( po.line ) ).sliced( po.pos );
+		const auto s = removeLineBreak( po.fr.data.at( po.line ) ).sliced( po.pos );
 		text.append( doNotEscape ? s : removeBackslashes( s ) );
 
 		makeTOWLB();
 	}
 	else
 	{
-		const auto s = po.fr.at( po.line ).sliced( po.pos,
-			( po.line == lastLine ? lastPos - po.pos : po.fr.at( po.line ).size() - po.pos ) );
+		const auto s = po.fr.data.at( po.line ).sliced( po.pos,
+			( po.line == lastLine ? lastPos - po.pos : po.fr.data.at( po.line ).size() - po.pos ) );
 		text.append( doNotEscape ? s : removeBackslashes( s ) );
 	}
 
@@ -1751,11 +1758,11 @@ makeText(
 
 		for( ; po.line < lastLine; ++po.line )
 		{
-			lineBreak = ( !po.ignoreLineBreak && po.line != po.fr.size() - 1 &&
-				isLineBreak( po.fr.at( po.line ) ) );
+			lineBreak = ( !po.ignoreLineBreak && po.line != po.fr.data.size() - 1 &&
+				isLineBreak( po.fr.data.at( po.line ) ) );
 
 			const auto s = ( lineBreak ?
-				removeLineBreak( po.fr.at( po.line ) ) : po.fr.at( po.line ) );
+				removeLineBreak( po.fr.data.at( po.line ) ) : po.fr.data.at( po.line ) );
 			text.append( doNotEscape ? s : removeBackslashes( s ) );
 
 			text.append( c_32 );
@@ -1764,10 +1771,10 @@ makeText(
 				makeTOWLB();
 		}
 
-		lineBreak = ( !po.ignoreLineBreak && po.line != po.fr.size() - 1 &&
-			lastPos == po.fr.at( po.line ).size() && isLineBreak( po.fr.at( po.line ) ) );
+		lineBreak = ( !po.ignoreLineBreak && po.line != po.fr.data.size() - 1 &&
+			lastPos == po.fr.data.at( po.line ).size() && isLineBreak( po.fr.data.at( po.line ) ) );
 
-		auto s = po.fr.at( po.line ).sliced( 0, lastPos );
+		auto s = po.fr.data.at( po.line ).sliced( 0, lastPos );
 
 		if( !lineBreak )
 			text.append( doNotEscape ? s : removeBackslashes( s ) );
@@ -1783,7 +1790,7 @@ makeText(
 	po.pos = lastPos;
 
 	makeTextObject( text, spaceBefore,
-		( po.pos > 0 ? po.fr.at( po.line )[ po.pos - 1 ].isSpace() : true ), po );
+		( po.pos > 0 ? po.fr.data.at( po.line )[ po.pos - 1 ].isSpace() : true ), po );
 }
 
 inline std::pair< QString, bool >
@@ -1793,9 +1800,9 @@ readHtmlTag( Delims::const_iterator it, TextParsingOpts & po )
 
 	qsizetype i = it->m_pos + 1;
 
-	for( ; i < po.fr[ it->m_line ].size(); ++i )
+	for( ; i < po.fr.data[ it->m_line ].size(); ++i )
 	{
-		const auto ch = po.fr[ it->m_line ][ i ];
+		const auto ch = po.fr.data[ it->m_line ][ i ];
 
 		if( !ch.isSpace() && ch != c_62 )
 			tag.append( ch );
@@ -1803,7 +1810,7 @@ readHtmlTag( Delims::const_iterator it, TextParsingOpts & po )
 			break;
 	}
 
-	return { tag, i < po.fr[ it->m_line ].size() ? po.fr[ it->m_line ][ i ] == c_62 : false };
+	return { tag, i < po.fr.data[ it->m_line ].size() ? po.fr.data[ it->m_line ][ i ] == c_62 : false };
 }
 
 inline Delims::const_iterator
@@ -1828,9 +1835,9 @@ eatRawHtml( qsizetype line, qsizetype pos, qsizetype toLine, qsizetype toPos,
 {
 	QString h = po.html.html->text();
 
-	const auto first = po.fr[ line ].sliced( pos,
-		( line == toLine ? ( toPos >= 0 ? toPos - pos : po.fr[ line ].size() - pos ) :
-			po.fr[ line ].size() - pos ) );
+	const auto first = po.fr.data[ line ].sliced( pos,
+		( line == toLine ? ( toPos >= 0 ? toPos - pos : po.fr.data[ line ].size() - pos ) :
+			po.fr.data[ line ].size() - pos ) );
 
 	if( !h.isEmpty() && !first.isEmpty() && !skipLineEnds )
 		h.append( c_10 );
@@ -1843,13 +1850,13 @@ eatRawHtml( qsizetype line, qsizetype pos, qsizetype toLine, qsizetype toPos,
 	for( ; line < toLine; ++line )
 	{
 		h.append( c_10 );
-		h.append( po.fr[ line ] );
+		h.append( po.fr.data[ line ] );
 	}
 
 	if( line == toLine && toPos != 0 )
 	{
 		h.append( c_10 );
-		h.append( po.fr[ line ].sliced( 0, toPos > 0 ? toPos : po.fr[ line ].size() ) );
+		h.append( po.fr.data[ line ].sliced( 0, toPos > 0 ? toPos : po.fr.data[ line ].size() ) );
 	}
 
 	po.line = ( toPos >= 0 ? toLine : toLine + 1 );
@@ -1910,7 +1917,7 @@ finishRule1HtmlTag( Delims::const_iterator it, Delims::const_iterator last,
 		}
 	}
 
-	eatRawHtml( po.line, po.pos, po.fr.size() - 1, -1, po, false, 1 );
+	eatRawHtml( po.line, po.pos, po.fr.data.size() - 1, -1, po, false, 1 );
 }
 
 inline void
@@ -1921,14 +1928,14 @@ finishRule2HtmlTag( Delims::const_iterator it, Delims::const_iterator last,
 	{
 		if( it->m_type == Delimiter::Greater )
 		{
-			if( it->m_pos > 1 && po.fr[ it->m_line ][ it->m_pos - 1 ] == c_45 &&
-				po.fr[ it->m_line ][ it->m_pos - 2 ] == c_45 )
+			if( it->m_pos > 1 && po.fr.data[ it->m_line ][ it->m_pos - 1 ] == c_45 &&
+				po.fr.data[ it->m_line ][ it->m_pos - 2 ] == c_45 )
 			{
 				qsizetype i = it->m_pos + 1;
 
-				for( ; i < po.fr[ it->m_line ].size(); ++i )
+				for( ; i < po.fr.data[ it->m_line ].size(); ++i )
 				{
-					if( po.fr[ it->m_line ][ i ] == c_60 )
+					if( po.fr.data[ it->m_line ][ i ] == c_60 )
 						break;
 				}
 
@@ -1939,7 +1946,7 @@ finishRule2HtmlTag( Delims::const_iterator it, Delims::const_iterator last,
 		}
 	}
 
-	eatRawHtml( po.line, po.pos, po.fr.size() - 1, -1, po, false, 2 );
+	eatRawHtml( po.line, po.pos, po.fr.data.size() - 1, -1, po, false, 2 );
 }
 
 inline void
@@ -1950,13 +1957,13 @@ finishRule3HtmlTag( Delims::const_iterator it, Delims::const_iterator last,
 	{
 		if( it->m_type == Delimiter::Greater )
 		{
-			if( it->m_pos > 0 && po.fr[ it->m_line ][ it->m_pos - 1 ] == c_63 )
+			if( it->m_pos > 0 && po.fr.data[ it->m_line ][ it->m_pos - 1 ] == c_63 )
 			{
 				qsizetype i = it->m_pos + 1;
 
-				for( ; i < po.fr[ it->m_line ].size(); ++i )
+				for( ; i < po.fr.data[ it->m_line ].size(); ++i )
 				{
-					if( po.fr[ it->m_line ][ i ] == c_60 )
+					if( po.fr.data[ it->m_line ][ i ] == c_60 )
 						break;
 				}
 
@@ -1967,7 +1974,7 @@ finishRule3HtmlTag( Delims::const_iterator it, Delims::const_iterator last,
 		}
 	}
 
-	eatRawHtml( po.line, po.pos, po.fr.size() - 1, -1, po, false, 3 );
+	eatRawHtml( po.line, po.pos, po.fr.data.size() - 1, -1, po, false, 3 );
 }
 
 inline void
@@ -1980,9 +1987,9 @@ finishRule4HtmlTag( Delims::const_iterator it, Delims::const_iterator last,
 		{
 			qsizetype i = it->m_pos + 1;
 
-			for( ; i < po.fr[ it->m_line ].size(); ++i )
+			for( ; i < po.fr.data[ it->m_line ].size(); ++i )
 			{
-				if( po.fr[ it->m_line ][ i ] == c_60 )
+				if( po.fr.data[ it->m_line ][ i ] == c_60 )
 					break;
 			}
 
@@ -1992,7 +1999,7 @@ finishRule4HtmlTag( Delims::const_iterator it, Delims::const_iterator last,
 		}
 	}
 
-	eatRawHtml( po.line, po.pos, po.fr.size() - 1, -1, po, false, 4 );
+	eatRawHtml( po.line, po.pos, po.fr.data.size() - 1, -1, po, false, 4 );
 }
 
 inline void
@@ -2003,14 +2010,14 @@ finishRule5HtmlTag( Delims::const_iterator it, Delims::const_iterator last,
 	{
 		if( it->m_type == Delimiter::Greater )
 		{
-			if( it->m_pos > 1 && po.fr[ it->m_line ][ it->m_pos - 1 ] == c_93 &&
-				po.fr[ it->m_line ][ it->m_pos - 2 ] == c_93 )
+			if( it->m_pos > 1 && po.fr.data[ it->m_line ][ it->m_pos - 1 ] == c_93 &&
+				po.fr.data[ it->m_line ][ it->m_pos - 2 ] == c_93 )
 			{
 				qsizetype i = it->m_pos + 1;
 
-				for( ; i < po.fr[ it->m_line ].size(); ++i )
+				for( ; i < po.fr.data[ it->m_line ].size(); ++i )
 				{
-					if( po.fr[ it->m_line ][ i ] == c_60 )
+					if( po.fr.data[ it->m_line ][ i ] == c_60 )
 						break;
 				}
 
@@ -2021,14 +2028,14 @@ finishRule5HtmlTag( Delims::const_iterator it, Delims::const_iterator last,
 		}
 	}
 
-	eatRawHtml( po.line, po.pos, po.fr.size() - 1, -1, po, false, 5 );
+	eatRawHtml( po.line, po.pos, po.fr.data.size() - 1, -1, po, false, 5 );
 }
 
 inline void
 finishRule6HtmlTag( Delims::const_iterator it, Delims::const_iterator last,
 	TextParsingOpts & po )
 {
-	eatRawHtml( po.line, po.pos, po.fr.size() - 1, -1, po, false, 6 );
+	eatRawHtml( po.line, po.pos, po.fr.data.size() - 1, -1, po, false, 6 );
 }
 
 inline Delims::const_iterator
@@ -2193,38 +2200,38 @@ isHtmlTag( Delims::const_iterator it, TextParsingOpts & po )
 		bool first = false;
 
 		{
-			const auto tmp = skipSpaces( 0, po.fr[ l ] );
+			const auto tmp = skipSpaces( 0, po.fr.data[ l ] );
 			first = ( tmp == it->m_pos && l == 0 );
 		}
 
-		if( p >= po.fr[ l ].size() )
+		if( p >= po.fr.data[ l ].size() )
 			return { false, -1, -1, false };
 
-		for( ; p < po.fr[ l ].size(); ++p )
+		for( ; p < po.fr.data[ l ].size(); ++p )
 		{
-			const auto ch = po.fr[ l ][ p ];
+			const auto ch = po.fr.data[ l ][ p ];
 
 			if( ch.isSpace() || ch == c_62 )
 				break;
 		}
 
-		if( p < po.fr[ l ].size() && po.fr[ l ][ p ] == c_62 )
+		if( p < po.fr.data[ l ].size() && po.fr.data[ l ][ p ] == c_62 )
 		{
-			const auto tmp = skipSpaces( p + 1, po.fr[ l ] );
+			const auto tmp = skipSpaces( p + 1, po.fr.data[ l ] );
 
-			return { true, l, p, tmp == po.fr[ l ].size() && first };
+			return { true, l, p, tmp == po.fr.data[ l ].size() && first };
 		}
 
-		skipSpacesInHtml( l, p, po.fr );
+		skipSpacesInHtml( l, p, po.fr.data );
 
-		if( l >= po.fr.size() )
+		if( l >= po.fr.data.size() )
 			return { false, -1, -1, false };
 
-		if( po.fr[ l ][ p ] == c_62 )
+		if( po.fr.data[ l ][ p ] == c_62 )
 		{
-			const auto tmp = skipSpaces( p + 1, po.fr[ l ] );
+			const auto tmp = skipSpaces( p + 1, po.fr.data[ l ] );
 
-			return { true, l, p, l == it->m_line && tmp == po.fr[ l ].size() && first };
+			return { true, l, p, l == it->m_line && tmp == po.fr.data[ l ].size() && first };
 		}
 
 		bool attr = true;
@@ -2233,22 +2240,22 @@ isHtmlTag( Delims::const_iterator it, TextParsingOpts & po )
 		{
 			bool ok = false;
 
-			std::tie( attr, ok ) = readHtmlAttr( l, p, po.fr );
+			std::tie( attr, ok ) = readHtmlAttr( l, p, po.fr.data );
 
 			if( !ok )
 				return { false, -1, -1, false };
 		}
 
-		skipSpacesInHtml( l, p, po.fr );
+		skipSpacesInHtml( l, p, po.fr.data );
 
-		if( l >= po.fr.size() )
+		if( l >= po.fr.data.size() )
 			return { false, -1, -1, false };
 
-		if( po.fr[ l ][ p ] == c_62 )
+		if( po.fr.data[ l ][ p ] == c_62 )
 		{
-			const auto tmp = skipSpaces( p + 1, po.fr[ l ] );
+			const auto tmp = skipSpaces( p + 1, po.fr.data[ l ] );
 
-			return { true, l, p, l == it->m_line && tmp == po.fr[ l ].size() && first };
+			return { true, l, p, l == it->m_line && tmp == po.fr.data[ l ].size() && first };
 		}
 	}
 
@@ -2397,7 +2404,7 @@ finishRule7HtmlTag( Delims::const_iterator it, Delims::const_iterator last,
 				}
 			}
 
-			eatRawHtml( po.line, po.pos, po.fr.size() - 1, -1, po, false, 7, onLine );
+			eatRawHtml( po.line, po.pos, po.fr.data.size() - 1, -1, po, false, 7, onLine );
 
 			return std::prev( last );
 		}
@@ -2419,7 +2426,7 @@ checkForAutolinkHtml( Delims::const_iterator it, Delims::const_iterator last,
 	{
 		if( nit->m_line == it->m_line )
 		{
-			const auto url = po.fr.at( it->m_line ).sliced( it->m_pos + 1,
+			const auto url = po.fr.data.at( it->m_line ).sliced( it->m_pos + 1,
 				nit->m_pos - it->m_pos - 1 );
 
 			const auto sit = std::find_if( url.cbegin(), url.cend(),
@@ -2486,9 +2493,9 @@ makeInlineCode( qsizetype lastLine, qsizetype lastPos,
 
 	for( ; po.line <= lastLine; ++po.line )
 	{
-		c.append( po.fr.at( po.line ).sliced( po.pos,
+		c.append( po.fr.data.at( po.line ).sliced( po.pos,
 			( po.line == lastLine ? lastPos - po.pos :
-				po.fr.at( po.line ).size() - po.pos ) ) );
+				po.fr.data.at( po.line ).size() - po.pos ) ) );
 
 		if( po.line < lastLine )
 			c.append( c_32 );
@@ -2563,14 +2570,14 @@ readTextBetweenSquareBrackets( Delims::const_iterator start,
 			const auto p = start->m_pos + start->m_len;
 			const auto n = it->m_pos - p;
 
-			return { po.fr.at( start->m_line ).sliced( p, n ).simplified(),
+			return { po.fr.data.at( start->m_line ).sliced( p, n ).simplified(),
 				it };
 		}
 		else
 		{
 			if( it->m_line - start->m_line < 3 )
 			{
-				auto text = po.fr.at( start->m_line ).sliced( start->m_pos + start->m_len );
+				auto text = po.fr.data.at( start->m_line ).sliced( start->m_pos + start->m_len );
 
 				qsizetype i = start->m_line + 1;
 
@@ -2579,9 +2586,9 @@ readTextBetweenSquareBrackets( Delims::const_iterator start,
 					text.append( c_32 );
 
 					if( i == it->m_line )
-						text.append( po.fr.at( i ).sliced( 0, it->m_pos ) );
+						text.append( po.fr.data.at( i ).sliced( 0, it->m_pos ) );
 					else
-						text.append( po.fr.at( i ) );
+						text.append( po.fr.data.at( i ) );
 				}
 
 				return { text.simplified(), it };
@@ -2734,12 +2741,13 @@ makeLink( const QString & url, const QString & text,
 
 	QStringList tmp;
 	tmp << text;
+	MdBlock block = { tmp, 0 };
 
 	QSharedPointer< Paragraph > p( new Paragraph );
 
 	RawHtmlBlock html;
 
-	parseFormattedText( tmp, p, po.doc,
+	parseFormattedText( block, p, po.doc,
 		po.linksToParse, po.workingPath,
 		po.fileName, po.collectRefLinks, true, html );
 
@@ -2842,12 +2850,13 @@ makeImage( const QString & url, const QString & text,
 
 	QStringList tmp;
 	tmp << text;
+	MdBlock block = { tmp, 0 };
 
 	QSharedPointer< Paragraph > p( new Paragraph );
 
 	RawHtmlBlock html;
 
-	parseFormattedText( tmp, p, po.doc,
+	parseFormattedText( block, p, po.doc,
 		po.linksToParse, po.workingPath,
 		po.fileName, po.collectRefLinks, true, html );
 
@@ -3085,18 +3094,18 @@ checkForInlineLink( Delims::const_iterator it, Delims::const_iterator last,
 	QString dest, title;
 	qsizetype destStartLine = 0;
 
-	std::tie( l, p, ok, dest, destStartLine ) = readLinkDestination( l, p, po.fr );
+	std::tie( l, p, ok, dest, destStartLine ) = readLinkDestination( l, p, po.fr.data );
 
 	if( !ok )
 		return { {}, {}, it, false };
 
 	qsizetype s = 0;
 
-	std::tie( l, p, ok, title, s ) = readLinkTitle( l, p, po.fr );
+	std::tie( l, p, ok, title, s ) = readLinkTitle( l, p, po.fr.data );
 
-	skipSpacesUpTo1Line( l, p, po.fr );
+	skipSpacesUpTo1Line( l, p, po.fr.data );
 
-	if( !ok || ( l >= po.fr.size() || p >= po.fr.at( l ).size() ||  po.fr.at( l )[ p ] != c_41 ) )
+	if( !ok || ( l >= po.fr.data.size() || p >= po.fr.data.at( l ).size() ||  po.fr.data.at( l )[ p ] != c_41 ) )
 		return { {}, {}, it, false };
 
 	for( ; it != last; ++it )
@@ -3118,7 +3127,7 @@ checkForRefLink( Delims::const_iterator it, Delims::const_iterator last,
 	QString dest, title;
 	qsizetype destStartLine = 0;
 
-	std::tie( l, p, ok, dest, destStartLine ) = readLinkDestination( l, p, po.fr );
+	std::tie( l, p, ok, dest, destStartLine ) = readLinkDestination( l, p, po.fr.data );
 
 	if( !ok )
 		return { {}, {}, it, false };
@@ -3126,21 +3135,21 @@ checkForRefLink( Delims::const_iterator it, Delims::const_iterator last,
 	const auto dp = p, dl = l;
 	qsizetype titleStartLine = 0;
 
-	std::tie( l, p, ok, title, titleStartLine ) = readLinkTitle( l, p, po.fr );
+	std::tie( l, p, ok, title, titleStartLine ) = readLinkTitle( l, p, po.fr.data );
 
 	if( !ok )
 		return { {}, {}, it, false };
 
 	if( !title.isEmpty() )
 	{
-		p = skipSpaces( p, po.fr.at( l ) );
+		p = skipSpaces( p, po.fr.data.at( l ) );
 
-		if( titleStartLine == destStartLine && p < po.fr.at( l ).size() )
+		if( titleStartLine == destStartLine && p < po.fr.data.at( l ).size() )
 			return { {}, {}, it, false };
-		else if( titleStartLine != destStartLine && p < po.fr.at( l ).size() )
+		else if( titleStartLine != destStartLine && p < po.fr.data.at( l ).size() )
 		{
 			l = destStartLine;
-			p = po.fr.at( l ).size();
+			p = po.fr.data.at( l ).size();
 			title.clear();
 		}
 	}
@@ -3171,10 +3180,10 @@ checkForImage( Delims::const_iterator it, Delims::const_iterator last,
 
 	if( it != start )
 	{
-		if( it->m_pos + it->m_len < po.fr.at( it->m_line ).size() )
+		if( it->m_pos + it->m_len < po.fr.data.at( it->m_line ).size() )
 		{
 			// Inline -> (
-			if( po.fr.at( it->m_line )[ it->m_pos + it->m_len ] == c_40 )
+			if( po.fr.data.at( it->m_line )[ it->m_pos + it->m_len ] == c_40 )
 			{
 				QString url, title;
 				Delims::const_iterator iit;
@@ -3201,7 +3210,7 @@ checkForImage( Delims::const_iterator it, Delims::const_iterator last,
 				}
 			}
 			// Reference -> [
-			else if( po.fr.at( it->m_line )[ it->m_pos + it->m_len ] == c_91 )
+			else if( po.fr.data.at( it->m_line )[ it->m_pos + it->m_len ] == c_91 )
 			{
 				QString label;
 				Delims::const_iterator lit;
@@ -3280,7 +3289,7 @@ checkForLink( Delims::const_iterator it, Delims::const_iterator last,
 	const auto wasRefLink = po.wasRefLink;
 	po.wasRefLink = false;
 
-	const auto ns = skipSpaces( 0, po.fr.at( po.line ) );
+	const auto ns = skipSpaces( 0, po.fr.data.at( po.line ) );
 
 	std::tie( text, it ) = checkForLinkText( it, last, po );
 
@@ -3304,10 +3313,10 @@ checkForLink( Delims::const_iterator it, Delims::const_iterator last,
 
 			return it;
 		}
-		else if( it->m_pos + it->m_len < po.fr.at( it->m_line ).size() )
+		else if( it->m_pos + it->m_len < po.fr.data.at( it->m_line ).size() )
 		{
 			// Reference definition -> :
-			if( po.fr.at( it->m_line )[ it->m_pos + it->m_len ] == c_58 )
+			if( po.fr.data.at( it->m_line )[ it->m_pos + it->m_len ] == c_58 )
 			{
 				// Reference definitions allowed only at start of paragraph.
 				if( ( po.line == 0 || wasRefLink ) && ns < 4 && start->m_pos == ns )
@@ -3374,7 +3383,7 @@ checkForLink( Delims::const_iterator it, Delims::const_iterator last,
 				}
 			}
 			// Inline -> (
-			else if( po.fr.at( it->m_line )[ it->m_pos + it->m_len ] == c_40 )
+			else if( po.fr.data.at( it->m_line )[ it->m_pos + it->m_len ] == c_40 )
 			{
 				QString url, title;
 				Delims::const_iterator iit;
@@ -3408,7 +3417,7 @@ checkForLink( Delims::const_iterator it, Delims::const_iterator last,
 				}
 			}
 			// Reference -> [
-			else if( po.fr.at( it->m_line )[ it->m_pos + it->m_len ] == c_91 )
+			else if( po.fr.data.at( it->m_line )[ it->m_pos + it->m_len ] == c_91 )
 			{
 				QString label;
 				Delims::const_iterator lit;
@@ -4135,18 +4144,18 @@ optimizeParagraph( QSharedPointer< Paragraph > & p )
 }
 
 void
-parseFormattedText( QStringList & fr, QSharedPointer< Block > parent,
+parseFormattedText( MdBlock & fr, QSharedPointer< Block > parent,
 	QSharedPointer< Document > doc, QStringList & linksToParse, const QString & workingPath,
 	const QString & fileName, bool collectRefLinks, bool ignoreLineBreak,
 	RawHtmlBlock & html )
 
 {
-	if( fr.isEmpty() )
+	if( fr.data.isEmpty() )
 		return;
 
 	QSharedPointer< Paragraph > p( new Paragraph );
 
-	const auto delims = collectDelimiters( fr );
+	const auto delims = collectDelimiters( fr.data );
 
 	TextParsingOpts po = { fr, p, doc, linksToParse, workingPath,
 		fileName, collectRefLinks, ignoreLineBreak, html };
@@ -4255,7 +4264,7 @@ parseFormattedText( QStringList & fr, QSharedPointer< Block > parent,
 			html.onLine = false;
 		}
 
-		makeText( fr.size() - 1, fr.back().length(), po );
+		makeText( fr.data.size() - 1, fr.data.back().length(), po );
 	}
 
 	if( !p->isEmpty() )
@@ -4272,7 +4281,7 @@ parseFormattedText( QStringList & fr, QSharedPointer< Block > parent,
 } /* namespace anonymous */
 
 void
-Parser::parseFormattedTextLinksImages( QStringList & fr, QSharedPointer< Block > parent,
+Parser::parseFormattedTextLinksImages( MdBlock & fr, QSharedPointer< Block > parent,
 	QSharedPointer< Document > doc, QStringList & linksToParse, const QString & workingPath,
 	const QString & fileName, bool collectRefLinks, bool ignoreLineBreak,
 	RawHtmlBlock & html )
@@ -4283,16 +4292,16 @@ Parser::parseFormattedTextLinksImages( QStringList & fr, QSharedPointer< Block >
 }
 
 void
-Parser::parseFootnote( QStringList & fr, QSharedPointer< Block >,
+Parser::parseFootnote( MdBlock & fr, QSharedPointer< Block >,
 	QSharedPointer< Document > doc, QStringList & linksToParse,
 	const QString & workingPath, const QString & fileName,
 	bool collectRefLinks )
 {
-	if( !fr.isEmpty() )
+	if( !fr.data.isEmpty() )
 	{
 		QSharedPointer< Footnote > f( new Footnote() );
 
-		const auto delims = collectDelimiters( fr );
+		const auto delims = collectDelimiters( fr.data );
 
 		RawHtmlBlock html;
 
@@ -4311,13 +4320,13 @@ Parser::parseFootnote( QStringList & fr, QSharedPointer< Block >,
 			std::tie( id, it ) = checkForLinkText( delims.cbegin(), delims.cend(), po );
 
 			if( !id.isEmpty() && id.startsWith( c_94 ) && it != delims.cend() &&
-				fr.at( it->m_line ).size() > it->m_pos + 1 &&
-				fr.at( it->m_line )[ it->m_pos + 1 ] == c_58 )
+				fr.data.at( it->m_line ).size() > it->m_pos + 1 &&
+				fr.data.at( it->m_line )[ it->m_pos + 1 ] == c_58 )
 			{
-				fr = fr.sliced( it->m_line );
-				fr.first() = fr.first().sliced( it->m_pos + 2 );
+				fr.data = fr.data.sliced( it->m_line );
+				fr.data.first() = fr.data.first().sliced( it->m_pos + 2 );
 
-				for( auto it = fr.begin(), last = fr.end(); it != last; ++it )
+				for( auto it = fr.data.begin(), last = fr.data.end(); it != last; ++it )
 				{
 					if( it->startsWith( QLatin1String( "    " ) ) )
 						*it = it->mid( 4 );
@@ -4325,7 +4334,7 @@ Parser::parseFootnote( QStringList & fr, QSharedPointer< Block >,
 						*it = it->mid( 1 );
 				}
 
-				StringListStream stream( fr );
+				StringListStream stream( fr.data );
 
 				parse( stream, f, doc, linksToParse, workingPath, fileName, collectRefLinks );
 
@@ -4338,12 +4347,12 @@ Parser::parseFootnote( QStringList & fr, QSharedPointer< Block >,
 }
 
 void
-Parser::parseBlockquote( QStringList & fr, QSharedPointer< Block > parent,
+Parser::parseBlockquote( MdBlock & fr, QSharedPointer< Block > parent,
 	QSharedPointer< Document > doc, QStringList & linksToParse,
 	const QString & workingPath, const QString & fileName,
 	bool collectRefLinks, RawHtmlBlock & html )
 {
-	const int pos = fr.first().indexOf( c_62 );
+	const int pos = fr.data.first().indexOf( c_62 );
 
 	if( pos > -1 )
 	{
@@ -4353,7 +4362,7 @@ Parser::parseBlockquote( QStringList & fr, QSharedPointer< Block > parent,
 
 		BlockType bt = BlockType::Unknown;
 
-		for( auto it = fr.begin(), last = fr.end(); it != last; ++it, ++i )
+		for( auto it = fr.data.begin(), last = fr.data.end(); it != last; ++it, ++i )
 		{
 			const auto ns = skipSpaces( 0, *it );
 			const auto gt = ( ns < it->size() ? ( (*it)[ ns ] == c_62 ? ns : -1 ) : -1 );
@@ -4405,7 +4414,7 @@ Parser::parseBlockquote( QStringList & fr, QSharedPointer< Block > parent,
 		QStringList tmp;
 
 		for( ; j < i; ++j )
-			tmp.append( fr.at( j ) );
+			tmp.append( fr.data.at( j ) );
 
 		StringListStream stream( tmp );
 
@@ -4416,9 +4425,9 @@ Parser::parseBlockquote( QStringList & fr, QSharedPointer< Block > parent,
 		if( !bq->isEmpty() )
 			parent->appendItem( bq );
 
-		if( i < fr.size() )
+		if( i < fr.data.size() )
 		{
-			tmp = fr.sliced( i );
+			tmp = fr.data.sliced( i );
 
 			StringListStream stream( tmp );
 
@@ -4507,22 +4516,22 @@ listItemData( const QString & s )
 } /* namespace anonymous */
 
 void
-Parser::parseList( QStringList & fr, QSharedPointer< Block > parent,
+Parser::parseList( MdBlock & fr, QSharedPointer< Block > parent,
 	QSharedPointer< Document > doc, QStringList & linksToParse,
 	const QString & workingPath, const QString & fileName,
 	bool collectRefLinks, RawHtmlBlock & html )
 {
-	for( auto it = fr.begin(), last = fr.end(); it != last; ++it )
+	for( auto it = fr.data.begin(), last = fr.data.end(); it != last; ++it )
 		it->replace( c_9, QLatin1String( "    " ) );
 
-	const auto p = skipSpaces( 0, fr.first() );
+	const auto p = skipSpaces( 0, fr.data.first() );
 
-	if( p != fr.first().length() )
+	if( p != fr.data.first().length() )
 	{
 		QSharedPointer< List > list( new List );
 
 		QStringList listItem;
-		auto it = fr.begin();
+		auto it = fr.data.begin();
 		listItem.append( *it );
 		++it;
 
@@ -4534,7 +4543,7 @@ Parser::parseList( QStringList & fr, QSharedPointer< Block > parent,
 
 		bool updateIndent = false;
 
-		for( auto last = fr.end(); it != last; ++it )
+		for( auto last = fr.data.end(); it != last; ++it )
 		{
 			if( updateIndent )
 			{
@@ -4549,7 +4558,9 @@ Parser::parseList( QStringList & fr, QSharedPointer< Block > parent,
 			{
 				updateIndent = true;
 
-				parseListItem( listItem, list, doc, linksToParse, workingPath, fileName,
+				MdBlock block = { listItem, 0 };
+
+				parseListItem( block, list, doc, linksToParse, workingPath, fileName,
 					collectRefLinks, html );
 				listItem.clear();
 
@@ -4568,7 +4579,9 @@ Parser::parseList( QStringList & fr, QSharedPointer< Block > parent,
 				QChar tmpMarker;
 				std::tie( ok, indent, tmpMarker ) = listItemData( *it );
 
-				parseListItem( listItem, list, doc, linksToParse, workingPath, fileName,
+				MdBlock block = { listItem, 0 };
+
+				parseListItem( block, list, doc, linksToParse, workingPath, fileName,
 					collectRefLinks, html );
 				listItem.clear();
 
@@ -4587,8 +4600,11 @@ Parser::parseList( QStringList & fr, QSharedPointer< Block > parent,
 		}
 
 		if( !listItem.isEmpty() )
-			parseListItem( listItem, list, doc, linksToParse, workingPath, fileName,
+		{
+			MdBlock block = { listItem, 0 };
+			parseListItem( block, list, doc, linksToParse, workingPath, fileName,
 				collectRefLinks, html );
+		}
 
 		if( !list->isEmpty() )
 			parent->appendItem( list );
@@ -4596,7 +4612,7 @@ Parser::parseList( QStringList & fr, QSharedPointer< Block > parent,
 }
 
 void
-Parser::parseListItem( QStringList & fr, QSharedPointer< Block > parent,
+Parser::parseListItem( MdBlock & fr, QSharedPointer< Block > parent,
 	QSharedPointer< Document > doc, QStringList & linksToParse,
 	const QString & workingPath, const QString & fileName,
 	bool collectRefLinks, RawHtmlBlock & html )
@@ -4605,7 +4621,7 @@ Parser::parseListItem( QStringList & fr, QSharedPointer< Block > parent,
 
 	int i = 0;
 
-	if( isOrderedList( fr.first(), &i ) )
+	if( isOrderedList( fr.data.first(), &i ) )
 	{
 		item->setListType( ListItem::Ordered );
 		item->setStartNumber( i );
@@ -4618,7 +4634,7 @@ Parser::parseListItem( QStringList & fr, QSharedPointer< Block > parent,
 
 	QStringList data;
 
-	auto it = fr.begin();
+	auto it = fr.data.begin();
 	++it;
 
 	int pos = 1;
@@ -4626,15 +4642,15 @@ Parser::parseListItem( QStringList & fr, QSharedPointer< Block > parent,
 	qsizetype indent = 0;
 	bool ok = false;
 
-	std::tie( ok, indent, std::ignore ) = listItemData( fr.first() );
+	std::tie( ok, indent, std::ignore ) = listItemData( fr.data.first() );
 
-	const auto firstNonSpacePos = calculateIndent( fr.first(), indent ).second;
+	const auto firstNonSpacePos = calculateIndent( fr.data.first(), indent ).second;
 	if( firstNonSpacePos - indent < 4 ) indent = firstNonSpacePos;
 
-	if( indent < fr.first().length() )
-		data.append( fr.first().right( fr.first().length() - indent ) );
+	if( indent < fr.data.first().length() )
+		data.append( fr.data.first().right( fr.data.first().length() - indent ) );
 
-	for( auto last = fr.end(); it != last; ++it, ++pos )
+	for( auto last = fr.data.end(); it != last; ++it, ++pos )
 	{
 		std::tie( ok, std::ignore, std::ignore ) = listItemData( *it );
 
@@ -4668,7 +4684,9 @@ Parser::parseListItem( QStringList & fr, QSharedPointer< Block > parent,
 					*it = it->sliced( indent );
 			}
 
-			parseList( nestedList, item, doc, linksToParse, workingPath, fileName,
+			MdBlock block = { nestedList, 0 };
+
+			parseList( block, item, doc, linksToParse, workingPath, fileName,
 				collectRefLinks, html );
 
 			for( ; it != last; ++it )
@@ -4702,35 +4720,35 @@ Parser::parseListItem( QStringList & fr, QSharedPointer< Block > parent,
 }
 
 void
-Parser::parseCode( QStringList & fr, QSharedPointer< Block > parent,
+Parser::parseCode( MdBlock & fr, QSharedPointer< Block > parent,
 	bool collectRefLinks, int indent )
 {
 	if( !collectRefLinks )
 	{
-		const auto i = skipSpaces( 0, fr.first() );
+		const auto i = skipSpaces( 0, fr.data.first() );
 
-		if( i != fr.first().length() )
+		if( i != fr.data.first().length() )
 			indent += i;
 
 		QString syntax;
-		isStartOfCode( fr.constFirst(), &syntax );
+		isStartOfCode( fr.data.constFirst(), &syntax );
 
-		fr.removeFirst();
-		fr.removeLast();
+		fr.data.removeFirst();
+		fr.data.removeLast();
 
 		parseCodeIndentedBySpaces( fr, parent, collectRefLinks, indent, syntax );
 	}
 }
 
 void
-Parser::parseCodeIndentedBySpaces( QStringList & fr, QSharedPointer< Block > parent,
+Parser::parseCodeIndentedBySpaces( MdBlock & fr, QSharedPointer< Block > parent,
 	bool collectRefLinks, int indent, const QString & syntax )
 {
 	if( !collectRefLinks )
 	{
 		QString code;
 
-		for( const auto & l : qAsConst( fr ) )
+		for( const auto & l : qAsConst( fr.data ) )
 		{
 			const auto ns = skipSpaces( 0, l );
 
