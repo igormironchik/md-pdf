@@ -1835,6 +1835,12 @@ eatRawHtml( qsizetype line, qsizetype pos, qsizetype toLine, qsizetype toPos,
 {
 	QString h = po.html.html->text();
 
+	if( !h.isEmpty() && !skipLineEnds )
+	{
+		for( qsizetype i = 0; i < po.fr.emptyLinesBefore; ++i )
+			h.append( c_10 );
+	}
+
 	const auto first = po.fr.data[ line ].sliced( pos,
 		( line == toLine ? ( toPos >= 0 ? toPos - pos : po.fr.data[ line ].size() - pos ) :
 			po.fr.data[ line ].size() - pos ) );

@@ -426,8 +426,8 @@ TEST_CASE( "169" )
 	}
 
 	{
-		REQUIRE( doc->items().at( 1 )->type() == MD::ItemType::Paragraph );
-		auto p = static_cast< MD::Paragraph* > ( doc->items().at( 1 ).data() );
+		REQUIRE( doc->items().at( 2 )->type() == MD::ItemType::Paragraph );
+		auto p = static_cast< MD::Paragraph* > ( doc->items().at( 2 ).data() );
 		REQUIRE( p->items().size() == 1 );
 
 		REQUIRE( p->items().at( 0 )->type() == MD::ItemType::Text );

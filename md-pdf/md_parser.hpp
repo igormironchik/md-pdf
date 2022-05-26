@@ -134,6 +134,7 @@ struct RawHtmlBlock {
 struct MdBlock {
 	QStringList data;
 	qsizetype emptyLinesBefore = 0;
+	bool emptyLineAfter = true;
 }; // struct MdBlock
 
 
@@ -243,13 +244,16 @@ private:
 		std::set< qsizetype > indents;
 		qsizetype indent = 0;
 		RawHtmlBlock html;
+		qsizetype emptyLinesBefore = 0;
 
 		// Parse fragment and clear internal cache.
 		auto pf = [&]()
 			{
 				if( !fragment.isEmpty() )
 				{
-					MdBlock block = { fragment, emptyLinesCount };
+					MdBlock block = { fragment, emptyLinesBefore, emptyLinesCount > 0 };
+
+					emptyLinesBefore = emptyLinesCount;
 
 					splitted.append( block );
 
@@ -575,7 +579,7 @@ private:
 					workingPath, fileName, false, html );
 
 				if( html.htmlBlockType >= 6 )
-					html.continueHtml = ( splitted[ i ].emptyLinesBefore <= 0 );
+					html.continueHtml = ( !splitted[ i ].emptyLineAfter );
 
 				if( !html.html.isNull() && !html.continueHtml )
 					finishHtml();
