@@ -1886,7 +1886,7 @@ eatRawHtml( qsizetype line, qsizetype pos, qsizetype toLine, qsizetype toPos,
 
 inline void
 finishRule1HtmlTag( Delims::const_iterator it, Delims::const_iterator last,
-	TextParsingOpts & po )
+	TextParsingOpts & po, bool skipFirst )
 {
 	static const std::set< QString > finish = {
 		QStringLiteral( "</pre>" ),
@@ -1895,7 +1895,7 @@ finishRule1HtmlTag( Delims::const_iterator it, Delims::const_iterator last,
 		QStringLiteral( "</textarea>" )
 	};
 
-	for( it = std::next( it ); it != last; ++it )
+	for( it = ( skipFirst ? std::next( it ) : it ); it != last; ++it )
 	{
 		bool doBreak = false;
 
@@ -2050,12 +2050,12 @@ finishRule7HtmlTag( Delims::const_iterator it, Delims::const_iterator last,
 
 inline Delims::const_iterator
 finishRawHtmlTag( Delims::const_iterator it, Delims::const_iterator last,
-	TextParsingOpts & po )
+	TextParsingOpts & po, bool skipFirst )
 {
 	switch( po.html.htmlBlockType )
 	{
 		case 1 :
-			finishRule1HtmlTag( it, last, po );
+			finishRule1HtmlTag( it, last, po, skipFirst );
 			break;
 
 		case 2 :
@@ -2373,7 +2373,7 @@ checkForRawHtml( Delims::const_iterator it, Delims::const_iterator last,
 	po.html.htmlBlockType = rule;
 	po.html.html.reset( new RawHtml );
 
-	return finishRawHtmlTag( it, last, po );
+	return finishRawHtmlTag( it, last, po, true );
 }
 
 inline Delims::const_iterator
@@ -4169,7 +4169,7 @@ parseFormattedText( MdBlock & fr, QSharedPointer< Block > parent,
 	for( auto it = delims.cbegin(), last = delims.cend(); it != last; ++it )
 	{
 		if( !html.html.isNull() && html.continueHtml )
-			it = finishRawHtmlTag( it, last, po );
+			it = finishRawHtmlTag( it, last, po, false );
 		else
 		{
 			if( !html.html.isNull() )
