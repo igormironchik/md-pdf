@@ -546,3 +546,39 @@ TEST_CASE( "174" )
 	REQUIRE( t->opts() == MD::TextWithoutFormat );
 	REQUIRE( t->text() == QStringLiteral( "bar" ) );
 }
+
+TEST_CASE( "175" )
+{
+	const auto doc = load_test( 175 );
+
+	REQUIRE( doc->isEmpty() == false );
+	REQUIRE( doc->items().size() == 2 );
+
+	REQUIRE( doc->items().at( 1 )->type() == MD::ItemType::List );
+	auto l = static_cast< MD::List* > ( doc->items().at( 1 ).data() );
+
+	REQUIRE( l->items().size() == 2 );
+
+	{
+		REQUIRE( l->items().at( 0 )->type() == MD::ItemType::ListItem );
+		auto li = static_cast< MD::ListItem* > ( l->items().at( 0 ).data() );
+
+		REQUIRE( li->items().at( 0 )->type() == MD::ItemType::RawHtml );
+		auto h = static_cast< MD::RawHtml* > ( li->items().at( 0 ).data() );
+		REQUIRE( h->text() == QStringLiteral( "<div>" ) );
+	}
+
+	{
+		REQUIRE( l->items().at( 1 )->type() == MD::ItemType::ListItem );
+		auto li = static_cast< MD::ListItem* > ( l->items().at( 1 ).data() );
+
+		REQUIRE( li->items().at( 0 )->type() == MD::ItemType::Paragraph );
+		auto p = static_cast< MD::Paragraph* > ( li->items().at( 0 ).data() );
+
+		REQUIRE( p->items().size() == 1 );
+		REQUIRE( p->items().at( 0 )->type() == MD::ItemType::Text );
+		auto t = static_cast< MD::Text* > ( p->items().at( 0 ).data() );
+		REQUIRE( t->opts() == MD::TextWithoutFormat );
+		REQUIRE( t->text() == QStringLiteral( "foo" ) );
+	}
+}

@@ -4729,7 +4729,7 @@ Parser::parseListItem( MdBlock & fr, QSharedPointer< Block > parent,
 		parse( stream, item, doc, linksToParse, workingPath, fileName, collectRefLinks );
 	}
 
-	if( !item->isEmpty() )
+	if( !item->isEmpty() && !collectRefLinks )
 		parent->appendItem( item );
 }
 
