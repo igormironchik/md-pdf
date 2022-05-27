@@ -740,3 +740,23 @@ TEST_CASE( "182" )
 		REQUIRE( t->text() == QStringLiteral( "okay" ) );
 	}
 }
+
+TEST_CASE( "183" )
+{
+	const auto doc = load_test( 183 );
+
+	REQUIRE( doc->isEmpty() == false );
+	REQUIRE( doc->items().size() == 3 );
+
+	{
+		REQUIRE( doc->items().at( 1 )->type() == MD::ItemType::RawHtml );
+		auto h = static_cast< MD::RawHtml* > ( doc->items().at( 1 ).data() );
+		REQUIRE( h->text() == QStringLiteral( "<!-- foo -->" ) );
+	}
+
+	{
+		REQUIRE( doc->items().at( 2 )->type() == MD::ItemType::Code );
+		auto c = static_cast< MD::Code* > ( doc->items().at( 2 ).data() );
+		REQUIRE( c->text() == QStringLiteral( "<!-- foo -->" ) );
+	}
+}
