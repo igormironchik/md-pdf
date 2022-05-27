@@ -2415,7 +2415,7 @@ finishRule7HtmlTag( Delims::const_iterator it, Delims::const_iterator last,
 			return std::prev( last );
 		}
 		else
-			return it;
+			return findIt( it, last, po );
 	}
 	else
 		return it;
