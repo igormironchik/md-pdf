@@ -1895,7 +1895,7 @@ finishRule1HtmlTag( Delims::const_iterator it, Delims::const_iterator last,
 		QStringLiteral( "</textarea>" )
 	};
 
-	for( it = ( skipFirst ? std::next( it ) : it ); it != last; ++it )
+	for( it = ( skipFirst && it != last ? std::next( it ) : it ); it != last; ++it )
 	{
 		bool doBreak = false;
 
@@ -4166,96 +4166,104 @@ parseFormattedText( MdBlock & fr, QSharedPointer< Block > parent,
 	TextParsingOpts po = { fr, p, doc, linksToParse, workingPath,
 		fileName, collectRefLinks, ignoreLineBreak, html };
 
-	for( auto it = delims.cbegin(), last = delims.cend(); it != last; ++it )
+	if( !delims.empty() )
 	{
-		if( !html.html.isNull() && html.continueHtml )
-			it = finishRawHtmlTag( it, last, po, false );
-		else
+		for( auto it = delims.cbegin(), last = delims.cend(); it != last; ++it )
 		{
-			if( !html.html.isNull() )
+			if( !html.html.isNull() && html.continueHtml )
+				it = finishRawHtmlTag( it, last, po, false );
+			else
 			{
-				if( !collectRefLinks )
-					p->appendItem( html.html );
-
-				html.html.reset( nullptr );
-				html.htmlBlockType = -1;
-				html.continueHtml = false;
-				html.onLine = false;
-			}
-
-			if( it->m_line > po.line || it->m_pos > po.pos )
-			{
-				if( !collectRefLinks )
-					makeText( it->m_line, it->m_pos, po );
-				else
-				{
-					po.line = it->m_line;
-					po.pos = it->m_pos;
-				}
-			}
-
-			switch( it->m_type )
-			{
-				case Delimiter::SquareBracketsOpen :
-					it = checkForLink( it, last, po );
-					break;
-
-				case Delimiter::ImageOpen :
-					it = checkForImage( it, last, po );
-					break;
-
-				case Delimiter::Less :
-					it = checkForAutolinkHtml( it, last, po, true );
-					break;
-
-				case Delimiter::Strikethrough :
-				case Delimiter::Emphasis1 :
-				case Delimiter::Emphasis2 :
-						it = checkForStyle( delims.cbegin(), it, last, po );
-					break;
-
-				case Delimiter::InlineCode :
-				{
-					if( !it->m_backslashed )
-						it = checkForInlineCode( it, last, po );
-				}
-					break;
-
-				case Delimiter::HorizontalLine :
+				if( !html.html.isNull() )
 				{
 					if( !collectRefLinks )
-					{
-						if( !p->isEmpty() )
-						{
-							optimizeParagraph( p );
-							parent->appendItem( p );
-						}
+						p->appendItem( html.html );
 
-						QSharedPointer< Item > hr( new HorizontalLine );
-						parent->appendItem( hr );
-
-						p.reset( new Paragraph );
-
-						po.parent = p;
-						po.line = it->m_line;
-						po.pos = it->m_pos + it->m_len;
-					}
+					html.html.reset( nullptr );
+					html.htmlBlockType = -1;
+					html.continueHtml = false;
+					html.onLine = false;
 				}
-					break;
 
-				default :
+				if( it->m_line > po.line || it->m_pos > po.pos )
 				{
 					if( !collectRefLinks )
-						makeText( it->m_line, it->m_pos + it->m_len, po );
+						makeText( it->m_line, it->m_pos, po );
 					else
 					{
 						po.line = it->m_line;
-						po.pos = it->m_pos + it->m_len;
+						po.pos = it->m_pos;
 					}
 				}
-					break;
+
+				switch( it->m_type )
+				{
+					case Delimiter::SquareBracketsOpen :
+						it = checkForLink( it, last, po );
+						break;
+
+					case Delimiter::ImageOpen :
+						it = checkForImage( it, last, po );
+						break;
+
+					case Delimiter::Less :
+						it = checkForAutolinkHtml( it, last, po, true );
+						break;
+
+					case Delimiter::Strikethrough :
+					case Delimiter::Emphasis1 :
+					case Delimiter::Emphasis2 :
+							it = checkForStyle( delims.cbegin(), it, last, po );
+						break;
+
+					case Delimiter::InlineCode :
+					{
+						if( !it->m_backslashed )
+							it = checkForInlineCode( it, last, po );
+					}
+						break;
+
+					case Delimiter::HorizontalLine :
+					{
+						if( !collectRefLinks )
+						{
+							if( !p->isEmpty() )
+							{
+								optimizeParagraph( p );
+								parent->appendItem( p );
+							}
+
+							QSharedPointer< Item > hr( new HorizontalLine );
+							parent->appendItem( hr );
+
+							p.reset( new Paragraph );
+
+							po.parent = p;
+							po.line = it->m_line;
+							po.pos = it->m_pos + it->m_len;
+						}
+					}
+						break;
+
+					default :
+					{
+						if( !collectRefLinks )
+							makeText( it->m_line, it->m_pos + it->m_len, po );
+						else
+						{
+							po.line = it->m_line;
+							po.pos = it->m_pos + it->m_len;
+						}
+					}
+						break;
+				}
 			}
 		}
+	}
+	else
+	{
+		if( !html.html.isNull() && html.continueHtml )
+			finishRawHtmlTag( delims.cend(), delims.cend(), po, false );
 	}
 
 	if( !collectRefLinks )
