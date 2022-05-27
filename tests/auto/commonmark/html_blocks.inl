@@ -887,3 +887,15 @@ TEST_CASE( "188" )
 		REQUIRE( h->text() == QStringLiteral( "</div>" ) );
 	}
 }
+
+TEST_CASE( "189" )
+{
+	const auto doc = load_test( 189 );
+
+	REQUIRE( doc->isEmpty() == false );
+	REQUIRE( doc->items().size() == 2 );
+
+	REQUIRE( doc->items().at( 1 )->type() == MD::ItemType::RawHtml );
+	auto h = static_cast< MD::RawHtml* > ( doc->items().at( 1 ).data() );
+	REQUIRE( h->text() == QStringLiteral( "<div>\n*Emphasized* text.\n</div>" ) );
+}
