@@ -464,3 +464,18 @@ TEST_CASE( "170" )
 		REQUIRE( t->text() == QStringLiteral( "okay" ) );
 	}
 }
+
+TEST_CASE( "171" )
+{
+	const auto doc = load_test( 171 );
+
+	REQUIRE( doc->isEmpty() == false );
+	REQUIRE( doc->items().size() == 2 );
+
+	REQUIRE( doc->items().at( 1 )->type() == MD::ItemType::RawHtml );
+	auto h = static_cast< MD::RawHtml* > ( doc->items().at( 1 ).data() );
+	REQUIRE( h->text() == QStringLiteral( "<textarea>\n\n"
+										  "*foo*\n\n"
+										  "_bar_\n\n"
+										  "</textarea>" ) );
+}
