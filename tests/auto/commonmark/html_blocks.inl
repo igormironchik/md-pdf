@@ -694,3 +694,15 @@ TEST_CASE( "180" )
 		REQUIRE( t->text() == QStringLiteral( "okay" ) );
 	}
 }
+
+TEST_CASE( "181" )
+{
+	const auto doc = load_test( 181 );
+
+	REQUIRE( doc->isEmpty() == false );
+	REQUIRE( doc->items().size() == 2 );
+
+	REQUIRE( doc->items().at( 1 )->type() == MD::ItemType::RawHtml );
+	auto h = static_cast< MD::RawHtml* > ( doc->items().at( 1 ).data() );
+	REQUIRE( h->text() == QStringLiteral( "<!DOCTYPE html>" ) );
+}
