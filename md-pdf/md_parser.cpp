@@ -2107,51 +2107,33 @@ skipSpacesInHtml( qsizetype & l, qsizetype & p, const QStringList & fr )
 }
 
 inline std::pair< bool, bool >
-readHtmlAttr( qsizetype & l, qsizetype & p, const QStringList & fr )
+readUnquotedHtmlAttrValue( qsizetype & l, qsizetype & p, const QStringList & fr )
 {
-	skipSpacesInHtml( l, p, fr );
+	static const QString notAllowed = QStringLiteral( "\"`=<>'" );
 
-	if( l >= fr.size() )
-		return { false, false };
-
-	if( p < fr[ l ].size() && fr[ l ][ p ] == c_47 )
-	{
-		++p;
-
-		return { false, true };
-	}
-
-	if( p < fr[ l ].size() && fr[ l ][ p ] == c_62 )
-		return { false, true };
+	QString value;
 
 	for( ; p < fr[ l ].size(); ++p )
 	{
-		const auto ch = fr[ l ][ p ];
-
-		if( ch.isSpace() || ch == c_62 || ch == c_61 )
+		if( fr[ l ][ p ].isSpace() )
 			break;
+		else if( notAllowed.contains( fr[ l ][ p ] ) )
+			return { false, false };
+		else
+			value.append( fr[ l ][ p ] );
 	}
 
-	if( p < fr[ l ].size() && fr[ l ][ p ] == c_62 )
+	if( value.isEmpty() )
 		return { false, false };
 
-	skipSpacesInHtml( l, p, fr );
+	return { true, true };
+}
 
-	if( l >= fr.size() )
-		return { false, false };
-
-	if( p < fr[ l ].size() && fr[ l ][ p ] != c_61 )
-		return { false, false };
-
-	++p;
-
-	skipSpacesInHtml( l, p, fr );
-
-	if( l >= fr.size() )
-		return { false, false };
-
+inline std::pair< bool, bool >
+readHtmlAttrValue( qsizetype & l, qsizetype & p, const QStringList & fr )
+{
 	if( p < fr[ l ].size() && fr[ l ][ p ] != c_34 && fr[ l ][ p ] != c_39 )
-		return { false, false };
+		return readUnquotedHtmlAttrValue( l, p, fr );
 
 	const auto s = fr[ l ][ p ];
 
@@ -2196,6 +2178,84 @@ readHtmlAttr( qsizetype & l, qsizetype & p, const QStringList & fr )
 	return { true, true };
 }
 
+inline std::pair< bool, bool >
+readHtmlAttr( qsizetype & l, qsizetype & p, const QStringList & fr )
+{
+	skipSpacesInHtml( l, p, fr );
+
+	if( l >= fr.size() )
+		return { false, false };
+
+	// /
+	if( p < fr[ l ].size() && fr[ l ][ p ] == c_47 )
+	{
+		++p;
+
+		return { false, true };
+	}
+
+	// >
+	if( p < fr[ l ].size() && fr[ l ][ p ] == c_62 )
+		return { false, true };
+
+	QString name;
+
+	for( ; p < fr[ l ].size(); ++p )
+	{
+		const auto ch = fr[ l ][ p ];
+
+		if( ch.isSpace() || ch == c_62 || ch == c_61 )
+			break;
+		else
+			name.append( ch );
+	}
+
+	name = name.toLower();
+
+	if( !name.startsWith( c_95 ) && !name.startsWith( c_58 ) &&
+		!name.isEmpty() &&
+		!( name[ 0 ].unicode() >= 97 && name[ 0 ].unicode() <= 122 ) )
+	{
+		return { false, false };
+	}
+
+	static const QString allowedInName =
+		QStringLiteral( "abcdefghijklmnopqrstuvwxyz0123456789_.:-" );
+
+	for( qsizetype i = 1; i < name.length(); ++i )
+	{
+		if( !allowedInName.contains( name[ i ] ) )
+			return { false, false };
+	}
+
+	// >
+	if( p < fr[ l ].size() && fr[ l ][ p ] == c_62 )
+		return { false, true };
+
+	skipSpacesInHtml( l, p, fr );
+
+	if( l >= fr.size() )
+		return { false, false };
+
+	// =
+	if( p < fr[ l ].size() )
+	{
+		if( fr[ l ][ p ] != c_61 )
+			return { true, true };
+		else
+			++p;
+	}
+	else
+		return { true, false };
+
+	skipSpacesInHtml( l, p, fr );
+
+	if( l >= fr.size() )
+		return { false, false };
+
+	return readHtmlAttrValue( l, p, fr );
+}
+
 inline std::tuple< bool, qsizetype, qsizetype, bool >
 isHtmlTag( Delims::const_iterator it, TextParsingOpts & po )
 {
@@ -2213,6 +2273,7 @@ isHtmlTag( Delims::const_iterator it, TextParsingOpts & po )
 		if( p >= po.fr.data[ l ].size() )
 			return { false, -1, -1, false };
 
+		// >
 		for( ; p < po.fr.data[ l ].size(); ++p )
 		{
 			const auto ch = po.fr.data[ l ][ p ];
