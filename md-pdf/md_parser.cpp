@@ -2299,7 +2299,7 @@ htmlTagRule( Delims::const_iterator it, Delims::const_iterator last,
 		return 1;
 	else if( tag == QStringLiteral( "!--" ) )
 		return 2;
-	else if( tag == QStringLiteral( "?" ) )
+	else if( tag.startsWith( QStringLiteral( "?" ) ) )
 		return 3;
 	else if( tag.startsWith( QLatin1Char( '!' ) ) && tag.size() > 1 &&
 		( ( tag[ 1 ].unicode() >= 65 && tag[ 1 ].unicode() <= 90 ) ||
