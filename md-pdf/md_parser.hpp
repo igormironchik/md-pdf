@@ -63,6 +63,11 @@ static const QChar c_60 = QLatin1Char( '<' );
 static const QChar c_10 = QLatin1Char( '\n' );
 static const QChar c_13 = QLatin1Char( '\r' );
 static const QChar c_39 = QLatin1Char( '\'' );
+static const QChar c_47 = QLatin1Char( '/' );
+static const QChar c_63 = QLatin1Char( '?' );
+
+static const QString c_startComment = QLatin1String( "<!--" );
+static const QString c_endComment = QLatin1String( "-->" );
 
 
 //! Skip spaces in line from pos \a i.
@@ -119,6 +124,19 @@ isColumnAlignment( const QString & s );
 bool
 isTableAlignment( const QString & s );
 
+struct RawHtmlBlock {
+	QSharedPointer< RawHtml > html = {};
+	int htmlBlockType = -1;
+	bool continueHtml = false;
+	bool onLine = false;
+}; // struct RawHtmlBlock
+
+struct MdBlock {
+	QStringList data;
+	qsizetype emptyLinesBefore = 0;
+	bool emptyLineAfter = true;
+}; // struct MdBlock
+
 
 //
 // Parser
@@ -151,118 +169,60 @@ private:
 	}; // enum BlockType
 
 	BlockType whatIsTheLine( QString & str, bool inList = false, qsizetype * indent = nullptr,
-		bool calcIndent = false, bool wasComment = false,
-		const std::set< qsizetype > * indents = nullptr ) const;
-	void parseFragment( QStringList & fr, QSharedPointer< Block > parent,
+		bool calcIndent = false, const std::set< qsizetype > * indents = nullptr ) const;
+	void parseFragment( MdBlock & fr, QSharedPointer< Block > parent,
 		QSharedPointer< Document > doc,
 		QStringList & linksToParse, const QString & workingPath,
-		const QString & fileName, bool collectRefLinks );
-	void parseText( QStringList & fr, QSharedPointer< Block > parent,
+		const QString & fileName, bool collectRefLinks,
+		RawHtmlBlock & html );
+	void parseText( MdBlock & fr, QSharedPointer< Block > parent,
 		QSharedPointer< Document > doc,
 		QStringList & linksToParse, const QString & workingPath,
-		const QString & fileName, bool collectRefLinks );
-	void parseBlockquote( QStringList & fr, QSharedPointer< Block > parent,
+		const QString & fileName, bool collectRefLinks,
+		RawHtmlBlock & html );
+	void parseBlockquote( MdBlock & fr, QSharedPointer< Block > parent,
 		QSharedPointer< Document > doc,
 		QStringList & linksToParse, const QString & workingPath,
-		const QString & fileName, bool collectRefLinks );
-	void parseList( QStringList & fr, QSharedPointer< Block > parent,
+		const QString & fileName, bool collectRefLinks,
+		RawHtmlBlock & html );
+	void parseList( MdBlock & fr, QSharedPointer< Block > parent,
 		QSharedPointer< Document > doc,
 		QStringList & linksToParse, const QString & workingPath,
-		const QString & fileName, bool collectRefLinks );
-	void parseCode( QStringList & fr, QSharedPointer< Block > parent,
+		const QString & fileName, bool collectRefLinks,
+		RawHtmlBlock & html );
+	void parseCode( MdBlock & fr, QSharedPointer< Block > parent,
 		bool collectRefLinks, int indent = 0 );
-	void parseCodeIndentedBySpaces( QStringList & fr, QSharedPointer< Block > parent,
+	void parseCodeIndentedBySpaces( MdBlock & fr, QSharedPointer< Block > parent,
 		bool collectRefLinks,
 		int indent = 4, const QString & syntax = QString() );
-	void parseListItem( QStringList & fr, QSharedPointer< Block > parent,
+	void parseListItem( MdBlock & fr, QSharedPointer< Block > parent,
 		QSharedPointer< Document > doc,
 		QStringList & linksToParse, const QString & workingPath,
-		const QString & fileName, bool collectRefLinks );
-	void parseHeading( QStringList & fr, QSharedPointer< Block > parent,
+		const QString & fileName, bool collectRefLinks,
+		RawHtmlBlock & html );
+	void parseHeading( MdBlock & fr, QSharedPointer< Block > parent,
 		QSharedPointer< Document > doc,
 		QStringList & linksToParse, const QString & workingPath,
 		const QString & fileName,
 		bool collectRefLinks );
-	void parseFootnote( QStringList & fr, QSharedPointer< Block > parent,
+	void parseFootnote( MdBlock & fr, QSharedPointer< Block > parent,
 		QSharedPointer< Document > doc,
 		QStringList & linksToParse, const QString & workingPath,
 		const QString & fileName, bool collectRefLinks );
-	void parseTable( QStringList & fr, QSharedPointer< Block > parent,
+	void parseTable( MdBlock & fr, QSharedPointer< Block > parent,
 		QSharedPointer< Document > doc,
 		QStringList & linksToParse, const QString & workingPath,
 		const QString & fileName, bool collectRefLinks );
-	void parseParagraph( QStringList & fr, QSharedPointer< Block > parent,
+	void parseParagraph( MdBlock & fr, QSharedPointer< Block > parent,
 		QSharedPointer< Document > doc,
 		QStringList & linksToParse, const QString & workingPath,
-		const QString & fileName, bool collectRefLinks );
-	void parseFormattedTextLinksImages( QStringList & fr, QSharedPointer< Block > parent,
+		const QString & fileName, bool collectRefLinks,
+		RawHtmlBlock & html );
+	void parseFormattedTextLinksImages( MdBlock & fr, QSharedPointer< Block > parent,
 		QSharedPointer< Document > doc,
 		QStringList & linksToParse, const QString & workingPath,
-		const QString & fileName, bool collectRefLinks, bool ignoreLineBreak );
-
-	// Read line from stream.
-	template< typename STREAM >
-	QPair< QString, bool >
-	readLine( STREAM & stream, bool & unfinishedCommentFound )
-	{
-		static const QString c_startComment = QLatin1String( "<!--" );
-		static const QString c_endComment = QLatin1String( "-->" );
-
-		auto line = stream.readLine();
-
-		bool searchEndFromBegining = unfinishedCommentFound;
-
-		bool wasComment = unfinishedCommentFound;
-
-		auto cs = line.indexOf( c_startComment );
-
-		if( !unfinishedCommentFound && cs > -1 )
-		{
-			unfinishedCommentFound = true;
-			wasComment = true;
-		}
-
-		if( cs == -1 )
-			cs = 0;
-
-		while( unfinishedCommentFound && !stream.atEnd() )
-		{
-			auto ce = line.indexOf( c_endComment,
-				( searchEndFromBegining ? 0 : cs + c_startComment.length() ) );
-
-			searchEndFromBegining = false;
-
-			if( ce > -1 )
-			{
-				if( cs + c_startComment.length() < ce )
-				{
-					line.remove( cs, ce + c_endComment.length() - cs );
-
-					unfinishedCommentFound = false;
-				}
-				else if( unfinishedCommentFound )
-				{
-					line.remove( 0, ce + c_endComment.length() );
-
-					unfinishedCommentFound = false;
-				}
-			}
-			else if( cs > 0 )
-				return { line.left( cs ), false };
-			else
-				return readLine( stream, unfinishedCommentFound );
-
-			cs = line.indexOf( c_startComment );
-
-			if( !unfinishedCommentFound && cs > -1 )
-				unfinishedCommentFound = true;
-		}
-
-		if( unfinishedCommentFound )
-			return { QString(), wasComment };
-		else
-			return { line, wasComment };
-	};
+		const QString & fileName, bool collectRefLinks, bool ignoreLineBreak,
+		RawHtmlBlock & html );
 
 	template< typename STREAM >
 	void parse( STREAM & stream, QSharedPointer< Block > parent,
@@ -271,53 +231,52 @@ private:
 		bool collectRefLinks,
 		bool top = false )
 	{
-		QVector< QStringList > splitted;
+		QVector< MdBlock > splitted;
 
 		QStringList fragment;
 
 		BlockType type = BlockType::Unknown;
 		bool emptyLineInList = false;
-		qsizetype emptyLinesInList = 0;
-		qsizetype emptyLinesInCode = 0;
+		qsizetype emptyLinesCount = 0;
 		bool firstLine = true;
 		qsizetype spaces = 0;
 		qsizetype lineCounter = 0;
 		std::set< qsizetype > indents;
 		qsizetype indent = 0;
+		RawHtmlBlock html;
+		qsizetype emptyLinesBefore = 0;
 
 		// Parse fragment and clear internal cache.
 		auto pf = [&]()
 			{
-				splitted.append( fragment );
-				parseFragment( fragment, parent, doc, linksToParse,
-					workingPath, fileName, collectRefLinks );
-				fragment.clear();
+				if( !fragment.isEmpty() )
+				{
+					MdBlock block = { fragment, emptyLinesBefore, emptyLinesCount > 0 };
+
+					emptyLinesBefore = emptyLinesCount;
+
+					splitted.append( block );
+
+					parseFragment( block, parent, doc, linksToParse,
+						workingPath, fileName, collectRefLinks, html );
+
+					fragment.clear();
+				}
+
 				type = BlockType::Unknown;
 				emptyLineInList = false;
-				emptyLinesInList = 0;
+				emptyLinesCount = 0;
 				lineCounter = 0;
 				indents.clear();
 				indent = 0;
 			};
-
-		bool unfinishedCommentFound = false;
-		bool wasComment = false;
-
-		auto rl = [&]() -> QString
-		{
-			QString line;
-
-			std::tie( line, wasComment ) = readLine( stream, unfinishedCommentFound );
-
-			return line;
-		};
 
 		// Eat footnote.
 		auto eatFootnote = [&]()
 			{
 				while( !stream.atEnd() )
 				{
-					auto line = rl();
+					auto line = stream.readLine();
 
 					if( line.isEmpty() || line.startsWith( QLatin1String( "    " ) ) ||
 						line.startsWith( c_9 ) )
@@ -340,46 +299,20 @@ private:
 			};
 
 		QString startOfCode;
-		bool split = false;
 
 		while( !stream.atEnd() )
 		{
-			auto line = rl();
-
-			if( wasComment )
-				split = true;
+			auto line = stream.readLine();
 
 			const qsizetype prevIndent = indent;
 
 			BlockType lineType = whatIsTheLine( line, emptyLineInList, &indent,
-				true, split, &indents );
+				true, &indents );
 
 			if( prevIndent != indent )
 				indents.insert( indent );
 
 			const auto ns = skipSpaces( 0, line );
-
-			if( ( lineType == BlockType::ListWithFirstEmptyLine ||
-				lineType == BlockType::List || lineType == BlockType::CodeIndentedBySpaces ) &&
-				( type == BlockType::ListWithFirstEmptyLine || type == BlockType::List ) )
-			{
-				if( split )
-				{
-					if( !fragment.isEmpty() )
-						pf();
-
-					emptyLineInList = false;
-					emptyLinesInList = 0;
-					type = lineType;
-					fragment.append( line );
-					split = false;
-
-					continue;
-				}
-			}
-
-			if( ns != line.length() )
-				split = false;
 
 			if( type == BlockType::CodeIndentedBySpaces && ns > 3 )
 				lineType = BlockType::CodeIndentedBySpaces;
@@ -387,7 +320,7 @@ private:
 			if( type == BlockType::ListWithFirstEmptyLine && lineCounter == 2 &&
 				lineType != BlockType::ListWithFirstEmptyLine && lineType != BlockType::List )
 			{
-				if( emptyLinesInList )
+				if( emptyLinesCount > 0 )
 				{
 					pf();
 
@@ -399,7 +332,7 @@ private:
 				else
 				{
 					emptyLineInList = false;
-					emptyLinesInList = 0;
+					emptyLinesCount = 0;
 				}
 			}
 
@@ -440,6 +373,8 @@ private:
 			// Got new empty line.
 			if( ns == line.length() )
 			{
+				++emptyLinesCount;
+
 				switch( type )
 				{
 					case BlockType::Text :
@@ -450,8 +385,6 @@ private:
 
 							eatFootnote();
 						}
-						else
-							pf();
 
 						continue;
 					}
@@ -464,15 +397,13 @@ private:
 					}
 
 					case BlockType::CodeIndentedBySpaces :
-					{
-						++emptyLinesInCode;
-
 						continue;
-					}
+						break;
 
 					case BlockType::Code :
 					{
 						fragment.append( line );
+						emptyLinesCount = 0;
 
 						continue;
 					}
@@ -481,7 +412,6 @@ private:
 					case BlockType::ListWithFirstEmptyLine :
 					{
 						emptyLineInList = true;
-						++emptyLinesInList;
 
 						continue;
 					}
@@ -496,13 +426,13 @@ private:
 				if( indentInList( &indents, ns ) || lineType == BlockType::List ||
 					lineType == BlockType::CodeIndentedBySpaces )
 				{
-					for( qsizetype i = 0; i < emptyLinesInList; ++i )
+					for( qsizetype i = 0; i < emptyLinesCount; ++i )
 						fragment.append( QString() );
 
 					fragment.append( line );
 
 					emptyLineInList = false;
-					emptyLinesInList = 0;
+					emptyLinesCount = 0;
 
 					continue;
 				}
@@ -512,31 +442,33 @@ private:
 
 					type = lineType;
 					fragment.append( line );
+					emptyLinesCount = 0;
 
 					continue;
 				}
 			}
-			else if( emptyLinesInCode )
+			else if( emptyLinesCount > 0 )
 			{
-				if( lineType == BlockType::CodeIndentedBySpaces )
+				if( type == BlockType::CodeIndentedBySpaces &&
+					lineType == BlockType::CodeIndentedBySpaces )
 				{
 					const auto indent = skipSpaces( 0, fragment.first() );
 
-					for( qsizetype i = 0; i < emptyLinesInCode; ++i )
+					for( qsizetype i = 0; i < emptyLinesCount; ++i )
 						fragment.append( QString( indent, c_32 ) );
-
-					fragment.append( line );
 				}
 				else
 				{
 					pf();
 
-					type = lineType;
+					if( html.htmlBlockType >= 6 )
+						html.continueHtml = ( emptyLinesCount <= 0 );
 
-					fragment.append( line );
+					type = lineType;
 				}
 
-				emptyLinesInCode = 0;
+				fragment.append( line );
+				emptyLinesCount = 0;
 
 				continue;
 			}
@@ -568,6 +500,9 @@ private:
 
 					pf();
 
+					if( html.htmlBlockType >= 6 )
+						html.continueHtml = ( emptyLinesCount <= 0 );
+
 					type = lineType;
 
 					if( !line.isEmpty() )
@@ -585,6 +520,8 @@ private:
 			}
 			else
 				fragment.append( line );
+
+			emptyLinesCount = 0;
 		}
 
 		if( !fragment.isEmpty() )
@@ -595,14 +532,59 @@ private:
 			pf();
 		}
 
+		auto finishHtml = [&] ()
+		{
+			if( html.html->isFreeTag() )
+				parent->appendItem( html.html );
+			else
+			{
+				if( parent->items().back()->type() == ItemType::Paragraph )
+				{
+					auto p = static_cast< Paragraph* > ( parent->items().back().data() );
+
+					if( p->isDirty() )
+						p->appendItem( html.html );
+					else
+					{
+						QSharedPointer< Paragraph > p( new Paragraph );
+						p->appendItem( html.html );
+						doc->appendItem( p );
+					}
+				}
+				else
+				{
+					QSharedPointer< Paragraph > p( new Paragraph );
+					p->appendItem( html.html );
+					doc->appendItem( p );
+				}
+			}
+
+			html.html.reset( nullptr );
+			html.htmlBlockType = -1;
+			html.continueHtml = false;
+		};
+
 		if( top )
 		{
+			html.html.reset( nullptr );
+			html.htmlBlockType = -1;
+			html.continueHtml = false;
+
 			for( qsizetype i = 0; i < splitted.size(); ++i )
 			{
 				parseFragment( splitted[ i ], parent, doc, linksToParse,
-					workingPath, fileName, false );
+					workingPath, fileName, false, html );
+
+				if( html.htmlBlockType >= 6 )
+					html.continueHtml = ( !splitted[ i ].emptyLineAfter );
+
+				if( !html.html.isNull() && !html.continueHtml )
+					finishHtml();
 			}
 		}
+
+		if( !html.html.isNull() )
+			finishHtml();
 	}
 
 	//! Wrapper for QStringList to be behaved like a stream.

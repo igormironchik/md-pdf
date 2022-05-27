@@ -124,6 +124,41 @@ Heading::setLabel( const QString & l )
 
 
 //
+// RawHtml
+//
+
+ItemType
+RawHtml::type() const
+{
+	return ItemType::RawHtml;
+}
+
+const QString &
+RawHtml::text() const
+{
+	return m_text;
+}
+
+void
+RawHtml::setText( const QString & t )
+{
+	m_text = t;
+}
+
+bool
+RawHtml::isFreeTag() const
+{
+	return m_isFreeTag;
+}
+
+void
+RawHtml::setFreeTag( bool on )
+{
+	m_isFreeTag = on;
+}
+
+
+//
 // Text
 //
 
@@ -230,6 +265,18 @@ ItemType
 Paragraph::type() const
 {
 	return ItemType::Paragraph;
+}
+
+bool
+Paragraph::isDirty() const
+{
+	return m_dirty;
+}
+
+void
+Paragraph::setDirty( bool on )
+{
+	m_dirty = on;
 }
 
 

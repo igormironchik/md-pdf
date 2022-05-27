@@ -79,7 +79,9 @@ enum class ItemType {
 	//! Anchor.
 	Anchor,
 	//! Horizontal line.
-	HorizontalLine
+	HorizontalLine,
+	//! Raw HTML.
+	RawHtml
 }; // enum class ItemType
 
 
@@ -180,6 +182,38 @@ Q_DECLARE_OPERATORS_FOR_FLAGS( TextOptions )
 
 
 //
+// RawHtml
+//
+
+//! Raw HTML.
+class RawHtml final
+	:	public Item
+{
+public:
+	RawHtml() = default;
+	~RawHtml() override = default;
+
+	ItemType type() const override;
+
+	const QString & text() const;
+	void setText( const QString & t );
+
+protected:
+	friend class Parser;
+	friend struct UnprotectedDocsMethods;
+
+	bool isFreeTag() const;
+	void setFreeTag( bool on = true );
+
+private:
+	QString m_text;
+	bool m_isFreeTag;
+
+	Q_DISABLE_COPY( RawHtml )
+}; // class RawHtml
+
+
+//
 // Text
 //
 
@@ -276,7 +310,16 @@ public:
 
 	ItemType type() const override;
 
+protected:
+	friend class Parser;
+	friend struct UnprotectedDocsMethods;
+
+	bool isDirty() const;
+	void setDirty( bool on = true );
+
 private:
+	bool m_dirty = false;
+
 	Q_DISABLE_COPY( Paragraph )
 }; // class Paragraph
 
