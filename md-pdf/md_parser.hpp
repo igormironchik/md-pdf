@@ -535,12 +535,12 @@ private:
 		auto finishHtml = [&] ()
 		{
 			if( html.html->isFreeTag() )
-				doc->appendItem( html.html );
+				parent->appendItem( html.html );
 			else
 			{
-				if( doc->items().back()->type() == ItemType::Paragraph )
+				if( parent->items().back()->type() == ItemType::Paragraph )
 				{
-					auto p = static_cast< Paragraph* > ( doc->items().back().data() );
+					auto p = static_cast< Paragraph* > ( parent->items().back().data() );
 
 					if( p->isDirty() )
 						p->appendItem( html.html );
@@ -560,6 +560,8 @@ private:
 			}
 
 			html.html.reset( nullptr );
+			html.htmlBlockType = -1;
+			html.continueHtml = false;
 		};
 
 		if( top )
@@ -579,10 +581,10 @@ private:
 				if( !html.html.isNull() && !html.continueHtml )
 					finishHtml();
 			}
-
-			if( !html.html.isNull() )
-				finishHtml();
 		}
+
+		if( !html.html.isNull() )
+			finishHtml();
 	}
 
 	//! Wrapper for QStringList to be behaved like a stream.

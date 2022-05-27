@@ -4436,7 +4436,7 @@ Parser::parseBlockquote( MdBlock & fr, QSharedPointer< Block > parent,
 
 		parse( stream, bq, doc, linksToParse, workingPath, fileName, collectRefLinks );
 
-		if( !bq->isEmpty() )
+		if( !bq->isEmpty() && !collectRefLinks )
 			parent->appendItem( bq );
 
 		if( i < fr.data.size() )
