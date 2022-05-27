@@ -899,3 +899,41 @@ TEST_CASE( "189" )
 	auto h = static_cast< MD::RawHtml* > ( doc->items().at( 1 ).data() );
 	REQUIRE( h->text() == QStringLiteral( "<div>\n*Emphasized* text.\n</div>" ) );
 }
+
+TEST_CASE( "190" )
+{
+	const auto doc = load_test( 190 );
+
+	REQUIRE( doc->isEmpty() == false );
+	REQUIRE( doc->items().size() == 6 );
+
+	{
+		REQUIRE( doc->items().at( 1 )->type() == MD::ItemType::RawHtml );
+		auto h = static_cast< MD::RawHtml* > ( doc->items().at( 1 ).data() );
+		REQUIRE( h->text() == QStringLiteral( "<table>" ) );
+	}
+
+	{
+		REQUIRE( doc->items().at( 2 )->type() == MD::ItemType::RawHtml );
+		auto h = static_cast< MD::RawHtml* > ( doc->items().at( 2 ).data() );
+		REQUIRE( h->text() == QStringLiteral( "<tr>" ) );
+	}
+
+	{
+		REQUIRE( doc->items().at( 3 )->type() == MD::ItemType::RawHtml );
+		auto h = static_cast< MD::RawHtml* > ( doc->items().at( 3 ).data() );
+		REQUIRE( h->text() == QStringLiteral( "<td>\nHi\n</td>" ) );
+	}
+
+	{
+		REQUIRE( doc->items().at( 4 )->type() == MD::ItemType::RawHtml );
+		auto h = static_cast< MD::RawHtml* > ( doc->items().at( 4 ).data() );
+		REQUIRE( h->text() == QStringLiteral( "</tr>" ) );
+	}
+
+	{
+		REQUIRE( doc->items().at( 5 )->type() == MD::ItemType::RawHtml );
+		auto h = static_cast< MD::RawHtml* > ( doc->items().at( 5 ).data() );
+		REQUIRE( h->text() == QStringLiteral( "</table>" ) );
+	}
+}
