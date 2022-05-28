@@ -2337,15 +2337,33 @@ htmlTagRule( Delims::const_iterator it, Delims::const_iterator last,
 
 	std::tie( tag, std::ignore ) = readHtmlTag( it, po );
 
+	if( tag == QStringLiteral( "![CDATA[" ) )
+		return 5;
+
 	tag = tag.toLower();
 
 	if( tag.isEmpty() )
 		return -1;
 
 	static const QString c_validHtmlTagLetters =
-		QStringLiteral( "abcdefghijklmnopqrstuvwxyz0123456789/-!?[" );
+		QStringLiteral( "abcdefghijklmnopqrstuvwxyz0123456789-" );
 
-	for( qsizetype i = 0; i < tag.size(); ++i )
+	bool closing = false;
+
+	if( tag.startsWith( c_47 ) )
+	{
+		tag.remove( 0, 1 );
+		closing = true;
+	}
+
+	if( tag.endsWith( c_47 ) )
+		tag.remove( tag.size() - 1, 1 );
+
+	if( !tag.startsWith( c_33 ) && !tag.startsWith( c_63 ) &&
+		!( tag[ 0 ].unicode() >= 97 && tag[ 0 ].unicode() <= 122 ) )
+			return -1;
+
+	for( qsizetype i = 1; i < tag.size(); ++i )
 	{
 		if( !c_validHtmlTagLetters.contains( tag[ i ] ) )
 			return -1;
@@ -2356,7 +2374,7 @@ htmlTagRule( Delims::const_iterator it, Delims::const_iterator last,
 		QStringLiteral( "style" ), QStringLiteral( "textarea" )
 	};
 
-	if( rule1.find( tag ) != rule1.cend() )
+	if( !closing && rule1.find( tag ) != rule1.cend() )
 		return 1;
 	else if( tag == QStringLiteral( "!--" ) )
 		return 2;
@@ -2368,13 +2386,8 @@ htmlTagRule( Delims::const_iterator it, Delims::const_iterator last,
 	{
 		return 4;
 	}
-	else if( tag == QStringLiteral( "![cdata[" ) )
-		return 5;
 	else
 	{
-		if( tag.startsWith( c_47 ) )
-			tag.remove( 0, 1 );
-
 		static const std::set< QString > rule6 = {
 			QStringLiteral( "address" ), QStringLiteral( "article" ), QStringLiteral( "aside" ),
 			QStringLiteral( "base" ), QStringLiteral( "basefont" ), QStringLiteral( "blockquote" ),

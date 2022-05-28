@@ -120,3 +120,28 @@ TEST_CASE( "615" )
 	REQUIRE( h->text() == QStringLiteral( "<a foo=\"bar\" bam = 'baz <em>\"</em>'\n"
 										  "_boolean zoop:33=zoop:33 />" ) );
 }
+
+TEST_CASE( "616" )
+{
+	const auto doc = load_test( 616 );
+
+	REQUIRE( doc->isEmpty() == false );
+	REQUIRE( doc->items().size() == 2 );
+
+	REQUIRE( doc->items().at( 1 )->type() == MD::ItemType::Paragraph );
+	auto p = static_cast< MD::Paragraph* > ( doc->items().at( 1 ).data() );
+	REQUIRE( p->items().size() == 2 );
+
+	{
+		REQUIRE( p->items().at( 0 )->type() == MD::ItemType::Text );
+		auto t = static_cast< MD::Text* > ( p->items().at( 0 ).data() );
+		REQUIRE( t->opts() == MD::TextWithoutFormat );
+		REQUIRE( t->text() == QStringLiteral( "Foo" ) );
+	}
+
+	{
+		REQUIRE( p->items().at( 1 )->type() == MD::ItemType::RawHtml );
+		auto h = static_cast< MD::RawHtml* > ( p->items().at( 1 ).data() );
+		REQUIRE( h->text() == QStringLiteral( "<responsive-image src=\"foo.jpg\" />" ) );
+	}
+}
