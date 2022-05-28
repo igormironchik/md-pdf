@@ -2273,13 +2273,28 @@ isHtmlTag( Delims::const_iterator it, TextParsingOpts & po )
 		if( p >= po.fr.data[ l ].size() )
 			return { false, -1, -1, false };
 
-		// >
+		if( po.fr.data[ l ][ p ] == c_47 )
+			++p;
+
+		// tag
 		for( ; p < po.fr.data[ l ].size(); ++p )
 		{
 			const auto ch = po.fr.data[ l ][ p ];
 
-			if( ch.isSpace() || ch == c_62 )
+			if( ch.isSpace() || ch == c_62 || ch == c_47 )
 				break;
+		}
+
+		if( p < po.fr.data[ l ].size() && po.fr.data[ l ][ p ] == c_47 )
+		{
+			if( p + 1 < po.fr.data[ l ].size() && po.fr.data[ l ][ p + 1 ] == c_62 )
+			{
+				const auto tmp = skipSpaces( p + 2, po.fr.data[ l ] );
+
+				return { true, l, p + 1, tmp == po.fr.data[ l ].size() && first };
+			}
+			else
+				return { false, -1, -1, false };
 		}
 
 		if( p < po.fr.data[ l ].size() && po.fr.data[ l ][ p ] == c_62 )
