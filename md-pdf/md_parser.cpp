@@ -2109,7 +2109,7 @@ skipSpacesInHtml( qsizetype & l, qsizetype & p, const QStringList & fr )
 inline std::pair< bool, bool >
 readUnquotedHtmlAttrValue( qsizetype & l, qsizetype & p, const QStringList & fr )
 {
-	static const QString notAllowed = QStringLiteral( "\"`=<>'" );
+	static const QString notAllowed = QStringLiteral( "\"`=<'" );
 
 	QString value;
 
@@ -2119,6 +2119,8 @@ readUnquotedHtmlAttrValue( qsizetype & l, qsizetype & p, const QStringList & fr 
 			break;
 		else if( notAllowed.contains( fr[ l ][ p ] ) )
 			return { false, false };
+		else if( fr[ l ][ p ] == c_62 )
+			return { !value.isEmpty(), !value.isEmpty() };
 		else
 			value.append( fr[ l ][ p ] );
 	}
@@ -2179,8 +2181,11 @@ readHtmlAttrValue( qsizetype & l, qsizetype & p, const QStringList & fr )
 }
 
 inline std::pair< bool, bool >
-readHtmlAttr( qsizetype & l, qsizetype & p, const QStringList & fr )
+readHtmlAttr( qsizetype & l, qsizetype & p, const QStringList & fr,
+	bool checkForSpace )
 {
+	qsizetype tl = l, tp = p;
+
 	skipSpacesInHtml( l, p, fr );
 
 	if( l >= fr.size() )
@@ -2193,6 +2198,12 @@ readHtmlAttr( qsizetype & l, qsizetype & p, const QStringList & fr )
 	// >
 	if( p < fr[ l ].size() && fr[ l ][ p ] == c_62 )
 		return { false, true };
+
+	if( checkForSpace )
+	{
+		if( tl == l && tp == p )
+			return { false, false };
+	}
 
 	QString name;
 
@@ -2228,6 +2239,9 @@ readHtmlAttr( qsizetype & l, qsizetype & p, const QStringList & fr )
 	if( p < fr[ l ].size() && fr[ l ][ p ] == c_62 )
 		return { false, true };
 
+	tl = l;
+	tp = p;
+
 	skipSpacesInHtml( l, p, fr );
 
 	if( l >= fr.size() )
@@ -2237,7 +2251,12 @@ readHtmlAttr( qsizetype & l, qsizetype & p, const QStringList & fr )
 	if( p < fr[ l ].size() )
 	{
 		if( fr[ l ][ p ] != c_61 )
+		{
+			l = tl;
+			p = tp;
+
 			return { true, true };
+		}
 		else
 			++p;
 	}
@@ -2313,12 +2332,15 @@ isHtmlTag( Delims::const_iterator it, TextParsingOpts & po )
 		}
 
 		bool attr = true;
+		bool firstAttr = true;
 
 		while( attr )
 		{
 			bool ok = false;
 
-			std::tie( attr, ok ) = readHtmlAttr( l, p, po.fr.data );
+			std::tie( attr, ok ) = readHtmlAttr( l, p, po.fr.data, !firstAttr );
+
+			firstAttr = false;
 
 			if( !ok )
 				return { false, -1, -1, false };
