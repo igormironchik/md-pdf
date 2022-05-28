@@ -2188,11 +2188,7 @@ readHtmlAttr( qsizetype & l, qsizetype & p, const QStringList & fr )
 
 	// /
 	if( p < fr[ l ].size() && fr[ l ][ p ] == c_47 )
-	{
-		++p;
-
 		return { false, true };
-	}
 
 	// >
 	if( p < fr[ l ].size() && fr[ l ][ p ] == c_62 )
@@ -2328,10 +2324,15 @@ isHtmlTag( Delims::const_iterator it, TextParsingOpts & po )
 				return { false, -1, -1, false };
 		}
 
-		skipSpacesInHtml( l, p, po.fr.data );
+		if( po.fr.data[ l ][ p ] == c_47 )
+			++p;
+		else
+		{
+			skipSpacesInHtml( l, p, po.fr.data );
 
-		if( l >= po.fr.data.size() )
-			return { false, -1, -1, false };
+			if( l >= po.fr.data.size() )
+				return { false, -1, -1, false };
+		}
 
 		if( po.fr.data[ l ][ p ] == c_62 )
 		{
