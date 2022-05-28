@@ -2288,8 +2288,14 @@ isHtmlTag( Delims::const_iterator it, TextParsingOpts & po )
 		if( p >= po.fr.data[ l ].size() )
 			return { false, -1, -1, false };
 
+		bool closing = false;
+
 		if( po.fr.data[ l ][ p ] == c_47 )
+		{
+			closing = true;
+
 			++p;
+		}
 
 		// tag
 		for( ; p < po.fr.data[ l ].size(); ++p )
@@ -2341,6 +2347,9 @@ isHtmlTag( Delims::const_iterator it, TextParsingOpts & po )
 			std::tie( attr, ok ) = readHtmlAttr( l, p, po.fr.data, !firstAttr );
 
 			firstAttr = false;
+
+			if( closing && attr )
+				return { false, -1, -1, false };
 
 			if( !ok )
 				return { false, -1, -1, false };
