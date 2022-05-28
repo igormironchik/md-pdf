@@ -131,8 +131,14 @@ struct RawHtmlBlock {
 	bool onLine = false;
 }; // struct RawHtmlBlock
 
+struct MdLineData {
+	qsizetype lineNumber;
+}; // struct MdLineData
+
 struct MdBlock {
-	QStringList data;
+	using Data = QVector< QPair< QString, MdLineData > >;
+
+	Data data;
 	qsizetype emptyLinesBefore = 0;
 	bool emptyLineAfter = true;
 }; // struct MdBlock
@@ -228,17 +234,18 @@ private:
 	class StringListStream final
 	{
 	public:
-		StringListStream( QStringList & stream )
+		StringListStream( MdBlock::Data & stream )
 			:	m_stream( stream )
 			,	m_pos( 0 )
 		{
 		}
 
 		bool atEnd() const { return ( m_pos >= m_stream.size() ); }
-		QString readLine() { return m_stream.at( m_pos++ ); }
+		QString readLine() { return m_stream.at( m_pos++ ).first; }
+		qsizetype currentLineNumber() const { return m_stream.at( m_pos ).second.lineNumber; }
 
 	private:
-		QStringList & m_stream;
+		MdBlock::Data & m_stream;
 		int m_pos;
 	}; // class StringListStream
 
