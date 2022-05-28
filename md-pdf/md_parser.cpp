@@ -2430,18 +2430,7 @@ finishRule2HtmlTag( Delims::const_iterator it, Delims::const_iterator last,
 						break;
 				}
 
-				qsizetype l = po.line, p = po.pos;
-
 				eatRawHtml( po.line, po.pos, it->m_line, i , po, true, 2 );
-
-				if( !isHtmlComment( po ) )
-				{
-					po.line = l;
-					po.pos = p;
-					po.html.html.reset( nullptr );
-					po.html.htmlBlockType = -1;
-					po.html.continueHtml = false;
-				}
 
 				return;
 			}
