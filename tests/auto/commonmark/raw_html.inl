@@ -230,3 +230,27 @@ TEST_CASE( "621" )
 	REQUIRE( t->opts() == MD::TextWithoutFormat );
 	REQUIRE( t->text() == QStringLiteral( "<a href='bar'title=title>" ) );
 }
+
+TEST_CASE( "622" )
+{
+	const auto doc = load_test( 622 );
+
+	REQUIRE( doc->isEmpty() == false );
+	REQUIRE( doc->items().size() == 2 );
+
+	REQUIRE( doc->items().at( 1 )->type() == MD::ItemType::Paragraph );
+	auto p = static_cast< MD::Paragraph* > ( doc->items().at( 1 ).data() );
+	REQUIRE( p->items().size() == 2 );
+
+	{
+		REQUIRE( p->items().at( 0 )->type() == MD::ItemType::RawHtml );
+		auto h = static_cast< MD::RawHtml* > ( p->items().at( 0 ).data() );
+		REQUIRE( h->text() == QStringLiteral( "</a>" ) );
+	}
+
+	{
+		REQUIRE( p->items().at( 1 )->type() == MD::ItemType::RawHtml );
+		auto h = static_cast< MD::RawHtml* > ( p->items().at( 1 ).data() );
+		REQUIRE( h->text() == QStringLiteral( "</foo >" ) );
+	}
+}
