@@ -76,7 +76,7 @@
 #include "autolinks.inl"
 
 // 6.6 Raw HTML
-// Skipped.
+#include "raw_html.inl"
 
 // 6.7
 #include "hard_line_breaks.inl"

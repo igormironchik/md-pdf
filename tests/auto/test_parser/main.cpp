@@ -2484,20 +2484,13 @@ TEST_CASE( "049" )
 	MD::Parser parser;
 	auto doc = parser.parse( QStringLiteral( "data/049.md" ) );
 	REQUIRE( doc->isEmpty() == false );
-	REQUIRE( doc->items().size() == 3 );
+	REQUIRE( doc->items().size() == 2 );
+
 	REQUIRE( doc->items().at( 0 )->type() == MD::ItemType::Anchor );
 
-	{
-		REQUIRE( doc->items().at( 1 )->type() == MD::ItemType::RawHtml );
-		auto h = static_cast< MD::RawHtml* > ( doc->items().at( 1 ).data() );
-		REQUIRE( h->text() == QStringLiteral( "<!-- --> 1" ) );
-	}
-
-	{
-		REQUIRE( doc->items().at( 2 )->type() == MD::ItemType::RawHtml );
-		auto h = static_cast< MD::RawHtml* > ( doc->items().at( 2 ).data() );
-		REQUIRE( h->text() == QStringLiteral( "<!-- -->" ) );
-	}
+	REQUIRE( doc->items().at( 1 )->type() == MD::ItemType::RawHtml );
+	auto h = static_cast< MD::RawHtml* > ( doc->items().at( 1 ).data() );
+	REQUIRE( h->text() == QStringLiteral( "<!-- --> 1<!-- -->" ) );
 }
 
 TEST_CASE( "050" )
