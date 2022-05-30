@@ -2428,7 +2428,8 @@ eatRawHtml( qsizetype line, qsizetype pos, qsizetype toLine, qsizetype toPos,
 	po.pos = ( toPos >= 0 ? toPos : 0 );
 
 	po.html.html->setText( h );
-	UnprotectedDocsMethods::setFreeTag( po.html.html, htmlRule != 7 || onLine );
+	UnprotectedDocsMethods::setFreeTag( po.html.html,
+		( htmlRule != 7 && htmlRule != 2 ) || onLine );
 
 	if( finish )
 	{
