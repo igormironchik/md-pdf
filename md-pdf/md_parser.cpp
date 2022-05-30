@@ -560,6 +560,91 @@ private:
 	qsizetype m_pos;
 }; // class TextStream
 
+inline bool
+isHtmlComment( const QString & s )
+{
+	auto c = s;
+
+	if( s.startsWith( QStringLiteral( "<!--" ) ) )
+		c.remove( 0, 4 );
+	else
+		return false;
+
+	if( c.startsWith( c_62 ) )
+		return false;
+
+	if( c.startsWith( QStringLiteral( "->" ) ) )
+		return false;
+
+	const auto p = c.indexOf( QStringLiteral( "--" ) );
+
+	if( p > -1 )
+	{
+		if( c.size() > p + 2 )
+			return c[ p + 2 ] == c_62;
+		else
+			return false;
+	}
+	else
+		return false;
+}
+
+inline bool
+checkForEndHtmlComments( const QString & line, qsizetype pos,
+	std::vector< bool > & res )
+{
+	qsizetype e = line.indexOf( QStringLiteral( "--" ), pos );
+
+	if( e != -1 )
+	{
+		if( e + 2 < line.size() && line[ e + 2 ] == c_62 )
+			res.push_back( isHtmlComment( line.sliced( 0, e + 3 ) ) );
+		else
+			res.push_back( false );
+
+		return true;
+	}
+
+	return false;
+}
+
+inline void
+checkForHtmlComments( const QString & line, StringListStream & stream,
+	std::vector< bool > & res )
+{
+	qsizetype p = 0, l = stream.currentLineNumber();
+
+	bool addFalse = false;
+
+	while( ( p = line.indexOf( QStringLiteral( "<!--" ), p ) ) != -1 )
+	{
+		auto c = line.sliced( p );
+
+		if( !checkForEndHtmlComments( c, 4, res ) )
+		{
+			for( ; l < stream.size(); ++l )
+			{
+				c.append( c_32 );
+				c.append( stream.lineAt( l ) );
+
+				if( checkForEndHtmlComments( c, 4, res ) )
+				{
+					addFalse = false;
+
+					break;
+				}
+				else
+					addFalse = true;
+			}
+		}
+
+		if( addFalse )
+			res.push_back( false );
+
+		++p;
+	}
+}
+
 } /* namespace anonymous */
 
 void
@@ -582,6 +667,7 @@ Parser::parse( StringListStream & stream, QSharedPointer< Block > parent,
 	qsizetype indent = 0;
 	RawHtmlBlock html;
 	qsizetype emptyLinesBefore = 0;
+	std::vector< bool > htmlCommentClosed;
 
 	// Parse fragment and clear internal cache.
 	auto pf = [&]()
@@ -620,14 +706,14 @@ Parser::parse( StringListStream & stream, QSharedPointer< Block > parent,
 				if( line.isEmpty() || line.startsWith( QLatin1String( "    " ) ) ||
 					line.startsWith( c_9 ) )
 				{
-					fragment.append( { line, { currentLineNumber } } );
+					fragment.append( { line, { currentLineNumber, htmlCommentClosed } } );
 				}
 				else
 				{
 					pf();
 
 					type = whatIsTheLine( line );
-					fragment.append( { line, { currentLineNumber } } );
+					fragment.append( { line, { currentLineNumber, htmlCommentClosed } } );
 
 					break;
 				}
@@ -641,9 +727,13 @@ Parser::parse( StringListStream & stream, QSharedPointer< Block > parent,
 
 	while( !stream.atEnd() )
 	{
+		htmlCommentClosed.clear();
+
 		const auto currentLineNumber = stream.currentLineNumber();
 
 		auto line = stream.readLine();
+
+		checkForHtmlComments( line, stream, htmlCommentClosed );
 
 		const qsizetype prevIndent = indent;
 
@@ -665,7 +755,7 @@ Parser::parse( StringListStream & stream, QSharedPointer< Block > parent,
 			{
 				pf();
 
-				fragment.append( { line, { currentLineNumber } } );
+				fragment.append( { line, { currentLineNumber, htmlCommentClosed } } );
 				type = lineType;
 
 				continue;
@@ -684,7 +774,7 @@ Parser::parse( StringListStream & stream, QSharedPointer< Block > parent,
 		{
 			type = lineType;
 			lineCounter = 1;
-			fragment.append( { line, { currentLineNumber } } );
+			fragment.append( { line, { currentLineNumber, htmlCommentClosed } } );
 
 			continue;
 		}
@@ -699,7 +789,7 @@ Parser::parse( StringListStream & stream, QSharedPointer< Block > parent,
 			if( type == BlockType::Code )
 				startOfCode = startSequence( line );
 
-			fragment.append( { line, { currentLineNumber } } );
+			fragment.append( { line, { currentLineNumber, htmlCommentClosed } } );
 
 			if( type == BlockType::Heading )
 				pf();
@@ -722,7 +812,7 @@ Parser::parse( StringListStream & stream, QSharedPointer< Block > parent,
 				{
 					if( isFootnote( fragment.first().first ) )
 					{
-						fragment.append( { QString(), { currentLineNumber } } );
+						fragment.append( { QString(), { currentLineNumber, htmlCommentClosed } } );
 
 						eatFootnote();
 					}
@@ -743,7 +833,7 @@ Parser::parse( StringListStream & stream, QSharedPointer< Block > parent,
 
 				case BlockType::Code :
 				{
-					fragment.append( { line, { currentLineNumber } } );
+					fragment.append( { line, { currentLineNumber, htmlCommentClosed } } );
 					emptyLinesCount = 0;
 
 					continue;
@@ -768,9 +858,10 @@ Parser::parse( StringListStream & stream, QSharedPointer< Block > parent,
 				lineType == BlockType::CodeIndentedBySpaces )
 			{
 				for( qsizetype i = 0; i < emptyLinesCount; ++i )
-					fragment.append( { QString(), { currentLineNumber - emptyLinesCount + i } } );
+					fragment.append( { QString(),
+						{ currentLineNumber - emptyLinesCount + i, {} } } );
 
-				fragment.append( { line, { currentLineNumber } } );
+				fragment.append( { line, { currentLineNumber, htmlCommentClosed } } );
 
 				emptyLineInList = false;
 				emptyLinesCount = 0;
@@ -782,7 +873,7 @@ Parser::parse( StringListStream & stream, QSharedPointer< Block > parent,
 				pf();
 
 				type = lineType;
-				fragment.append( { line, { currentLineNumber } } );
+				fragment.append( { line, { currentLineNumber, htmlCommentClosed } } );
 				emptyLinesCount = 0;
 
 				continue;
@@ -797,7 +888,7 @@ Parser::parse( StringListStream & stream, QSharedPointer< Block > parent,
 
 				for( qsizetype i = 0; i < emptyLinesCount; ++i )
 					fragment.append( { QString( indent, c_32 ),
-						{ currentLineNumber - emptyLinesCount + i } } );
+						{ currentLineNumber - emptyLinesCount + i, {} } } );
 			}
 			else
 			{
@@ -809,7 +900,7 @@ Parser::parse( StringListStream & stream, QSharedPointer< Block > parent,
 				type = lineType;
 			}
 
-			fragment.append( { line, { currentLineNumber } } );
+			fragment.append( { line, { currentLineNumber, htmlCommentClosed } } );
 			emptyLinesCount = 0;
 
 			continue;
@@ -820,7 +911,7 @@ Parser::parse( StringListStream & stream, QSharedPointer< Block > parent,
 			type != BlockType::Blockquote && type != BlockType::ListWithFirstEmptyLine )
 		{
 			if( type == BlockType::Text && lineType == BlockType::CodeIndentedBySpaces )
-				fragment.append( { line, { currentLineNumber } } );
+				fragment.append( { line, { currentLineNumber, htmlCommentClosed } } );
 			else
 			{
 				if( type == BlockType::Text &&
@@ -833,7 +924,7 @@ Parser::parse( StringListStream & stream, QSharedPointer< Block > parent,
 					{
 						if( num > 1 )
 						{
-							fragment.append( { line, { currentLineNumber } } );
+							fragment.append( { line, { currentLineNumber, htmlCommentClosed } } );
 
 							continue;
 						}
@@ -848,7 +939,7 @@ Parser::parse( StringListStream & stream, QSharedPointer< Block > parent,
 				type = lineType;
 
 				if( !line.isEmpty() )
-					fragment.append( { line, { currentLineNumber } } );
+					fragment.append( { line, { currentLineNumber, htmlCommentClosed } } );
 			}
 		}
 		// End of code block.
@@ -856,12 +947,12 @@ Parser::parse( StringListStream & stream, QSharedPointer< Block > parent,
 			startSequence( line ).contains( startOfCode ) &&
 			isCodeFences( line, true ) )
 		{
-			fragment.append( { line, { currentLineNumber } } );
+			fragment.append( { line, { currentLineNumber, htmlCommentClosed } } );
 
 			pf();
 		}
 		else
-			fragment.append( { line, { currentLineNumber } } );
+			fragment.append( { line, { currentLineNumber, htmlCommentClosed } } );
 
 		emptyLinesCount = 0;
 	}
@@ -869,7 +960,7 @@ Parser::parse( StringListStream & stream, QSharedPointer< Block > parent,
 	if( !fragment.isEmpty() )
 	{
 		if( type == BlockType::Code )
-			fragment.append( { startOfCode, { -1 } } );
+			fragment.append( { startOfCode, { -1, {} } } );
 
 		pf();
 	}
@@ -2394,68 +2485,62 @@ finishRule1HtmlTag( Delims::const_iterator it, Delims::const_iterator last,
 	eatRawHtml( po.line, po.pos, po.fr.data.size() - 1, -1, po, false, 1 );
 }
 
-inline bool
-isHtmlComment( TextParsingOpts & po )
-{
-	if( !po.html.html.isNull() && po.html.htmlBlockType == 2 )
-	{
-		auto c = po.html.html->text();
-		c = c.replace( c_10, c_32 );
-
-		if( c.startsWith( QStringLiteral( "<!--" ) ) )
-			c.remove( 0, 4 );
-		else
-			return false;
-
-		if( c.startsWith( c_62 ) )
-			return false;
-
-		if( c.startsWith( QStringLiteral( "->" ) ) )
-			return false;
-
-		const auto p = c.indexOf( QStringLiteral( "--" ) );
-
-		if( p > -1 )
-		{
-			if( c.size() > p + 2 )
-				return c[ p + 2 ] == c_62;
-			else
-				return false;
-		}
-		else
-			return false;
-	}
-	else
-		return false;
-}
-
 inline void
 finishRule2HtmlTag( Delims::const_iterator it, Delims::const_iterator last,
 	TextParsingOpts & po )
 {
-	for( ; it != last; ++it )
+	bool finish = true;
+
+	if( po.html.html->text().isEmpty() && it->m_type == Delimiter::Less )
 	{
-		if( it->m_type == Delimiter::Greater )
+		size_t i = 0;
+
+		const auto & s = po.fr.data[ it->m_line ].first;
+
+		qsizetype p = 0;
+
+		while( ( p = s.indexOf( QStringLiteral( "<!--" ), p ) ) != it->m_pos )
 		{
-			if( it->m_pos > 1 && po.fr.data[ it->m_line ].first[ it->m_pos - 1 ] == c_45 &&
-				po.fr.data[ it->m_line ].first[ it->m_pos - 2 ] == c_45 )
-			{
-				qsizetype i = it->m_pos + 1;
-
-				for( ; i < po.fr.data[ it->m_line ].first.size(); ++i )
-				{
-					if( po.fr.data[ it->m_line ].first[ i ] == c_60 )
-						break;
-				}
-
-				eatRawHtml( po.line, po.pos, it->m_line, i , po, true, 2 );
-
-				return;
-			}
+			++i;
+			++p;
 		}
+
+		finish = po.fr.data[ it->m_line ].second.htmlCommentClosed[ i ];
 	}
 
-	eatRawHtml( po.line, po.pos, po.fr.data.size() - 1, -1, po, false, 2 );
+	if( finish )
+	{
+		for( ; it != last; ++it )
+		{
+			if( it->m_type == Delimiter::Greater )
+			{
+				if( it->m_pos > 1 && po.fr.data[ it->m_line ].first[ it->m_pos - 1 ] == c_45 &&
+					po.fr.data[ it->m_line ].first[ it->m_pos - 2 ] == c_45 )
+				{
+					qsizetype i = it->m_pos + 1;
+
+					for( ; i < po.fr.data[ it->m_line ].first.size(); ++i )
+					{
+						if( po.fr.data[ it->m_line ].first[ i ] == c_60 )
+							break;
+					}
+
+					eatRawHtml( po.line, po.pos, it->m_line, i , po, true, 2 );
+
+					return;
+				}
+			}
+		}
+
+		eatRawHtml( po.line, po.pos, po.fr.data.size() - 1, -1, po, false, 2 );
+	}
+	else
+	{
+		po.html.html.reset( nullptr );
+		po.html.htmlBlockType = -1;
+		po.html.continueHtml = false;
+		po.html.onLine = false;
+	}
 }
 
 inline void

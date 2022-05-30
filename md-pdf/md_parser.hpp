@@ -132,7 +132,8 @@ struct RawHtmlBlock {
 }; // struct RawHtmlBlock
 
 struct MdLineData {
-	qsizetype lineNumber;
+	qsizetype lineNumber = -1;
+	std::vector< bool > htmlCommentClosed = {};
 }; // struct MdLineData
 
 struct MdBlock {
@@ -142,6 +143,28 @@ struct MdBlock {
 	qsizetype emptyLinesBefore = 0;
 	bool emptyLineAfter = true;
 }; // struct MdBlock
+
+//! Wrapper for QStringList to be behaved like a stream.
+class StringListStream final
+{
+public:
+	StringListStream( MdBlock::Data & stream )
+		:	m_stream( stream )
+		,	m_pos( 0 )
+	{
+	}
+
+	bool atEnd() const { return ( m_pos >= m_stream.size() ); }
+	QString readLine() { return m_stream.at( m_pos++ ).first; }
+	qsizetype currentLineNumber() const
+		{ return ( m_pos < size() ? m_stream.at( m_pos ).second.lineNumber : size() ); }
+	QString lineAt( qsizetype pos ) { return m_stream.at( pos ).first; }
+	qsizetype size() const { return m_stream.size(); }
+
+private:
+	MdBlock::Data & m_stream;
+	int m_pos;
+}; // class StringListStream
 
 
 //
@@ -229,25 +252,6 @@ private:
 		QStringList & linksToParse, const QString & workingPath,
 		const QString & fileName, bool collectRefLinks, bool ignoreLineBreak,
 		RawHtmlBlock & html );
-
-	//! Wrapper for QStringList to be behaved like a stream.
-	class StringListStream final
-	{
-	public:
-		StringListStream( MdBlock::Data & stream )
-			:	m_stream( stream )
-			,	m_pos( 0 )
-		{
-		}
-
-		bool atEnd() const { return ( m_pos >= m_stream.size() ); }
-		QString readLine() { return m_stream.at( m_pos++ ).first; }
-		qsizetype currentLineNumber() const { return m_stream.at( m_pos ).second.lineNumber; }
-
-	private:
-		MdBlock::Data & m_stream;
-		int m_pos;
-	}; // class StringListStream
 
 	void parse( StringListStream & stream, QSharedPointer< Block > parent,
 		QSharedPointer< Document > doc, QStringList & linksToParse,
