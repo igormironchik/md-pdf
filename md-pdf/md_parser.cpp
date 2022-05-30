@@ -2350,332 +2350,6 @@ makeText(
 		( po.pos > 0 ? po.fr.data.at( po.line ).first[ po.pos - 1 ].isSpace() : true ), po );
 }
 
-inline std::pair< QString, bool >
-readHtmlTag( Delims::const_iterator it, TextParsingOpts & po )
-{
-	QString tag;
-
-	qsizetype i = it->m_pos + 1;
-
-	for( ; i < po.fr.data[ it->m_line ].first.size(); ++i )
-	{
-		const auto ch = po.fr.data[ it->m_line ].first[ i ];
-
-		if( !ch.isSpace() && ch != c_62 )
-			tag.append( ch );
-		else
-			break;
-	}
-
-	return { tag, i < po.fr.data[ it->m_line ].first.size() ?
-		po.fr.data[ it->m_line ].first[ i ] == c_62 : false };
-}
-
-inline Delims::const_iterator
-findIt( Delims::const_iterator it, Delims::const_iterator last,
-	TextParsingOpts & po )
-{
-	auto ret = it;
-
-	for( ; it != last; ++it )
-	{
-		if( ( it->m_line == po.line && it->m_pos < po.pos ) || it->m_line < po.line )
-			ret = it;
-	}
-
-	return ret;
-}
-
-inline void
-eatRawHtml( qsizetype line, qsizetype pos, qsizetype toLine, qsizetype toPos,
-	TextParsingOpts & po, bool finish, int htmlRule, bool skipLineEnds = false,
-	bool onLine = true )
-{
-	QString h = po.html.html->text();
-
-	if( !h.isEmpty() && !skipLineEnds )
-	{
-		for( qsizetype i = 0; i < po.fr.emptyLinesBefore; ++i )
-			h.append( c_10 );
-	}
-
-	const auto first = po.fr.data[ line ].first.sliced( pos,
-		( line == toLine ? ( toPos >= 0 ? toPos - pos : po.fr.data[ line ].first.size() - pos ) :
-			po.fr.data[ line ].first.size() - pos ) );
-
-	if( !h.isEmpty() && !first.isEmpty() && !skipLineEnds )
-		h.append( c_10 );
-
-	if( !first.isEmpty() )
-		h.append( first );
-
-	++line;
-
-	for( ; line < toLine; ++line )
-	{
-		h.append( c_10 );
-		h.append( po.fr.data[ line ].first );
-	}
-
-	if( line == toLine && toPos != 0 )
-	{
-		h.append( c_10 );
-		h.append( po.fr.data[ line ].first.sliced( 0,
-			toPos > 0 ? toPos : po.fr.data[ line ].first.size() ) );
-	}
-
-	po.line = ( toPos >= 0 ? toLine : toLine + 1 );
-	po.pos = ( toPos >= 0 ? toPos : 0 );
-
-	po.html.html->setText( h );
-	UnprotectedDocsMethods::setFreeTag( po.html.html, htmlRule != 7 || onLine );
-
-	if( finish )
-	{
-		if( !po.collectRefLinks )
-			po.parent->appendItem( po.html.html );
-
-		po.html.html.reset( nullptr );
-		po.html.htmlBlockType = -1;
-		po.html.continueHtml = false;
-	}
-	else
-		po.html.continueHtml = true;
-}
-
-inline void
-finishRule1HtmlTag( Delims::const_iterator it, Delims::const_iterator last,
-	TextParsingOpts & po, bool skipFirst )
-{
-	static const std::set< QString > finish = {
-		QStringLiteral( "</pre>" ),
-		QStringLiteral( "</script>" ),
-		QStringLiteral( "</style>" ),
-		QStringLiteral( "</textarea>" )
-	};
-
-	for( it = ( skipFirst && it != last ? std::next( it ) : it ); it != last; ++it )
-	{
-		bool doBreak = false;
-
-		if( it->m_type == Delimiter::Less )
-		{
-			QString tag;
-			bool closed = false;
-
-			std::tie( tag, closed ) = readHtmlTag( it, po );
-
-			if( closed )
-			{
-				tag.prepend( c_60 );
-				tag.append( c_62 );
-
-				tag = tag.toLower();
-
-				if( finish.find( tag ) != finish.cend() )
-				{
-					eatRawHtml( po.line, po.pos, it->m_line, -1, po, true, 1 );
-
-					return;
-				}
-			}
-		}
-	}
-
-	eatRawHtml( po.line, po.pos, po.fr.data.size() - 1, -1, po, false, 1 );
-}
-
-inline void
-finishRule2HtmlTag( Delims::const_iterator it, Delims::const_iterator last,
-	TextParsingOpts & po )
-{
-	bool finish = true;
-
-	if( po.html.html->text().isEmpty() && it->m_type == Delimiter::Less )
-	{
-		size_t i = 0;
-
-		const auto & s = po.fr.data[ it->m_line ].first;
-
-		qsizetype p = 0;
-
-		while( ( p = s.indexOf( QStringLiteral( "<!--" ), p ) ) != it->m_pos )
-		{
-			++i;
-			++p;
-		}
-
-		finish = po.fr.data[ it->m_line ].second.htmlCommentClosed[ i ];
-	}
-
-	if( finish )
-	{
-		for( ; it != last; ++it )
-		{
-			if( it->m_type == Delimiter::Greater )
-			{
-				if( it->m_pos > 1 && po.fr.data[ it->m_line ].first[ it->m_pos - 1 ] == c_45 &&
-					po.fr.data[ it->m_line ].first[ it->m_pos - 2 ] == c_45 )
-				{
-					qsizetype i = it->m_pos + 1;
-
-					for( ; i < po.fr.data[ it->m_line ].first.size(); ++i )
-					{
-						if( po.fr.data[ it->m_line ].first[ i ] == c_60 )
-							break;
-					}
-
-					eatRawHtml( po.line, po.pos, it->m_line, i , po, true, 2 );
-
-					return;
-				}
-			}
-		}
-
-		eatRawHtml( po.line, po.pos, po.fr.data.size() - 1, -1, po, false, 2 );
-	}
-	else
-	{
-		po.html.html.reset( nullptr );
-		po.html.htmlBlockType = -1;
-		po.html.continueHtml = false;
-		po.html.onLine = false;
-	}
-}
-
-inline void
-finishRule3HtmlTag( Delims::const_iterator it, Delims::const_iterator last,
-	TextParsingOpts & po )
-{
-	for( ; it != last; ++it )
-	{
-		if( it->m_type == Delimiter::Greater )
-		{
-			if( it->m_pos > 0 && po.fr.data[ it->m_line ].first[ it->m_pos - 1 ] == c_63 )
-			{
-				qsizetype i = it->m_pos + 1;
-
-				for( ; i < po.fr.data[ it->m_line ].first.size(); ++i )
-				{
-					if( po.fr.data[ it->m_line ].first[ i ] == c_60 )
-						break;
-				}
-
-				eatRawHtml( po.line, po.pos, it->m_line, i , po, true, 3 );
-
-				return;
-			}
-		}
-	}
-
-	eatRawHtml( po.line, po.pos, po.fr.data.size() - 1, -1, po, false, 3 );
-}
-
-inline void
-finishRule4HtmlTag( Delims::const_iterator it, Delims::const_iterator last,
-	TextParsingOpts & po )
-{
-	for( ; it != last; ++it )
-	{
-		if( it->m_type == Delimiter::Greater )
-		{
-			qsizetype i = it->m_pos + 1;
-
-			for( ; i < po.fr.data[ it->m_line ].first.size(); ++i )
-			{
-				if( po.fr.data[ it->m_line ].first[ i ] == c_60 )
-					break;
-			}
-
-			eatRawHtml( po.line, po.pos, it->m_line, i , po, true, 4 );
-
-			return;
-		}
-	}
-
-	eatRawHtml( po.line, po.pos, po.fr.data.size() - 1, -1, po, false, 4 );
-}
-
-inline void
-finishRule5HtmlTag( Delims::const_iterator it, Delims::const_iterator last,
-	TextParsingOpts & po )
-{
-	for( ; it != last; ++it )
-	{
-		if( it->m_type == Delimiter::Greater )
-		{
-			if( it->m_pos > 1 && po.fr.data[ it->m_line ].first[ it->m_pos - 1 ] == c_93 &&
-				po.fr.data[ it->m_line ].first[ it->m_pos - 2 ] == c_93 )
-			{
-				qsizetype i = it->m_pos + 1;
-
-				for( ; i < po.fr.data[ it->m_line ].first.size(); ++i )
-				{
-					if( po.fr.data[ it->m_line ].first[ i ] == c_60 )
-						break;
-				}
-
-				eatRawHtml( po.line, po.pos, it->m_line, i , po, true, 5 );
-
-				return;
-			}
-		}
-	}
-
-	eatRawHtml( po.line, po.pos, po.fr.data.size() - 1, -1, po, false, 5 );
-}
-
-inline void
-finishRule6HtmlTag( Delims::const_iterator it, Delims::const_iterator last,
-	TextParsingOpts & po )
-{
-	eatRawHtml( po.line, po.pos, po.fr.data.size() - 1, -1, po, false, 6 );
-}
-
-inline Delims::const_iterator
-finishRule7HtmlTag( Delims::const_iterator it, Delims::const_iterator last,
-	TextParsingOpts & po );
-
-inline Delims::const_iterator
-finishRawHtmlTag( Delims::const_iterator it, Delims::const_iterator last,
-	TextParsingOpts & po, bool skipFirst )
-{
-	switch( po.html.htmlBlockType )
-	{
-		case 1 :
-			finishRule1HtmlTag( it, last, po, skipFirst );
-			break;
-
-		case 2 :
-			finishRule2HtmlTag( it, last, po );
-			break;
-
-		case 3 :
-			finishRule3HtmlTag( it, last, po );
-			break;
-
-		case 4 :
-			finishRule4HtmlTag( it, last, po );
-			break;
-
-		case 5 :
-			finishRule5HtmlTag( it, last, po );
-			break;
-
-		case 6 :
-			finishRule6HtmlTag( it, last, po );
-			break;
-
-		case 7 :
-			return finishRule7HtmlTag( it, last, po );
-
-		default :
-			break;
-	}
-
-	return findIt( it, last, po );
-}
-
 inline void
 skipSpacesInHtml( qsizetype & l, qsizetype & p, const MdBlock::Data & fr )
 {
@@ -2859,109 +2533,486 @@ readHtmlAttr( qsizetype & l, qsizetype & p, const MdBlock::Data & fr,
 	return readHtmlAttrValue( l, p, fr );
 }
 
-inline std::tuple< bool, qsizetype, qsizetype, bool >
-isHtmlTag( Delims::const_iterator it, TextParsingOpts & po )
+inline std::tuple< bool, qsizetype, qsizetype, bool, QString >
+isHtmlTag( qsizetype line, qsizetype pos, TextParsingOpts & po );
+
+inline bool
+isOnlyHtmlTagsAfter( qsizetype line, qsizetype pos, TextParsingOpts & po )
 {
-	if( it->m_type == Delimiter::Less )
+	auto p = skipSpaces( pos, po.fr.data[ line ].first );
+
+	while( p < po.fr.data[ line ].first.size() )
 	{
-		qsizetype l = it->m_line;
-		qsizetype p = it->m_pos + 1;
-		bool first = false;
+		bool ok = false;
 
-		{
-			const auto tmp = skipSpaces( 0, po.fr.data[ l ].first );
-			first = ( tmp == it->m_pos && l == 0 );
-		}
+		qsizetype l;
 
-		if( p >= po.fr.data[ l ].first.size() )
-			return { false, -1, -1, false };
+		std::tie( ok, l, p, std::ignore, std::ignore ) =
+			isHtmlTag( line, p, po );
 
-		bool closing = false;
+		++p;
 
-		if( po.fr.data[ l ].first[ p ] == c_47 )
-		{
-			closing = true;
+		if( !ok )
+			return false;
 
-			++p;
-		}
+		if( l > line )
+			return true;
 
-		// tag
-		for( ; p < po.fr.data[ l ].first.size(); ++p )
-		{
-			const auto ch = po.fr.data[ l ].first[ p ];
+		p = skipSpaces( p, po.fr.data[ line ].first );
+	}
 
-			if( ch.isSpace() || ch == c_62 || ch == c_47 )
-				break;
-		}
+	if( p >= po.fr.data[ line ].first.size() )
+		return true;
 
-		if( p < po.fr.data[ l ].first.size() && po.fr.data[ l ].first[ p ] == c_47 )
-		{
-			if( p + 1 < po.fr.data[ l ].first.size() && po.fr.data[ l ].first[ p + 1 ] == c_62 )
-			{
-				const auto tmp = skipSpaces( p + 2, po.fr.data[ l ].first );
+	return false;
+}
 
-				return { true, l, p + 1, tmp == po.fr.data[ l ].first.size() && first };
-			}
-			else
-				return { false, -1, -1, false };
-		}
+inline std::tuple< bool, qsizetype, qsizetype, bool, QString >
+isHtmlTag( qsizetype line, qsizetype pos, TextParsingOpts & po )
+{
+	if( po.fr.data[ line ].first[ pos ] != c_60 )
+		return { false, -1, -1, false, {} };
 
-		if( p < po.fr.data[ l ].first.size() && po.fr.data[ l ].first[ p ] == c_62 )
-		{
-			const auto tmp = skipSpaces( p + 1, po.fr.data[ l ].first );
+	QString tag;
 
-			return { true, l, p, tmp == po.fr.data[ l ].first.size() && first };
-		}
+	qsizetype l = line;
+	qsizetype p = pos + 1;
+	bool first = false;
 
+	{
+		const auto tmp = skipSpaces( 0, po.fr.data[ l ].first );
+		first = ( tmp == pos );
+	}
+
+	if( p >= po.fr.data[ l ].first.size() )
+		return { false, -1, -1, false, tag };
+
+	bool closing = false;
+
+	if( po.fr.data[ l ].first[ p ] == c_47 )
+	{
+		closing = true;
+
+		tag.append( c_47 );
+
+		++p;
+	}
+
+	// tag
+	for( ; p < po.fr.data[ l ].first.size(); ++p )
+	{
+		const auto ch = po.fr.data[ l ].first[ p ];
+
+		if( ch.isSpace() || ch == c_62 || ch == c_47 )
+			break;
+		else
+			tag.append( ch );
+	}
+
+	if( p < po.fr.data[ l ].first.size() && po.fr.data[ l ].first[ p ] == c_47 )
+	{
+		if( p + 1 < po.fr.data[ l ].first.size() && po.fr.data[ l ].first[ p + 1 ] == c_62 )
+			return { true, l, p + 1, first && isOnlyHtmlTagsAfter( l, p + 2, po ), tag };
+		else
+			return { false, -1, -1, false, tag };
+	}
+
+	if( p < po.fr.data[ l ].first.size() && po.fr.data[ l ].first[ p ] == c_62 )
+		return { true, l, p, first && isOnlyHtmlTagsAfter( l, p + 1, po ), tag };
+
+	skipSpacesInHtml( l, p, po.fr.data );
+
+	if( l >= po.fr.data.size() )
+		return { false, -1, -1, false, tag };
+
+	if( po.fr.data[ l ].first[ p ] == c_62 )
+		return { true, l, p, first && isOnlyHtmlTagsAfter( l, p + 1, po ), tag };
+
+	bool attr = true;
+	bool firstAttr = true;
+
+	while( attr )
+	{
+		bool ok = false;
+
+		std::tie( attr, ok ) = readHtmlAttr( l, p, po.fr.data, !firstAttr );
+
+		firstAttr = false;
+
+		if( closing && attr )
+			return { false, -1, -1, false, tag };
+
+		if( !ok )
+			return { false, -1, -1, false, tag };
+	}
+
+	if( po.fr.data[ l ].first[ p ] == c_47 )
+		++p;
+	else
+	{
 		skipSpacesInHtml( l, p, po.fr.data );
 
 		if( l >= po.fr.data.size() )
-			return { false, -1, -1, false };
+			return { false, -1, -1, false, tag };
+	}
 
-		if( po.fr.data[ l ].first[ p ] == c_62 )
-		{
-			const auto tmp = skipSpaces( p + 1, po.fr.data[ l ].first );
+	if( po.fr.data[ l ].first[ p ] == c_62 )
+		return { true, l, p, first && isOnlyHtmlTagsAfter( l, p + 1, po ), tag };
 
-			return { true, l, p, l == it->m_line && tmp == po.fr.data[ l ].first.size() && first };
-		}
+	return { false, -1, -1, false, {} };
+}
 
-		bool attr = true;
-		bool firstAttr = true;
+inline std::pair< QString, bool >
+readHtmlTag( Delims::const_iterator it, TextParsingOpts & po )
+{
+	QString tag;
 
-		while( attr )
-		{
-			bool ok = false;
+	qsizetype i = it->m_pos + 1;
 
-			std::tie( attr, ok ) = readHtmlAttr( l, p, po.fr.data, !firstAttr );
+	for( ; i < po.fr.data[ it->m_line ].first.size(); ++i )
+	{
+		const auto ch = po.fr.data[ it->m_line ].first[ i ];
 
-			firstAttr = false;
-
-			if( closing && attr )
-				return { false, -1, -1, false };
-
-			if( !ok )
-				return { false, -1, -1, false };
-		}
-
-		if( po.fr.data[ l ].first[ p ] == c_47 )
-			++p;
+		if( !ch.isSpace() && ch != c_62 )
+			tag.append( ch );
 		else
+			break;
+	}
+
+	return { tag, i < po.fr.data[ it->m_line ].first.size() ?
+		po.fr.data[ it->m_line ].first[ i ] == c_62 : false };
+}
+
+inline Delims::const_iterator
+findIt( Delims::const_iterator it, Delims::const_iterator last,
+	TextParsingOpts & po )
+{
+	auto ret = it;
+
+	for( ; it != last; ++it )
+	{
+		if( ( it->m_line == po.line && it->m_pos < po.pos ) || it->m_line < po.line )
+			ret = it;
+	}
+
+	return ret;
+}
+
+inline void
+eatRawHtml( qsizetype line, qsizetype pos, qsizetype toLine, qsizetype toPos,
+	TextParsingOpts & po, bool finish, int htmlRule, bool skipLineEnds = false,
+	bool onLine = true )
+{
+	QString h = po.html.html->text();
+
+	if( !h.isEmpty() && !skipLineEnds )
+	{
+		for( qsizetype i = 0; i < po.fr.emptyLinesBefore; ++i )
+			h.append( c_10 );
+	}
+
+	const auto first = po.fr.data[ line ].first.sliced( pos,
+		( line == toLine ? ( toPos >= 0 ? toPos - pos : po.fr.data[ line ].first.size() - pos ) :
+			po.fr.data[ line ].first.size() - pos ) );
+
+	if( !h.isEmpty() && !first.isEmpty() && !skipLineEnds )
+		h.append( c_10 );
+
+	if( !first.isEmpty() )
+		h.append( first );
+
+	++line;
+
+	for( ; line < toLine; ++line )
+	{
+		h.append( c_10 );
+		h.append( po.fr.data[ line ].first );
+	}
+
+	if( line == toLine && toPos != 0 )
+	{
+		h.append( c_10 );
+		h.append( po.fr.data[ line ].first.sliced( 0,
+			toPos > 0 ? toPos : po.fr.data[ line ].first.size() ) );
+	}
+
+	po.line = ( toPos >= 0 ? toLine : toLine + 1 );
+	po.pos = ( toPos >= 0 ? toPos : 0 );
+
+	po.html.html->setText( h );
+	UnprotectedDocsMethods::setFreeTag( po.html.html, onLine );
+
+	if( finish )
+	{
+		if( !po.collectRefLinks )
+			po.parent->appendItem( po.html.html );
+
+		po.html.html.reset( nullptr );
+		po.html.htmlBlockType = -1;
+		po.html.continueHtml = false;
+	}
+	else
+		po.html.continueHtml = true;
+}
+
+inline void
+finishRule1HtmlTag( Delims::const_iterator it, Delims::const_iterator last,
+	TextParsingOpts & po, bool skipFirst )
+{
+	static const std::set< QString > finish = {
+		QStringLiteral( "</pre>" ),
+		QStringLiteral( "</script>" ),
+		QStringLiteral( "</style>" ),
+		QStringLiteral( "</textarea>" )
+	};
+
+	bool onLine = true;
+
+	if( po.html.html->text().isEmpty() && it->m_type == Delimiter::Less && !skipFirst )
+		std::tie( std::ignore, std::ignore, std::ignore, onLine, std::ignore ) =
+			isHtmlTag( it->m_line, it->m_pos, po );
+
+	for( it = ( skipFirst && it != last ? std::next( it ) : it ); it != last; ++it )
+	{
+		bool doBreak = false;
+
+		if( it->m_type == Delimiter::Less )
 		{
-			skipSpacesInHtml( l, p, po.fr.data );
+			QString tag;
+			bool closed = false;
 
-			if( l >= po.fr.data.size() )
-				return { false, -1, -1, false };
-		}
+			std::tie( tag, closed ) = readHtmlTag( it, po );
 
-		if( po.fr.data[ l ].first[ p ] == c_62 )
-		{
-			const auto tmp = skipSpaces( p + 1, po.fr.data[ l ].first );
+			if( closed )
+			{
+				tag.prepend( c_60 );
+				tag.append( c_62 );
 
-			return { true, l, p, l == it->m_line && tmp == po.fr.data[ l ].first.size() && first };
+				tag = tag.toLower();
+
+				if( finish.find( tag ) != finish.cend() )
+				{		
+					eatRawHtml( po.line, po.pos, it->m_line, -1, po, true, 1, false, onLine );
+
+					return;
+				}
+			}
 		}
 	}
 
-	return { false, -1, -1, false };
+	eatRawHtml( po.line, po.pos, po.fr.data.size() - 1, -1, po, false, 1 );
+}
+
+inline void
+finishRule2HtmlTag( Delims::const_iterator it, Delims::const_iterator last,
+	TextParsingOpts & po )
+{
+	bool finish = true;
+	bool onLine = po.html.onLine;
+
+	if( po.html.html->text().isEmpty() && it->m_type == Delimiter::Less )
+	{
+		size_t i = 0;
+
+		const auto & s = po.fr.data[ it->m_line ].first;
+
+		qsizetype p = 0;
+
+		while( ( p = s.indexOf( QStringLiteral( "<!--" ), p ) ) != it->m_pos )
+		{
+			++i;
+			++p;
+		}
+
+		finish = po.fr.data[ it->m_line ].second.htmlCommentClosed[ i ];
+
+		onLine = ( it->m_pos == skipSpaces( 0, po.fr.data[ it->m_line ].first ) );
+		po.html.onLine = onLine;
+	}
+
+	if( finish )
+	{
+		for( ; it != last; ++it )
+		{
+			if( it->m_type == Delimiter::Greater )
+			{
+				if( it->m_pos > 1 && po.fr.data[ it->m_line ].first[ it->m_pos - 1 ] == c_45 &&
+					po.fr.data[ it->m_line ].first[ it->m_pos - 2 ] == c_45 )
+				{
+					eatRawHtml( po.line, po.pos, it->m_line, po.fr.data[ it->m_line ].first.size(),
+						po, true, 2, false, onLine );
+
+					return;
+				}
+			}
+		}
+
+		eatRawHtml( po.line, po.pos, po.fr.data.size() - 1, -1, po, false, 2, false, onLine );
+	}
+	else
+	{
+		po.html.html.reset( nullptr );
+		po.html.htmlBlockType = -1;
+		po.html.continueHtml = false;
+		po.html.onLine = false;
+	}
+}
+
+inline void
+finishRule3HtmlTag( Delims::const_iterator it, Delims::const_iterator last,
+	TextParsingOpts & po )
+{
+	bool onLine = po.html.onLine;
+
+	if( po.html.html->text().isEmpty() && it->m_type == Delimiter::Less )
+	{
+		onLine = ( it->m_pos == skipSpaces( 0, po.fr.data[ it->m_line ].first ) );
+		po.html.onLine = onLine;
+	}
+
+	for( ; it != last; ++it )
+	{
+		if( it->m_type == Delimiter::Greater )
+		{
+			if( it->m_pos > 0 && po.fr.data[ it->m_line ].first[ it->m_pos - 1 ] == c_63 )
+			{
+				qsizetype i = it->m_pos + 1;
+
+				for( ; i < po.fr.data[ it->m_line ].first.size(); ++i )
+				{
+					if( po.fr.data[ it->m_line ].first[ i ] == c_60 )
+						break;
+				}
+
+				eatRawHtml( po.line, po.pos, it->m_line, i , po, true, 3, false, onLine );
+
+				return;
+			}
+		}
+	}
+
+	eatRawHtml( po.line, po.pos, po.fr.data.size() - 1, -1, po, false, 3 );
+}
+
+inline void
+finishRule4HtmlTag( Delims::const_iterator it, Delims::const_iterator last,
+	TextParsingOpts & po )
+{
+	bool onLine = po.html.onLine;
+
+	if( po.html.html->text().isEmpty() && it->m_type == Delimiter::Less )
+	{
+		onLine = ( it->m_pos == skipSpaces( 0, po.fr.data[ it->m_line ].first ) );
+		po.html.onLine = onLine;
+	}
+
+	for( ; it != last; ++it )
+	{
+		if( it->m_type == Delimiter::Greater )
+		{
+			qsizetype i = it->m_pos + 1;
+
+			for( ; i < po.fr.data[ it->m_line ].first.size(); ++i )
+			{
+				if( po.fr.data[ it->m_line ].first[ i ] == c_60 )
+					break;
+			}
+
+			eatRawHtml( po.line, po.pos, it->m_line, i , po, true, 4, false, onLine );
+
+			return;
+		}
+	}
+
+	eatRawHtml( po.line, po.pos, po.fr.data.size() - 1, -1, po, false, 4 );
+}
+
+inline void
+finishRule5HtmlTag( Delims::const_iterator it, Delims::const_iterator last,
+	TextParsingOpts & po )
+{
+	bool onLine = po.html.onLine;
+
+	if( po.html.html->text().isEmpty() && it->m_type == Delimiter::Less )
+	{
+		onLine = ( it->m_pos == skipSpaces( 0, po.fr.data[ it->m_line ].first ) );
+		po.html.onLine = onLine;
+	}
+
+	for( ; it != last; ++it )
+	{
+		if( it->m_type == Delimiter::Greater )
+		{
+			if( it->m_pos > 1 && po.fr.data[ it->m_line ].first[ it->m_pos - 1 ] == c_93 &&
+				po.fr.data[ it->m_line ].first[ it->m_pos - 2 ] == c_93 )
+			{
+				qsizetype i = it->m_pos + 1;
+
+				for( ; i < po.fr.data[ it->m_line ].first.size(); ++i )
+				{
+					if( po.fr.data[ it->m_line ].first[ i ] == c_60 )
+						break;
+				}
+
+				eatRawHtml( po.line, po.pos, it->m_line, i , po, true, 5, false, onLine );
+
+				return;
+			}
+		}
+	}
+
+	eatRawHtml( po.line, po.pos, po.fr.data.size() - 1, -1, po, false, 5 );
+}
+
+inline void
+finishRule6HtmlTag( Delims::const_iterator it, Delims::const_iterator last,
+	TextParsingOpts & po )
+{
+	eatRawHtml( po.line, po.pos, po.fr.data.size() - 1, -1, po, false, 6, false, true );
+}
+
+inline Delims::const_iterator
+finishRule7HtmlTag( Delims::const_iterator it, Delims::const_iterator last,
+	TextParsingOpts & po );
+
+inline Delims::const_iterator
+finishRawHtmlTag( Delims::const_iterator it, Delims::const_iterator last,
+	TextParsingOpts & po, bool skipFirst )
+{
+	switch( po.html.htmlBlockType )
+	{
+		case 1 :
+			finishRule1HtmlTag( it, last, po, skipFirst );
+			break;
+
+		case 2 :
+			finishRule2HtmlTag( it, last, po );
+			break;
+
+		case 3 :
+			finishRule3HtmlTag( it, last, po );
+			break;
+
+		case 4 :
+			finishRule4HtmlTag( it, last, po );
+			break;
+
+		case 5 :
+			finishRule5HtmlTag( it, last, po );
+			break;
+
+		case 6 :
+			finishRule6HtmlTag( it, last, po );
+			break;
+
+		case 7 :
+			return finishRule7HtmlTag( it, last, po );
+
+		default :
+			break;
+	}
+
+	return findIt( it, last, po );
 }
 
 inline int
@@ -3053,7 +3104,8 @@ htmlTagRule( Delims::const_iterator it, Delims::const_iterator last,
 		{
 			bool tag = false;
 
-			std::tie( tag, std::ignore, std::ignore, std::ignore ) = isHtmlTag( it, po );
+			std::tie( tag, std::ignore, std::ignore, std::ignore, std::ignore ) =
+				isHtmlTag( it->m_line, it->m_pos, po );
 
 			if( tag )
 				return 7;
@@ -3089,10 +3141,13 @@ inline Delims::const_iterator
 finishRule7HtmlTag( Delims::const_iterator it, Delims::const_iterator last,
 	TextParsingOpts & po )
 {
+	const auto start = it;
 	qsizetype l = -1, p = -1;
 	bool onLine = false;
 
-	std::tie( std::ignore, l, p, onLine ) = isHtmlTag( it, po );
+	std::tie( std::ignore, l, p, onLine, std::ignore ) = isHtmlTag( it->m_line, it->m_pos, po );
+
+	onLine = onLine && it->m_line == 0 && l == start->m_line;
 
 	if( l != -1 )
 	{
@@ -3112,14 +3167,16 @@ finishRule7HtmlTag( Delims::const_iterator it, Delims::const_iterator last,
 
 					if( rule != -1 && rule != 7 )
 					{
-						eatRawHtml( po.line, po.pos, it->m_line, it->m_pos, po, true, 7, onLine );
+						eatRawHtml( po.line, po.pos, it->m_line, it->m_pos, po, true, 7,
+							true, onLine );
 
 						return std::prev( it );
 					}
 				}
 			}
 
-			eatRawHtml( po.line, po.pos, po.fr.data.size() - 1, -1, po, false, 7, onLine );
+			eatRawHtml( po.line, po.pos, po.fr.data.size() - 1, -1, po, false, 7,
+				true, onLine );
 
 			return std::prev( last );
 		}
@@ -4978,20 +5035,19 @@ parseFormattedText( MdBlock & fr, QSharedPointer< Block > parent,
 			finishRawHtmlTag( delims.cend(), delims.cend(), po, false );
 	}
 
-	if( !collectRefLinks )
+	if( !html.html.isNull() && !html.continueHtml )
 	{
-		if( !html.html.isNull() && !html.continueHtml )
-		{
+		if( !collectRefLinks )
 			p->appendItem( html.html );
 
-			html.html.reset( nullptr );
-			html.htmlBlockType = -1;
-			html.continueHtml = false;
-			html.onLine = false;
-		}
-
-		makeText( fr.data.size() - 1, fr.data.back().first.length(), po );
+		html.html.reset( nullptr );
+		html.htmlBlockType = -1;
+		html.continueHtml = false;
+		html.onLine = false;
 	}
+
+	if( !collectRefLinks )
+		makeText( fr.data.size() - 1, fr.data.back().first.length(), po );
 
 	if( !p->isEmpty() )
 	{

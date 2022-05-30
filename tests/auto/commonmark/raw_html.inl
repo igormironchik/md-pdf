@@ -33,27 +33,9 @@ TEST_CASE( "612" )
 	REQUIRE( doc->isEmpty() == false );
 	REQUIRE( doc->items().size() == 2 );
 
-	REQUIRE( doc->items().at( 1 )->type() == MD::ItemType::Paragraph );
-	auto p = static_cast< MD::Paragraph* > ( doc->items().at( 1 ).data() );
-	REQUIRE( p->items().size() == 3 );
-
-	{
-		REQUIRE( p->items().at( 0 )->type() == MD::ItemType::RawHtml );
-		auto h = static_cast< MD::RawHtml* > ( p->items().at( 0 ).data() );
-		REQUIRE( h->text() == QStringLiteral( "<a>" ) );
-	}
-
-	{
-		REQUIRE( p->items().at( 1 )->type() == MD::ItemType::RawHtml );
-		auto h = static_cast< MD::RawHtml* > ( p->items().at( 1 ).data() );
-		REQUIRE( h->text() == QStringLiteral( "<bab>" ) );
-	}
-
-	{
-		REQUIRE( p->items().at( 2 )->type() == MD::ItemType::RawHtml );
-		auto h = static_cast< MD::RawHtml* > ( p->items().at( 2 ).data() );
-		REQUIRE( h->text() == QStringLiteral( "<c2c>" ) );
-	}
+	REQUIRE( doc->items().at( 1 )->type() == MD::ItemType::RawHtml );
+	auto h = static_cast< MD::RawHtml* > ( doc->items().at( 1 ).data() );
+	REQUIRE( h->text() == QStringLiteral( "<a><bab><c2c>" ) );
 }
 
 TEST_CASE( "613" )
@@ -63,21 +45,9 @@ TEST_CASE( "613" )
 	REQUIRE( doc->isEmpty() == false );
 	REQUIRE( doc->items().size() == 2 );
 
-	REQUIRE( doc->items().at( 1 )->type() == MD::ItemType::Paragraph );
-	auto p = static_cast< MD::Paragraph* > ( doc->items().at( 1 ).data() );
-	REQUIRE( p->items().size() == 2 );
-
-	{
-		REQUIRE( p->items().at( 0 )->type() == MD::ItemType::RawHtml );
-		auto h = static_cast< MD::RawHtml* > ( p->items().at( 0 ).data() );
-		REQUIRE( h->text() == QStringLiteral( "<a/>" ) );
-	}
-
-	{
-		REQUIRE( p->items().at( 1 )->type() == MD::ItemType::RawHtml );
-		auto h = static_cast< MD::RawHtml* > ( p->items().at( 1 ).data() );
-		REQUIRE( h->text() == QStringLiteral( "<b2/>" ) );
-	}
+	REQUIRE( doc->items().at( 1 )->type() == MD::ItemType::RawHtml );
+	auto h = static_cast< MD::RawHtml* > ( doc->items().at( 1 ).data() );
+	REQUIRE( h->text() == QStringLiteral( "<a/><b2/>" ) );
 }
 
 TEST_CASE( "614" )
@@ -87,21 +57,9 @@ TEST_CASE( "614" )
 	REQUIRE( doc->isEmpty() == false );
 	REQUIRE( doc->items().size() == 2 );
 
-	REQUIRE( doc->items().at( 1 )->type() == MD::ItemType::Paragraph );
-	auto p = static_cast< MD::Paragraph* > ( doc->items().at( 1 ).data() );
-	REQUIRE( p->items().size() == 2 );
-
-	{
-		REQUIRE( p->items().at( 0 )->type() == MD::ItemType::RawHtml );
-		auto h = static_cast< MD::RawHtml* > ( p->items().at( 0 ).data() );
-		REQUIRE( h->text() == QStringLiteral( "<a  />" ) );
-	}
-
-	{
-		REQUIRE( p->items().at( 1 )->type() == MD::ItemType::RawHtml );
-		auto h = static_cast< MD::RawHtml* > ( p->items().at( 1 ).data() );
-		REQUIRE( h->text() == QStringLiteral( "<b2\ndata=\"foo\" >" ) );
-	}
+	REQUIRE( doc->items().at( 1 )->type() == MD::ItemType::RawHtml );
+	auto h = static_cast< MD::RawHtml* > ( doc->items().at( 1 ).data() );
+	REQUIRE( h->text() == QStringLiteral( "<a  /><b2\ndata=\"foo\" >" ) );
 }
 
 TEST_CASE( "615" )
@@ -238,21 +196,9 @@ TEST_CASE( "622" )
 	REQUIRE( doc->isEmpty() == false );
 	REQUIRE( doc->items().size() == 2 );
 
-	REQUIRE( doc->items().at( 1 )->type() == MD::ItemType::Paragraph );
-	auto p = static_cast< MD::Paragraph* > ( doc->items().at( 1 ).data() );
-	REQUIRE( p->items().size() == 2 );
-
-	{
-		REQUIRE( p->items().at( 0 )->type() == MD::ItemType::RawHtml );
-		auto h = static_cast< MD::RawHtml* > ( p->items().at( 0 ).data() );
-		REQUIRE( h->text() == QStringLiteral( "</a>" ) );
-	}
-
-	{
-		REQUIRE( p->items().at( 1 )->type() == MD::ItemType::RawHtml );
-		auto h = static_cast< MD::RawHtml* > ( p->items().at( 1 ).data() );
-		REQUIRE( h->text() == QStringLiteral( "</foo >" ) );
-	}
+	REQUIRE( doc->items().at( 1 )->type() == MD::ItemType::RawHtml );
+	auto h = static_cast< MD::RawHtml* > ( doc->items().at( 1 ).data() );
+	REQUIRE( h->text() == QStringLiteral( "</a></foo >" ) );
 }
 
 TEST_CASE( "623" )
@@ -277,19 +223,19 @@ TEST_CASE( "624" )
 	const auto doc = load_test( 624 );
 
 	REQUIRE( doc->isEmpty() == false );
-	REQUIRE( doc->items().size() == 3 );
+	REQUIRE( doc->items().size() == 2 );
 
 	REQUIRE( doc->items().at( 1 )->type() == MD::ItemType::Paragraph );
 	auto p = static_cast< MD::Paragraph* > ( doc->items().at( 1 ).data() );
-	REQUIRE( p->items().size() == 1 );
+	REQUIRE( p->items().size() == 2 );
 
 	REQUIRE( p->items().at( 0 )->type() == MD::ItemType::Text );
 	auto t = static_cast< MD::Text* > ( p->items().at( 0 ).data() );
 	REQUIRE( t->opts() == MD::TextWithoutFormat );
 	REQUIRE( t->text() == QStringLiteral( "foo" ) );
 
-	REQUIRE( doc->items().at( 2 )->type() == MD::ItemType::RawHtml );
-	auto h = static_cast< MD::RawHtml* > ( doc->items().at( 2 ).data() );
+	REQUIRE( p->items().at( 1 )->type() == MD::ItemType::RawHtml );
+	auto h = static_cast< MD::RawHtml* > ( p->items().at( 1 ).data() );
 	REQUIRE( h->text() == QStringLiteral( "<!-- this is a\ncomment - with hyphen -->" ) );
 }
 
@@ -338,4 +284,25 @@ TEST_CASE( "626" )
 		REQUIRE( t->opts() == MD::TextWithoutFormat );
 		REQUIRE( t->text() == QStringLiteral( "foo <!-- foo--->" ) );
 	}
+}
+
+TEST_CASE( "627" )
+{
+	const auto doc = load_test( 627 );
+
+	REQUIRE( doc->isEmpty() == false );
+	REQUIRE( doc->items().size() == 2 );
+
+	REQUIRE( doc->items().at( 1 )->type() == MD::ItemType::Paragraph );
+	auto p = static_cast< MD::Paragraph* > ( doc->items().at( 1 ).data() );
+	REQUIRE( p->items().size() == 2 );
+
+	REQUIRE( p->items().at( 0 )->type() == MD::ItemType::Text );
+	auto t = static_cast< MD::Text* > ( p->items().at( 0 ).data() );
+	REQUIRE( t->opts() == MD::TextWithoutFormat );
+	REQUIRE( t->text() == QStringLiteral( "foo" ) );
+
+	REQUIRE( p->items().at( 1 )->type() == MD::ItemType::RawHtml );
+	auto h = static_cast< MD::RawHtml* > ( p->items().at( 1 ).data() );
+	REQUIRE( h->text() == QStringLiteral( "<?php echo $a; ?>" ) );
 }
