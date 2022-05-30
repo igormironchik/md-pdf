@@ -23,7 +23,7 @@
 #define DOCTEST_CONFIG_IMPLEMENT_WITH_MAIN
 #include <doctest/doctest.h>
 
-//CommonMark 0.30
+// CommonMark 0.30
 
 // 2.2
 #include "tabs.inl"
