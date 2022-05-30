@@ -2190,6 +2190,12 @@ removeLineBreak( const QString & s )
 		return s;
 }
 
+inline QString
+replaceEntity( const QString & s )
+{
+	return s;
+}
+
 inline void
 makeTextObject( const QString & text, bool spaceBefore, bool spaceAfter,
 	TextParsingOpts & po )
@@ -2199,7 +2205,7 @@ makeTextObject( const QString & text, bool spaceBefore, bool spaceAfter,
 	if( !s.isEmpty() )
 	{
 		QSharedPointer< Text > t( new Text() );
-		t->setText( s );
+		t->setText( replaceEntity( s ) );
 		t->setOpts( po.opts );
 		t->setSpaceBefore( spaceBefore );
 		t->setSpaceAfter( spaceAfter );

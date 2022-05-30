@@ -29,13 +29,12 @@
 #include "tabs.inl"
 
 // 2.3 Insecure characters
-// Skipped.
 
 // 2.4
 #include "backslash.inl"
 
 // 2.5 Entity and numeric character references
-// Skipped.
+#include "entity.inl"
 
 // 3.1 - 4.5
 #include "blocks.inl"
