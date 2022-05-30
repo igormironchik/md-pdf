@@ -385,3 +385,24 @@ TEST_CASE( "628" )
 	auto h = static_cast< MD::RawHtml* > ( p->items().at( 1 ).data() );
 	REQUIRE( h->text() == QStringLiteral( "<!ELEMENT br EMPTY>" ) );
 }
+
+TEST_CASE( "629" )
+{
+	const auto doc = load_test( 629 );
+
+	REQUIRE( doc->isEmpty() == false );
+	REQUIRE( doc->items().size() == 2 );
+
+	REQUIRE( doc->items().at( 1 )->type() == MD::ItemType::Paragraph );
+	auto p = static_cast< MD::Paragraph* > ( doc->items().at( 1 ).data() );
+	REQUIRE( p->items().size() == 2 );
+
+	REQUIRE( p->items().at( 0 )->type() == MD::ItemType::Text );
+	auto t = static_cast< MD::Text* > ( p->items().at( 0 ).data() );
+	REQUIRE( t->opts() == MD::TextWithoutFormat );
+	REQUIRE( t->text() == QStringLiteral( "foo" ) );
+
+	REQUIRE( p->items().at( 1 )->type() == MD::ItemType::RawHtml );
+	auto h = static_cast< MD::RawHtml* > ( p->items().at( 1 ).data() );
+	REQUIRE( h->text() == QStringLiteral( "<![CDATA[>&<]]>" ) );
+}
