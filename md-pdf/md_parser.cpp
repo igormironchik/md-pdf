@@ -732,6 +732,7 @@ Parser::parse( StringListStream & stream, QSharedPointer< Block > parent,
 		const auto currentLineNumber = stream.currentLineNumber();
 
 		auto line = stream.readLine();
+		line.replace( QChar( 0 ), QChar( 0xFFFD ) );
 
 		checkForHtmlComments( line, stream, htmlCommentClosed );
 
