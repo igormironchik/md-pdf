@@ -2534,7 +2534,7 @@ readHtmlAttr( qsizetype & l, qsizetype & p, const MdBlock::Data & fr,
 }
 
 inline std::tuple< bool, qsizetype, qsizetype, bool, QString >
-isHtmlTag( qsizetype line, qsizetype pos, TextParsingOpts & po );
+isHtmlTag( qsizetype line, qsizetype pos, TextParsingOpts & po, bool rule7 = false );
 
 inline bool
 isOnlyHtmlTagsAfter( qsizetype line, qsizetype pos, TextParsingOpts & po )
@@ -2568,7 +2568,7 @@ isOnlyHtmlTagsAfter( qsizetype line, qsizetype pos, TextParsingOpts & po )
 }
 
 inline std::tuple< bool, qsizetype, qsizetype, bool, QString >
-isHtmlTag( qsizetype line, qsizetype pos, TextParsingOpts & po )
+isHtmlTag( qsizetype line, qsizetype pos, TextParsingOpts & po, bool rule7 )
 {
 	if( po.fr.data[ line ].first[ pos ] != c_60 )
 		return { false, -1, -1, false, {} };
@@ -2612,13 +2612,33 @@ isHtmlTag( qsizetype line, qsizetype pos, TextParsingOpts & po )
 	if( p < po.fr.data[ l ].first.size() && po.fr.data[ l ].first[ p ] == c_47 )
 	{
 		if( p + 1 < po.fr.data[ l ].first.size() && po.fr.data[ l ].first[ p + 1 ] == c_62 )
-			return { true, l, p + 1, first && isOnlyHtmlTagsAfter( l, p + 2, po ), tag };
+		{
+			qsizetype tmp = 0;
+
+			if( rule7 )
+				tmp = skipSpaces( p + 2, po.fr.data[ l ].first );
+
+			bool onLine = ( first && ( rule7 ? tmp == po.fr.data[ l ].first.size() :
+				isOnlyHtmlTagsAfter( l, p + 2, po ) ) );
+
+			return { true, l, p + 1, onLine, tag };
+		}
 		else
 			return { false, -1, -1, false, tag };
 	}
 
 	if( p < po.fr.data[ l ].first.size() && po.fr.data[ l ].first[ p ] == c_62 )
-		return { true, l, p, first && isOnlyHtmlTagsAfter( l, p + 1, po ), tag };
+	{
+		qsizetype tmp = 0;
+
+		if( rule7 )
+			tmp = skipSpaces( p + 1, po.fr.data[ l ].first );
+
+		bool onLine = ( first && ( rule7 ? tmp == po.fr.data[ l ].first.size() :
+			isOnlyHtmlTagsAfter( l, p + 1, po ) ) );
+
+		return { true, l, p, onLine, tag };
+	}
 
 	skipSpacesInHtml( l, p, po.fr.data );
 
@@ -2626,7 +2646,17 @@ isHtmlTag( qsizetype line, qsizetype pos, TextParsingOpts & po )
 		return { false, -1, -1, false, tag };
 
 	if( po.fr.data[ l ].first[ p ] == c_62 )
-		return { true, l, p, first && isOnlyHtmlTagsAfter( l, p + 1, po ), tag };
+	{
+		qsizetype tmp = 0;
+
+		if( rule7 )
+			tmp = skipSpaces( p + 1, po.fr.data[ l ].first );
+
+		bool onLine = ( first && ( rule7 ? tmp == po.fr.data[ l ].first.size() :
+			isOnlyHtmlTagsAfter( l, p + 1, po ) ) );
+
+		return { true, l, p, onLine, tag };
+	}
 
 	bool attr = true;
 	bool firstAttr = true;
@@ -2657,7 +2687,17 @@ isHtmlTag( qsizetype line, qsizetype pos, TextParsingOpts & po )
 	}
 
 	if( po.fr.data[ l ].first[ p ] == c_62 )
-		return { true, l, p, first && isOnlyHtmlTagsAfter( l, p + 1, po ), tag };
+	{
+		qsizetype tmp = 0;
+
+		if( rule7 )
+			tmp = skipSpaces( p + 1, po.fr.data[ l ].first );
+
+		bool onLine = ( first && ( rule7 ? tmp == po.fr.data[ l ].first.size() :
+			isOnlyHtmlTagsAfter( l, p + 1, po ) ) );
+
+		return { true, l, p, onLine, tag };
+	}
 
 	return { false, -1, -1, false, {} };
 }
@@ -3145,7 +3185,8 @@ finishRule7HtmlTag( Delims::const_iterator it, Delims::const_iterator last,
 	qsizetype l = -1, p = -1;
 	bool onLine = false;
 
-	std::tie( std::ignore, l, p, onLine, std::ignore ) = isHtmlTag( it->m_line, it->m_pos, po );
+	std::tie( std::ignore, l, p, onLine, std::ignore ) = isHtmlTag( it->m_line, it->m_pos,
+		po, true );
 
 	onLine = onLine && it->m_line == 0 && l == start->m_line;
 
