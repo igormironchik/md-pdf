@@ -191,3 +191,16 @@ TEST_CASE( "33" )
 	REQUIRE( doc->labeledLinks() [ l->url() ]->url() ==
 		QStringLiteral( "/f" ) + QChar( 0xF6 ) + QChar( 0xF6 ) );
 }
+
+TEST_CASE( "34" )
+{
+	const auto doc = load_test( 34 );
+
+	REQUIRE( doc->isEmpty() == false );
+	REQUIRE( doc->items().size() == 2 );
+
+	REQUIRE( doc->items().at( 1 )->type() == MD::ItemType::Code );
+	auto c = static_cast< MD::Code* > ( doc->items().at( 1 ).data() );
+	REQUIRE( c->syntax() == QStringLiteral( "f" ) + QChar( 0xF6 ) + QChar( 0xF6 ) );
+	REQUIRE( c->text() == QStringLiteral( "foo" ) );
+}

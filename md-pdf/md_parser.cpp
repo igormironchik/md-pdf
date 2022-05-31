@@ -5658,6 +5658,7 @@ Parser::parseCode( MdBlock & fr, QSharedPointer< Block > parent,
 
 		QString syntax;
 		isStartOfCode( fr.data.constFirst().first, &syntax );
+		syntax = replaceEntity( syntax );
 
 		fr.data.removeFirst();
 		fr.data.removeLast();
