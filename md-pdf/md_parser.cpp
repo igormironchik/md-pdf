@@ -2327,6 +2327,12 @@ makeTextObject( const QString & text, bool spaceBefore, bool spaceAfter,
 	if( !doNotEscape )
 		s = removeBackslashes( s );
 
+	if( !s.isEmpty() )
+	{
+		spaceBefore = spaceBefore || s.at( 0 ).isSpace();
+		spaceAfter = spaceAfter || s.at( s.size() - 1 ).isSpace();
+	}
+
 	s = s.simplified();
 
 	if( !s.isEmpty() )
