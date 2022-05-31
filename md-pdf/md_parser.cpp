@@ -4153,8 +4153,8 @@ checkForImage( Delims::const_iterator it, Delims::const_iterator last,
 					}
 				}
 				else if( createShortcutImage( text.simplified(),
-							po, start->m_line, start->m_pos + start->m_len,
-							it, {}, false ) )
+					po, start->m_line, start->m_pos + start->m_len,
+					it, {}, false ) )
 				{
 					return it;
 				}
@@ -4257,7 +4257,7 @@ checkForLink( Delims::const_iterator it, Delims::const_iterator last,
 
 							QSharedPointer< Link > link( new Link );
 
-							url = removeBackslashes( url );
+							url = removeBackslashes( replaceEntity( url ) );
 
 							if( !url.isEmpty() )
 							{
