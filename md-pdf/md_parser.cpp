@@ -3629,7 +3629,7 @@ makeLink( const QString & url, const QString & text,
 	bool doNotCreateTextOnFail,
 	qsizetype lastLine, qsizetype lastPos )
 {
-	QString u = ( url.startsWith( c_35 ) ? url : removeBackslashes( url ) );
+	QString u = ( url.startsWith( c_35 ) ? url : removeBackslashes( replaceEntity( url ) ) );
 
 	if( !u.isEmpty() )
 	{
@@ -3757,10 +3757,12 @@ makeImage( const QString & url, const QString & text,
 {
 	QSharedPointer< Image > img( new Image );
 
-	if( !QUrl( url ).isRelative() )
-		img->setUrl( url );
+	QString u = ( url.startsWith( c_35 ) ? url : removeBackslashes( replaceEntity( url ) ) );
+
+	if( !QUrl( u ).isRelative() )
+		img->setUrl( u );
 	else
-		img->setUrl( fileExists( url, po.workingPath ) ? po.workingPath + url : url );
+		img->setUrl( fileExists( u, po.workingPath ) ? po.workingPath + u : u );
 
 	MdBlock::Data tmp;
 	tmp.append( { text, { -1 } } );

@@ -452,8 +452,6 @@ TEST_CASE( "501" )
 
 TEST_CASE( "502" )
 {
-	MESSAGE( "This test is not strict to CommonMark 0.30." );
-
 	const auto doc = load_test( 502 );
 
 	REQUIRE( doc->isEmpty() == false );
@@ -467,8 +465,7 @@ TEST_CASE( "502" )
 	REQUIRE( l->img()->isEmpty() );
 	REQUIRE( l->opts() == MD::TextWithoutFormat );
 	REQUIRE( l->text() == QStringLiteral( "link" ) );
-	// I don't convert HTML entities.
-	REQUIRE( l->url() == QStringLiteral( "foo%20b&auml;" ) );
+	REQUIRE( l->url() == QStringLiteral( "foo%20b" ) + QChar( 0xE4 ) );
 }
 
 TEST_CASE( "503" )
