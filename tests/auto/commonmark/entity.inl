@@ -141,3 +141,15 @@ TEST_CASE( "30" )
 	REQUIRE( t->opts() == MD::TextWithoutFormat );
 	REQUIRE( t->text() == QStringLiteral( "&MadeUpEntity;" ) );
 }
+
+TEST_CASE( "31" )
+{
+	const auto doc = load_test( 31 );
+
+	REQUIRE( doc->isEmpty() == false );
+	REQUIRE( doc->items().size() == 2 );
+
+	REQUIRE( doc->items().at( 1 )->type() == MD::ItemType::RawHtml );
+	auto h = static_cast< MD::RawHtml* > ( doc->items().at( 1 ).data() );
+	REQUIRE( h->text() == QStringLiteral( "<a href=\"&ouml;&ouml;.html\">" ) );
+}
