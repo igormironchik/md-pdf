@@ -220,3 +220,15 @@ TEST_CASE( "35" )
 	auto c = static_cast< MD::Code* > ( p->items().at( 0 ).data() );
 	REQUIRE( c->text() == QStringLiteral( "f&ouml;&ouml;" ) );
 }
+
+TEST_CASE( "36" )
+{
+	const auto doc = load_test( 36 );
+
+	REQUIRE( doc->isEmpty() == false );
+	REQUIRE( doc->items().size() == 2 );
+
+	REQUIRE( doc->items().at( 1 )->type() == MD::ItemType::Code );
+	auto c = static_cast< MD::Code* > ( doc->items().at( 1 ).data() );
+	REQUIRE( c->text() == QStringLiteral( "f&ouml;f&ouml;" ) );
+}
