@@ -21,7 +21,8 @@ endif( ENABLE_COVERAGE )
 set( LIB_SRC md_doc.hpp
     md_doc.cpp
     md_parser.hpp
-    md_parser.cpp )
+    md_parser.cpp
+	md_entities_map.hpp )
 
 set( GUI_SRC main.cpp
 	main_window.cpp

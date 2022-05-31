@@ -22,6 +22,7 @@
 
 // md-pdf include
 #include "md_parser.hpp"
+#include "md_entities_map.hpp"
 
 // C++ include.
 #include <tuple>
@@ -565,7 +566,7 @@ isHtmlComment( const QString & s )
 {
 	auto c = s;
 
-	if( s.startsWith( QStringLiteral( "<!--" ) ) )
+	if( s.startsWith( c_startComment ) )
 		c.remove( 0, 4 );
 	else
 		return false;
@@ -616,7 +617,7 @@ checkForHtmlComments( const QString & line, StringListStream & stream,
 
 	bool addFalse = false;
 
-	while( ( p = line.indexOf( QStringLiteral( "<!--" ), p ) ) != -1 )
+	while( ( p = line.indexOf( c_startComment, p ) ) != -1 )
 	{
 		auto c = line.sliced( p );
 
@@ -2193,37 +2194,94 @@ removeLineBreak( const QString & s )
 inline QString
 replaceEntity( const QString & s )
 {
-	return s;
-}
+	qsizetype p1 = 0;
 
-inline void
-makeTextObject( const QString & text, bool spaceBefore, bool spaceAfter,
-	TextParsingOpts & po )
-{
-	const auto s = text.simplified();
+	QString res;
+	qsizetype i = 0;
 
-	if( !s.isEmpty() )
+	while( ( p1 = s.indexOf( c_38, p1 ) ) != -1 )
 	{
-		QSharedPointer< Text > t( new Text() );
-		t->setText( replaceEntity( s ) );
-		t->setOpts( po.opts );
-		t->setSpaceBefore( spaceBefore );
-		t->setSpaceAfter( spaceAfter );
+		if( p1 > 0 && s[ p1 - 1 ] == c_92 )
+		{
+			++p1;
 
-		po.wasRefLink = false;
-		po.parent->appendItem( t );
+			continue;
+		}
+
+		const auto p2 = s.indexOf( c_59, p1 );
+
+		if( p2 != -1 )
+		{
+			const auto en = s.sliced( p1, p2 - p1 + 1 );
+
+			if( en.size() > 2 && en[ 1 ] == c_35 )
+			{
+				if( en.size() > 3 && en[ 2 ].toLower() == c_120 )
+				{
+					const auto hex = en.sliced( 3, en.size() - 4 );
+
+					if( hex.size() <= 6 && hex.size() > 0  )
+					{
+						bool ok = false;
+
+						const auto c = hex.toInt( &ok, 16 );
+
+						if( ok )
+						{
+							res.append( s.sliced( i, p1 - i ) );
+							i = p2 + 1;
+
+							if( c )
+								res.append( QChar( c ) );
+							else
+								res.append( QChar( 0xFFFD ) );
+						}
+					}
+				}
+				else
+				{
+					const auto dec = en.sliced( 2, en.size() - 3 );
+
+					if( dec.size() <= 7 && dec.size() > 0 )
+					{
+						bool ok = false;
+
+						const auto c = dec.toInt( &ok, 10 );
+
+						if( ok )
+						{
+							res.append( s.sliced( i, p1 - i ) );
+							i = p2 + 1;
+
+							if( c )
+								res.append( QChar( c ) );
+							else
+								res.append( QChar( 0xFFFD ) );
+						}
+					}
+				}
+			}
+			else
+			{
+				const auto it = c_entityMap.find( en );
+
+				if( it != c_entityMap.cend() )
+				{
+					res.append( s.sliced( i, p1 - i ) );
+					i = p2 + 1;
+					res.append( it->second );
+				}
+			}
+		}
+		else
+			break;
+
+		p1 = p2 + 1;
 	}
-}
 
-inline void
-makeTextObjectWithLineBreak( const QString & text, bool spaceBefore, bool spaceAfter,
-	TextParsingOpts & po )
-{
-	makeTextObject( text, spaceBefore, true, po );
+	res.append( s.sliced( i, s.size() - i ) );
 
-	QSharedPointer< Item > hr( new LineBreak );
-	po.wasRefLink = false;
-	po.parent->appendItem( hr );
+	return res;
 }
 
 static const QString c_canBeEscaped = QStringLiteral( "!\"#$%&'()*+,-./:;<=>?@[\\]^_`{|}~" );
@@ -2261,6 +2319,41 @@ removeBackslashes( const QString & s )
 }
 
 inline void
+makeTextObject( const QString & text, bool spaceBefore, bool spaceAfter,
+	TextParsingOpts & po, bool doNotEscape )
+{
+	auto s = replaceEntity( text );
+
+	if( !doNotEscape )
+		s = removeBackslashes( s );
+
+	s = s.simplified();
+
+	if( !s.isEmpty() )
+	{
+		QSharedPointer< Text > t( new Text() );
+		t->setText( s );
+		t->setOpts( po.opts );
+		t->setSpaceBefore( spaceBefore );
+		t->setSpaceAfter( spaceAfter );
+
+		po.wasRefLink = false;
+		po.parent->appendItem( t );
+	}
+}
+
+inline void
+makeTextObjectWithLineBreak( const QString & text, bool spaceBefore, bool spaceAfter,
+	TextParsingOpts & po, bool doNotEscape )
+{
+	makeTextObject( text, spaceBefore, true, po, doNotEscape );
+
+	QSharedPointer< Item > hr( new LineBreak );
+	po.wasRefLink = false;
+	po.parent->appendItem( hr );
+}
+
+inline void
 makeText(
 	// Inclusive.
 	qsizetype lastLine,
@@ -2291,7 +2384,7 @@ makeText(
 	auto makeTOWLB = [&] () {
 		if( po.line != po.fr.data.size() - 1 )
 		{
-			makeTextObjectWithLineBreak( text, spaceBefore, true, po );
+			makeTextObjectWithLineBreak( text, spaceBefore, true, po, doNotEscape );
 
 			text.clear();
 
@@ -2301,8 +2394,7 @@ makeText(
 
 	if( lineBreak )
 	{
-		const auto s = removeLineBreak( po.fr.data.at( po.line ).first ).sliced( po.pos );
-		text.append( doNotEscape ? s : removeBackslashes( s ) );
+		text.append( removeLineBreak( po.fr.data.at( po.line ).first ).sliced( po.pos ) );
 
 		makeTOWLB();
 	}
@@ -2311,7 +2403,7 @@ makeText(
 		const auto s = po.fr.data.at( po.line ).first.sliced( po.pos,
 			( po.line == lastLine ? lastPos - po.pos :
 				po.fr.data.at( po.line ).first.size() - po.pos ) );
-		text.append( doNotEscape ? s : removeBackslashes( s ) );
+		text.append( s );
 	}
 
 	if( po.line != lastLine )
@@ -2326,7 +2418,7 @@ makeText(
 
 			const auto s = ( lineBreak ?
 				removeLineBreak( po.fr.data.at( po.line ).first ) : po.fr.data.at( po.line ).first );
-			text.append( doNotEscape ? s : removeBackslashes( s ) );
+			text.append( s );
 
 			text.append( c_32 );
 
@@ -2341,11 +2433,11 @@ makeText(
 		auto s = po.fr.data.at( po.line ).first.sliced( 0, lastPos );
 
 		if( !lineBreak )
-			text.append( doNotEscape ? s : removeBackslashes( s ) );
+			text.append( s );
 		else
 		{
 			s = removeLineBreak( s );
-			text.append( doNotEscape ? s : removeBackslashes( s ) );
+			text.append( s );
 
 			makeTOWLB();
 		}
@@ -2354,7 +2446,8 @@ makeText(
 	po.pos = lastPos;
 
 	makeTextObject( text, spaceBefore,
-		( po.pos > 0 ? po.fr.data.at( po.line ).first[ po.pos - 1 ].isSpace() : true ), po );
+		( po.pos > 0 ? po.fr.data.at( po.line ).first[ po.pos - 1 ].isSpace() : true ), po,
+		doNotEscape );
 }
 
 inline void
@@ -2865,7 +2958,7 @@ finishRule2HtmlTag( Delims::const_iterator it, Delims::const_iterator last,
 
 		qsizetype p = 0;
 
-		while( ( p = s.indexOf( QStringLiteral( "<!--" ), p ) ) != it->m_pos )
+		while( ( p = s.indexOf( c_startComment, p ) ) != it->m_pos )
 		{
 			++i;
 			++p;
