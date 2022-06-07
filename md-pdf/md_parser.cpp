@@ -1515,6 +1515,45 @@ Parser::parseHeading( MdBlock & fr, QSharedPointer< Block > parent,
 	}
 }
 
+namespace /* anonymous */ {
+
+QStringList splitTableRow( const QString & s )
+{
+	QStringList res;
+	QString c;
+
+	bool backslash = false;
+
+	for( qsizetype i = 0; i < s.size(); ++i )
+	{
+		bool now = false;
+
+		if( s[ i ] == c_92 && !backslash )
+		{
+			backslash = true;
+			now = true;
+			c.append( s[ i ] );
+		}
+		else if( s[ i ] == c_124 && !backslash )
+		{
+			res.append( c.simplified() );
+			c.clear();
+		}
+		else
+			c.append( s[ i ] );
+
+		if( !now )
+			backslash = false;
+	}
+
+	if( !c.isEmpty() )
+		res.append( c.simplified() );
+
+	return res;
+}
+
+} /* namespace anonymous */
+
 void
 Parser::parseTable( MdBlock & fr, QSharedPointer< Block > parent,
 	QSharedPointer< Document > doc, QStringList & linksToParse,
@@ -1537,7 +1576,7 @@ Parser::parseTable( MdBlock & fr, QSharedPointer< Block > parent,
 			if( line.endsWith( sep ) )
 				line.remove( line.length() - 1, 1 );
 
-			auto columns = line.split( sep );
+			auto columns = splitTableRow( line );
 
 			QSharedPointer< TableRow > tr( new TableRow );
 
