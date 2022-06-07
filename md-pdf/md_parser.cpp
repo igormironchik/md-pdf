@@ -1366,7 +1366,7 @@ Parser::parseText( MdBlock & fr, QSharedPointer< Block > parent,
 		parseFootnote( fr, parent, doc, linksToParse, workingPath, fileName,
 			collectRefLinks );
 	else if( c && h && c == h )
-		parseTable( fr, parent, doc, linksToParse, workingPath, fileName, collectRefLinks );
+		parseTable( fr, parent, doc, linksToParse, workingPath, fileName, collectRefLinks, c );
 	else
 		parseParagraph( fr, parent, doc, linksToParse,
 			workingPath, fileName, collectRefLinks, html );
@@ -1586,7 +1586,7 @@ void
 Parser::parseTable( MdBlock & fr, QSharedPointer< Block > parent,
 	QSharedPointer< Document > doc, QStringList & linksToParse,
 	const QString & workingPath, const QString & fileName,
-	bool collectRefLinks )
+	bool collectRefLinks, int columnsCount )
 {
 	static const QChar sep( '|' );
 
@@ -1608,8 +1608,13 @@ Parser::parseTable( MdBlock & fr, QSharedPointer< Block > parent,
 
 			QSharedPointer< TableRow > tr( new TableRow );
 
-			for( auto it = columns.begin(), last = columns.end(); it != last; ++it )
+			int c = 0;
+
+			for( auto it = columns.begin(), last = columns.end(); it != last; ++it, ++c )
 			{
+				if( c == columnsCount )
+					break;
+
 				QSharedPointer< TableCell > c( new TableCell );
 
 				if( !it->isEmpty() )

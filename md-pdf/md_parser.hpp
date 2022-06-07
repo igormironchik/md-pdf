@@ -244,7 +244,7 @@ private:
 	void parseTable( MdBlock & fr, QSharedPointer< Block > parent,
 		QSharedPointer< Document > doc,
 		QStringList & linksToParse, const QString & workingPath,
-		const QString & fileName, bool collectRefLinks );
+		const QString & fileName, bool collectRefLinks, int columnsCount );
 	void parseParagraph( MdBlock & fr, QSharedPointer< Block > parent,
 		QSharedPointer< Document > doc,
 		QStringList & linksToParse, const QString & workingPath,
