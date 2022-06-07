@@ -222,7 +222,7 @@ TEST_CASE( "is_horizontal_line" )
 TEST_CASE( "is_column_alignment" )
 {
 	REQUIRE( !MD::isColumnAlignment( QStringLiteral( "a" ) ) );
-	REQUIRE( !MD::isColumnAlignment( QStringLiteral( ":-" ) ) );
+	REQUIRE( MD::isColumnAlignment( QStringLiteral( ":-" ) ) );
 	REQUIRE( !MD::isColumnAlignment( QStringLiteral( ":---a" ) ) );
 	REQUIRE( !MD::isColumnAlignment( QStringLiteral( ":--- a" ) ) );
 }

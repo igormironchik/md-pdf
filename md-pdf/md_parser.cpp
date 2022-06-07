@@ -431,7 +431,7 @@ isColumnAlignment( const QString & s )
 			break;
 	}
 
-	if( a != p && p - a < 3 )
+	if( a != p && p - a < 1 )
 		return false;
 
 	if( p == s.size() )
