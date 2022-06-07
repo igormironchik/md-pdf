@@ -343,3 +343,96 @@ TEST_CASE( "201" )
 		REQUIRE( t->text() == QStringLiteral( "bar" ) );
 	}
 }
+
+TEST_CASE( "202" )
+{
+	const auto doc = load_test( 202 );
+	REQUIRE( doc->items().size() == 3 );
+
+	REQUIRE( doc->items().at( 1 )->type() == MD::ItemType::Table );
+	const auto t = static_cast< MD::Table* > ( doc->items().at( 1 ).data() );
+	REQUIRE( t->columnsCount() == 2 );
+	REQUIRE( t->rows().size() == 3 );
+
+	REQUIRE( t->columnAlignment( 0 ) == MD::Table::AlignLeft );
+	REQUIRE( t->columnAlignment( 1 ) == MD::Table::AlignLeft );
+
+	{
+		REQUIRE( t->rows().at( 0 )->type() == MD::ItemType::TableRow );
+		const auto r = static_cast< MD::TableRow* > ( t->rows().at( 0 ).data() );
+		REQUIRE( r->cells().size() == 2 );
+
+		{
+			REQUIRE( r->cells().at( 0 )->type() == MD::ItemType::TableCell );
+			const auto c = static_cast< MD::TableCell* > ( r->cells().at( 0 ).data() );
+			REQUIRE( c->items().size() == 1 );
+			REQUIRE( c->items().at( 0 )->type() == MD::ItemType::Text );
+			const auto t = static_cast< MD::Text* > ( c->items().at( 0 ).data() );
+			REQUIRE( t->opts() == MD::TextWithoutFormat );
+			REQUIRE( t->text() == QStringLiteral( "abc" ) );
+		}
+
+		{
+			REQUIRE( r->cells().at( 1 )->type() == MD::ItemType::TableCell );
+			const auto c = static_cast< MD::TableCell* > ( r->cells().at( 1 ).data() );
+			REQUIRE( c->items().size() == 1 );
+			REQUIRE( c->items().at( 0 )->type() == MD::ItemType::Text );
+			const auto t = static_cast< MD::Text* > ( c->items().at( 0 ).data() );
+			REQUIRE( t->opts() == MD::TextWithoutFormat );
+			REQUIRE( t->text() == QStringLiteral( "def" ) );
+		}
+	}
+
+	{
+		REQUIRE( t->rows().at( 1 )->type() == MD::ItemType::TableRow );
+		const auto r = static_cast< MD::TableRow* > ( t->rows().at( 1 ).data() );
+		REQUIRE( r->cells().size() == 2 );
+
+		{
+			REQUIRE( r->cells().at( 0 )->type() == MD::ItemType::TableCell );
+			const auto c = static_cast< MD::TableCell* > ( r->cells().at( 0 ).data() );
+			REQUIRE( c->items().size() == 1 );
+			REQUIRE( c->items().at( 0 )->type() == MD::ItemType::Text );
+			const auto t = static_cast< MD::Text* > ( c->items().at( 0 ).data() );
+			REQUIRE( t->opts() == MD::TextWithoutFormat );
+			REQUIRE( t->text() == QStringLiteral( "bar" ) );
+		}
+
+		{
+			REQUIRE( r->cells().at( 1 )->type() == MD::ItemType::TableCell );
+			const auto c = static_cast< MD::TableCell* > ( r->cells().at( 1 ).data() );
+			REQUIRE( c->items().size() == 1 );
+			REQUIRE( c->items().at( 0 )->type() == MD::ItemType::Text );
+			const auto t = static_cast< MD::Text* > ( c->items().at( 0 ).data() );
+			REQUIRE( t->opts() == MD::TextWithoutFormat );
+			REQUIRE( t->text() == QStringLiteral( "baz" ) );
+		}
+	}
+
+	{
+		REQUIRE( t->rows().at( 2 )->type() == MD::ItemType::TableRow );
+		const auto r = static_cast< MD::TableRow* > ( t->rows().at( 2 ).data() );
+		REQUIRE( r->cells().size() == 1 );
+
+		{
+			REQUIRE( r->cells().at( 0 )->type() == MD::ItemType::TableCell );
+			const auto c = static_cast< MD::TableCell* > ( r->cells().at( 0 ).data() );
+			REQUIRE( c->items().size() == 1 );
+			REQUIRE( c->items().at( 0 )->type() == MD::ItemType::Text );
+			const auto t = static_cast< MD::Text* > ( c->items().at( 0 ).data() );
+			REQUIRE( t->opts() == MD::TextWithoutFormat );
+			REQUIRE( t->text() == QStringLiteral( "bar" ) );
+		}
+	}
+
+	REQUIRE( doc->items().at( 2 )->type() == MD::ItemType::Paragraph );
+	const auto p = static_cast< MD::Paragraph* > ( doc->items().at( 2 ).data() );
+	REQUIRE( p->items().size() == 1 );
+
+	{
+		REQUIRE( p->items().at( 0 )->type() == MD::ItemType::Text );
+		const auto t = static_cast< MD::Text* > ( p->items().at( 0 ).data() );
+		REQUIRE( t->opts() == MD::TextWithoutFormat );
+		REQUIRE( t->text() == QStringLiteral( "bar" ) );
+	}
+}
