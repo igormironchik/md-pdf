@@ -689,3 +689,27 @@ TEST_CASE( "280" )
 		REQUIRE( t->text() == QStringLiteral( "bim" ) );
 	}
 }
+
+TEST_CASE( "491" )
+{
+	const auto doc = load_test( 491 );
+	REQUIRE( doc->items().size() == 2 );
+
+	REQUIRE( doc->items().at( 1 )->type() == MD::ItemType::Paragraph );
+	const auto p = static_cast< MD::Paragraph* > ( doc->items().at( 1 ).data() );
+	REQUIRE( p->items().size() == 2 );
+
+	{
+		REQUIRE( p->items().at( 0 )->type() == MD::ItemType::Text );
+		const auto t = static_cast< MD::Text* > ( p->items().at( 0 ).data() );
+		REQUIRE( t->opts() == MD::StrikethroughText );
+		REQUIRE( t->text() == QStringLiteral( "Hi" ) );
+	}
+
+	{
+		REQUIRE( p->items().at( 1 )->type() == MD::ItemType::Text );
+		const auto t = static_cast< MD::Text* > ( p->items().at( 1 ).data() );
+		REQUIRE( t->opts() == MD::TextWithoutFormat );
+		REQUIRE( t->text() == QStringLiteral( "Hello, world!" ) );
+	}
+}
