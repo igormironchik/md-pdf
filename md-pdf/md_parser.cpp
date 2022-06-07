@@ -412,9 +412,6 @@ isColumnAlignment( const QString & s )
 {
 	qsizetype p = skipSpaces( 0, s );
 
-	if( p == s.size() )
-		return true;
-
 	static const auto c_legitime = QStringLiteral( ":-" );
 
 	if( !c_legitime.contains( s[ p ] ) )
@@ -451,18 +448,18 @@ isColumnAlignment( const QString & s )
 	return true;
 }
 
-bool
+int
 isTableAlignment( const QString & s )
 {
-	const auto columns = s.split( c_124, Qt::SkipEmptyParts );
+	const auto columns = s.simplified().split( c_124, Qt::SkipEmptyParts );
 
 	for( const auto & c : columns )
 	{
 		if( !isColumnAlignment( c ) )
-			return false;
+			return 0;
 	}
 
-	return true;
+	return columns.size();
 }
 
 
@@ -1316,13 +1313,42 @@ Parser::clearCache()
 
 namespace /* anonymous */ {
 
-inline bool
+inline int
 isTableHeader( const QString & s )
 {
 	if( s.contains( c_124 ) )
-		return true;
+	{
+		int c = 0;
+
+		const auto tmp = s.simplified();
+		const auto p = tmp.startsWith( c_124 ) ? 1 : 0;
+		const auto n = tmp.size() - p - ( tmp.endsWith( c_124 ) ? 1 : 0 );
+		QStringView v( tmp.sliced( p, n ) );
+
+		bool backslash = false;
+
+		for( qsizetype i = 0; i < v.size(); ++i )
+		{
+			bool now = false;
+
+			if( v[ i ] == c_92 && !backslash )
+			{
+				backslash = true;
+				now = true;
+			}
+			else if( v[ i ] == c_124 && !backslash )
+				++c;
+
+			if( !now )
+				backslash = false;
+		}
+
+		++c;
+
+		return c;
+	}
 	else
-		return false;
+		return 0;
 }
 
 } /* namespace anonymous */
@@ -1333,12 +1359,14 @@ Parser::parseText( MdBlock & fr, QSharedPointer< Block > parent,
 	const QString & workingPath, const QString & fileName,
 	bool collectRefLinks, RawHtmlBlock & html )
 {
+	const auto h = isTableHeader( fr.data.first().first );
+	const auto c = fr.data.size() > 1 ? isTableAlignment( fr.data[ 1 ].first ) : 0;
+
 	if( isFootnote( fr.data.first().first ) )
 		parseFootnote( fr, parent, doc, linksToParse, workingPath, fileName,
 			collectRefLinks );
-	else if( isTableHeader( fr.data.first().first ) && fr.data.size() > 1 &&
-		isTableAlignment( fr.data[ 1 ].first ) )
-			parseTable( fr, parent, doc, linksToParse, workingPath, fileName, collectRefLinks );
+	else if( c && h && c == h )
+		parseTable( fr, parent, doc, linksToParse, workingPath, fileName, collectRefLinks );
 	else
 		parseParagraph( fr, parent, doc, linksToParse,
 			workingPath, fileName, collectRefLinks, html );

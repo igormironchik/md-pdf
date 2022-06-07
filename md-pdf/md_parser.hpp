@@ -123,8 +123,8 @@ isHorizontalLine( QStringView s );
 bool
 isColumnAlignment( const QString & s );
 
-//! \return Is string a table alignment?
-bool
+//! \return Number of columns?
+int
 isTableAlignment( const QString & s );
 
 struct RawHtmlBlock {

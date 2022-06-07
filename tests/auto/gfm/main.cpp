@@ -436,3 +436,18 @@ TEST_CASE( "202" )
 		REQUIRE( t->text() == QStringLiteral( "bar" ) );
 	}
 }
+
+TEST_CASE( "203" )
+{
+	const auto doc = load_test( 203 );
+	REQUIRE( doc->items().size() == 2 );
+
+	REQUIRE( doc->items().at( 1 )->type() == MD::ItemType::Paragraph );
+	const auto p = static_cast< MD::Paragraph* > ( doc->items().at( 1 ).data() );
+	REQUIRE( p->items().size() == 1 );
+
+	REQUIRE( p->items().at( 0 )->type() == MD::ItemType::Text );
+	const auto t = static_cast< MD::Text* > ( p->items().at( 0 ).data() );
+	REQUIRE( t->opts() == MD::TextWithoutFormat );
+	REQUIRE( t->text() == QStringLiteral( "| abc | def | | --- | | bar |" ) );
+}
