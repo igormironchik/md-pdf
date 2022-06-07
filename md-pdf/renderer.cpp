@@ -2601,7 +2601,27 @@ PdfRenderer::drawListItem( PdfAuxData & pdfData, const RenderOpts & renderOpts,
 		const auto spaceWidth = font->GetFontMetrics()->StringWidth( PdfString( " " ) );
 		const auto unorderedMarkWidth = spaceWidth * 0.75;
 
-		if( item->listType() == MD::ListItem::Ordered )
+		if( item->isTaskList() )
+		{
+			pdfData.setColor( Qt::black );
+			pdfData.drawRectangle( pdfData.coords.margins.left + offset,
+				pdfData.coords.y,
+				orderedListNumberWidth, orderedListNumberWidth );
+			pdfData.painter->Stroke();
+
+			if( item->isChecked() )
+			{
+				const auto d = orderedListNumberWidth * 0.2;
+
+				pdfData.drawRectangle( pdfData.coords.margins.left + offset + d,
+					pdfData.coords.y + d,
+					orderedListNumberWidth - 2.0 * d, orderedListNumberWidth - 2.0 * d );
+				pdfData.painter->Fill();
+			}
+
+			pdfData.restoreColor();
+		}
+		else if( item->listType() == MD::ListItem::Ordered )
 		{
 			if( prevListItemType == ListItemType::Unordered )
 				idx = 1;

@@ -84,6 +84,11 @@ private slots:
 	//! Test complex 2.
 	void testComplex2();
 
+	//! Test task list.
+	void testTaskList();
+	//! Test task list.
+	void testTaskListBigFont();
+
 	//! Test link with inline content.
 	void testLinks();
 	//! Test link with inline content.
@@ -367,6 +372,18 @@ void
 TestRender::testLinksBigFont()
 {
 	doTest( QStringLiteral( "links.md" ), QStringLiteral( "_big" ), 16.0, 14.0 );
+}
+
+void
+TestRender::testTaskList()
+{
+	doTest( QStringLiteral( "tasklist.md" ), QString(), 8.0, 8.0 );
+}
+
+void
+TestRender::testTaskListBigFont()
+{
+	doTest( QStringLiteral( "tasklist.md" ), QStringLiteral( "_big" ), 16.0, 14.0 );
 }
 
 
