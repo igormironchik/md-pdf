@@ -337,6 +337,30 @@ ListItem::setStartNumber( int n )
 	m_startNumber = n;
 }
 
+bool
+ListItem::isTaskList() const
+{
+	return m_isTaskList;
+}
+
+void
+ListItem::setTaskList( bool on )
+{
+	m_isTaskList = on;
+}
+
+bool
+ListItem::isChecked() const
+{
+	return m_isChecked;
+}
+
+void
+ListItem::setChecked( bool on )
+{
+	m_isChecked = on;
+}
+
 
 //
 // List

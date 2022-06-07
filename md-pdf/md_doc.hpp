@@ -411,10 +411,18 @@ public:
 	int startNumber() const;
 	void setStartNumber( int n );
 
+	bool isTaskList() const;
+	void setTaskList( bool on = true );
+
+	bool isChecked() const;
+	void setChecked( bool on = true );
+
 private:
 	ListType m_listType = Unordered;
 	OrderedListPreState m_orderedListState = Start;
 	int m_startNumber = 1;
+	bool m_isTaskList = false;
+	bool m_isChecked = false;
 
 	Q_DISABLE_COPY( ListItem )
 }; // class ListItem

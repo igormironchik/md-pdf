@@ -5654,6 +5654,50 @@ Parser::parseListItem( MdBlock & fr, QSharedPointer< Block > parent,
 		data.append( { fr.data.first().first.right( fr.data.first().first.length() - indent ),
 			fr.data.first().second } );
 
+	bool taskList = false;
+	bool checked = false;
+
+	if( !data.isEmpty() )
+	{
+		auto p = skipSpaces( 0, data.first().first );
+
+		if( p < data.first().first.size() )
+		{
+			if( data.first().first[ p ] == c_91 )
+			{
+				++p;
+
+				if( p < data.first().first.size() )
+				{
+					if( data.first().first[ p ] == c_32 ||
+						data.first().first[ p ].toLower() == c_120 )
+					{
+						if( data.first().first[ p ].toLower() == c_120 )
+							checked = true;
+
+						++p;
+
+						if( p < data.first().first.size() )
+						{
+							if( data.first().first[ p ] == c_93 )
+							{
+								taskList = true;
+
+								data[ 0 ].first = data[ 0 ].first.sliced( p + 1 );
+							}
+						}
+					}
+				}
+			}
+		}
+	}
+
+	if( taskList )
+	{
+		item->setTaskList();
+		item->setChecked( checked );
+	}
+
 	for( auto last = fr.data.end(); it != last; ++it, ++pos )
 	{
 		std::tie( ok, std::ignore, std::ignore ) = listItemData( it->first );
