@@ -8,6 +8,10 @@ if( ENABLE_COVERAGE )
 	set( CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} --coverage" )
 endif( ENABLE_COVERAGE )
 
+if( MSVC )
+	add_compile_options( /bigobj )
+endif()
+
 file( GLOB MD_FILES 0.30/*.md )
 file( COPY ${MD_FILES} DESTINATION ${CMAKE_CURRENT_BINARY_DIR}/0.30 )
 file( GLOB HPP *.hpp )
