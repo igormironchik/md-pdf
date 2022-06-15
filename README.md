@@ -44,12 +44,10 @@ Good example of work of this application is
 
 # Known issues
  
- * I do not support HTML tags in Markdown, as for PDF rendering HTML is unuseful.
+ * I do not render HTML tags in Markdown.
 
  * I don't support Chinese, as they don't use spaces. I don't know theirs rules, to adapt
  algorithms.
- 
-   I checked on this weird [Markdown file](https://github.com/feiyangqingyun/qtkaifajingyan/blob/master/README.md), guys, they don't follow up Markdown standard even.
    
  * I don't support right-to-left languages. I don't know theirs rules too.
  
