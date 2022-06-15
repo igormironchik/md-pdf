@@ -62,13 +62,13 @@ MainWidget::MainWidget( QWidget * parent )
 	m_ui->m_keywordColor->setColor( QColor( 128, 128, 0 ) );
 	m_ui->m_commentColor->setColor( QColor( 0, 128, 0 ) );
 
-	connect( m_ui->m_linkColorBtn, &QToolButton::clicked, this, &MainWidget::changeLinkColor );
-	connect( m_ui->m_borderColorBtn, &QToolButton::clicked, this, &MainWidget::changeBorderColor );
-	connect( m_ui->m_codeBackgroundBtn, &QToolButton::clicked,
+	connect( m_ui->m_linkColor, &ColorWidget::clicked, this, &MainWidget::changeLinkColor );
+	connect( m_ui->m_borderColor, &ColorWidget::clicked, this, &MainWidget::changeBorderColor );
+	connect( m_ui->m_codeBackground, &ColorWidget::clicked,
 		this, &MainWidget::changeCodeBackground );
-	connect( m_ui->m_keywordColorBtn, &QToolButton::clicked, this, &MainWidget::changeKeywordColor );
-	connect( m_ui->m_commentColorBtn, &QToolButton::clicked, this, &MainWidget::changeCommentColor );
-	connect( m_ui->m_codeColorBtn, &QToolButton::clicked, this, &MainWidget::changeCodeColor );
+	connect( m_ui->m_keywordColor, &ColorWidget::clicked, this, &MainWidget::changeKeywordColor );
+	connect( m_ui->m_commentColor, &ColorWidget::clicked, this, &MainWidget::changeCommentColor );
+	connect( m_ui->m_codeColor, &ColorWidget::clicked, this, &MainWidget::changeCodeColor );
 	connect( m_ui->m_fileNameBtn, &QToolButton::clicked,
 		this, &MainWidget::selectMarkdown );
 	connect( m_ui->m_startBtn, &QPushButton::clicked,

@@ -37,6 +37,10 @@ class ColorWidget final
 {
 	Q_OBJECT
 
+signals:
+	//! Clicked.
+	void clicked();
+
 public:
 	ColorWidget( QWidget * parent );
 	~ColorWidget() override = default;
@@ -46,9 +50,12 @@ public:
 
 protected:
 	void paintEvent( QPaintEvent * ) override;
+	void mousePressEvent( QMouseEvent * e ) override;
+	void mouseReleaseEvent( QMouseEvent * e ) override;
 
 private:
 	QColor m_color;
+	bool m_pressed;
 
 	Q_DISABLE_COPY( ColorWidget )
 }; // class ColorWidget

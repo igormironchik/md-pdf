@@ -25,6 +25,7 @@
 
 // Qt include.
 #include <QPainter>
+#include <QMouseEvent>
 
 
 //
@@ -33,6 +34,7 @@
 
 ColorWidget::ColorWidget( QWidget * parent )
 	:	QFrame( parent )
+	,	m_pressed( false )
 {
 	setFrameStyle( QFrame::Panel | QFrame::Sunken );
 	setColor( Qt::white );
@@ -62,4 +64,26 @@ ColorWidget::paintEvent( QPaintEvent * e )
 	p.drawRect( frameRect() );
 
 	QFrame::paintEvent( e );
+}
+
+void
+ColorWidget::mousePressEvent( QMouseEvent * e )
+{
+	if( e->button() == Qt::LeftButton )
+		m_pressed = true;
+
+	e->accept();
+}
+
+void
+ColorWidget::mouseReleaseEvent( QMouseEvent * e )
+{
+	if( m_pressed && e->button() == Qt::LeftButton )
+	{
+		m_pressed = false;
+
+		emit clicked();
+	}
+
+	e->accept();
 }
