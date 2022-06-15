@@ -26,7 +26,6 @@
 #include "renderer.hpp"
 #include "progress.hpp"
 #include "const.hpp"
-#include "license_dialog.hpp"
 
 // Qt include.
 #include <QToolButton>
@@ -42,6 +41,9 @@
 
 // podofo include.
 #include <podofo/podofo.h>
+
+// Widgets include.
+#include <Widgets/LicenseDialog>
 
 
 //
@@ -352,7 +354,8 @@ void
 MainWindow::licenses()
 {
 	LicenseDialog msg( this );
-	msg.addLicense( QStringLiteral( "<p><b>PoDoFo License\n\n</b></p>"
+	msg.addLicense( QStringLiteral( "PoDoFo" ),
+		QStringLiteral( "<p><b>PoDoFo License\n\n</b></p>"
 		"<p>GNU LIBRARY GENERAL PUBLIC LICENSE\n</p>"
 		"<p>Version 2, June 1991\n</p>"
 		"\n"
@@ -835,7 +838,8 @@ MainWindow::licenses()
 		"\n"
 		"<p>That's all there is to it!</p>" ) );
 
-	msg.addLicense( QStringLiteral( "<p><b>ImageMagick License</b>\n\n</p>"
+	msg.addLicense( QStringLiteral( "ImageMagick" ),
+		QStringLiteral( "<p><b>ImageMagick License</b>\n\n</p>"
 		"<p>Terms and Conditions for Use, Reproduction, and Distribution\n</p>"
 		"\n"
 		"<p>The legally binding and authoritative terms and conditions for use, reproduction, "

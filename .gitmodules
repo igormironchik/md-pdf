@@ -1,0 +1,3 @@
+[submodule "3rdparty/widgets"]
+	path = 3rdparty/widgets
+	url = https://github.com/igormironchik/widgets.git

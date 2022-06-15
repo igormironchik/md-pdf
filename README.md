@@ -16,6 +16,14 @@ If you will find a bug of rendering, please, try to localize the issue in
 short Markdown and reproduce with fonts in `tests/fonts` folder (`Droid Serif` for text
 and `Courier New` for code). And post the issue here...
 
+# Getting from Repository
+
+After clone update submodules with the next command:
+
+```
+git submodule update --init --recursive
+```
+
 # Building
 
 To build this application first of all install dependencies of PoDoFo

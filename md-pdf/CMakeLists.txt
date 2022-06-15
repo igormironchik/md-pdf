@@ -35,10 +35,7 @@ set( GUI_SRC main.cpp
 	progress.hpp
 	progress.cpp
 	progress.ui
-	const.hpp
-	license_dialog.cpp
-	license_dialog.hpp
-	license_dialog.ui )
+	const.hpp )
 	
 qt6_add_resources( GUI_SRC resources.qrc )
 
@@ -51,6 +48,7 @@ set( LIB_SYNTAX_SRC syntax.cpp
 
 include_directories( ${CMAKE_CURRENT_SOURCE_DIR}
 	${CMAKE_CURRENT_SOURCE_DIR}/../3rdparty/podofo-trunk/src
+	${CMAKE_CURRENT_SOURCE_DIR}/../3rdparty/widgets/include
 	${CMAKE_CURRENT_BINARY_DIR}/../3rdparty/podofo-trunk
 	${ImageMagick_INCLUDE_DIRS} )
 
@@ -67,5 +65,5 @@ target_link_libraries( syntax Qt6::Core )
 
 add_executable( md-pdf-gui WIN32 ${GUI_SRC} )
 
-target_link_libraries( md-pdf-gui md-parser syntax ${PODOFO_LIB} ${ImageMagick_LIBRARIES}
+target_link_libraries( md-pdf-gui md-parser syntax widgets ${PODOFO_LIB} ${ImageMagick_LIBRARIES}
 	Qt6::Widgets Qt6::Network Qt6::Core )

@@ -24,6 +24,7 @@ file( MAKE_DIRECTORY ${CMAKE_SOURCE_DIR}/lib )
 set( PODOFO_BUILD_LIB_ONLY ON )
 
 add_subdirectory( 3rdparty/podofo-trunk )
+add_subdirectory( 3rdparty/widgets )
 
 find_package( LIBJPEG )
 find_package( PNG )
