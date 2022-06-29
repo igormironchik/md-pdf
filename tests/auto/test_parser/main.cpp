@@ -2915,3 +2915,74 @@ TEST_CASE( "064" )
 	REQUIRE( t->opts() == MD::TextWithoutFormat );
 	REQUIRE( t->text() == QStringLiteral( "\\`" ) );
 }
+
+TEST_CASE( "065" )
+{
+	MD::Parser parser;
+
+	auto doc = parser.parse( QStringLiteral( "data/065.md" ) );
+
+	REQUIRE( doc->isEmpty() == false );
+	REQUIRE( doc->items().size() == 2 );
+
+	REQUIRE( doc->items().at( 1 )->type() == MD::ItemType::Paragraph );
+	auto p = static_cast< MD::Paragraph* > ( doc->items().at( 1 ).data() );
+	REQUIRE( p->items().size() == 6 );
+
+	{
+		REQUIRE( p->items().at( 0 )->type() == MD::ItemType::Text );
+		auto t = static_cast< MD::Text* > ( p->items().at( 0 ).data() );
+		REQUIRE( t->opts() == MD::TextWithoutFormat );
+		REQUIRE( t->text() == QStringLiteral( "When" ) );
+	}
+
+	{
+		REQUIRE( p->items().at( 1 )->type() == MD::ItemType::Math );
+		auto m = static_cast< MD::Math* > ( p->items().at( 1 ).data() );
+		REQUIRE( m->expr() == QStringLiteral( "a \\ne 0" ) );
+		REQUIRE( m->isInline() );
+	}
+
+	{
+		REQUIRE( p->items().at( 2 )->type() == MD::ItemType::Text );
+		auto t = static_cast< MD::Text* > ( p->items().at( 2 ).data() );
+		REQUIRE( t->opts() == MD::TextWithoutFormat );
+		REQUIRE( t->text() == QStringLiteral( ", there are two solutions to" ) );
+	}
+
+	{
+		REQUIRE( p->items().at( 3 )->type() == MD::ItemType::Math );
+		auto m = static_cast< MD::Math* > ( p->items().at( 3 ).data() );
+		REQUIRE( m->expr() == QStringLiteral( "(ax^2 + bx + c = 0)" ) );
+		REQUIRE( m->isInline() );
+	}
+
+	{
+		REQUIRE( p->items().at( 4 )->type() == MD::ItemType::Text );
+		auto t = static_cast< MD::Text* > ( p->items().at( 4 ).data() );
+		REQUIRE( t->opts() == MD::TextWithoutFormat );
+		REQUIRE( t->text() == QStringLiteral( "and they are" ) );
+	}
+
+	{
+		REQUIRE( p->items().at( 5 )->type() == MD::ItemType::Math );
+		auto m = static_cast< MD::Math* > ( p->items().at( 5 ).data() );
+		REQUIRE( m->expr() == QStringLiteral( " x = {-b \\pm \\sqrt{b^2-4ac} \\over 2a} " ) );
+		REQUIRE( !m->isInline() );
+	}
+}
+
+TEST_CASE( "066" )
+{
+	MD::Parser parser;
+
+	auto doc = parser.parse( QStringLiteral( "data/066.md" ) );
+
+	REQUIRE( doc->isEmpty() == false );
+	REQUIRE( doc->items().size() == 2 );
+
+	REQUIRE( doc->items().at( 1 )->type() == MD::ItemType::Math );
+	auto m = static_cast< MD::Math* > ( doc->items().at( 1 ).data() );
+	REQUIRE( m->expr() == QStringLiteral( "x = {-b \\pm \\sqrt{b^2-4ac} \\over 2a}" ) );
+	REQUIRE( !m->isInline() );
+}

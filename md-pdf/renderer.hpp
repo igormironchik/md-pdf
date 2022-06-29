@@ -354,6 +354,10 @@ private:
 		MD::Paragraph * item, QSharedPointer< MD::Document > doc, double offset,
 		bool withNewLine, CalcHeightOpt heightCalcOpt,
 		float scale, bool inFootnote );
+	//! Draw math expression.
+	QVector< WhereDrawn > drawMathExpr( PdfAuxData & pdfData, const RenderOpts & renderOpts,
+		MD::Math * item, QSharedPointer< MD::Document > doc, double offset,
+		CalcHeightOpt heightCalcOpt, float scale, bool inFootnote );
 	//! Draw block of code.
 	QVector< WhereDrawn > drawCode( PdfAuxData & pdfData, const RenderOpts & renderOpts,
 		MD::Code * item, QSharedPointer< MD::Document > doc, double offset,

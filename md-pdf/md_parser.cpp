@@ -1923,6 +1923,8 @@ struct Delimiter {
 		Less,
 		// >
 		Greater,
+		// $
+		Math,
 		HorizontalLine,
 		Unknown
 	}; // enum DelimiterType
@@ -2203,6 +2205,28 @@ collectDelimiters( const MdBlock::Data & fr )
 							line, i - code.length() - ( backslash ? 1 : 0 ),
 							code.length() + ( backslash ? 1 : 0 ),
 							space, spaceAfter, word, backslash } );
+
+						word = false;
+
+						--i;
+					}
+					// $
+					else if( str[ i ] == c_36 )
+					{
+						QString m;
+
+						while( i < str.length() && str[ i ] == c_36 )
+						{
+							m.append( str[ i ] );
+							++i;
+						}
+
+						if( m.length() <= 2 && !backslash )
+						{
+							d.push_back( { Delimiter::Math,
+								line, i - m.length(), m.length(),
+								false, false, false, false } );
+						}
 
 						word = false;
 
@@ -3404,6 +3428,56 @@ finishRule7HtmlTag( Delims::const_iterator it, Delims::const_iterator last,
 	}
 	else
 		return it;
+}
+
+inline Delims::const_iterator
+checkForMath( Delims::const_iterator it, Delims::const_iterator last,
+	TextParsingOpts & po )
+{
+	const auto end = std::find_if( std::next( it ), last,
+		[&] ( const auto & d )
+		{
+			return ( d.m_type == Delimiter::Math &&
+					 d.m_len == it->m_len );
+		} );
+
+	if( end != last )
+	{
+		QString math;
+
+		if( it->m_line == end->m_line )
+			math = po.fr.data[ it->m_line ].first.sliced( it->m_pos + it->m_len,
+				end->m_pos - ( it->m_pos + it->m_len ) );
+		else
+		{
+			math = po.fr.data[ it->m_line ].first.sliced( it->m_pos + it->m_len );
+
+			for( qsizetype i = it->m_line + 1; i < end->m_line; ++i )
+			{
+				math.append( c_10 );
+				math.append( po.fr.data[ i ].first );
+			}
+
+			math.append( c_10 );
+			math.append( po.fr.data[ end->m_line ].first.sliced( 0, end->m_pos ) );
+		}
+
+		if( !po.collectRefLinks )
+		{
+			QSharedPointer< Math > m( new Math );
+			m->setInline( it->m_len == 1 );
+			m->setExpr( math );
+
+			po.parent->appendItem( m );
+
+			po.pos = end->m_pos + end->m_len;
+			po.line = end->m_line;
+		}
+
+		return end;
+	}
+
+	return it;
 }
 
 inline Delims::const_iterator
@@ -5206,6 +5280,9 @@ parseFormattedText( MdBlock & fr, QSharedPointer< Block > parent,
 							it = checkForStyle( delims.cbegin(), it, last, po );
 						break;
 
+					case Delimiter::Math :
+						it = checkForMath( it, last, po );
+
 					case Delimiter::InlineCode :
 					{
 						if( !it->m_backslashed )
@@ -5785,7 +5862,32 @@ Parser::parseCode( MdBlock & fr, QSharedPointer< Block > parent,
 		fr.data.removeFirst();
 		fr.data.removeLast();
 
-		parseCodeIndentedBySpaces( fr, parent, collectRefLinks, indent, syntax );
+		if( syntax.toLower() == QStringLiteral( "math" ) )
+		{
+			QString math;
+			bool first = true;
+
+			for( const auto & l : qAsConst( fr.data ) )
+			{
+				if( !first )
+					math.append( c_10 );
+
+				math.append( l.first );
+
+				first = false;
+			}
+
+			if( !collectRefLinks )
+			{
+				QSharedPointer< Math > m( new Math );
+				m->setInline( false );
+				m->setExpr( math );
+
+				parent->appendItem( m );
+			}
+		}
+		else
+			parseCodeIndentedBySpaces( fr, parent, collectRefLinks, indent, syntax );
 	}
 }
 

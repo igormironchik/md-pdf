@@ -81,7 +81,9 @@ enum class ItemType {
 	//! Horizontal line.
 	HorizontalLine,
 	//! Raw HTML.
-	RawHtml
+	RawHtml,
+	//! Math expression.
+	Math
 }; // enum class ItemType
 
 
@@ -247,6 +249,34 @@ private:
 
 	Q_DISABLE_COPY( Text )
 }; // class Text
+
+
+//
+// Math
+//
+
+//! Math expression.
+class Math final
+	:	public Item
+{
+public:
+	Math() = default;
+	~Math() override = default;
+
+	ItemType type() const override;
+
+	const QString & expr() const;
+	void setExpr( const QString & e );
+
+	bool isInline() const;
+	void setInline( bool on = true );
+
+private:
+	QString m_expr;
+	bool m_inline = false;
+
+	Q_DISABLE_COPY( Math )
+}; // class Math
 
 
 //

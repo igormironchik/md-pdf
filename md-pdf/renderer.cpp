@@ -1756,6 +1756,14 @@ PdfRenderer::drawParagraph( PdfAuxData & pdfData, const RenderOpts & renderOpts,
 	return toWhereDrawn( normalizeRects( rects ), pdfData.coords.pageHeight );
 }
 
+QVector< WhereDrawn >
+PdfRenderer::drawMathExpr( PdfAuxData & pdfData, const RenderOpts & renderOpts,
+	MD::Math * item, QSharedPointer< MD::Document > doc, double offset,
+	CalcHeightOpt heightCalcOpt, float scale, bool inFootnote )
+{
+	return {};
+}
+
 void
 PdfRenderer::reserveSpaceForFootnote( PdfAuxData & pdfData, const RenderOpts & renderOpts,
 	const QVector< WhereDrawn > & h, const double & currentY, int currentPage )
