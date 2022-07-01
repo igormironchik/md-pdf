@@ -5879,11 +5879,13 @@ Parser::parseCode( MdBlock & fr, QSharedPointer< Block > parent,
 
 			if( !collectRefLinks )
 			{
+				QSharedPointer< Paragraph > p( new Paragraph );
 				QSharedPointer< Math > m( new Math );
 				m->setInline( false );
 				m->setExpr( math );
+				p->appendItem( m );
 
-				parent->appendItem( m );
+				parent->appendItem( p );
 			}
 		}
 		else

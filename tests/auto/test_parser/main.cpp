@@ -2981,8 +2981,11 @@ TEST_CASE( "066" )
 	REQUIRE( doc->isEmpty() == false );
 	REQUIRE( doc->items().size() == 2 );
 
-	REQUIRE( doc->items().at( 1 )->type() == MD::ItemType::Math );
-	auto m = static_cast< MD::Math* > ( doc->items().at( 1 ).data() );
+	REQUIRE( doc->items().at( 1 )->type() == MD::ItemType::Paragraph );
+	auto p = static_cast< MD::Paragraph* > ( doc->items().at( 1 ).data() );
+	REQUIRE( p->items().size() == 1 );
+	REQUIRE( p->items().at( 0 )->type() == MD::ItemType::Math );
+	auto m = static_cast< MD::Math* > ( p->items().at( 0 ).data() );
 	REQUIRE( m->expr() == QStringLiteral( "x = {-b \\pm \\sqrt{b^2-4ac} \\over 2a}" ) );
 	REQUIRE( !m->isInline() );
 }
