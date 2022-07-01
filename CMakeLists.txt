@@ -39,6 +39,9 @@ if( NOT PNG_FOUND )
 	message( FATAL_ERROR "libpng is required!" )
 endif()
 
+set( JKQtPlotter_BUILD_EXAMPLES OFF CACHE INTERNAL "" FORCE )
+add_subdirectory( 3rdparty/JKQtPlotter )
+
 add_subdirectory( md-pdf )
 
 enable_testing()

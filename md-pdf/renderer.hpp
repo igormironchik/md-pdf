@@ -88,6 +88,10 @@ struct RenderOpts
 	QString m_codeFont;
 	//! Code font size.
 	int m_codeFontSize;
+	//! Math font.
+	QString m_mathFont;
+	//! Math font size.
+	int m_mathFontSize;
 	//! Links color.
 	QColor m_linkColor;
 	//! Borders color.
@@ -354,10 +358,6 @@ private:
 		MD::Paragraph * item, QSharedPointer< MD::Document > doc, double offset,
 		bool withNewLine, CalcHeightOpt heightCalcOpt,
 		float scale, bool inFootnote );
-	//! Draw math expression.
-	QVector< WhereDrawn > drawMathExpr( PdfAuxData & pdfData, const RenderOpts & renderOpts,
-		MD::Math * item, QSharedPointer< MD::Document > doc, double offset,
-		CalcHeightOpt heightCalcOpt, float scale, bool inFootnote );
 	//! Draw block of code.
 	QVector< WhereDrawn > drawCode( PdfAuxData & pdfData, const RenderOpts & renderOpts,
 		MD::Code * item, QSharedPointer< MD::Document > doc, double offset,
@@ -427,6 +427,8 @@ private:
 		void append( const Width & w ) { m_width.append( w ); }
 		//! \return scale of space at line.
 		double scale() { return m_scale.at( m_pos ); }
+		//! \return Height of the line.
+		double height() { return m_height.at( m_pos ); }
 		//! Move to next line.
 		void moveToNextLine() { ++m_pos; }
 		//! Is drawing? This struct can be used to precalculate widthes and for actual drawing.
@@ -453,6 +455,8 @@ private:
 		QVector< Width > m_width;
 		//! Scales on lines.
 		QVector< double > m_scale;
+		//! Heights of lines.
+		QVector< double > m_height;
 		//! Position of current line.
 		int m_pos = 0;
 	}; // struct CustomWidth
@@ -481,6 +485,11 @@ private:
 	//! Draw image.
 	QPair< QRectF, int > drawImage( PdfAuxData & pdfData, const RenderOpts & renderOpts,
 		MD::Image * item, QSharedPointer< MD::Document > doc, bool & newLine, double offset,
+		bool firstInParagraph, CustomWidth * cw, float scale );
+	//! Draw math expression.
+	QPair< QRectF, int > drawMathExpr( PdfAuxData & pdfData, const RenderOpts & renderOpts,
+		MD::Math * item, QSharedPointer< MD::Document > doc,
+		bool & newLine, double offset, bool hasNext,
 		bool firstInParagraph, CustomWidth * cw, float scale );
 
 	//! Font in table.

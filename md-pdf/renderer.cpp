@@ -36,9 +36,13 @@
 #include <QThread>
 #include <QBuffer>
 #include <QTemporaryFile>
+#include <QPainter>
 
 // Magick++ include.
 #include <Magick++.h>
+
+// JKQtPlotter include.
+#include <jkqtmathtext/jkqtmathtext.h>
 
 
 //
@@ -350,9 +354,13 @@ PdfRenderer::CustomWidth::calcScale( double lineWidth )
 	double w = 0.0;
 	double sw = 0.0;
 	double ww = 0.0;
+	double h = 0.0;
 
 	for( int i = 0, last = m_width.size(); i < last; ++i )
 	{
+		if( m_width.at( i ).height > h )
+			h = m_width.at( i ).height;
+
 		w += m_width.at( i ).width;
 
 		if( m_width.at( i ).isSpace )
@@ -374,9 +382,12 @@ PdfRenderer::CustomWidth::calcScale( double lineWidth )
 			else
 				m_scale.append( 100.0 );
 
+			m_height.append( h );
+
 			w = 0.0;
 			sw = 0.0;
 			ww = 0.0;
+			h = 0.0;
 		}
 	}
 }
@@ -1210,16 +1221,20 @@ PdfRenderer::drawString( PdfAuxData & pdfData, const RenderOpts & renderOpts,
 		footnoteFont->SetFontSize( old );
 	}
 
+	double h = lineHeight;
+
 	auto newLineFn = [&] ()
 	{
 		newLine = true;
 
 		if( draw )
 		{
-			moveToNewLine( pdfData, offset, lineHeight, 1.0 );
-
 			if( cw )
 				cw->moveToNextLine();
+
+			moveToNewLine( pdfData, offset, cw->height(), 1.0 );
+
+			h = cw->height();
 		}
 		else if( cw )
 		{
@@ -1268,14 +1283,16 @@ PdfRenderer::drawString( PdfAuxData & pdfData, const RenderOpts & renderOpts,
 			{
 				spaceFont->SetFontScale( scale );
 
-				pdfData.drawText( pdfData.coords.x, pdfData.coords.y, " " );
+				pdfData.drawText( pdfData.coords.x,
+					pdfData.coords.y + ( h - lineHeight ) / 2.0, " " );
 
 				spaceFont->SetFontScale( 100.0 );
 			}
 			else if( cw )
 				cw->append( { w, lineHeight, true, false, true, " " } );
 
-			ret.append( qMakePair( QRectF( pdfData.coords.x, pdfData.coords.y,
+			ret.append( qMakePair( QRectF( pdfData.coords.x,
+				pdfData.coords.y + ( h - lineHeight ) / 2.0,
 				w * scale / 100.0, lineHeight ), pdfData.currentPageIndex() ) );
 
 			pdfData.coords.x += w * scale / 100.0;
@@ -1315,14 +1332,16 @@ PdfRenderer::drawString( PdfAuxData & pdfData, const RenderOpts & renderOpts,
 				{
 					pdfData.setColor( background );
 					pdfData.drawRectangle( pdfData.coords.x, pdfData.coords.y +
-						font->GetFontMetrics()->GetDescent(), length,
+						font->GetFontMetrics()->GetDescent() + ( h - lineHeight ) / 2.0, length,
 						font->GetFontMetrics()->GetLineSpacing() );
 					pdfData.painter->Fill();
 					pdfData.restoreColor();
 				}
 
-				pdfData.drawText( pdfData.coords.x, pdfData.coords.y, str );
-				ret.append( qMakePair( QRectF( pdfData.coords.x, pdfData.coords.y,
+				pdfData.drawText( pdfData.coords.x,
+					pdfData.coords.y + ( h - lineHeight ) / 2.0, str );
+				ret.append( qMakePair( QRectF( pdfData.coords.x,
+					pdfData.coords.y + ( h - lineHeight ) / 2.0,
 					length, lineHeight ), pdfData.currentPageIndex() ) );
 			}
 			else if( cw )
@@ -1351,20 +1370,23 @@ PdfRenderer::drawString( PdfAuxData & pdfData, const RenderOpts & renderOpts,
 					{
 						font->SetFontScale( scale );
 
-						ret.append( qMakePair( QRectF( pdfData.coords.x, pdfData.coords.y,
+						ret.append( qMakePair( QRectF( pdfData.coords.x,
+							pdfData.coords.y + ( h - lineHeight ) / 2.0,
 							spaceWidth * scale / 100.0, lineHeight ), pdfData.currentPageIndex() ) );
 
 						if( background.isValid() )
 						{
 							pdfData.setColor( background );
 							pdfData.drawRectangle( pdfData.coords.x, pdfData.coords.y +
-								font->GetFontMetrics()->GetDescent(), spaceWidth * scale / 100.0,
+								font->GetFontMetrics()->GetDescent() +
+								( h - lineHeight ) / 2.0, spaceWidth * scale / 100.0,
 								font->GetFontMetrics()->GetLineSpacing() );
 							pdfData.painter->Fill();
 							pdfData.restoreColor();
 						}
 
-						pdfData.drawText( pdfData.coords.x, pdfData.coords.y, " " );
+						pdfData.drawText( pdfData.coords.x,
+							pdfData.coords.y + ( h - lineHeight ) / 2.0, " " );
 
 						font->SetFontScale( 100.0 );
 					}
@@ -1395,8 +1417,10 @@ PdfRenderer::drawString( PdfAuxData & pdfData, const RenderOpts & renderOpts,
 
 				if( draw )
 				{
-					pdfData.drawText( pdfData.coords.x, pdfData.coords.y, str );
-					ret.append( qMakePair( QRectF( pdfData.coords.x, pdfData.coords.y,
+					pdfData.drawText( pdfData.coords.x,
+						pdfData.coords.y + ( h - lineHeight ) / 2.0, str );
+					ret.append( qMakePair( QRectF( pdfData.coords.x,
+							pdfData.coords.y + ( h - lineHeight ) / 2.0,
 							font->GetFontMetrics()->StringWidth( str ), lineHeight ),
 						pdfData.currentPageIndex() ) );
 				}
@@ -1588,6 +1612,14 @@ PdfRenderer::drawParagraph( PdfAuxData & pdfData, const RenderOpts & renderOpts,
 				lineBreak = false;
 				break;
 
+			case MD::ItemType::Math :
+				drawMathExpr( pdfData, renderOpts, static_cast< MD::Math* > ( it->data() ),
+					doc, newLine, offset, ( std::next( it ) != last),
+					( it == item->items().begin() || lineBreak ),
+					&cw, scale );
+				lineBreak = false;
+				break;
+
 			case MD::ItemType::LineBreak :
 			{
 				lineBreak = true;
@@ -1705,6 +1737,14 @@ PdfRenderer::drawParagraph( PdfAuxData & pdfData, const RenderOpts & renderOpts,
 				lineBreak = false;
 				break;
 
+			case MD::ItemType::Math :
+				rects.append( drawMathExpr( pdfData, renderOpts, static_cast< MD::Math* > ( it->data() ),
+					doc, newLine, offset, ( std::next( it ) != last ),
+					( it == item->items().begin() || lineBreak ),
+					&cw, scale ) );
+				lineBreak = false;
+				break;
+
 			case MD::ItemType::LineBreak :
 				lineBreak = true;
 				moveToNewLine( pdfData, offset, lineHeight, 1.0 );
@@ -1756,11 +1796,268 @@ PdfRenderer::drawParagraph( PdfAuxData & pdfData, const RenderOpts & renderOpts,
 	return toWhereDrawn( normalizeRects( rects ), pdfData.coords.pageHeight );
 }
 
-QVector< WhereDrawn >
+QPair< QRectF, int >
 PdfRenderer::drawMathExpr( PdfAuxData & pdfData, const RenderOpts & renderOpts,
-	MD::Math * item, QSharedPointer< MD::Document > doc, double offset,
-	CalcHeightOpt heightCalcOpt, float scale, bool inFootnote )
+	MD::Math * item, QSharedPointer< MD::Document > doc,
+	bool & newLine, double offset, bool hasNext,
+	bool firstInParagraph, CustomWidth * cw, float scale )
 {
+	JKQTMathText mt;
+	mt.useAnyUnicode( renderOpts.m_mathFont, renderOpts.m_mathFont );
+	mt.setFontSize( renderOpts.m_mathFontSize * scale );
+	mt.parse( item->expr() );
+
+	QPainter tmpP;
+	const QSizeF size = mt.getSize( tmpP );
+
+	QPixmap px( size.width(), size.height() );
+	px.fill();
+	QPainter p( &px );
+
+	mt.draw( p, 0, QRectF( QPointF( 0, 0 ), size ) );
+
+	const auto img = px.toImage();
+
+	QByteArray data;
+	QBuffer buf( &data );
+
+	img.save( &buf, "png" );
+
+	PdfImage pdfImg( pdfData.doc );
+	pdfImg.SetDpi( pdfData.m_dpi );
+	pdfImg.LoadFromData( reinterpret_cast< const unsigned char * > ( data.data() ), data.size() );
+
+	auto * font = createFont( renderOpts.m_textFont, false, false,
+		renderOpts.m_textFontSize, pdfData.doc, scale, pdfData );
+	const auto lineHeight = font->GetFontMetrics()->GetLineSpacing();
+
+	newLine = false;
+
+	bool draw = true;
+
+	if( cw && !cw->isDrawing() )
+		draw = false;
+
+	double h = ( cw && cw->isDrawing() ? cw->height() : 0.0 );
+
+	if( draw )
+	{
+		if( !item->isInline() )
+		{
+			newLine = true;
+
+			if( !firstInParagraph )
+			{
+				moveToNewLine( pdfData, offset, lineHeight, 1.0 );
+
+				if( cw )
+				{
+					cw->moveToNextLine();
+					h = cw->height();
+				}
+			}
+
+			double x = 0.0;
+			double imgScale = 1.0;
+			const double availableWidth = pdfData.coords.pageWidth - pdfData.coords.margins.left -
+				pdfData.coords.margins.right - offset;
+			double availableHeight = pdfData.coords.y - pdfData.currentPageAllowedY();
+
+			if( pdfImg.GetWidth() - availableWidth > 0.01 )
+				imgScale = ( availableWidth / pdfImg.GetWidth() ) * scale;
+
+			const double pageHeight = pdfData.topY( pdfData.currentPageIndex() ) -
+				pdfData.coords.margins.bottom;
+
+			if( pdfImg.GetHeight() * imgScale - pageHeight > 0.01 )
+			{
+				imgScale = ( pageHeight / ( pdfImg.GetHeight() * imgScale ) ) * scale;
+
+				createPage( pdfData );
+
+				pdfData.freeSpaceOn( pdfData.currentPageIndex() );
+
+				pdfData.coords.x += offset;
+			}
+			else if( pdfImg.GetHeight() * imgScale - availableHeight > 0.01 )
+			{
+				createPage( pdfData );
+
+				pdfData.freeSpaceOn( pdfData.currentPageIndex() );
+
+				pdfData.coords.x += offset;
+			}
+
+			if( availableWidth - pdfImg.GetWidth() * imgScale > 0.01 )
+				x = ( availableWidth - pdfImg.GetWidth() * imgScale ) / 2.0;
+
+			pdfData.drawImage( pdfData.coords.x + x,
+				pdfData.coords.y - pdfImg.GetHeight() * imgScale,
+				&pdfImg, imgScale, imgScale );
+
+			pdfData.coords.y -= pdfImg.GetHeight() * imgScale;
+
+			const QRectF r = { pdfData.coords.x, pdfData.coords.y - pdfImg.GetHeight() * imgScale,
+				pdfImg.GetWidth() * imgScale, pdfImg.GetHeight() * imgScale };
+			const auto idx = pdfData.currentPageIndex();
+
+			if( hasNext )
+			{
+				moveToNewLine( pdfData, offset, lineHeight, 1.0 );
+
+				if( cw )
+					cw->moveToNextLine();
+			}
+
+			return { r, idx };
+		}
+		else
+		{
+			auto sscale = 100.0;
+
+			if( cw )
+				sscale = cw->scale();
+
+			const auto spaceWidth = font->GetFontMetrics()->StringWidth( PdfString( " " ) );
+
+			pdfData.coords.x += spaceWidth * sscale / 100.0;
+
+			const double availableWidth = pdfData.coords.pageWidth - pdfData.coords.x -
+				pdfData.coords.margins.right;
+
+			const double availableTotalWidth = pdfData.coords.pageWidth -
+				pdfData.coords.margins.left - pdfData.coords.margins.right - offset;
+
+			if( pdfImg.GetWidth() - availableWidth > 0.01 )
+			{
+				moveToNewLine( pdfData, offset, lineHeight, 1.0 );
+
+				if( cw )
+				{
+					cw->moveToNextLine();
+					h = cw->height();
+				}
+			}
+
+			double imgScale = 1.0;
+
+			if( pdfImg.GetWidth() - availableTotalWidth > 0.01 )
+				imgScale = ( availableWidth / pdfImg.GetWidth() ) * scale;
+
+			double availableHeight = pdfData.coords.y - pdfData.currentPageAllowedY();
+
+			const double pageHeight = pdfData.topY( pdfData.currentPageIndex() ) -
+				pdfData.coords.margins.bottom;
+
+			if( pdfImg.GetHeight() * imgScale - pageHeight > 0.01 )
+			{
+				imgScale = ( pageHeight / ( pdfImg.GetHeight() * imgScale ) ) * scale;
+
+				createPage( pdfData );
+
+				pdfData.freeSpaceOn( pdfData.currentPageIndex() );
+
+				pdfData.coords.x += offset;
+			}
+			else if( pdfImg.GetHeight() * imgScale - availableHeight > 0.01 )
+			{
+				createPage( pdfData );
+
+				pdfData.freeSpaceOn( pdfData.currentPageIndex() );
+
+				pdfData.coords.x += offset;
+			}
+
+			pdfData.drawImage( pdfData.coords.x,
+				pdfData.coords.y + ( h > lineHeight ?
+					( ( h - pdfImg.GetHeight() * imgScale ) / 2.0 ) : 0.0 ),
+				&pdfImg, imgScale, imgScale );
+
+			pdfData.coords.x += pdfImg.GetWidth() * imgScale;
+
+			const QRectF r = { pdfData.coords.x,
+				pdfData.coords.y + ( h > lineHeight ?
+					( ( h - pdfImg.GetHeight() * imgScale ) / 2.0 ) : 0.0 ),
+				pdfImg.GetWidth() * imgScale, pdfImg.GetHeight() * imgScale };
+			const auto idx = pdfData.currentPageIndex();
+
+			return { r, idx };
+		}
+	}
+	else
+	{
+		if( !item->isInline() )
+		{
+			double height = 0.0;
+
+			newLine = true;
+
+			const auto lineHeight = font->GetFontMetrics()->GetLineSpacing();
+
+			if( !firstInParagraph )
+				height += lineHeight;
+
+			double imgScale = 1.0;
+			const double availableWidth = pdfData.coords.pageWidth - pdfData.coords.margins.left -
+				pdfData.coords.margins.right - offset;
+
+			if( pdfImg.GetWidth() - availableWidth > 0.01 )
+				imgScale = ( availableWidth / pdfImg.GetWidth() ) * scale;
+
+			const double pageHeight = pdfData.topY( pdfData.currentPageIndex() ) -
+				pdfData.coords.margins.bottom;
+
+			if( pdfImg.GetHeight() * imgScale - pageHeight > 0.01 )
+				imgScale = ( pageHeight / ( pdfImg.GetHeight() * imgScale ) ) * scale;
+
+			height += pdfImg.GetHeight() * imgScale;
+
+			pdfData.coords.x = pdfData.coords.margins.left + offset;
+
+			cw->append( { 0.0, 0.0, false, true, false, "" } );
+			cw->append( { 0.0, height, false, true, false, "" } );
+
+			if( hasNext )
+				cw->append( { 0.0, 0.0, false, true, false, "" } );
+		}
+		else
+		{
+			const auto spaceWidth = font->GetFontMetrics()->StringWidth( PdfString( " " ) );
+
+			pdfData.coords.x += spaceWidth;
+
+			cw->append( { spaceWidth, lineHeight, true, false, true, " " } );
+
+			const double availableWidth = pdfData.coords.pageWidth - pdfData.coords.x -
+				pdfData.coords.margins.right;
+
+			const double availableTotalWidth = pdfData.coords.pageWidth -
+				pdfData.coords.margins.left - pdfData.coords.margins.right - offset;
+
+			if( pdfImg.GetWidth() - availableWidth > 0.01 )
+			{
+				cw->append( { 0.0, lineHeight, false, true, true, "" } );
+				pdfData.coords.x = pdfData.coords.margins.left + offset;
+			}
+
+			double imgScale = 1.0;
+
+			if( pdfImg.GetWidth() - availableTotalWidth > 0.01 )
+				imgScale = ( availableWidth / pdfImg.GetWidth() ) * scale;
+
+			double availableHeight = pdfData.coords.y - pdfData.currentPageAllowedY();
+
+			const double pageHeight = pdfData.topY( pdfData.currentPageIndex() ) -
+				pdfData.coords.margins.bottom;
+
+			if( pdfImg.GetHeight() * imgScale - pageHeight > 0.01 )
+				imgScale = ( pageHeight / ( pdfImg.GetHeight() * imgScale ) ) * scale;
+
+			cw->append( { pdfImg.GetWidth() * imgScale, pdfImg.GetHeight() * imgScale,
+				false, false, hasNext, "" } );
+		}
+	}
+
 	return {};
 }
 
