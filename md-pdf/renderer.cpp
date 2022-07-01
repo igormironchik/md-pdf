@@ -1223,6 +1223,9 @@ PdfRenderer::drawString( PdfAuxData & pdfData, const RenderOpts & renderOpts,
 
 	double h = lineHeight;
 
+	if( cw && cw->isDrawing() )
+		h = cw->height();
+
 	auto newLineFn = [&] ()
 	{
 		newLine = true;
@@ -1930,13 +1933,13 @@ PdfRenderer::drawMathExpr( PdfAuxData & pdfData, const RenderOpts & renderOpts,
 
 			if( pdfImg.GetWidth() - availableWidth > 0.01 )
 			{
-				moveToNewLine( pdfData, offset, lineHeight, 1.0 );
-
 				if( cw )
 				{
 					cw->moveToNextLine();
 					h = cw->height();
 				}
+
+				moveToNewLine( pdfData, offset, h, 1.0 );
 			}
 
 			double imgScale = 1.0;
@@ -2010,7 +2013,7 @@ PdfRenderer::drawMathExpr( PdfAuxData & pdfData, const RenderOpts & renderOpts,
 			if( pdfImg.GetHeight() * imgScale - pageHeight > 0.01 )
 				imgScale = ( pageHeight / ( pdfImg.GetHeight() * imgScale ) ) * scale;
 
-			height += pdfImg.GetHeight() * imgScale;
+			height += pdfImg.GetHeight() * imgScale - font->GetFontMetrics()->GetDescent();
 
 			pdfData.coords.x = pdfData.coords.margins.left + offset;
 
@@ -2053,7 +2056,8 @@ PdfRenderer::drawMathExpr( PdfAuxData & pdfData, const RenderOpts & renderOpts,
 			if( pdfImg.GetHeight() * imgScale - pageHeight > 0.01 )
 				imgScale = ( pageHeight / ( pdfImg.GetHeight() * imgScale ) ) * scale;
 
-			cw->append( { pdfImg.GetWidth() * imgScale, pdfImg.GetHeight() * imgScale,
+			cw->append( { pdfImg.GetWidth() * imgScale,
+				pdfImg.GetHeight() * imgScale - font->GetFontMetrics()->GetDescent(),
 				false, false, hasNext, "" } );
 		}
 	}
@@ -2350,6 +2354,10 @@ PdfRenderer::drawImage( PdfAuxData & pdfData, const RenderOpts & renderOpts,
 		}
 
 		pdfData.coords.x = pdfData.coords.margins.left + offset;
+
+		if( !cw->isEmpty() )
+			cw->append( { 0.0, 0.0, false, true, false, "" } );
+
 		cw->append( { 0.0, height, false, true, false, "" } );
 
 		return qMakePair( QRectF(), pdfData.currentPageIndex() );

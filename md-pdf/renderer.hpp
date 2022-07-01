@@ -435,6 +435,8 @@ private:
 		bool isDrawing() const { return m_drawing; }
 		//! Set drawing.
 		void setDrawing( bool on = true ) { m_drawing = on; }
+		//! \return Is empty?
+		bool isEmpty() const { return m_width.isEmpty(); }
 
 		//! \return Begin iterator.
 		QVector< Width >::ConstIterator cbegin() const { return m_width.cbegin(); }

@@ -93,6 +93,11 @@ private slots:
 	void testLinks();
 	//! Test link with inline content.
 	void testLinksBigFont();
+
+	//! Test math.
+	void testMath();
+	//! Test math.
+	void testMathBigFont();
 }; // class TestRender
 
 //! Prepare test data or do actual test?
@@ -121,6 +126,8 @@ struct TestRendering {
 		opts.m_right = 50.0;
 		opts.m_textFont = QStringLiteral( "Droid Serif" );
 		opts.m_textFontSize = textFontSize;
+		opts.m_mathFont = QStringLiteral( "Droid Serif" );
+		opts.m_mathFontSize = textFontSize;
 		opts.m_top = 50.0;
 		opts.m_dpi = 150;
 
@@ -386,7 +393,19 @@ TestRender::testTaskListBigFont()
 	doTest( QStringLiteral( "tasklist.md" ), QStringLiteral( "_big" ), 16.0, 14.0 );
 }
 
+void
+TestRender::testMath()
+{
+	doTest( QStringLiteral( "math.md" ), QString(), 8.0, 8.0 );
+}
 
-QTEST_GUILESS_MAIN( TestRender )
+void
+TestRender::testMathBigFont()
+{
+	doTest( QStringLiteral( "math.md" ), QStringLiteral( "_big" ), 16.0, 14.0 );
+}
+
+
+QTEST_MAIN( TestRender )
 
 #include "main.moc"
