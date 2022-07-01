@@ -1824,7 +1824,7 @@ PdfRenderer::drawMathExpr( PdfAuxData & pdfData, const RenderOpts & renderOpts,
 	img.save( &buf, "png" );
 
 	PdfImage pdfImg( pdfData.doc );
-	pdfImg.SetDpi( pdfData.m_dpi );
+	pdfImg.SetDpi( 200 );
 	pdfImg.LoadFromData( reinterpret_cast< const unsigned char * > ( data.data() ), data.size() );
 
 	auto * font = createFont( renderOpts.m_textFont, false, false,
