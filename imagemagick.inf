@@ -1,0 +1,6 @@
+[Setup]
+Lang=default
+Dir=C:\Program Files\ImageMagick-7.1.0-Q16-HDRI
+Group=ImageMagick 7.1.0 Q16-HDRI (64-bit)
+NoIcons=0
+Tasks=modifypath,install_devel

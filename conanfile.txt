@@ -8,3 +8,6 @@ zlib/1.2.12@
 [generators]
 cmake
 cmake_find_package
+
+[options]
+openssl:shared=True
