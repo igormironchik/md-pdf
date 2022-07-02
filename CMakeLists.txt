@@ -22,8 +22,6 @@ project( md-pdf )
 if( MDPDF_USE_CONAN )
 	include( conanbuildinfo.cmake )
 	conan_basic_setup()
-
-	set( CMAKE_PREFIX_PATH ${CMAKE_PREFIX_PATH} "C:\Program Files\ImageMagick-6.9.12-54-Q16-HDRI")
 endif()
 
 file( MAKE_DIRECTORY ${CMAKE_SOURCE_DIR}/lib )
