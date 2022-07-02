@@ -24,6 +24,8 @@ if( MDPDF_USE_CONAN )
 	conan_basic_setup()
 endif()
 
+set( CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} ${CMAKE_CURRENT_SOURCE_DIR}/cmake )
+
 file( MAKE_DIRECTORY ${CMAKE_SOURCE_DIR}/lib )
 
 set( PODOFO_BUILD_LIB_ONLY ON )
