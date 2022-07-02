@@ -123,9 +123,14 @@ jobs:
     - name: Enable developer command prompt
       uses: ilammy/msvc-dev-cmd@v1
 
-    - name: Build and Test
-      run: |
-       conan install .
-       cmake -G "NMake Makefiles" -DMDPDF_USE_CONAN=ON -DCMAKE_BUILD_TYPE=Relese .
-       nmake
-       ctest --output-on-failure --verbose
+    - name: Install dependencies with Conan
+      run: conan install .
+
+    - name: Generate Makefiles
+      run: cmake -G "NMake Makefiles" -DMDPDF_USE_CONAN=ON -DCMAKE_BUILD_TYPE=Relese .
+
+    - name: Build
+      run: nmake
+
+    - name: Test
+      run: ctest --output-on-failure --verbose
