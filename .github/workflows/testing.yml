@@ -73,3 +73,46 @@ jobs:
       uses: codecov/codecov-action@v2
       with:
         fail_ci_if_error: true
+
+  windows:
+    name: windows
+    runs-on: windows-latest
+
+    strategy:
+      fail-fast: true
+      matrix:
+        language: ['cpp']
+
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v2
+      with:
+        # We must fetch at least the immediate parents so that if this is
+        # a pull request then we can checkout the head.
+        fetch-depth: 2
+
+    # If this run was triggered by a pull request event, then checkout
+    # the head of the pull request instead of the merge commit.
+    - run: git checkout HEAD^2
+      if: ${{ github.event_name == 'pull_request' }}
+      
+    - run: git submodule update --init --recursive
+
+    - name: Install Conan
+      id: conan
+      uses: turtlebrowser/get-conan@main
+          
+    - name: Install Qt
+      uses: jurplel/install-qt-action@v2
+      with:
+        version: '6.2.0'
+        
+    - name: Enable developer command prompt
+      uses: ilammy/msvc-dev-cmd@v1
+
+    - name: Build and Test
+      run: |
+       conan install .
+       cmake -G "NMake Makefiles" -DMDPDF_USE_CONAN=ON -DCMAKE_BUILD_TYPE=Relese .
+       nmake
+       ctest --output-on-failure --verbose

@@ -19,6 +19,11 @@ set( CMAKE_CXX_STANDARD_REQUIRED ON )
 
 project( md-pdf )
 
+if( MDPDF_USE_CONAN )
+	include( conanbuildinfo.cmake )
+	conan_basic_setup()
+endif()
+
 file( MAKE_DIRECTORY ${CMAKE_SOURCE_DIR}/lib )
 
 set( PODOFO_BUILD_LIB_ONLY ON )

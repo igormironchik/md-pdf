@@ -1,0 +1,10 @@
+[requires]
+openssl/1.1.1o@
+freetype/2.12.1@
+libjpeg/9d@
+libpng/1.6.37@
+zlib/1.2.12@
+
+[generators]
+cmake
+cmake_find_package
