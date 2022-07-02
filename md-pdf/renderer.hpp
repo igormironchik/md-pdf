@@ -88,6 +88,10 @@ struct RenderOpts
 	QString m_codeFont;
 	//! Code font size.
 	int m_codeFontSize;
+	//! Math font.
+	QString m_mathFont;
+	//! Math font size.
+	int m_mathFontSize;
 	//! Links color.
 	QColor m_linkColor;
 	//! Borders color.
@@ -413,6 +417,7 @@ private:
 		struct Width {
 			double width = 0.0;
 			double height = 0.0;
+			double descent = 0.0;
 			bool isSpace = false;
 			bool isNewLine = false;
 			bool shrink = true;
@@ -421,14 +426,20 @@ private:
 
 		//! Append new item.
 		void append( const Width & w ) { m_width.append( w ); }
-		//! \return scale of space at line.
+		//! \return Scale of space at line.
 		double scale() { return m_scale.at( m_pos ); }
+		//! \return Height of the line.
+		double height() { return m_height.at( m_pos ); }
+		//! \return Descent of the line.
+		double descent() { return m_descent.at( m_pos ); }
 		//! Move to next line.
 		void moveToNextLine() { ++m_pos; }
 		//! Is drawing? This struct can be used to precalculate widthes and for actual drawing.
 		bool isDrawing() const { return m_drawing; }
 		//! Set drawing.
 		void setDrawing( bool on = true ) { m_drawing = on; }
+		//! \return Is empty?
+		bool isEmpty() const { return m_width.isEmpty(); }
 
 		//! \return Begin iterator.
 		QVector< Width >::ConstIterator cbegin() const { return m_width.cbegin(); }
@@ -449,6 +460,10 @@ private:
 		QVector< Width > m_width;
 		//! Scales on lines.
 		QVector< double > m_scale;
+		//! Heights of lines.
+		QVector< double > m_height;
+		//! Descents of lines.
+		QVector< double > m_descent;
 		//! Position of current line.
 		int m_pos = 0;
 	}; // struct CustomWidth
@@ -477,6 +492,11 @@ private:
 	//! Draw image.
 	QPair< QRectF, int > drawImage( PdfAuxData & pdfData, const RenderOpts & renderOpts,
 		MD::Image * item, QSharedPointer< MD::Document > doc, bool & newLine, double offset,
+		bool firstInParagraph, CustomWidth * cw, float scale );
+	//! Draw math expression.
+	QPair< QRectF, int > drawMathExpr( PdfAuxData & pdfData, const RenderOpts & renderOpts,
+		MD::Math * item, QSharedPointer< MD::Document > doc,
+		bool & newLine, double offset, bool hasNext,
 		bool firstInParagraph, CustomWidth * cw, float scale );
 
 	//! Font in table.

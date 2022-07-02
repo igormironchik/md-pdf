@@ -68,6 +68,7 @@ static const QChar c_63 = QLatin1Char( '?' );
 static const QChar c_38 = QLatin1Char( '&' );
 static const QChar c_59 = QLatin1Char( ';' );
 static const QChar c_120 = QLatin1Char( 'x' );
+static const QChar c_36 = QLatin1Char( '$' );
 
 static const QString c_startComment = QLatin1String( "<!--" );
 static const QString c_endComment = QLatin1String( "-->" );

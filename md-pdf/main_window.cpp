@@ -201,6 +201,8 @@ MainWidget::process()
 			opts.m_textFontSize = m_ui->m_textFontSize->value();
 			opts.m_codeFont = m_ui->m_codeFont->currentFont().family();
 			opts.m_codeFontSize = m_ui->m_codeFontSize->value();
+			opts.m_mathFont = m_ui->m_mathFont->currentFont().family();
+			opts.m_mathFontSize = m_ui->m_mathFontSize->value();
 			opts.m_linkColor = m_ui->m_linkColor->color();
 			opts.m_borderColor = m_ui->m_borderColor->color();
 			opts.m_codeBackground = m_ui->m_codeBackground->color();

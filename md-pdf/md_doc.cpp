@@ -224,6 +224,41 @@ Text::setSpaceAfter( bool on )
 
 
 //
+// Math
+//
+
+ItemType
+Math::type() const
+{
+	return ItemType::Math;
+}
+
+const QString &
+Math::expr() const
+{
+	return m_expr;
+}
+
+void
+Math::setExpr( const QString & e )
+{
+	m_expr = e;
+}
+
+bool
+Math::isInline() const
+{
+	return m_inline;
+}
+
+void
+Math::setInline( bool on )
+{
+	m_inline = on;
+}
+
+
+//
 // LineBreak
 //
 

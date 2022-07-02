@@ -50,7 +50,8 @@ include_directories( ${CMAKE_CURRENT_SOURCE_DIR}
 	${CMAKE_CURRENT_SOURCE_DIR}/../3rdparty/podofo-trunk/src
 	${CMAKE_CURRENT_SOURCE_DIR}/../3rdparty/widgets/include
 	${CMAKE_CURRENT_BINARY_DIR}/../3rdparty/podofo-trunk
-	${ImageMagick_INCLUDE_DIRS} )
+	${ImageMagick_INCLUDE_DIRS}
+	${CMAKE_CURRENT_SOURCE_DIR}/../3rdparty/JKQtPlotter/lib )
 
 link_directories( ${CMAKE_CURRENT_BINARY_DIR}/../3rdparty/podofo-trunk/src/podofo
 	${CMAKE_CURRENT_BINARY_DIR}/../3rdparty/podofo-trunk/src )
@@ -66,4 +67,4 @@ target_link_libraries( syntax Qt6::Core )
 add_executable( md-pdf-gui WIN32 ${GUI_SRC} )
 
 target_link_libraries( md-pdf-gui md-parser syntax widgets ${PODOFO_LIB} ${ImageMagick_LIBRARIES}
-	Qt6::Widgets Qt6::Network Qt6::Core )
+	JKQTMathTextSharedLib JKQTCommonSharedLib Qt6::Widgets Qt6::Network Qt6::Core )
