@@ -54,5 +54,5 @@ target_link_libraries( test.render syntax md-parser ${PODOFO_LIB} ${ImageMagick_
 	Qt6::Widgets Qt6::Gui Qt6::Network Qt6::Test Qt6::Core )
 
 add_test( NAME test.render
-	COMMAND ${CMAKE_CURRENT_BINARY_DIR}/test.render
-	WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR} )
+	COMMAND ${CMAKE_CURRENT_BINARY_DIR}/../../../bin/test.render
+	WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/../../../bin )

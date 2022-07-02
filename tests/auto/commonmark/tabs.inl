@@ -253,7 +253,8 @@ TEST_CASE( "010" )
 
 	auto h = static_cast< MD::Heading* > ( doc->items().at( 1 ).data() );
 	REQUIRE( h->isLabeled() );
-	const QString fn = QStringLiteral( "/" ) + QDir().absolutePath() + QStringLiteral( "/0.30/010.md" );
+	const QString fn = QStringLiteral( "/" ) + QDir().absolutePath() +
+		QStringLiteral( "/tests/commonmark/0.30/010.md" );
 	REQUIRE( !h->text().isNull() );
 	auto p = h->text().data();
 	REQUIRE( p->items().size() == 1 );

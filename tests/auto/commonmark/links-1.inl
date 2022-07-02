@@ -402,7 +402,7 @@ TEST_CASE( "500" )
 		REQUIRE( l->text() == QStringLiteral( "link" ) );
 
 		const QString fn = QStringLiteral( "/" ) + QDir().absolutePath() +
-			QStringLiteral( "/0.30/500.md" );
+			QStringLiteral( "/tests/commonmark/0.30/500.md" );
 
 		REQUIRE( l->url() == QStringLiteral( "#fragment" ) + fn );
 	}

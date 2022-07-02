@@ -33,7 +33,7 @@
 TEST_CASE( "001" )
 {
 	MD::Parser p;
-	auto doc = p.parse( QStringLiteral( "data/001.md" ) );
+	auto doc = p.parse( QStringLiteral( "tests/parser/data/001.md" ) );
 	REQUIRE( doc->isEmpty() == false );
 	REQUIRE( doc->items().size() == 1 );
 	REQUIRE( doc->items().at( 0 )->type() == MD::ItemType::Anchor );
@@ -42,7 +42,7 @@ TEST_CASE( "001" )
 TEST_CASE( "002" )
 {
 	MD::Parser p;
-	auto doc = p.parse( QStringLiteral( "data/002.md" ) );
+	auto doc = p.parse( QStringLiteral( "tests/parser/data/002.md" ) );
 
 	REQUIRE( doc->isEmpty() == false );
 	REQUIRE( doc->items().size() == 2 );
@@ -63,7 +63,7 @@ TEST_CASE( "003" )
 {
 	MD::Parser parser;
 
-	auto doc = parser.parse( QStringLiteral( "data/003.md" ) );
+	auto doc = parser.parse( QStringLiteral( "tests/parser/data/003.md" ) );
 
 	REQUIRE( doc->isEmpty() == false );
 	REQUIRE( doc->items().size() == 3 );
@@ -101,7 +101,7 @@ TEST_CASE( "004" )
 {
 	MD::Parser parser;
 
-	auto doc = parser.parse( QStringLiteral( "data/004.md" ) );
+	auto doc = parser.parse( QStringLiteral( "tests/parser/data/004.md" ) );
 
 	REQUIRE( doc->isEmpty() == false );
 	REQUIRE( doc->items().size() == 2 );
@@ -124,7 +124,7 @@ TEST_CASE( "005" )
 {
 	MD::Parser parser;
 
-	auto doc = parser.parse( QStringLiteral( "data/005.md" ) );
+	auto doc = parser.parse( QStringLiteral( "tests/parser/data/005.md" ) );
 
 	REQUIRE( doc->isEmpty() == false );
 	REQUIRE( doc->items().size() == 2 );
@@ -160,7 +160,7 @@ TEST_CASE( "006" )
 {
 	MD::Parser parser;
 
-	auto doc = parser.parse( QStringLiteral( "data/006.md" ) );
+	auto doc = parser.parse( QStringLiteral( "tests/parser/data/006.md" ) );
 
 	REQUIRE( doc->isEmpty() == false );
 	REQUIRE( doc->items().size() == 2 );
@@ -203,7 +203,7 @@ TEST_CASE( "007" )
 {
 	MD::Parser parser;
 
-	auto doc = parser.parse( QStringLiteral( "data/007.md" ) );
+	auto doc = parser.parse( QStringLiteral( "tests/parser/data/007.md" ) );
 
 	REQUIRE( doc->isEmpty() == false );
 	REQUIRE( doc->items().size() == 2 );
@@ -226,7 +226,7 @@ TEST_CASE( "008" )
 {
 	MD::Parser parser;
 
-	auto doc = parser.parse( QStringLiteral( "data/008.md" ) );
+	auto doc = parser.parse( QStringLiteral( "tests/parser/data/008.md" ) );
 
 	REQUIRE( doc->isEmpty() == false );
 	REQUIRE( doc->items().size() == 2 );
@@ -250,7 +250,7 @@ TEST_CASE( "009" )
 {
 	MD::Parser parser;
 
-	auto doc = parser.parse( QStringLiteral( "data/009.md" ) );
+	auto doc = parser.parse( QStringLiteral( "tests/parser/data/009.md" ) );
 
 	REQUIRE( doc->isEmpty() == false );
 	REQUIRE( doc->items().size() == 2 );
@@ -284,7 +284,7 @@ TEST_CASE( "010" )
 {
 	MD::Parser parser;
 
-	auto doc = parser.parse( QStringLiteral( "data/010.md" ) );
+	auto doc = parser.parse( QStringLiteral( "tests/parser/data/010.md" ) );
 
 	REQUIRE( doc->isEmpty() == false );
 	REQUIRE( doc->items().size() == 2 );
@@ -309,7 +309,7 @@ TEST_CASE( "011" )
 {
 	MD::Parser parser;
 
-	auto doc = parser.parse( QStringLiteral( "data/011.md" ) );
+	auto doc = parser.parse( QStringLiteral( "tests/parser/data/011.md" ) );
 
 	REQUIRE( doc->isEmpty() == false );
 	REQUIRE( doc->items().size() == 2 );
@@ -332,7 +332,7 @@ TEST_CASE( "012" )
 {
 	MD::Parser parser;
 
-	auto doc = parser.parse( QStringLiteral( "data/012.md" ) );
+	auto doc = parser.parse( QStringLiteral( "tests/parser/data/012.md" ) );
 
 	REQUIRE( doc->isEmpty() == false );
 	REQUIRE( doc->items().size() == 2 );
@@ -367,7 +367,7 @@ TEST_CASE( "013" )
 {
 	MD::Parser parser;
 
-	auto doc = parser.parse( QStringLiteral( "data/013.md" ) );
+	auto doc = parser.parse( QStringLiteral( "tests/parser/data/013.md" ) );
 
 	REQUIRE( doc->isEmpty() == false );
 	REQUIRE( doc->items().size() == 2 );
@@ -390,14 +390,14 @@ TEST_CASE( "014" )
 {
 	MD::Parser parser;
 
-	QFile f( "data/014.md" );
+	QFile f( "tests/parser/data/014.md" );
 
 	if( f.open( QIODevice::WriteOnly | QIODevice::Truncate ) )
 	{
 		f.write( "Line 1...\rLine 2...\r\nLine 3...\n" );
 		f.close();
 
-		auto doc = parser.parse( QStringLiteral( "data/014.md" ) );
+		auto doc = parser.parse( QStringLiteral( "tests/parser/data/014.md" ) );
 
 		REQUIRE( doc->isEmpty() == false );
 		REQUIRE( doc->items().size() == 2 );
@@ -425,14 +425,14 @@ TEST_CASE( "015" )
 {
 	MD::Parser parser;
 
-	QFile f( "data/015.md" );
+	QFile f( "tests/parser/data/015.md" );
 
 	if( f.open( QIODevice::WriteOnly | QIODevice::Truncate ) )
 	{
 		f.write( "Line 1...\r\rLine 2...\r\rLine 3...\r" );
 		f.close();
 
-		auto doc = parser.parse( QStringLiteral( "data/015.md" ) );
+		auto doc = parser.parse( QStringLiteral( "tests/parser/data/015.md" ) );
 
 		REQUIRE( doc->isEmpty() == false );
 		REQUIRE( doc->items().size() == 4 );
@@ -490,14 +490,14 @@ TEST_CASE( "016" )
 {
 	MD::Parser parser;
 
-	QFile f( "data/016.md" );
+	QFile f( "tests/parser/data/016.md" );
 
 	if( f.open( QIODevice::WriteOnly | QIODevice::Truncate ) )
 	{
 		f.write( "Line 1...\r\nLine 2...\r\nLine 3...\r\n" );
 		f.close();
 
-		auto doc = parser.parse( QStringLiteral( "data/016.md" ) );
+		auto doc = parser.parse( QStringLiteral( "tests/parser/data/016.md" ) );
 
 		REQUIRE( doc->isEmpty() == false );
 		REQUIRE( doc->items().size() == 2 );
@@ -525,7 +525,7 @@ TEST_CASE( "017" )
 {
 	MD::Parser parser;
 
-	auto doc = parser.parse( QStringLiteral( "data/017.md" ) );
+	auto doc = parser.parse( QStringLiteral( "tests/parser/data/017.md" ) );
 
 	REQUIRE( doc->isEmpty() == false );
 	REQUIRE( doc->items().size() == 2 );
@@ -595,7 +595,7 @@ TEST_CASE( "018" )
 {
 	MD::Parser parser;
 
-	auto doc = parser.parse( QStringLiteral( "data/018.md" ) );
+	auto doc = parser.parse( QStringLiteral( "tests/parser/data/018.md" ) );
 
 	REQUIRE( doc->isEmpty() == false );
 	REQUIRE( doc->items().size() == 2 );
@@ -665,7 +665,7 @@ TEST_CASE( "019" )
 {
 	MD::Parser parser;
 
-	auto doc = parser.parse( QStringLiteral( "data/019.md" ) );
+	auto doc = parser.parse( QStringLiteral( "tests/parser/data/019.md" ) );
 
 	REQUIRE( doc->isEmpty() == false );
 	REQUIRE( doc->items().size() == 3 );
@@ -738,7 +738,7 @@ TEST_CASE( "020" )
 {
 	MD::Parser parser;
 
-	auto doc = parser.parse( QStringLiteral( "data/020.md" ) );
+	auto doc = parser.parse( QStringLiteral( "tests/parser/data/020.md" ) );
 
 	REQUIRE( doc->isEmpty() == false );
 	REQUIRE( doc->items().size() == 2 );
@@ -757,7 +757,7 @@ TEST_CASE( "021" )
 {
 	MD::Parser parser;
 
-	auto doc = parser.parse( QStringLiteral( "data/021.md" ) );
+	auto doc = parser.parse( QStringLiteral( "tests/parser/data/021.md" ) );
 
 	REQUIRE( doc->isEmpty() == false );
 	REQUIRE( doc->items().size() == 2 );
@@ -775,7 +775,7 @@ TEST_CASE( "022" )
 {
 	MD::Parser parser;
 
-	auto doc = parser.parse( QStringLiteral( "data/022.md" ) );
+	auto doc = parser.parse( QStringLiteral( "tests/parser/data/022.md" ) );
 
 	REQUIRE( doc->isEmpty() == false );
 	REQUIRE( doc->items().size() == 2 );
@@ -793,7 +793,7 @@ TEST_CASE( "023" )
 {
 	MD::Parser parser;
 
-	auto doc = parser.parse( QStringLiteral( "data/023.md" ) );
+	auto doc = parser.parse( QStringLiteral( "tests/parser/data/023.md" ) );
 
 	REQUIRE( doc->isEmpty() == false );
 	REQUIRE( doc->items().size() == 2 );
@@ -849,7 +849,7 @@ TEST_CASE( "024" )
 
 	MD::Parser parser;
 
-	auto doc = parser.parse( QStringLiteral( "data/024.md" ) );
+	auto doc = parser.parse( QStringLiteral( "tests/parser/data/024.md" ) );
 
 	REQUIRE( doc->isEmpty() == false );
 	REQUIRE( doc->items().size() == 2 );
@@ -893,7 +893,7 @@ TEST_CASE( "025" )
 {
 	MD::Parser parser;
 
-	auto doc = parser.parse( QStringLiteral( "data/025.md" ) );
+	auto doc = parser.parse( QStringLiteral( "tests/parser/data/025.md" ) );
 
 	REQUIRE( doc->isEmpty() == false );
 	REQUIRE( doc->items().size() == 2 );
@@ -950,7 +950,7 @@ TEST_CASE( "026" )
 {
 	MD::Parser parser;
 
-	auto doc = parser.parse( QStringLiteral( "data/026.md" ) );
+	auto doc = parser.parse( QStringLiteral( "tests/parser/data/026.md" ) );
 
 	REQUIRE( doc->isEmpty() == false );
 	REQUIRE( doc->items().size() == 2 );
@@ -1051,7 +1051,7 @@ TEST_CASE( "027" )
 {
 	MD::Parser parser;
 
-	auto doc = parser.parse( QStringLiteral( "data/027.md" ) );
+	auto doc = parser.parse( QStringLiteral( "tests/parser/data/027.md" ) );
 
 	REQUIRE( doc->isEmpty() == false );
 	REQUIRE( doc->items().size() == 2 );
@@ -1102,7 +1102,7 @@ TEST_CASE( "028" )
 {
 	MD::Parser parser;
 
-	auto doc = parser.parse( QStringLiteral( "data/028.md" ) );
+	auto doc = parser.parse( QStringLiteral( "tests/parser/data/028.md" ) );
 
 	REQUIRE( doc->isEmpty() == false );
 	REQUIRE( doc->items().size() == 2 );
@@ -1153,7 +1153,7 @@ TEST_CASE( "029" )
 {
 	MD::Parser parser;
 
-	auto doc = parser.parse( QStringLiteral( "data/029.md" ) );
+	auto doc = parser.parse( QStringLiteral( "tests/parser/data/029.md" ) );
 
 	REQUIRE( doc->isEmpty() == false );
 	REQUIRE( doc->items().size() == 3 );
@@ -1267,7 +1267,7 @@ TEST_CASE( "030" )
 {
 	MD::Parser parser;
 
-	auto doc = parser.parse( QStringLiteral( "data/030.md" ) );
+	auto doc = parser.parse( QStringLiteral( "tests/parser/data/030.md" ) );
 
 	REQUIRE( doc->isEmpty() == false );
 	REQUIRE( doc->items().size() == 2 );
@@ -1288,7 +1288,7 @@ TEST_CASE( "030" )
 
 	auto i1 = static_cast< MD::Image* > ( p->items().at( 1 ).data() );
 
-	const QString wd = QDir().absolutePath() + QStringLiteral( "/data/" );
+	const QString wd = QDir().absolutePath() + QStringLiteral( "/tests/parser/data/" );
 
 	REQUIRE( i1->text() == QStringLiteral( "Image 1" ) );
 	REQUIRE( i1->url() == wd + QStringLiteral( "a.jpg" ) );
@@ -1324,9 +1324,9 @@ TEST_CASE( "031" )
 {
 	MD::Parser parser;
 
-	auto doc = parser.parse( QStringLiteral( "data/031.md" ) );
+	auto doc = parser.parse( QStringLiteral( "tests/parser/data/031.md" ) );
 
-	const QString wd = QDir().absolutePath() + QStringLiteral( "/data" );
+	const QString wd = QDir().absolutePath() + QStringLiteral( "/tests/parser/data" );
 
 	REQUIRE( doc->isEmpty() == false );
 	REQUIRE( doc->items().size() == 9 );
@@ -1436,7 +1436,7 @@ TEST_CASE( "032" )
 {
 	MD::Parser parser;
 
-	auto doc = parser.parse( QStringLiteral( "data/032.md" ) );
+	auto doc = parser.parse( QStringLiteral( "tests/parser/data/032.md" ) );
 
 	REQUIRE( doc->isEmpty() == false );
 	REQUIRE( doc->items().size() == 2 );
@@ -1459,7 +1459,7 @@ TEST_CASE( "033" )
 {
 	MD::Parser parser;
 
-	auto doc = parser.parse( QStringLiteral( "data/033.md" ) );
+	auto doc = parser.parse( QStringLiteral( "tests/parser/data/033.md" ) );
 
 	REQUIRE( doc->isEmpty() == false );
 	REQUIRE( doc->items().size() == 2 );
@@ -1482,7 +1482,7 @@ TEST_CASE( "034" )
 {
 	MD::Parser parser;
 
-	auto doc = parser.parse( QStringLiteral( "data/034.md" ) );
+	auto doc = parser.parse( QStringLiteral( "tests/parser/data/034.md" ) );
 
 	REQUIRE( doc->isEmpty() == false );
 	REQUIRE( doc->items().size() == 2 );
@@ -1506,7 +1506,7 @@ TEST_CASE( "035" )
 {
 	MD::Parser parser;
 
-	auto doc = parser.parse( QStringLiteral( "data/035.md" ) );
+	auto doc = parser.parse( QStringLiteral( "tests/parser/data/035.md" ) );
 
 	REQUIRE( doc->isEmpty() == false );
 	REQUIRE( doc->items().size() == 2 );
@@ -1615,7 +1615,7 @@ TEST_CASE( "036" )
 {
 	MD::Parser parser;
 
-	auto doc = parser.parse( QStringLiteral( "data/036.md" ) );
+	auto doc = parser.parse( QStringLiteral( "tests/parser/data/036.md" ) );
 
 	REQUIRE( doc->isEmpty() == false );
 	REQUIRE( doc->items().size() == 2 );
@@ -1638,7 +1638,7 @@ TEST_CASE( "037" )
 {
 	MD::Parser parser;
 
-	auto doc = parser.parse( QStringLiteral( "data/037.md" ) );
+	auto doc = parser.parse( QStringLiteral( "tests/parser/data/037.md" ) );
 
 	REQUIRE( doc->isEmpty() == false );
 	REQUIRE( doc->items().size() == 17 );
@@ -1888,7 +1888,7 @@ TEST_CASE( "038" )
 {
 	MD::Parser parser;
 
-	auto doc = parser.parse( QStringLiteral( "data/038.md" ) );
+	auto doc = parser.parse( QStringLiteral( "tests/parser/data/038.md" ) );
 
 	REQUIRE( doc->isEmpty() == false );
 	REQUIRE( doc->items().size() == 2 );
@@ -1997,7 +1997,7 @@ TEST_CASE( "039" )
 {
 	MD::Parser parser;
 
-	auto doc = parser.parse( QStringLiteral( "data/039.md" ) );
+	auto doc = parser.parse( QStringLiteral( "tests/parser/data/039.md" ) );
 
 	REQUIRE( doc->isEmpty() == false );
 	REQUIRE( doc->items().size() == 2 );
@@ -2019,7 +2019,7 @@ TEST_CASE( "040" )
 {
 	MD::Parser parser;
 
-	auto doc = parser.parse( QStringLiteral( "data/040.md" ) );
+	auto doc = parser.parse( QStringLiteral( "tests/parser/data/040.md" ) );
 
 	REQUIRE( doc->isEmpty() == false );
 	REQUIRE( doc->items().size() == 2 );
@@ -2053,7 +2053,7 @@ TEST_CASE( "041" )
 {
 	MD::Parser parser;
 
-	auto doc = parser.parse( QStringLiteral( "data/041.md" ) );
+	auto doc = parser.parse( QStringLiteral( "tests/parser/data/041.md" ) );
 
 	REQUIRE( doc->isEmpty() == false );
 	REQUIRE( doc->items().size() == 2 );
@@ -2110,7 +2110,7 @@ TEST_CASE( "042" )
 {
 	MD::Parser parser;
 
-	auto doc = parser.parse( QStringLiteral( "data/042.md" ) );
+	auto doc = parser.parse( QStringLiteral( "tests/parser/data/042.md" ) );
 
 	REQUIRE( doc->isEmpty() == false );
 	REQUIRE( doc->items().size() == 5 );
@@ -2121,7 +2121,7 @@ TEST_CASE( "042" )
 
 	REQUIRE( l->items().size() == 2 );
 
-	const QString wd = QDir().absolutePath() + QStringLiteral( "/data" );
+	const QString wd = QDir().absolutePath() + QStringLiteral( "/tests/parser/data" );
 
 	for( int i = 0; i < 2; ++i )
 	{
@@ -2166,7 +2166,7 @@ TEST_CASE( "042-1" )
 {
 	MD::Parser parser;
 
-	auto doc = parser.parse( QStringLiteral( "data/042.md" ), false );
+	auto doc = parser.parse( QStringLiteral( "tests/parser/data/042.md" ), false );
 
 	REQUIRE( doc->isEmpty() == false );
 	REQUIRE( doc->items().size() == 2 );
@@ -2177,7 +2177,7 @@ TEST_CASE( "042-1" )
 
 	REQUIRE( l->items().size() == 2 );
 
-	const QString wd = QDir().absolutePath() + QStringLiteral( "/data" );
+	const QString wd = QDir().absolutePath() + QStringLiteral( "/tests/parser/data" );
 
 	for( int i = 0; i < 2; ++i )
 	{
@@ -2204,7 +2204,7 @@ TEST_CASE( "044" )
 {
 	MD::Parser parser;
 
-	auto doc = parser.parse( QStringLiteral( "data/044.md" ), false );
+	auto doc = parser.parse( QStringLiteral( "tests/parser/data/044.md" ), false );
 
 	REQUIRE( doc->isEmpty() == false );
 	REQUIRE( doc->items().size() == 2 );
@@ -2253,7 +2253,7 @@ TEST_CASE( "045" )
 {
 	MD::Parser parser;
 
-	auto doc = parser.parse( QStringLiteral( "data/045.md" ), false );
+	auto doc = parser.parse( QStringLiteral( "tests/parser/data/045.md" ), false );
 
 	REQUIRE( !doc->isEmpty() );
 	REQUIRE( doc->items().size() == 1 );
@@ -2261,7 +2261,7 @@ TEST_CASE( "045" )
 
 	REQUIRE( doc->footnotesMap().size() == 1 );
 
-	const QString wd = QDir().absolutePath() + QStringLiteral( "/data/" );
+	const QString wd = QDir().absolutePath() + QStringLiteral( "/tests/parser/data/" );
 
 	const QString label = QString::fromLatin1( "#^footnote" ) + QStringLiteral( "/" ) + wd +
 		QStringLiteral( "045.md" );
@@ -2292,7 +2292,7 @@ TEST_CASE( "046" )
 {
 	MD::Parser parser;
 
-	auto doc = parser.parse( QStringLiteral( "data/046.md" ) );
+	auto doc = parser.parse( QStringLiteral( "tests/parser/data/046.md" ) );
 
 	REQUIRE( !doc->isEmpty() );
 	REQUIRE( doc->items().size() == 14 );
@@ -2345,7 +2345,7 @@ TEST_CASE( "046" )
 	REQUIRE( t->text() == QStringLiteral( "Heading 3" ) );
 	REQUIRE( h->isLabeled() );
 
-	const QString wd = QDir().absolutePath() + QStringLiteral( "/data/" );
+	const QString wd = QDir().absolutePath() + QStringLiteral( "/tests/parser/data/" );
 	const QString label = QString::fromLatin1( "#heading-3" ) + QStringLiteral( "/" ) +
 		wd + QStringLiteral( "046.md" );
 
@@ -2360,7 +2360,7 @@ TEST_CASE( "047" )
 {
 	MD::Parser parser;
 
-	auto doc = parser.parse( QStringLiteral( "data/047.md" ) );
+	auto doc = parser.parse( QStringLiteral( "tests/parser/data/047.md" ) );
 
 	REQUIRE( !doc->isEmpty() );
 	REQUIRE( doc->items().size() == 3 );
@@ -2444,7 +2444,7 @@ TEST_CASE( "047" )
 TEST_CASE( "048" )
 {
 	MD::Parser parser;
-	auto doc = parser.parse( QStringLiteral( "data/048.md" ) );
+	auto doc = parser.parse( QStringLiteral( "tests/parser/data/048.md" ) );
 	REQUIRE( doc->isEmpty() == false );
 	REQUIRE( doc->items().size() == 4 );
 	REQUIRE( doc->items().at( 0 )->type() == MD::ItemType::Anchor );
@@ -2482,7 +2482,7 @@ TEST_CASE( "048" )
 TEST_CASE( "049" )
 {
 	MD::Parser parser;
-	auto doc = parser.parse( QStringLiteral( "data/049.md" ) );
+	auto doc = parser.parse( QStringLiteral( "tests/parser/data/049.md" ) );
 	REQUIRE( doc->isEmpty() == false );
 	REQUIRE( doc->items().size() == 2 );
 
@@ -2496,7 +2496,7 @@ TEST_CASE( "049" )
 TEST_CASE( "050" )
 {
 	MD::Parser parser;
-	auto doc = parser.parse( QStringLiteral( "data/050.md" ) );
+	auto doc = parser.parse( QStringLiteral( "tests/parser/data/050.md" ) );
 	REQUIRE( doc->isEmpty() == false );
 	REQUIRE( doc->items().size() == 2 );
 	REQUIRE( doc->items().at( 1 )->type() == MD::ItemType::Paragraph );
@@ -2524,9 +2524,9 @@ TEST_CASE( "050" )
 TEST_CASE( "051" )
 {
 	MD::Parser parser;
-	auto doc = parser.parse( QStringLiteral( "data/051.md" ) );
+	auto doc = parser.parse( QStringLiteral( "tests/parser/data/051.md" ) );
 
-	const QString wd = QDir().absolutePath() + QStringLiteral( "/data" );
+	const QString wd = QDir().absolutePath() + QStringLiteral( "/tests/parser/data" );
 
 	REQUIRE( doc->items().size() == 8 );
 
@@ -2552,7 +2552,7 @@ TEST_CASE( "052" )
 {
 	MD::Parser parser;
 
-	auto doc = parser.parse( QStringLiteral( "data/052.md" ) );
+	auto doc = parser.parse( QStringLiteral( "tests/parser/data/052.md" ) );
 
 	REQUIRE( doc->isEmpty() == false );
 	REQUIRE( doc->items().size() == 2 );
@@ -2572,7 +2572,7 @@ TEST_CASE( "053" )
 {
 	MD::Parser parser;
 
-	auto doc = parser.parse( QStringLiteral( "data/053.md" ) );
+	auto doc = parser.parse( QStringLiteral( "tests/parser/data/053.md" ) );
 
 	REQUIRE( doc->isEmpty() == false );
 	REQUIRE( doc->items().size() == 2 );
@@ -2589,7 +2589,7 @@ TEST_CASE( "054" )
 {
 	MD::Parser parser;
 
-	const auto doc = parser.parse( QStringLiteral( "data/054.md" ) );
+	const auto doc = parser.parse( QStringLiteral( "tests/parser/data/054.md" ) );
 
 	REQUIRE( doc->isEmpty() == false );
 	REQUIRE( doc->items().size() == 2 );
@@ -2606,7 +2606,7 @@ TEST_CASE( "055" )
 {
 	MD::Parser parser;
 
-	auto doc = parser.parse( QStringLiteral( "data/055.md" ), false );
+	auto doc = parser.parse( QStringLiteral( "tests/parser/data/055.md" ), false );
 
 	REQUIRE( doc->type() == MD::ItemType::Document );
 
@@ -2616,7 +2616,7 @@ TEST_CASE( "055" )
 
 	REQUIRE( doc->footnotesMap().size() == 1 );
 
-	const QString wd = QDir().absolutePath() + QStringLiteral( "/data/" );
+	const QString wd = QDir().absolutePath() + QStringLiteral( "/tests/parser/data/" );
 
 	const QString label = QString::fromLatin1( "#^footnote" ) + QStringLiteral( "/" ) + wd +
 		QStringLiteral( "055.md" );
@@ -2661,7 +2661,7 @@ TEST_CASE( "056" )
 {
 	MD::Parser parser;
 
-	auto doc = parser.parse( QStringLiteral( "data/056.md" ) );
+	auto doc = parser.parse( QStringLiteral( "tests/parser/data/056.md" ) );
 
 	REQUIRE( doc->isEmpty() == false );
 	REQUIRE( doc->items().size() == 2 );
@@ -2679,7 +2679,7 @@ TEST_CASE( "057" )
 {
 	MD::Parser parser;
 
-	auto doc = parser.parse( QStringLiteral( "data/057.md" ) );
+	auto doc = parser.parse( QStringLiteral( "tests/parser/data/057.md" ) );
 
 	REQUIRE( doc->isEmpty() == false );
 	REQUIRE( doc->items().size() == 2 );
@@ -2696,7 +2696,7 @@ TEST_CASE( "058" )
 {
 	MD::Parser parser;
 
-	auto doc = parser.parse( QStringLiteral( "data/058.md" ) );
+	auto doc = parser.parse( QStringLiteral( "tests/parser/data/058.md" ) );
 
 	REQUIRE( doc->isEmpty() == false );
 	REQUIRE( doc->items().size() == 2 );
@@ -2721,7 +2721,7 @@ TEST_CASE( "059" )
 {
 	MD::Parser parser;
 
-	auto doc = parser.parse( QStringLiteral( "data/059.md" ) );
+	auto doc = parser.parse( QStringLiteral( "tests/parser/data/059.md" ) );
 
 	REQUIRE( doc->isEmpty() == false );
 	REQUIRE( doc->items().size() == 2 );
@@ -2742,7 +2742,7 @@ TEST_CASE( "060" )
 {
 	MD::Parser parser;
 
-	auto doc = parser.parse( QStringLiteral( "data/060.md" ) );
+	auto doc = parser.parse( QStringLiteral( "tests/parser/data/060.md" ) );
 
 	REQUIRE( doc->isEmpty() == false );
 	REQUIRE( doc->items().size() == 2 );
@@ -2767,7 +2767,7 @@ TEST_CASE( "061" )
 {
 	MD::Parser parser;
 
-	auto doc = parser.parse( QStringLiteral( "data/061.md" ) );
+	auto doc = parser.parse( QStringLiteral( "tests/parser/data/061.md" ) );
 
 	REQUIRE( doc->isEmpty() == false );
 	REQUIRE( doc->items().size() == 2 );
@@ -2803,7 +2803,7 @@ TEST_CASE( "062" )
 {
 	MD::Parser parser;
 
-	auto doc = parser.parse( QStringLiteral( "data/062.md" ) );
+	auto doc = parser.parse( QStringLiteral( "tests/parser/data/062.md" ) );
 
 	REQUIRE( doc->isEmpty() == false );
 	REQUIRE( doc->items().size() == 5 );
@@ -2874,7 +2874,7 @@ TEST_CASE( "063" )
 {
 	MD::Parser parser;
 
-	auto doc = parser.parse( QStringLiteral( "data/063.md" ) );
+	auto doc = parser.parse( QStringLiteral( "tests/parser/data/063.md" ) );
 
 	REQUIRE( doc->isEmpty() == false );
 	REQUIRE( doc->items().size() == 2 );
@@ -2902,7 +2902,7 @@ TEST_CASE( "064" )
 {
 	MD::Parser parser;
 
-	auto doc = parser.parse( QStringLiteral( "data/064.md" ) );
+	auto doc = parser.parse( QStringLiteral( "tests/parser/data/064.md" ) );
 
 	REQUIRE( doc->isEmpty() == false );
 	REQUIRE( doc->items().size() == 2 );
@@ -2920,7 +2920,7 @@ TEST_CASE( "065" )
 {
 	MD::Parser parser;
 
-	auto doc = parser.parse( QStringLiteral( "data/065.md" ) );
+	auto doc = parser.parse( QStringLiteral( "tests/parser/data/065.md" ) );
 
 	REQUIRE( doc->isEmpty() == false );
 	REQUIRE( doc->items().size() == 2 );
@@ -2976,7 +2976,7 @@ TEST_CASE( "066" )
 {
 	MD::Parser parser;
 
-	auto doc = parser.parse( QStringLiteral( "data/066.md" ) );
+	auto doc = parser.parse( QStringLiteral( "tests/parser/data/066.md" ) );
 
 	REQUIRE( doc->isEmpty() == false );
 	REQUIRE( doc->items().size() == 2 );

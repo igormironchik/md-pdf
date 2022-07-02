@@ -21,5 +21,5 @@ add_executable( test.syntax ${SRC} )
 target_link_libraries( test.syntax syntax Qt6::Core )
 
 add_test( NAME test.syntax
-	COMMAND ${CMAKE_CURRENT_BINARY_DIR}/test.syntax
-	WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR} )
+	COMMAND ${CMAKE_CURRENT_BINARY_DIR}/../../../bin/test.syntax
+	WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/../../../bin )

@@ -9,7 +9,7 @@ if( ENABLE_COVERAGE )
 endif( ENABLE_COVERAGE )
 
 file( GLOB MD_FILES data/*.md )
-file( COPY ${MD_FILES} DESTINATION ${CMAKE_CURRENT_BINARY_DIR}/data )
+file( COPY ${MD_FILES} DESTINATION ${CMAKE_CURRENT_BINARY_DIR}/../../../bin/tests/gfm/data )
 
 set( SRC main.cpp )
 
@@ -24,5 +24,5 @@ add_executable( test.md_parser.gfm ${SRC} )
 target_link_libraries( test.md_parser.gfm md-parser Qt6::Core )
 
 add_test( NAME test.md_parser.gfm
-	COMMAND ${CMAKE_CURRENT_BINARY_DIR}/test.md_parser.gfm
-	WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR} )
+	COMMAND ${CMAKE_CURRENT_BINARY_DIR}/../../../bin/test.md_parser.gfm
+	WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/../../../bin )

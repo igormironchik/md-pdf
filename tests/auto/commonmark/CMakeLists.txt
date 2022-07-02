@@ -13,7 +13,7 @@ if( MSVC )
 endif()
 
 file( GLOB MD_FILES 0.30/*.md )
-file( COPY ${MD_FILES} DESTINATION ${CMAKE_CURRENT_BINARY_DIR}/0.30 )
+file( COPY ${MD_FILES} DESTINATION ${CMAKE_CURRENT_BINARY_DIR}/../../../bin/tests/commonmark/0.30 )
 file( GLOB HPP *.hpp )
 file( GLOB INL *.inl )
 
@@ -30,5 +30,5 @@ add_executable( test.md_parser.commonmark ${SRC} )
 target_link_libraries( test.md_parser.commonmark md-parser Qt6::Core )
 
 add_test( NAME test.md_parser.commonmark
-	COMMAND ${CMAKE_CURRENT_BINARY_DIR}/test.md_parser.commonmark
-	WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR} )
+	COMMAND ${CMAKE_CURRENT_BINARY_DIR}/../../../bin/test.md_parser.commonmark
+	WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/../../../bin )

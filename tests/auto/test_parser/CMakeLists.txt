@@ -11,14 +11,14 @@ endif( ENABLE_COVERAGE )
 set( SRC main.cpp )
 
 file( GLOB MD_FILES data/*.md )
-file( COPY ${MD_FILES} DESTINATION ${CMAKE_CURRENT_BINARY_DIR}/data )
+file( COPY ${MD_FILES} DESTINATION ${CMAKE_CURRENT_BINARY_DIR}/../../../bin/tests/parser/data )
 
 file( COPY data/a.png
-	DESTINATION ${CMAKE_CURRENT_BINARY_DIR}/data )
+	DESTINATION ${CMAKE_CURRENT_BINARY_DIR}/../../../bin/tests/parser/data )
 file( COPY data/a.jpg
-	DESTINATION ${CMAKE_CURRENT_BINARY_DIR}/data )
+	DESTINATION ${CMAKE_CURRENT_BINARY_DIR}/../../../bin/tests/parser/data )
 file( COPY data/b.png
-	DESTINATION ${CMAKE_CURRENT_BINARY_DIR}/data )
+	DESTINATION ${CMAKE_CURRENT_BINARY_DIR}/../../../bin/tests/parser/data )
 
 include_directories( ${CMAKE_CURRENT_SOURCE_DIR}
 	${CMAKE_CURRENT_SOURCE_DIR}/../../..
@@ -31,5 +31,5 @@ add_executable( test.md_parser ${SRC} )
 target_link_libraries( test.md_parser md-parser Qt6::Core )
 
 add_test( NAME test.md_parser
-	COMMAND ${CMAKE_CURRENT_BINARY_DIR}/test.md_parser
-	WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR} )
+	COMMAND ${CMAKE_CURRENT_BINARY_DIR}/../../../bin/test.md_parser
+	WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/../../../bin )

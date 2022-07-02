@@ -21,5 +21,5 @@ add_executable( test.funcs ${SRC} )
 target_link_libraries( test.funcs md-parser Qt6::Core )
 
 add_test( NAME test.funcs
-	COMMAND ${CMAKE_CURRENT_BINARY_DIR}/test.funcs
-	WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR} )
+	COMMAND ${CMAKE_CURRENT_BINARY_DIR}/../../../bin/test.funcs
+	WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/../../../bin )

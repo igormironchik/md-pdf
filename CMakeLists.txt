@@ -1,9 +1,16 @@
 
 cmake_minimum_required( VERSION 3.1 )
 
+project( md-pdf )
+
 include( ExternalProject )
 
 set( CMAKE_MODULE_PATH ${CMAKE_SOURCE_DIR}/3rdparty/podofo-trunk/cmake/modules )
+set( CMAKE_ARCHIVE_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/lib )
+set( CMAKE_LIBRARY_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/lib )
+set( CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin )
+
+link_directories( ${CMAKE_BINARY_DIR}/lib )
 
 option( BUILD_BENCHMARK "Build benchmark? Default OFF." OFF )
 
@@ -16,8 +23,6 @@ endif( NOT CMAKE_BUILD_TYPE )
 set( CMAKE_CXX_STANDARD 14 )
 
 set( CMAKE_CXX_STANDARD_REQUIRED ON )
-
-project( md-pdf )
 
 if( MDPDF_USE_CONAN )
 	include( conanbuildinfo.cmake )
