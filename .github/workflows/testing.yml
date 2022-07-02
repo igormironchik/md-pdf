@@ -135,5 +135,8 @@ jobs:
     - name: Build
       run: nmake
 
+    - name: Test rendering
+      run: bin/test.render.exe
+
     - name: Test
       run: ctest --output-on-failure --verbose
