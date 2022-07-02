@@ -11,3 +11,6 @@ cmake_find_package
 
 [options]
 openssl:shared=True
+libpng:shared=True
+libjpeg:shared=True
+freetype:shared=True
