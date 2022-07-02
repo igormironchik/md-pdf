@@ -417,6 +417,7 @@ private:
 		struct Width {
 			double width = 0.0;
 			double height = 0.0;
+			double descent = 0.0;
 			bool isSpace = false;
 			bool isNewLine = false;
 			bool shrink = true;
@@ -425,10 +426,12 @@ private:
 
 		//! Append new item.
 		void append( const Width & w ) { m_width.append( w ); }
-		//! \return scale of space at line.
+		//! \return Scale of space at line.
 		double scale() { return m_scale.at( m_pos ); }
 		//! \return Height of the line.
 		double height() { return m_height.at( m_pos ); }
+		//! \return Descent of the line.
+		double descent() { return m_descent.at( m_pos ); }
 		//! Move to next line.
 		void moveToNextLine() { ++m_pos; }
 		//! Is drawing? This struct can be used to precalculate widthes and for actual drawing.
@@ -459,6 +462,8 @@ private:
 		QVector< double > m_scale;
 		//! Heights of lines.
 		QVector< double > m_height;
+		//! Descents of lines.
+		QVector< double > m_descent;
 		//! Position of current line.
 		int m_pos = 0;
 	}; // struct CustomWidth
