@@ -98,6 +98,16 @@ jobs:
       
     - run: git submodule update --init --recursive
 
+    - uses: suisei-cn/actions-download-file@v1
+      id: downloadfile  # Remember to give an ID if you need the output filename
+      name: Download ImageMagick
+      with:
+        url: "https://imagemagick.org/archive//binaries/ImageMagick-6.9.12-54-Q16-HDRI-x64-dll.exe"
+        target: downloads/
+
+    - name: Install ImageMagick
+      run: downloads/ImageMagick-6.9.12-54-Q16-HDRI-x64-dll.exe /VERYSILENT /SUPPRESSMSGBOXES /LOADINF="imagemagick.inf"
+
     - name: Install Conan
       id: conan
       uses: turtlebrowser/get-conan@main
@@ -109,16 +119,6 @@ jobs:
         
     - name: Enable developer command prompt
       uses: ilammy/msvc-dev-cmd@v1
-
-    - uses: suisei-cn/actions-download-file@v1
-      id: downloadfile  # Remember to give an ID if you need the output filename
-      name: Download ImageMagick
-      with:
-        url: "https://imagemagick.org/archive//binaries/ImageMagick-6.9.12-54-Q16-HDRI-x64-dll.exe"
-        target: .
-
-    - name: Install ImageMagick
-      run: ImageMagick-6.9.12-54-Q16-HDRI-x64-dll.exe /VERYSILENT /SUPPRESSMSGBOXES /LOADINF="imagemagick.inf"
 
     - name: Build and Test
       run: |
