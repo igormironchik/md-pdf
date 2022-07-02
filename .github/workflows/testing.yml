@@ -108,6 +108,9 @@ jobs:
     - name: Install ImageMagick
       run: downloads/ImageMagick-6.9.12-54-Q16-HDRI-x64-dll.exe /VERYSILENT /SUPPRESSMSGBOXES /LOADINF="imagemagick.inf"
 
+    - name: Update PATH
+      run: echo "C:\Program Files\ImageMagick-6.9.12-54-Q16-HDRI" | Out-File -FilePath $env:GITHUB_PATH -Encoding utf8 -Append
+
     - name: Install Conan
       id: conan
       uses: turtlebrowser/get-conan@main
