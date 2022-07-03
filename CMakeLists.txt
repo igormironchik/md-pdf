@@ -5,7 +5,9 @@ project( md-pdf )
 
 include( ExternalProject )
 
-set( CMAKE_MODULE_PATH ${CMAKE_SOURCE_DIR}/3rdparty/podofo-trunk/cmake/modules )
+set( CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} ${CMAKE_CURRENT_SOURCE_DIR}/cmake
+	${CMAKE_CURRENT_SOURCE_DIR}/3rdparty/podofo-trunk/cmake/modules )
+
 set( CMAKE_ARCHIVE_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/lib )
 set( CMAKE_LIBRARY_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/lib )
 set( CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin )
@@ -28,10 +30,6 @@ if( MDPDF_USE_CONAN )
 	include( conanbuildinfo.cmake )
 	conan_basic_setup()
 endif()
-
-set( CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} ${CMAKE_CURRENT_SOURCE_DIR}/cmake )
-
-file( MAKE_DIRECTORY ${CMAKE_SOURCE_DIR}/lib )
 
 set( PODOFO_BUILD_LIB_ONLY ON )
 
