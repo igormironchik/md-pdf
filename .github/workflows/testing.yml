@@ -132,11 +132,8 @@ jobs:
     - name: Generate Makefiles
       run: cmake -G "NMake Makefiles" -DCMAKE_PREFIX_PATH="${{ github.workspace }}/ImageMagick" -DMDPDF_USE_CONAN=ON -DCMAKE_BUILD_TYPE=Relese .
 
-    - name: Dir
-      run: dir
-
     - name: Append PATH with packages' bin directories
-      run: path.cmd
+      run: "${{ github.workspace }}/path.cmd"
 
     - name: Build
       run: nmake
