@@ -99,17 +99,17 @@ jobs:
     - run: git submodule update --init --recursive
 
     - uses: suisei-cn/actions-download-file@v1
-      id: downloadfile  # Remember to give an ID if you need the output filename
+      id: downloadfile
       name: Download ImageMagick
       with:
-        url: "https://imagemagick.org/archive//binaries/ImageMagick-6.9.12-54-Q16-HDRI-x64-dll.exe"
+        url: "https://github.com/igormironchik/md-pdf/releases/download/0.7.0/ImageMagick.zip"
         target: downloads/
 
-    - name: Install ImageMagick
-      run: downloads/ImageMagick-6.9.12-54-Q16-HDRI-x64-dll.exe /VERYSILENT /SUPPRESSMSGBOXES /LOADINF="imagemagick.inf"
+    - name: Unzip ImageMagick
+      run: 7z x downloads/ImageMagick.zip"
 
     - name: Append ImageMagick into PATH
-      run: echo "C:\Program Files\ImageMagick-6.9.12-54-Q16-HDRI" | Out-File -FilePath $env:GITHUB_PATH -Encoding utf8 -Append
+      run: echo "${{ github.workspace }}/downloads/ImageMagick" | Out-File -FilePath $env:GITHUB_PATH -Encoding utf8 -Append
 
     - name: Test ImageMagick
       run: convert -version

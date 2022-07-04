@@ -1,6 +1,0 @@
-[Setup]
-Lang=default
-Dir=C:\Program Files\ImageMagick-6.9.12-54-Q16-HDRI
-Group=ImageMagick 6.9.12 Q16-HDRI (64-bit)
-NoIcons=0
-Tasks=install_devel
