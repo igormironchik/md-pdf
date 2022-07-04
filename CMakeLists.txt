@@ -29,6 +29,8 @@ set( CMAKE_CXX_STANDARD_REQUIRED ON )
 if( MDPDF_USE_CONAN )
 	include( conanbuildinfo.cmake )
 	conan_basic_setup()
+
+	configure_file( path.cmd.in ${CMAKE_CURRENT_SOURCE_DIR}/path.cmd )
 endif()
 
 set( PODOFO_BUILD_LIB_ONLY ON )

@@ -108,7 +108,7 @@ jobs:
     - name: Install ImageMagick
       run: downloads/ImageMagick-6.9.12-54-Q16-HDRI-x64-dll.exe /VERYSILENT /SUPPRESSMSGBOXES /LOADINF="imagemagick.inf"
 
-    - name: Update PATH
+    - name: Append ImageMagick into PATH
       run: echo "C:\Program Files\ImageMagick-6.9.12-54-Q16-HDRI" | Out-File -FilePath $env:GITHUB_PATH -Encoding utf8 -Append
 
     - name: Test ImageMagick
@@ -132,11 +132,11 @@ jobs:
     - name: Generate Makefiles
       run: cmake -G "NMake Makefiles" -DCMAKE_PREFIX_PATH="C:\\Program Files\\ImageMagick-6.9.12-54-Q16-HDRI" -DMDPDF_USE_CONAN=ON -DCMAKE_BUILD_TYPE=Relese .
 
+    - name: Append PATH with packages' bin directories
+      run: path.cmd
+
     - name: Build
       run: nmake
-
-    - name: Test rendering
-      run: bin/test.render.exe
 
     - name: Test
       run: ctest --output-on-failure --verbose
