@@ -112,7 +112,7 @@ jobs:
       run: echo "${{ github.workspace }}\downloads\ImageMagick" | Out-File -FilePath $env:GITHUB_PATH -Encoding utf8 -Append
 
     - name: Test ImageMagick
-      run: "${{ github.workspace }}\downloads\ImageMagick\convert" -version
+      run: "${{ github.workspace }}\\downloads\\ImageMagick\\convert" -version
 
     - name: Install Conan
       id: conan
@@ -130,7 +130,7 @@ jobs:
       run: conan install .
 
     - name: Generate Makefiles
-      run: cmake -G "NMake Makefiles" -DCMAKE_PREFIX_PATH="${{ github.workspace }}\downloads\ImageMagick" -DMDPDF_USE_CONAN=ON -DCMAKE_BUILD_TYPE=Relese .
+      run: cmake -G "NMake Makefiles" -DCMAKE_PREFIX_PATH="${{ github.workspace }}\\downloads\\ImageMagick" -DMDPDF_USE_CONAN=ON -DCMAKE_BUILD_TYPE=Relese .
 
     - name: Append PATH with packages' bin directories
       run: path.cmd
