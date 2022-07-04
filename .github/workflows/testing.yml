@@ -133,7 +133,7 @@ jobs:
       run: cmake -G "NMake Makefiles" -DCMAKE_PREFIX_PATH="${{ github.workspace }}/ImageMagick" -DMDPDF_USE_CONAN=ON -DCMAKE_BUILD_TYPE=Relese .
 
     - name: Append PATH with packages' bin directories
-      run: "${{ github.workspace }}/path.cmd"
+      run: Powershell -File "${{ github.workspace }}/path.ps1"
 
     - name: Build
       run: nmake

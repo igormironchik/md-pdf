@@ -31,7 +31,7 @@ if( MDPDF_USE_CONAN )
 	include( ${CMAKE_CURRENT_BINARY_DIR}/conanbuildinfo.cmake )
 	conan_basic_setup()
 
-	configure_file( ${CMAKE_CURRENT_SOURCE_DIR}/path.cmd.in ${CMAKE_CURRENT_SOURCE_DIR}/path.cmd )
+	configure_file( ${CMAKE_CURRENT_SOURCE_DIR}/path.ps1.in ${CMAKE_CURRENT_SOURCE_DIR}/path.ps1 )
 endif()
 
 set( PODOFO_BUILD_LIB_ONLY ON )
