@@ -103,16 +103,16 @@ jobs:
       name: Download ImageMagick
       with:
         url: "https://github.com/igormironchik/md-pdf/releases/download/0.7.0/ImageMagick.zip"
-        target: downloads/
+        target: ${{ github.workspace }}/downloads/
 
     - name: Unzip ImageMagick
-      run: 7z x downloads/ImageMagick.zip
+      run: 7z x ${{ github.workspace }}/downloads/ImageMagick.zip
 
     - name: Append ImageMagick into PATH
-      run: echo "${{ github.workspace }}\downloads\ImageMagick" | Out-File -FilePath $env:GITHUB_PATH -Encoding utf8 -Append
+      run: echo "${{ github.workspace }}/downloads/ImageMagick" | Out-File -FilePath $env:GITHUB_PATH -Encoding utf8 -Append
 
     - name: Test ImageMagick
-      run: ${{ github.workspace }}\\downloads\\ImageMagick\\convert -version
+      run: ${{ github.workspace }}/downloads/ImageMagick/convert -version
 
     - name: Install Conan
       id: conan
@@ -130,7 +130,7 @@ jobs:
       run: conan install .
 
     - name: Generate Makefiles
-      run: cmake -G "NMake Makefiles" -DCMAKE_PREFIX_PATH="${{ github.workspace }}\downloads\ImageMagick" -DMDPDF_USE_CONAN=ON -DCMAKE_BUILD_TYPE=Relese .
+      run: cmake -G "NMake Makefiles" -DCMAKE_PREFIX_PATH="${{ github.workspace }}/downloads/ImageMagick" -DMDPDF_USE_CONAN=ON -DCMAKE_BUILD_TYPE=Relese .
 
     - name: Append PATH with packages' bin directories
       run: path.cmd
