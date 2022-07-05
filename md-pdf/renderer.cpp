@@ -1229,11 +1229,14 @@ PdfRenderer::drawString( PdfAuxData & pdfData, const RenderOpts & renderOpts,
 
 	double h = lineHeight;
 	double descent = 0.0;
+	double ascent = font->GetFontMetrics()->GetAscent();
+	double d = 0.0;
 
 	if( cw && cw->isDrawing() )
 	{
 		h = cw->height();
 		descent = cw->descent();
+		d = ( h - ascent ) / 2.0;
 	}
 
 	auto newLineFn = [&] ()
@@ -1249,6 +1252,7 @@ PdfRenderer::drawString( PdfAuxData & pdfData, const RenderOpts & renderOpts,
 
 			h = cw->height();
 			descent = cw->descent();
+			d = ( h - ascent ) / 2.0;
 		}
 		else if( cw )
 		{
@@ -1298,7 +1302,7 @@ PdfRenderer::drawString( PdfAuxData & pdfData, const RenderOpts & renderOpts,
 				spaceFont->SetFontScale( scale );
 
 				pdfData.drawText( pdfData.coords.x,
-					pdfData.coords.y + descent, " " );
+					pdfData.coords.y + d, " " );
 
 				spaceFont->SetFontScale( 100.0 );
 			}
@@ -1306,7 +1310,7 @@ PdfRenderer::drawString( PdfAuxData & pdfData, const RenderOpts & renderOpts,
 				cw->append( { w, lineHeight, 0.0, true, false, true, " " } );
 
 			ret.append( qMakePair( QRectF( pdfData.coords.x,
-				pdfData.coords.y + descent,
+				pdfData.coords.y + d,
 				w * scale / 100.0, lineHeight ), pdfData.currentPageIndex() ) );
 
 			pdfData.coords.x += w * scale / 100.0;
@@ -1346,16 +1350,16 @@ PdfRenderer::drawString( PdfAuxData & pdfData, const RenderOpts & renderOpts,
 				{
 					pdfData.setColor( background );
 					pdfData.drawRectangle( pdfData.coords.x, pdfData.coords.y +
-						font->GetFontMetrics()->GetDescent() + descent, length,
+						font->GetFontMetrics()->GetDescent() + d, length,
 						font->GetFontMetrics()->GetLineSpacing() );
 					pdfData.painter->Fill();
 					pdfData.restoreColor();
 				}
 
 				pdfData.drawText( pdfData.coords.x,
-					pdfData.coords.y + descent, str );
+					pdfData.coords.y + d, str );
 				ret.append( qMakePair( QRectF( pdfData.coords.x,
-					pdfData.coords.y + descent,
+					pdfData.coords.y + d,
 					length, lineHeight ), pdfData.currentPageIndex() ) );
 			}
 			else if( cw )
@@ -1385,7 +1389,7 @@ PdfRenderer::drawString( PdfAuxData & pdfData, const RenderOpts & renderOpts,
 						font->SetFontScale( scale );
 
 						ret.append( qMakePair( QRectF( pdfData.coords.x,
-							pdfData.coords.y + descent,
+							pdfData.coords.y + d,
 							spaceWidth * scale / 100.0, lineHeight ), pdfData.currentPageIndex() ) );
 
 						if( background.isValid() )
@@ -1393,14 +1397,14 @@ PdfRenderer::drawString( PdfAuxData & pdfData, const RenderOpts & renderOpts,
 							pdfData.setColor( background );
 							pdfData.drawRectangle( pdfData.coords.x, pdfData.coords.y +
 								font->GetFontMetrics()->GetDescent() +
-								descent, spaceWidth * scale / 100.0,
+								d, spaceWidth * scale / 100.0,
 								font->GetFontMetrics()->GetLineSpacing() );
 							pdfData.painter->Fill();
 							pdfData.restoreColor();
 						}
 
 						pdfData.drawText( pdfData.coords.x,
-							pdfData.coords.y + descent, " " );
+							pdfData.coords.y + d, " " );
 
 						font->SetFontScale( 100.0 );
 					}
@@ -1432,9 +1436,9 @@ PdfRenderer::drawString( PdfAuxData & pdfData, const RenderOpts & renderOpts,
 				if( draw )
 				{
 					pdfData.drawText( pdfData.coords.x,
-						pdfData.coords.y + descent, str );
+						pdfData.coords.y + d, str );
 					ret.append( qMakePair( QRectF( pdfData.coords.x,
-							pdfData.coords.y + descent,
+							pdfData.coords.y + d,
 							font->GetFontMetrics()->StringWidth( str ), lineHeight ),
 						pdfData.currentPageIndex() ) );
 				}
@@ -1865,7 +1869,7 @@ PdfRenderer::drawMathExpr( PdfAuxData & pdfData, const RenderOpts & renderOpts,
 
 			if( !firstInParagraph )
 			{
-				moveToNewLine( pdfData, offset, lineHeight, 1.0 );
+				moveToNewLine( pdfData, offset, 0.0, 1.0 );
 
 				if( cw )
 				{
@@ -1909,13 +1913,15 @@ PdfRenderer::drawMathExpr( PdfAuxData & pdfData, const RenderOpts & renderOpts,
 				x = ( availableWidth - pdfImg.GetWidth() * imgScale ) / 2.0;
 
 			pdfData.drawImage( pdfData.coords.x + x,
-				pdfData.coords.y - pdfImg.GetHeight() * imgScale + descent,
+				pdfData.coords.y - pdfImg.GetHeight() * imgScale -
+					( h - pdfImg.GetHeight() * imgScale ) / 2.0,
 				&pdfImg, imgScale, imgScale );
 
 			pdfData.coords.y -= pdfImg.GetHeight() * imgScale;
 
-			const QRectF r = { pdfData.coords.x,
-				pdfData.coords.y - pdfImg.GetHeight() * imgScale + descent,
+			const QRectF r = { pdfData.coords.x + x,
+				pdfData.coords.y - pdfImg.GetHeight() * imgScale -
+				( h - pdfImg.GetHeight() * imgScale ) / 2.0,
 				pdfImg.GetWidth() * imgScale, pdfImg.GetHeight() * imgScale };
 			const auto idx = pdfData.currentPageIndex();
 
@@ -1987,12 +1993,13 @@ PdfRenderer::drawMathExpr( PdfAuxData & pdfData, const RenderOpts & renderOpts,
 			}
 
 			pdfData.drawImage( pdfData.coords.x,
-				pdfData.coords.y + descent,
+				pdfData.coords.y + ( h - pdfImg.GetHeight() * imgScale ) / 2.0,
 				&pdfImg, imgScale, imgScale );
 
 			pdfData.coords.x += pdfImg.GetWidth() * imgScale;
 
-			const QRectF r = { pdfData.coords.x, pdfData.coords.y + descent,
+			const QRectF r = { pdfData.coords.x,
+				pdfData.coords.y + ( h - pdfImg.GetHeight() * imgScale ) / 2.0,
 				pdfImg.GetWidth() * imgScale, pdfImg.GetHeight() * imgScale };
 			const auto idx = pdfData.currentPageIndex();
 
@@ -2025,8 +2032,7 @@ PdfRenderer::drawMathExpr( PdfAuxData & pdfData, const RenderOpts & renderOpts,
 			if( pdfImg.GetHeight() * imgScale - pageHeight > 0.01 )
 				imgScale = ( pageHeight / ( pdfImg.GetHeight() * imgScale ) ) * scale;
 
-			height += pdfImg.GetHeight() * imgScale - font->GetFontMetrics()->GetDescent() +
-				descent;
+			height += pdfImg.GetHeight() * imgScale - font->GetFontMetrics()->GetDescent();
 
 			pdfData.coords.x = pdfData.coords.margins.left + offset;
 
@@ -2072,7 +2078,7 @@ PdfRenderer::drawMathExpr( PdfAuxData & pdfData, const RenderOpts & renderOpts,
 			pdfData.coords.x += pdfImg.GetWidth() * imgScale;
 
 			cw->append( { pdfImg.GetWidth() * imgScale,
-				pdfImg.GetHeight() * imgScale - font->GetFontMetrics()->GetDescent() + descent,
+				pdfImg.GetHeight() * imgScale - font->GetFontMetrics()->GetDescent(),
 				descent, false, false, hasNext, "" } );
 		}
 	}
@@ -2168,23 +2174,27 @@ PdfRenderer::drawFootnote( PdfAuxData & pdfData, const RenderOpts & renderOpts,
 						minNecessaryHeight( pdfData, renderOpts, *( it + 1 ), doc, 0.0,
 							c_footnoteScale, true ) :
 						0.0 ), heightCalcOpt, c_footnoteScale ) );
+				pdfData.continueParagraph = true;
 				break;
 
 			case MD::ItemType::Paragraph :
 				ret.append( drawParagraph( pdfData, renderOpts,
 					static_cast< MD::Paragraph* > ( it->data() ), doc, footnoteOffset,
 					true, heightCalcOpt, c_footnoteScale, true ) );
+				pdfData.continueParagraph = true;
 				break;
 
 			case MD::ItemType::Code :
 				ret.append( drawCode( pdfData, renderOpts, static_cast< MD::Code* > ( it->data() ),
 					doc, footnoteOffset, heightCalcOpt, c_footnoteScale ) );
+				pdfData.continueParagraph = true;
 				break;
 
 			case MD::ItemType::Blockquote :
 				ret.append( drawBlockquote( pdfData, renderOpts,
 					static_cast< MD::Blockquote* > ( it->data() ),
 					doc, footnoteOffset, heightCalcOpt, c_footnoteScale, true ) );
+				pdfData.continueParagraph = true;
 				break;
 
 			case MD::ItemType::List :
@@ -2196,6 +2206,8 @@ PdfRenderer::drawFootnote( PdfAuxData & pdfData, const RenderOpts & renderOpts,
 
 				ret.append( drawList( pdfData, renderOpts, list, doc, bulletWidth, footnoteOffset,
 					heightCalcOpt, c_footnoteScale, true ) );
+
+				pdfData.continueParagraph = true;
 			}
 				break;
 
@@ -2203,6 +2215,7 @@ PdfRenderer::drawFootnote( PdfAuxData & pdfData, const RenderOpts & renderOpts,
 				ret.append( drawTable( pdfData, renderOpts,
 					static_cast< MD::Table* > ( it->data() ),
 					doc, footnoteOffset, heightCalcOpt, c_footnoteScale, true ) );
+				pdfData.continueParagraph = true;
 				break;
 
 			default :
@@ -2228,6 +2241,8 @@ PdfRenderer::drawFootnote( PdfAuxData & pdfData, const RenderOpts & renderOpts,
 			++pdfData.currentFootnote;
 		}
 	}
+
+	pdfData.continueParagraph = false;
 
 	return ret;
 }
