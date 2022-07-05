@@ -11,6 +11,7 @@
 #include "jkqtmathtext/nodes/jkqtmathtextsqrtnode.h"
 #include "jkqtmathtext/nodes/jkqtmathtextsubsupernode.h"
 #include "jkqtmathtext/nodes/jkqtmathtextsymbolnode.h"
+#include "jkqtmathtext/nodes/jkqtmathtextwhitespacenode.h"
 
 
 TestForm::TestForm(QWidget *parent) :
@@ -21,6 +22,19 @@ TestForm::TestForm(QWidget *parent) :
     ui->cmbTestset->addItem("text: fonts", "rm: \\textrm{ABCabc123}, sf: \\textsf{ABCabc123}, tt: \\texttt{ABCabc123}, cal: \\textcal{ABCabc123}, scr: \\textscr{ABCabc123}, bb: \\textbb{ABCabc123}, frak: \\textfrak{ABCabc123}, ");
     ui->cmbTestset->addItem("math-fonts", "rm: $\\mathrm{ABCabc123}$, sf: $\\mathsf{ABCabc123}$, tt: $\\mathtt{ABCabc123}$, cal: $\\mathcal{ABCabc123}$, scr: $\\mathscr{ABCabc123}$, bb: $\\mathbb{ABCabc123}$, frak: $\\mathfrak{ABCabc123}$, ");
     ui->cmbTestset->addItem("math: simple relations", "$a{\\leq}b$, $a{\\geq}b$, $a{\\equiv}b$, $a=b$, $a{\\neq}b$, $a<b$, $a>b$");
+    const auto wsExample=[](const QStringList& spaces, const QString before, const QString& after)->QString {
+        QString s;
+        for (int i=0; i<spaces.size(); i++) {
+            s+="text: {\\backslash}"+spaces[i]+": "+before+"{\\"+spaces[i]+"}"+after;
+            s+="\\ \\ \\ \\ ";
+        }
+        return s;
+    };
+    QStringList whitespaces=QStringList()<<" "<<"enspace"<<"quad"<<"qquad"<<","<<":"<<";"<<"!"<<"negmedspace"<<"negthickspace";
+    ui->cmbTestset->addItem("text: whitespaces arrows", "text: "+wsExample(whitespaces, "\\rightarrow", "\\leftarrow"));
+    ui->cmbTestset->addItem("text: whitespaces fg", "text: "+wsExample(whitespaces, "f", "g"));
+    ui->cmbTestset->addItem("math: whitespaces arrows", "math: "+wsExample(whitespaces, "$\\rightarrow", "\\leftarrow$"));
+    ui->cmbTestset->addItem("math: whitespaces fg", "math: "+wsExample(whitespaces, "$f", "g$"));
     ui->cmbTestset->addItem("text/math: simple relations in different modes", "math: $a{\\leq}b$, math/no braces: $a\\leq b$, no math: a{\\leq}b, no math/no braces: a\\leq b");
     ui->cmbTestset->addItem("math: named symbols 1", "ll: $\\ll$\\ gg: $\\gg$\\ leq: $\\leq$\\ geq: $\\geq$\\ pm: $\\pm$\\ mp: $\\mp$\\ ");
     ui->cmbTestset->addItem("math: named symbols 2", "nexists: $\\nexists$\\ ni: $\\ni$\\ notni: $\\notni$\\ circ: $\\circ$\\ sim: $\\sim$\\ emptyset: $\\emptyset$\\ odot: $\\odot$\\ ominus: $\\ominus$\\ subsetnot: $\\subsetnot$\\ bot: $\\bot$");
@@ -212,7 +226,7 @@ TestForm::TestForm(QWidget *parent) :
     ui->cmbEncodingSerifMath->setCurrentIndex(static_cast<int>(mt.getFontEncodingMathRoman()));
     ui->cmbUnicodeSansMath->setCurrentFont(QFont(mt.getFontMathSans()));
     ui->cmbEncodingSansMath->setCurrentIndex(static_cast<int>(mt.getFontEncodingMathSans()));
-    ui->cmbUnicodeFixed->setCurrentFont(QFont(mt.getFontTypewriter()));
+    ui->cmbUnicodeTypewriter->setCurrentFont(QFont(mt.getFontTypewriter()));
     ui->cmbEncodingTypewriter->setCurrentIndex(static_cast<int>(mt.getFontEncodingTypewriter()));
     ui->cmbCaligraphic->setCurrentFont(QFont(mt.getFontCaligraphic()));
     ui->cmbEncodingCaligraphic->setCurrentIndex(static_cast<int>(mt.getFontEncodingCaligraphic()));
@@ -222,10 +236,10 @@ TestForm::TestForm(QWidget *parent) :
     ui->cmbEncodingFraktur->setCurrentIndex(static_cast<int>(mt.getFontEncodingFraktur()));
     ui->cmbUnicodeBlackboard->setCurrentFont(QFont(mt.getFontBlackboard()));
     ui->cmbEncodingBlackboard->setCurrentIndex(static_cast<int>(mt.getFontEncodingBlackboard()));
-    ui->cmbUnicodeSymbol->setCurrentFont(QFont(mt.getSymbolfontSymbol(JKQTMathTextEnvironmentFont::MTEroman)));
-    ui->cmbEncodingSymbol->setCurrentIndex(static_cast<int>(mt.getSymbolfontEncodingSymbol(JKQTMathTextEnvironmentFont::MTEroman)));
-    ui->cmbUnicodeGreek->setCurrentFont(QFont(mt.getSymbolfontGreek(JKQTMathTextEnvironmentFont::MTEroman)));
-    ui->cmbEncodingGreek->setCurrentIndex(static_cast<int>(mt.getSymbolfontEncodingGreek(JKQTMathTextEnvironmentFont::MTEroman)));
+    ui->cmbUnicodeSymbol->setCurrentFont(QFont(mt.getFallbackFontSymbols()));
+    ui->cmbEncodingSymbol->setCurrentIndex(static_cast<int>(mt.getFontEncodingFallbackFontSymbols()));
+    ui->cmbUnicodeGreek->setCurrentFont(QFont(mt.getFallbackFontGreek()));
+    ui->cmbEncodingGreek->setCurrentIndex(static_cast<int>(mt.getFontEncodingFallbackFontGreek()));
     ui->chkSimulateBlackboard->setChecked(mt.isFontBlackboardSimulated());
 
 
@@ -237,20 +251,21 @@ TestForm::TestForm(QWidget *parent) :
     ui->cmbFont->setCurrentIndex(1);
 
     connect(ui->chkBoxes, SIGNAL(toggled(bool)), this, SLOT(updateMath()));
+    connect(ui->chkBigBox, SIGNAL(toggled(bool)), this, SLOT(updateMath()));
     connect(ui->chkAntiAlias, SIGNAL(toggled(bool)), this, SLOT(updateMath()));
-    connect(ui->chkAntiAliasHQ, SIGNAL(toggled(bool)), this, SLOT(updateMath()));
     connect(ui->chkAntiAliasText, SIGNAL(toggled(bool)), this, SLOT(updateMath()));
-    connect(ui->chkSmoothTransform, SIGNAL(toggled(bool)), this, SLOT(updateMath()));
     connect(ui->chkSimulateBlackboard, SIGNAL(toggled(bool)), this, SLOT(updateMath()));
+    connect(ui->cmbLastAlign, SIGNAL(currentIndexChanged(int)), this, SLOT(updateMath()));
     connect(ui->cmbFont, SIGNAL(currentIndexChanged(int)), this, SLOT(updateMath()));
     connect(ui->cmbScript, SIGNAL(currentIndexChanged(int)), this, SLOT(updateMath()));
+    connect(ui->cmbSizeUnit, SIGNAL(currentIndexChanged(int)), this, SLOT(updateMath()));
     connect(ui->cmbTestset, SIGNAL(currentIndexChanged(int)), this, SLOT(updateMath()));
     connect(ui->cmbCaligraphic, SIGNAL(currentIndexChanged(int)), this, SLOT(updateMath()));
     connect(ui->cmbUnicodeSans, SIGNAL(currentIndexChanged(int)), this, SLOT(updateMath()));
     connect(ui->cmbUnicodeSansMath, SIGNAL(currentIndexChanged(int)), this, SLOT(updateMath()));
     connect(ui->cmbEncodingSans, SIGNAL(currentIndexChanged(int)), this, SLOT(updateMath()));
     connect(ui->cmbEncodingSansMath, SIGNAL(currentIndexChanged(int)), this, SLOT(updateMath()));
-    connect(ui->cmbUnicodeFixed, SIGNAL(currentIndexChanged(int)), this, SLOT(updateMath()));
+    connect(ui->cmbUnicodeTypewriter, SIGNAL(currentIndexChanged(int)), this, SLOT(updateMath()));
     connect(ui->cmbUnicodeGreek, SIGNAL(currentIndexChanged(int)), this, SLOT(updateMath()));
     connect(ui->cmbUnicodeSerif, SIGNAL(currentIndexChanged(int)), this, SLOT(updateMath()));
     connect(ui->cmbUnicodeSerifMath, SIGNAL(currentIndexChanged(int)), this, SLOT(updateMath()));
@@ -295,15 +310,17 @@ double TestForm::draw(QPainter& painter, double X, double YY, JKQTMathText& mt, 
     durationSizingMS=ht.getTime()/1000.0;
     qDebug()<<"    sizing in "<<durationSizingMS<<" ms\n";
     QPen p=painter.pen();
-    p.setColor("lightcoral");
-    p.setStyle(Qt::DashLine);
-    p.setWidth(2);
-    painter.setPen(p);
-    QRectF r(X, Y-mt.getAscent(painter),s.width(), s.height());
-    painter.drawRect(r);
-    p.setColor("lightblue");
-    painter.setPen(p);
-    painter.drawLine(X, Y, X+s.width(), Y);
+    if (ui->chkBigBox->isChecked()) {
+        p.setColor("lightcoral");
+        p.setStyle(Qt::DashLine);
+        p.setWidth(2);
+        painter.setPen(p);
+        QRectF r(X, Y-mt.getAscent(painter),s.width(), s.height());
+        painter.drawRect(r);
+        p.setColor("lightblue");
+        painter.setPen(p);
+        painter.drawLine(X, Y, X+s.width(), Y);
+    }
     ht.start();
     p.setStyle(Qt::SolidLine);
     p.setWidth(1);
@@ -325,6 +342,52 @@ double TestForm::draw(QPainter& painter, double X, double YY, JKQTMathText& mt, 
     painter.restore();
     qDebug()<<name<<":  width="<<s.width()<<"  height="<<s.height()<<"  ascent="<<mt.getAscent(painter)<<"  descent="<<mt.getDescent(painter);
     return mt.getDescent(painter)+mt.getAscent(painter)+40;
+}
+
+double TestForm::drawAligned(QPainter& painter, double X, double YY, JKQTMathText& mt, QString name) {
+
+
+    double Y=YY;
+    painter.save();
+    ht.start();
+    const QSizeF s=mt.getSize(painter);
+    const QRectF rect(X, Y, s.width()+32, s.height()+32);
+    int flags=Qt::AlignLeft|Qt::AlignTop;
+    switch(ui->cmbLastAlign->currentIndex()) {
+    case 0: flags=Qt::AlignLeft|Qt::AlignTop; break;
+    case 1: flags=Qt::AlignLeft|Qt::AlignVCenter; break;
+    case 2: flags=Qt::AlignLeft|Qt::AlignBottom; break;
+    case 3: flags=Qt::AlignHCenter|Qt::AlignTop; break;
+    case 4: flags=Qt::AlignHCenter|Qt::AlignVCenter; break;
+    case 5: flags=Qt::AlignHCenter|Qt::AlignBottom; break;
+    case 6: flags=Qt::AlignRight|Qt::AlignTop; break;
+    case 7: flags=Qt::AlignRight|Qt::AlignVCenter; break;
+    case 8: flags=Qt::AlignRight|Qt::AlignBottom; break;
+    }
+
+    QPen p=painter.pen();
+    p.setColor("darkred");
+    p.setStyle(Qt::SolidLine);
+    p.setWidth(2);
+    painter.setPen(p);
+    painter.drawRect(rect);
+    p.setStyle(Qt::SolidLine);
+    p.setWidth(1);
+    p.setColor("black");
+    painter.setPen(p);
+    mt.draw(painter, flags, rect, ui->chkBoxes->isChecked());
+    p.setColor("blue");
+    painter.setPen(p);
+
+    QFont f;
+    f.setFamily("sans serif");
+    f.setUnderline(true);
+    f.setPointSize(10);
+    painter.setFont(f);
+    painter.drawText(X, Y-6, name+":");
+    painter.restore();
+    qDebug()<<name<<":  width="<<s.width()<<"  height="<<s.height()<<"  ascent="<<mt.getAscent(painter)<<"  descent="<<mt.getDescent(painter);
+    return rect.bottom()+40;
 }
 
 QTreeWidgetItem *TestForm::createTree(JKQTMathTextNode *node, QTreeWidgetItem* parent)
@@ -393,7 +456,7 @@ QTreeWidgetItem *TestForm::createTree(JKQTMathTextNode *node, QTreeWidgetItem* p
     } else if (symN)  {
         name=QString("MTSymbolNode: \'%1\' (addWhite: %2, subsuper=%3)").arg(symN->getSymbolName()).arg(symN->getAddWhitespace()).arg(symN->isSubSuperscriptAboveBelowNode());
     } else if (spN)  {
-        name=QString("MTWhitespaceNode :\'%1\'").arg(txtN->getText());
+        name=QString("MTWhitespaceNode :type=%1, count=%2").arg(spN->Type2String(spN->getWhitespaceType())).arg(spN->getWhitespaceCount());
     } else if (txtN)  {
         name=QString("MTTextNode: \'%1\'").arg(txtN->getText());
 
@@ -455,11 +518,7 @@ void TestForm::updateMath()
 
     painter.begin(&pix);
     if (ui->chkAntiAlias->isChecked()) painter.setRenderHint(QPainter::Antialiasing);
-#if (QT_VERSION<QT_VERSION_CHECK(6, 0, 0))
-    if (ui->chkAntiAliasHQ->isChecked()) painter.setRenderHint(QPainter::HighQualityAntialiasing);
-#endif
     if (ui->chkAntiAliasText->isChecked()) painter.setRenderHint(QPainter::TextAntialiasing);
-    if (ui->chkSmoothTransform->isChecked()) painter.setRenderHint(QPainter::QPainter::SmoothPixmapTransform);
     ht.start();
 
 
@@ -468,13 +527,13 @@ void TestForm::updateMath()
         mt.setFontSans(ui->cmbUnicodeSans->currentFont().family(), static_cast<JKQTMathTextFontEncoding>(ui->cmbEncodingSans->currentIndex()));
         mt.setFontMathRoman(ui->cmbUnicodeSerifMath->currentFont().family(), static_cast<JKQTMathTextFontEncoding>(ui->cmbEncodingSerifMath->currentIndex()));
         mt.setFontMathSans(ui->cmbUnicodeSansMath->currentFont().family(), static_cast<JKQTMathTextFontEncoding>(ui->cmbEncodingSansMath->currentIndex()));
-        mt.setFontTypewriter(ui->cmbUnicodeFixed->currentFont().family(), static_cast<JKQTMathTextFontEncoding>(ui->cmbEncodingTypewriter->currentIndex()));
+        mt.setFontTypewriter(ui->cmbUnicodeTypewriter->currentFont().family(), static_cast<JKQTMathTextFontEncoding>(ui->cmbEncodingTypewriter->currentIndex()));
         mt.setFontCaligraphic(ui->cmbCaligraphic->currentFont().family(), static_cast<JKQTMathTextFontEncoding>(ui->cmbEncodingCaligraphic->currentIndex()));
         mt.setFontScript(ui->cmbScript->currentFont().family(), static_cast<JKQTMathTextFontEncoding>(ui->cmbEncodingScript->currentIndex()));
         mt.setFontFraktur(ui->cmbUnicodeFraktur->currentFont().family(), static_cast<JKQTMathTextFontEncoding>(ui->cmbEncodingFraktur->currentIndex()));
         mt.setFontBlackboard(ui->cmbUnicodeBlackboard->currentFont().family(), static_cast<JKQTMathTextFontEncoding>(ui->cmbEncodingBlackboard->currentIndex()));
-        mt.setSymbolfontSymbol(ui->cmbUnicodeSymbol->currentFont().family(), static_cast<JKQTMathTextFontEncoding>(ui->cmbEncodingSymbol->currentIndex()));
-        mt.setSymbolfontGreek(ui->cmbUnicodeGreek->currentFont().family(), static_cast<JKQTMathTextFontEncoding>(ui->cmbEncodingGreek->currentIndex()));
+        mt.setFallbackFontSymbols(ui->cmbUnicodeSymbol->currentFont().family(), static_cast<JKQTMathTextFontEncoding>(ui->cmbEncodingSymbol->currentIndex()));
+        mt.setFallbackFontGreek(ui->cmbUnicodeGreek->currentFont().family(), static_cast<JKQTMathTextFontEncoding>(ui->cmbEncodingGreek->currentIndex()));
     } else if (ui->cmbFont->currentIndex()==5 || ui->cmbFont->currentIndex()==6) {
         mt.setFontRoman(QGuiApplication::font().family());
     } else if (ui->cmbFont->currentIndex()==7) {
@@ -511,13 +570,15 @@ void TestForm::updateMath()
     QStringList sl=ui->edtSizes->text().split(",");
     ui->labRenderTimes->setText("");
 
-    for (int i=0; i<sl.size(); i++) {
+    for (int i=0; i<sl.size()-1; i++) {
         bool ok=true;
         int size=sl[i].trimmed().toUInt(&ok);
         if (!ok) size=10+i*5;
-        mt.setFontSize(size);
+        QString unit="";
+        if (ui->cmbSizeUnit->currentIndex()==0) { unit="pt"; mt.setFontSize(size); }
+        else {unit="px"; mt.setFontSizePixels(size); }
         double durationSizingMS=0, durationTimingMS=0;
-        Y+=draw(painter, X1, Y, mt, QString("%1, %2, %3pt").arg(ui->cmbTestset->currentText()).arg(ui->cmbFont->currentText()).arg(size), durationSizingMS, durationTimingMS);
+        Y+=draw(painter, X1, Y, mt, QString("%1, %2, %3"+unit).arg(ui->cmbTestset->currentText()).arg(ui->cmbFont->currentText()).arg(size), durationSizingMS, durationTimingMS);
 
         if (i==0) {
             ui->labError->clear();
@@ -536,6 +597,16 @@ void TestForm::updateMath()
                 qDebug()<<mt.getErrorList().join("\n")<<"\n";
             }
         }
+    }
+
+    if (sl.size()>0) {
+        bool ok=true;
+        int size=sl.last().trimmed().toUInt(&ok);
+        if (!ok) size=font().pointSizeF();
+        QString unit;
+        if (ui->cmbSizeUnit->currentIndex()==0) { unit="pt"; mt.setFontSize(size); }
+        else { unit="px"; mt.setFontSizePixels(size); }
+        Y+=drawAligned(painter, X1, Y, mt, QString("%1, %2"+unit+", align: %3").arg(ui->cmbTestset->currentText()).arg(size).arg(ui->cmbLastAlign->currentText()));
     }
 
     painter.end();
