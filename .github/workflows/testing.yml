@@ -66,11 +66,10 @@ jobs:
     - name: Build
       run: make
 
-    - name: Set environment
-      run: export QT_QPA_PLATFORM=offscreen
-
     - name: Test
-      run: ctest --output-on-failure --verbose
+      run: |
+        export QT_QPA_PLATFORM=offscreen
+        ctest --output-on-failure --verbose
 
     - name: Upload coverage info
       run: |
