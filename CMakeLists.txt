@@ -43,6 +43,9 @@ add_subdirectory( 3rdparty/widgets )
 
 find_package( LIBJPEG )
 find_package( PNG )
+find_package( BZip2 )
+find_package( Brotli )
+
 
 if( NOT LIBJPEG_FOUND )
 	message( FATAL_ERROR "libjpeg is required!" )
