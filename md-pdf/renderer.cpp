@@ -1820,9 +1820,14 @@ PdfRenderer::drawMathExpr( PdfAuxData & pdfData, const RenderOpts & renderOpts,
 	bool & newLine, double offset, bool hasNext,
 	bool firstInParagraph, CustomWidth * cw, float scale )
 {
+	static const double dpi = 200.0;
+
 	JKQTMathText mt;
 	mt.useAnyUnicode( renderOpts.m_mathFont, renderOpts.m_mathFont );
-	mt.setFontSize( renderOpts.m_mathFontSize * scale );
+
+	const double fontSizePx = ( renderOpts.m_mathFontSize / 72.0 ) * dpi;
+
+	mt.setFontSizePixels( qRound( fontSizePx * scale ) );
 	mt.parse( item->expr() );
 
 	QPainter tmpP;
@@ -1843,7 +1848,7 @@ PdfRenderer::drawMathExpr( PdfAuxData & pdfData, const RenderOpts & renderOpts,
 	img.save( &buf, "png" );
 
 	PdfImage pdfImg( pdfData.doc );
-	pdfImg.SetDpi( 200 );
+	pdfImg.SetDpi( qRound( dpi ) );
 	pdfImg.LoadFromData( reinterpret_cast< const unsigned char * > ( data.data() ), data.size() );
 
 	descent = ( pdfImg.GetHeight() / size.height() ) * descent;
