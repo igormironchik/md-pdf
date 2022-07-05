@@ -168,8 +168,8 @@ double JKQTMathTextWhitespaceNode::Type2PixelWidth(Types type, JKQTMathTextEnvir
 #endif
     const double en=em/2.0;
     switch (type) {
-        case WSTNormal: return fm.width(' ');
-        case WSTNonbreaking: return fm.width(' ');
+        case WSTNormal: return fm.horizontalAdvance(' ');
+        case WSTNonbreaking: return fm.horizontalAdvance(' ');
         case WST1en: return en;
         case WST1em: return em;
         case WSThair: return em/12.0;
