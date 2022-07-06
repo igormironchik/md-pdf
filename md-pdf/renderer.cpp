@@ -1834,11 +1834,11 @@ PdfRenderer::drawMathExpr( PdfAuxData & pdfData, const RenderOpts & renderOpts,
 	const QSizeF size = mt.getSize( tmpP );
 	auto descent = mt.getDescent( tmpP );
 
-	QPixmap px( size.width(), size.height() );
+	QPixmap px( qRound( size.width() ), qRound( size.height() ) );
 	px.fill();
 	QPainter p( &px );
 
-	mt.draw( p, 0, QRectF( QPointF( 0, 0 ), size ) );
+	mt.draw( p, 0, QRectF( QPointF( 0.0, 0.0 ), size ) );
 
 	const auto img = px.toImage();
 

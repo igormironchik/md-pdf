@@ -30,6 +30,7 @@
 #include <QtTest/QtTest>
 #include <QSignalSpy>
 #include <QVector>
+#include <QFontDatabase>
 
 //
 // TestRender
@@ -41,6 +42,8 @@ class TestRender final
 	Q_OBJECT
 
 private slots:
+	//! Init tests.
+	void initTestCase();
 	//! Test footnotes rendering.
 	void testFootnotes();
 	//! Test table with images.
@@ -250,6 +253,16 @@ doTest( const QString & fileName, const QString & suffix,
 }
 
 void
+TestRender::initTestCase()
+{
+	QFontDatabase::addApplicationFont( c_font );
+	QFontDatabase::addApplicationFont( c_italicFont );
+	QFontDatabase::addApplicationFont( c_boldFont );
+	QFontDatabase::addApplicationFont( c_boldItalicFont );
+	QFontDatabase::addApplicationFont( c_monoFont );
+}
+
+void
 TestRender::testFootnotes()
 {
 	doTest( QStringLiteral( "footnotes.md" ), QString(), 8.0, 8.0 );
@@ -396,13 +409,13 @@ TestRender::testTaskListBigFont()
 void
 TestRender::testMath()
 {
-//	doTest( QStringLiteral( "math.md" ), QString(), 8.0, 8.0 );
+	doTest( QStringLiteral( "math.md" ), QString(), 8.0, 8.0 );
 }
 
 void
 TestRender::testMathBigFont()
 {
-//	doTest( QStringLiteral( "math.md" ), QStringLiteral( "_big" ), 16.0, 14.0 );
+	doTest( QStringLiteral( "math.md" ), QStringLiteral( "_big" ), 16.0, 14.0 );
 }
 
 
