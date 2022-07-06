@@ -44,7 +44,7 @@ jobs:
     - name: Install Qt
       uses: jurplel/install-qt-action@v2
       with:
-        version: '6.2.0'
+        version: '6.2.4'
         
     - run: sudo apt install libfreetype6-dev libjpeg-dev libpng-dev zlibc zlib1g-dev libfontconfig1-dev fontconfig lcov libmagick++-dev
 
@@ -129,7 +129,7 @@ jobs:
     - name: Install Qt
       uses: jurplel/install-qt-action@v2
       with:
-        version: '6.2.0'
+        version: '6.2.4'
         
     - name: Enable developer command prompt
       uses: ilammy/msvc-dev-cmd@v1

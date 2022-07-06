@@ -396,13 +396,13 @@ TestRender::testTaskListBigFont()
 void
 TestRender::testMath()
 {
-//	doTest( QStringLiteral( "math.md" ), QString(), 8.0, 8.0 );
+	doTest( QStringLiteral( "math.md" ), QString(), 8.0, 8.0 );
 }
 
 void
 TestRender::testMathBigFont()
 {
-//	doTest( QStringLiteral( "math.md" ), QStringLiteral( "_big" ), 16.0, 14.0 );
+	doTest( QStringLiteral( "math.md" ), QStringLiteral( "_big" ), 16.0, 14.0 );
 }
 
 
