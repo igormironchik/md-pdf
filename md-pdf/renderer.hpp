@@ -352,7 +352,7 @@ private:
 	QPair< QVector< WhereDrawn >, WhereDrawn > drawHeading( PdfAuxData & pdfData, const RenderOpts & renderOpts,
 		MD::Heading * item, QSharedPointer< MD::Document > doc, double offset,
 		double nextItemMinHeight, CalcHeightOpt heightCalcOpt,
-		float scale );
+		float scale, bool withNewLine = true );
 	//! Draw paragraph.
 	QPair< QVector< WhereDrawn >, WhereDrawn > drawParagraph( PdfAuxData & pdfData, const RenderOpts & renderOpts,
 		MD::Paragraph * item, QSharedPointer< MD::Document > doc, double offset,
@@ -371,7 +371,7 @@ private:
 	QPair< QVector< WhereDrawn >, WhereDrawn > drawList( PdfAuxData & pdfData, const RenderOpts & renderOpts,
 		MD::List * item, QSharedPointer< MD::Document > doc, int bulletWidth,
 		double offset = 0.0, CalcHeightOpt heightCalcOpt = CalcHeightOpt::Unknown,
-		float scale = 1.0, bool inFootnote = false );
+		float scale = 1.0, bool inFootnote = false, bool nested = false );
 	//! Draw table.
 	QPair< QVector< WhereDrawn >, WhereDrawn > drawTable( PdfAuxData & pdfData, const RenderOpts & renderOpts,
 		MD::Table * item, QSharedPointer< MD::Document > doc, double offset,
@@ -409,7 +409,7 @@ private:
 	QPair< QVector< WhereDrawn >, WhereDrawn > drawListItem( PdfAuxData & pdfData, const RenderOpts & renderOpts,
 		MD::ListItem * item, QSharedPointer< MD::Document > doc, int & idx,
 		ListItemType & prevListItemType, int bulletWidth, double offset,
-		CalcHeightOpt heightCalcOpt, float scale, bool inFootnote );
+		CalcHeightOpt heightCalcOpt, float scale, bool inFootnote, bool firstInList );
 
 	//! Auxiliary struct for calculation of spaces scales to shrink text to width.
 	struct CustomWidth {

@@ -986,12 +986,12 @@ PdfRenderer::createQString( const PdfString & str )
 QPair< QVector< WhereDrawn >, WhereDrawn >
 PdfRenderer::drawHeading( PdfAuxData & pdfData, const RenderOpts & renderOpts,
 	MD::Heading * item, QSharedPointer< MD::Document > doc, double offset,
-	double nextItemMinHeight, CalcHeightOpt heightCalcOpt, float scale )
+	double nextItemMinHeight, CalcHeightOpt heightCalcOpt, float scale, bool withNewLine )
 {
 	if( item && !item->text().isNull() )
 	{
 		const auto where = drawParagraph( pdfData, renderOpts, item->text().data(), doc,
-			offset, true, heightCalcOpt,
+			offset, withNewLine, heightCalcOpt,
 			scale * ( 1.0 + ( 7 - item->level() ) * 0.25 ),
 			pdfData.drawFootnotes );
 
@@ -2946,7 +2946,7 @@ PdfRenderer::drawBlockquote( PdfAuxData & pdfData, const RenderOpts & renderOpts
 QPair< QVector< WhereDrawn >, WhereDrawn >
 PdfRenderer::drawList( PdfAuxData & pdfData, const RenderOpts & renderOpts,
 	MD::List * item, QSharedPointer< MD::Document > doc, int bulletWidth, double offset,
-	CalcHeightOpt heightCalcOpt, float scale, bool inFootnote )
+	CalcHeightOpt heightCalcOpt, float scale, bool inFootnote, bool nested )
 {
 	QVector< WhereDrawn > ret;
 
@@ -2972,7 +2972,7 @@ PdfRenderer::drawList( PdfAuxData & pdfData, const RenderOpts & renderOpts,
 			const auto where = drawListItem( pdfData, renderOpts,
 				static_cast< MD::ListItem* > ( it->data() ), doc, idx,
 				prevListItemType, bulletWidth, offset, heightCalcOpt,
-				scale, inFootnote );
+				scale, inFootnote, first && !nested );
 
 			ret.append( where.first );
 
@@ -3002,7 +3002,7 @@ QPair< QVector< WhereDrawn >, WhereDrawn >
 PdfRenderer::drawListItem( PdfAuxData & pdfData, const RenderOpts & renderOpts,
 	MD::ListItem * item, QSharedPointer< MD::Document > doc, int & idx,
 	ListItemType & prevListItemType, int bulletWidth, double offset, CalcHeightOpt heightCalcOpt,
-	float scale, bool inFootnote )
+	float scale, bool inFootnote, bool firstInList )
 {
 	auto * font = createFont( renderOpts.m_textFont, false, false, renderOpts.m_textFontSize,
 		pdfData.doc, scale, pdfData );
@@ -3048,7 +3048,7 @@ PdfRenderer::drawListItem( PdfAuxData & pdfData, const RenderOpts & renderOpts,
 							minNecessaryHeight( pdfData, renderOpts, *( it + 1 ),  doc, offset,
 								scale, inFootnote ) :
 							0.0 ),
-						heightCalcOpt, scale );
+						heightCalcOpt, scale, ( it == item->items().cbegin() && firstInList ) );
 
 					ret.append( where.first );
 
@@ -3067,7 +3067,7 @@ PdfRenderer::drawListItem( PdfAuxData & pdfData, const RenderOpts & renderOpts,
 			{
 				const auto where = drawParagraph( pdfData, renderOpts,
 					static_cast< MD::Paragraph* > ( it->data() ),
-					doc, offset, ( it != item->items().cbegin() ), heightCalcOpt,
+					doc, offset, ( it == item->items().cbegin() && firstInList ), heightCalcOpt,
 					scale, inFootnote );
 
 				ret.append( where.first );
@@ -3123,7 +3123,7 @@ PdfRenderer::drawListItem( PdfAuxData & pdfData, const RenderOpts & renderOpts,
 				const auto where = drawList( pdfData, renderOpts,
 					static_cast< MD::List* > ( it->data() ),
 					doc, bulletWidth, offset, heightCalcOpt,
-					scale, inFootnote );
+					scale, inFootnote, true );
 
 				ret.append( where.first );
 
