@@ -1484,6 +1484,7 @@ PdfRenderer::moveToNewLine( PdfAuxData & pdfData, double xOffset, double yOffset
 		createPage( pdfData );
 
 		pdfData.coords.x = pdfData.coords.margins.left + xOffset;
+		pdfData.coords.y -= yOffset;
 	}
 }
 
