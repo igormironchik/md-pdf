@@ -259,7 +259,7 @@ struct PdfAuxData {
 
 //! Where was the item drawn?
 struct WhereDrawn {
-	int pageIdx = 0;
+	int pageIdx = -1;
 	double y = 0.0;
 	double height = 0.0;
 }; // struct WhereDrawn
@@ -349,31 +349,31 @@ private:
 	void finishPages( PdfAuxData & pdfData );
 
 	//! Draw heading.
-	QVector< WhereDrawn > drawHeading( PdfAuxData & pdfData, const RenderOpts & renderOpts,
+	QPair< QVector< WhereDrawn >, WhereDrawn > drawHeading( PdfAuxData & pdfData, const RenderOpts & renderOpts,
 		MD::Heading * item, QSharedPointer< MD::Document > doc, double offset,
 		double nextItemMinHeight, CalcHeightOpt heightCalcOpt,
 		float scale );
 	//! Draw paragraph.
-	QVector< WhereDrawn > drawParagraph( PdfAuxData & pdfData, const RenderOpts & renderOpts,
+	QPair< QVector< WhereDrawn >, WhereDrawn > drawParagraph( PdfAuxData & pdfData, const RenderOpts & renderOpts,
 		MD::Paragraph * item, QSharedPointer< MD::Document > doc, double offset,
 		bool withNewLine, CalcHeightOpt heightCalcOpt,
 		float scale, bool inFootnote );
 	//! Draw block of code.
-	QVector< WhereDrawn > drawCode( PdfAuxData & pdfData, const RenderOpts & renderOpts,
+	QPair< QVector< WhereDrawn >, WhereDrawn > drawCode( PdfAuxData & pdfData, const RenderOpts & renderOpts,
 		MD::Code * item, QSharedPointer< MD::Document > doc, double offset,
 		CalcHeightOpt heightCalcOpt,
 		float scale );
 	//! Draw blockquote.
-	QVector< WhereDrawn > drawBlockquote( PdfAuxData & pdfData, const RenderOpts & renderOpts,
+	QPair< QVector< WhereDrawn >, WhereDrawn > drawBlockquote( PdfAuxData & pdfData, const RenderOpts & renderOpts,
 		MD::Blockquote * item, QSharedPointer< MD::Document > doc, double offset,
 		CalcHeightOpt heightCalcOpt, float scale, bool inFootnote );
 	//! Draw list.
-	QVector< WhereDrawn > drawList( PdfAuxData & pdfData, const RenderOpts & renderOpts,
+	QPair< QVector< WhereDrawn >, WhereDrawn > drawList( PdfAuxData & pdfData, const RenderOpts & renderOpts,
 		MD::List * item, QSharedPointer< MD::Document > doc, int bulletWidth,
 		double offset = 0.0, CalcHeightOpt heightCalcOpt = CalcHeightOpt::Unknown,
 		float scale = 1.0, bool inFootnote = false );
 	//! Draw table.
-	QVector< WhereDrawn > drawTable( PdfAuxData & pdfData, const RenderOpts & renderOpts,
+	QPair< QVector< WhereDrawn >, WhereDrawn > drawTable( PdfAuxData & pdfData, const RenderOpts & renderOpts,
 		MD::Table * item, QSharedPointer< MD::Document > doc, double offset,
 		CalcHeightOpt heightCalcOpt, float scale, bool inFootnote );
 
@@ -406,7 +406,7 @@ private:
 	}; // enum class ListItemType
 
 	//! Draw list item.
-	QVector< WhereDrawn > drawListItem( PdfAuxData & pdfData, const RenderOpts & renderOpts,
+	QPair< QVector< WhereDrawn >, WhereDrawn > drawListItem( PdfAuxData & pdfData, const RenderOpts & renderOpts,
 		MD::ListItem * item, QSharedPointer< MD::Document > doc, int & idx,
 		ListItemType & prevListItemType, int bulletWidth, double offset,
 		CalcHeightOpt heightCalcOpt, float scale, bool inFootnote );
@@ -550,7 +550,8 @@ private:
 	void calculateCellsSize( PdfAuxData & pdfData, QVector< QVector< CellData > > & auxTable,
 		double spaceWidth, double offset, double lineHeight, float scale );
 	//! Draw table's row.
-	QVector< WhereDrawn > drawTableRow( QVector< QVector< CellData > > & table, int row,
+	QPair< QVector< WhereDrawn >, WhereDrawn > drawTableRow(
+		QVector< QVector< CellData > > & table, int row,
 		PdfAuxData & pdfData, double offset, double lineHeight,
 		const RenderOpts & renderOpts, QSharedPointer< MD::Document > doc,
 		QVector< QSharedPointer< MD::Footnote > > & footnotes,
