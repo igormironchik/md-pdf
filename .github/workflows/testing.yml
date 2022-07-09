@@ -13,7 +13,7 @@ on:
     branches: [master]
 
 jobs:
-  build_and_test:
+  linux:
     name: linux
     runs-on: ubuntu-latest
 
@@ -148,3 +148,46 @@ jobs:
 
     - name: Test
       run: ctest --output-on-failure --verbose
+
+  macos:
+    name: macos
+    runs-on: macos-11
+
+    strategy:
+      fail-fast: true
+      matrix:
+        language: ['cpp']
+
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v2
+      with:
+        fetch-depth: 2
+
+    - run: git checkout HEAD^2
+      if: ${{ github.event_name == 'pull_request' }}
+
+    - run: git submodule update --init --recursive
+
+    - name: Install Qt
+      uses: jurplel/install-qt-action@v2
+      with:
+        version: '6.3.1'
+
+    - run: brew update
+
+    - run: brew install imagemagick
+
+    - name: Test ImageMagick
+      run: convert -version
+
+    #- name: Generate Makefiles
+    #  run: cmake -DENABLE_COVERAGE=ON -DCMAKE_BUILD_TYPE=Debug .
+
+    #- name: Build
+    #  run: make
+
+    #- name: Test
+    #  run: |
+    #    export QT_QPA_PLATFORM=offscreen
+    #    ctest --output-on-failure --verbose
