@@ -190,7 +190,7 @@ jobs:
       uses: turtlebrowser/get-conan@main
 
     - name: Install dependencies with Conan
-      run: conan install .
+      run: conan install . --build=missing
 
     #- name: Generate Makefiles
     #  run: cmake -DENABLE_COVERAGE=ON -DCMAKE_BUILD_TYPE=Debug .
