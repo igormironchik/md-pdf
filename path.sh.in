@@ -1,7 +1,7 @@
-echo "export DYLD_LIBRARY_PATH=@CONAN_LIB_DIRS_OPENSSL@:DYLD_LIBRARY_PATH" >> /Users/runner/.bash_profile
-echo "export DYLD_LIBRARY_PATH=@CONAN_LIB_DIRS_FREETYPE@:DYLD_LIBRARY_PATH" >> /Users/runner/.bash_profile
-echo "export DYLD_LIBRARY_PATH=@CONAN_LIB_DIRS_LIBJPEG@:DYLD_LIBRARY_PATH" >> /Users/runner/.bash_profile
-echo "export DYLD_LIBRARY_PATH=@CONAN_LIB_DIRS_LIBPNG@:DYLD_LIBRARY_PATH" >> /Users/runner/.bash_profile
-echo "export DYLD_LIBRARY_PATH=@CONAN_LIB_DIRS_BZIP2@:DYLD_LIBRARY_PATH" >> /Users/runner/.bash_profile
-echo "export DYLD_LIBRARY_PATH=@CONAN_LIB_DIRS_BROTLI@:DYLD_LIBRARY_PATH" >> /Users/runner/.bash_profile
-echo "export DYLD_LIBRARY_PATH=@CONAN_LIB_DIRS_ZLIB@:DYLD_LIBRARY_PATH" >> /Users/runner/.bash_profile
+echo "export DYLD_LIBRARY_PATH=@CONAN_LIB_DIRS_OPENSSL@:$DYLD_LIBRARY_PATH" >> /Users/runner/.bash_profile
+echo "export DYLD_LIBRARY_PATH=@CONAN_LIB_DIRS_FREETYPE@:$DYLD_LIBRARY_PATH" >> /Users/runner/.bash_profile
+echo "export DYLD_LIBRARY_PATH=@CONAN_LIB_DIRS_LIBJPEG@:$DYLD_LIBRARY_PATH" >> /Users/runner/.bash_profile
+echo "export DYLD_LIBRARY_PATH=@CONAN_LIB_DIRS_LIBPNG@:$DYLD_LIBRARY_PATH" >> /Users/runner/.bash_profile
+echo "export DYLD_LIBRARY_PATH=@CONAN_LIB_DIRS_BZIP2@:$DYLD_LIBRARY_PATH" >> /Users/runner/.bash_profile
+echo "export DYLD_LIBRARY_PATH=@CONAN_LIB_DIRS_BROTLI@:$DYLD_LIBRARY_PATH" >> /Users/runner/.bash_profile
+echo "export DYLD_LIBRARY_PATH=@CONAN_LIB_DIRS_ZLIB@:$DYLD_LIBRARY_PATH" >> /Users/runner/.bash_profile

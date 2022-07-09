@@ -206,10 +206,10 @@ jobs:
     - name: Append DYLD_LIBRARY_PATH with packages' lib directories
       run: ${{ github.workspace }}/path.sh
 
-    #- name: Build
-    #  run: make
+    - name: Build
+      run: make
 
-    #- name: Test
-    #  run: |
-    #    export QT_QPA_PLATFORM=offscreen
-    #    ctest --output-on-failure --verbose
+    - name: Test
+      run: |
+        export QT_QPA_PLATFORM=offscreen
+        ctest --output-on-failure --verbose
