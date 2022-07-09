@@ -180,7 +180,7 @@ jobs:
 
     - run: brew uninstall imagemagick
 
-    - run: echo "/usr/local/opt/imagemagick@6/bin" >> $GITHUB_PATH
+    - run: cp -r /usr/local/opt/imagemagick@6 /usr/local
 
     - name: Test ImageMagick
       run: convert -version
