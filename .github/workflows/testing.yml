@@ -203,13 +203,11 @@ jobs:
     - name: Generate Makefiles
       run: cmake -DMDPDF_USE_CONAN=ON -DCMAKE_BUILD_TYPE=Relese .
 
-    - name: Append DYLD_LIBRARY_PATH with packages' lib directories
-      run: ${{ github.workspace }}/path.sh
-
     - name: Build
       run: make
 
     - name: Test
       run: |
         export QT_QPA_PLATFORM=offscreen
+        export DYLD_LIBRARY_PATH=`cat ${{ github.workspace }}/path.txt`
         ctest --output-on-failure --verbose
