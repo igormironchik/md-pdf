@@ -176,10 +176,13 @@ jobs:
 
     - run: brew update
 
-    - run: brew install imagemagick
+    - run: brew install imagemagick@6
 
     - name: Test ImageMagick
       run: convert -version
+
+    - name: Install dependencies with Conan
+      run: conan install .
 
     #- name: Generate Makefiles
     #  run: cmake -DENABLE_COVERAGE=ON -DCMAKE_BUILD_TYPE=Debug .
