@@ -178,8 +178,14 @@ jobs:
 
     - run: brew install imagemagick@6
 
+    - run: brew uninstall imagemagick
+
     - name: Test ImageMagick
       run: convert -version
+
+    - name: Install Conan
+      id: conan
+      uses: turtlebrowser/get-conan@main
 
     - name: Install dependencies with Conan
       run: conan install .
