@@ -201,7 +201,7 @@ jobs:
       run: conan install . --build=missing
 
     - name: Generate Makefiles
-      run: cmake -DMDPDF_USE_CONAN=ON -DCMAKE_BUILD_TYPE=Relese .
+      run: cmake -DMDPDF_USE_CONAN=ON -DCMAKE_BUILD_TYPE=Relese -DCMAKE_C_COMPILER=gcc-11 -DCMAKE_CXX_COMPILER=gcc-11 .
 
     - name: Build
       run: make
