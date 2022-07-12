@@ -198,7 +198,7 @@ jobs:
       uses: turtlebrowser/get-conan@main
 
     - name: Install dependencies with Conan
-      run: conan install . --build=missing -s compiler=gcc
+      run: conan install . --build=missing -s compiler=gcc-11
 
     - name: Generate Makefiles
       run: cmake -DMDPDF_USE_CONAN=ON -DCMAKE_BUILD_TYPE=Relese -DCMAKE_C_COMPILER=gcc-11 -DCMAKE_CXX_COMPILER=g++-11 .
