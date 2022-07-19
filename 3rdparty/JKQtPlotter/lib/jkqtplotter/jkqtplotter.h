@@ -1,5 +1,5 @@
 /*
-    Copyright (c) 2008-2020 Jan W. Krieger (<jan@jkrieger.de>)
+    Copyright (c) 2008-2022 Jan W. Krieger (<jan@jkrieger.de>)
 
     
 
@@ -1025,10 +1025,12 @@ class JKQTPLOTTER_LIB_EXPORT JKQTPlotter: public QWidget {
             plotter->saveData(filename, format);
         }
 
+#ifndef JKQTPLOTTER_COMPILE_WITHOUT_PRINTSUPPORT
         /** \brief print the current plot, if printer is \c nullptr a printer selection dialog is displayed */
         inline void print(QPrinter* printer=nullptr) {
             plotter->print(printer);
         }
+#endif
 
         /** \brief copy displayed data to cpliboard */
         inline void copyData() {

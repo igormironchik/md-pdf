@@ -1,5 +1,5 @@
 /*
-    Copyright (c) 2008-2020 Jan W. Krieger (<jan@jkrieger.de>)
+    Copyright (c) 2008-2022 Jan W. Krieger (<jan@jkrieger.de>)
 
 
 
@@ -27,6 +27,7 @@
 #include "jkqtplotter/jkqtpimagetools.h"
 #include "jkqtplotter/jkqtpgraphsbasestyle.h"
 #include "jkqtplotter/jkqtplotter_imexport.h"
+#include "jkqtplotter/jkqtplotter_configmacros.h"
 #include "jkqtcommon/jkqtpdrawingtools.h"
 #include "jkqtcommon/jkqtpbasicimagetools.h"
 #include <QColor>

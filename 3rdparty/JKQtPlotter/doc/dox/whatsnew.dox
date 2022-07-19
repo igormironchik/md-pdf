@@ -14,9 +14,13 @@ This page lists release notes for the different version of JKQTPlotter
 \subsection page_whatsnew_TRUNK_OVERVIEW trunk: Overview
 Changes, compared to  \ref page_whatsnew_V4_0_0 "v4.0.0" include:
 <ul>
+  <li>General:<ul>
+    <li>CLEANUP (BREAKING) of library structure</li>
+  </ul></li>
   <li>JKQtPlotter:<ul>
     <li>FIXED issue described in <a href="https://github.com/jkriege2/JKQtPlotter/pull/62">#62: Fix custom labels draw, because giving exactly two label-strings did not display all of them</a>, thanks to <a href="https://github.com/FalsinSoft">user:FalsinSoft</a></li>
     <li>FIXED issue <a href="https://github.com/jkriege2/JKQtPlotter/pull/70">#70: Typo in jkqtplotter/CMakeLists.txt</a>, thanks to <a href="https://github.com/tedlinlab">user:tedlinlab</a></li>
+    <li>FIXED issue <a href="https://github.com/jkriege2/JKQtPlotter/pull/80">#80: Bug with multiple inheritance with Q_GDAGET with CLANG</a>, thanks to <a href="https://github.com/igormironchik">user:igormironchik</a>, caused by <a href="https://bugreports.qt.io/browse/QTBUG-104874">QTBUG-104874</a></li>
     <li>FIXED: styling was not properly applied to coordinate axes of colorbars outside the plot</li>
     <li>IMPROVED: QT6-compatibility by removing deprecated warnings</li>
     <li>NEW: JKQTPFilledCurveXGraph and JKQTPFilledCurveYGraph can now plot wiggle plots with different fill styles above and below the baseline (feature request <a href="https://github.com/jkriege2/JKQtPlotter/issues/68">#68 Wiggle Plots</a> from <a href="https://github.com/xichaoqiang">user:xichaoqiang</a>   </li>
@@ -24,6 +28,7 @@ Changes, compared to  \ref page_whatsnew_V4_0_0 "v4.0.0" include:
     <li>NEW: new "seaborn" style for plots</li>
     <li>NEW/BREAKING CHANGE: changed JKQTPColorDerivationMode into a struct, which extends its capabilities above the previously available few enum-items</li>
     <li>NEW: added debug-feature to show boxes around text in the plot</li>
+    <li>BREAKING: Print-Support can now be switched off with a CMAKE-option JKQtPlotter_BUILD_FORCE_NO_PRINTER_SUPPORT=ON. This also switches off PDF and SVG export, partly solves issue <a href="https://github.com/jkriege2/JKQtPlotter/issues/81">#81</a>, many thanks to <a href="https://github.com/sufuk">user:sufuk</a> for contributing part of the code and supplying the idea!  </li>
   </ul>
   
   <li>JKQTMathText:<ul>
@@ -40,8 +45,10 @@ Changes, compared to  \ref page_whatsnew_V4_0_0 "v4.0.0" include:
     <li>IMPROVED: added x-correction for sub/superscript above/below/besides integrals</li>
     <li>IMPROVED: rendering of sqrt</li>
     <li>IMPROVED: rendering and size calculation of decorations</li>
+    <li>IMPROVED: tokenizing and parsing of text in text-mode: now a lot of accents with commands like \"a, \'e and variants (e.g. {\"a}, \"{a}, ...) are supported now</li>
     <li>IMPROVED/breaking: refactored symbol node JKQTMathTextSymbolNode and changed font-lookup!</li>
     <li>IMPROVED/NEW/breaking: refactored whitespace-processing node JKQTMathTextWhitespaceNode, now all major LaTeX whitespace commands are supported properly</li>
+    <li>IMPROVED/NEW/breaking: refactored LaTeX parser in JKQTMathText</li>
     <li>REMOVED/breaking: \v[a-zA-Z] and shorthand for \vec{a-zA-Z} was removed, implementation of \bbR,\bbC,... changed</li>
     <li>NEW: now supports new decoration instructions: \cancel, \xcancel, \bcancel, \sout, \ocirc, \widetilde, \widehat, \breve</li>
     <li>NEW: reworked drawing of decorations: improved appearance and positioning!</li>
@@ -54,6 +61,8 @@ Changes, compared to  \ref page_whatsnew_V4_0_0 "v4.0.0" include:
     <li>NEW: \limits and \nolimits works as in LaTeX now (before it was simply removed and the functionality implemented for a fixed list of symbols)</li>
     <li>NEW: added top-corner (\ulcorner/\urcorner) and bottom-corner brackets (\llcorner/\lrcorner)</li>
     <li>NEW: added \overbracket and \underbracket</li>
+    <li>NEW: added \shaded{color}{...}</li>
+    <li>NEW: added \acute{X}, \grave{X}, \acute{X}</li>
     <li>NEW: added functions to set the font-size in pixels (as alternative to the existing functions that set them in points), implements request <a href="https://github.com/jkriege2/JKQtPlotter/issues/76">#76</a> from <a href="https://github.com/igormironchik">user:igormironchik</a> </li>
   </ul>
 </ul>

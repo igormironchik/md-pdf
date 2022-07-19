@@ -13,6 +13,9 @@ endif()
 if(NOT DEFINED JKQtPlotter_BUILD_EXAMPLES)
     option(JKQtPlotter_BUILD_EXAMPLES "Build the examples examples" ON)
 endif()
+if(NOT DEFINED JKQtPlotter_BUILD_FORCE_NO_PRINTER_SUPPORT)
+    option(JKQtPlotter_BUILD_FORCE_NO_PRINTER_SUPPORT "Build the library with printer support switched off, even if it is available" OFF)
+endif()
 if(NOT DEFINED CMAKE_INSTALL_PREFIX)
     option(CMAKE_INSTALL_PREFIX "Install directory" ${CMAKE_CURRENT_SOURCE_DIR}/install)
 endif()
@@ -32,8 +35,8 @@ if (NOT CMAKE_INSTALL_INCLUDEDIR)
 endif()
 
 # place all DLLs and EXEs in the subdirectory output of the top level directory of the build tree
-# set (CMAKE_LIBRARY_OUTPUT_DIRECTORY ${PROJECT_BINARY_DIR}/output)
-# set (CMAKE_RUNTIME_OUTPUT_DIRECTORY ${PROJECT_BINARY_DIR}/output)
+set (CMAKE_LIBRARY_OUTPUT_DIRECTORY ${PROJECT_BINARY_DIR}/output)
+set (CMAKE_RUNTIME_OUTPUT_DIRECTORY ${PROJECT_BINARY_DIR}/output)
 
 
 if(JKQtPlotter_BUILD_DECORATE_LIBNAMES_WITH_BUILDTYPE)

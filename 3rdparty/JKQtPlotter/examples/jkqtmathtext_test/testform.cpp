@@ -20,8 +20,18 @@ TestForm::TestForm(QWidget *parent) :
     ui(new Ui::TestForm)
 {
     ui->setupUi(this);
-    ui->cmbTestset->addItem("text: fonts", "rm: \\textrm{ABCabc123}, sf: \\textsf{ABCabc123}, tt: \\texttt{ABCabc123}, cal: \\textcal{ABCabc123}, scr: \\textscr{ABCabc123}, bb: \\textbb{ABCabc123}, frak: \\textfrak{ABCabc123}, ");
-    ui->cmbTestset->addItem("math-fonts", "rm: $\\mathrm{ABCabc123}$, sf: $\\mathsf{ABCabc123}$, tt: $\\mathtt{ABCabc123}$, cal: $\\mathcal{ABCabc123}$, scr: $\\mathscr{ABCabc123}$, bb: $\\mathbb{ABCabc123}$, frak: $\\mathfrak{ABCabc123}$, ");
+    const QString testText="ABCabc00, 123-45+6.0\\%\\S";
+    const QString umla="\\\"A\\\"a\\`A\\`a\\'A\\'a\\^A\\^a\\~A\\~a\\r{A}\\r{a}\\u{A}\\u{a}\\=A\\=a\\AA\\aa{\\AE}{\\ae}\\v{C}\\v{c}\\\"E\\\"e\\.e\\L\\l\\\"O\\\"o\\`O\\`o\\'O\\'o\\^O\\^o\\~O\\~o\\O\\o{\\OE}{\\ae}\\v{S}\\v{s}\\ss\\\"U\\\"u\\`U\\`u\\'U\\'u\\^U\\^u\\~U\\~u";
+    const QString testTextUmla="\\\"Aq{\\\"u}\\\"{a}t{\\oe}r00, 123-45+6.0\\%\\S";
+    const QString umla_math="\\ddot{A}\\ddot{a}\\grave{A}\\grave{a}\\acute{A}\\acute{a}\\hat{A}\\hat{a}\\tilde{A}\\tilde{a}\\r{A}\\r{a}\\u{A}\\u{a}\\bar{A}\\bar{a}\\AA\\aa{\\AE}{\\ae}\\check{C}\\check{c}\\ddot{E}\\ddot{e}\\dot{e}\\L\\l\\ddot{O}\\ddot{o}\\grave{O}\\grave{o}\\acute{O}\\acute{o}\\hat{O}\\hat{o}\\tilde{O}\\tilde{o}\\O\\o{\\OE}{\\ae}\\check{S}\\check{s}\\ss\\ddot{U}\\ddot{u}\\grave{U}\\grave{u}\\acute{U}\\acute{u}\\hat{U}\\hat{u}\\tilde{U}\\tilde{u}";
+    const QString testTextUmla_math="\\ddot{A}q{\\ddot{u}}\\ddot{{}a}t{\\oe}r00, 123-45+6.0\\%\\S";
+    ui->cmbTestset->addItem("text: fonts", "rm: \\textrm{"+testText+"}, sf: \\textsf{"+testText+"}, tt: \\texttt{"+testText+"}, cal: \\textcal{"+testText+"}, scr: \\textscr{"+testText+"}, bb: \\textbb{"+testText+"}, frak: \\textfrak{"+testText+"}, ");
+    ui->cmbTestset->addItem("text: umlaute", umla);
+    ui->cmbTestset->addItem("text: umlaute and fonts", "rm: \\textrm{"+testTextUmla+"}, sf: \\textsf{"+testTextUmla+"}, tt: \\texttt{"+testTextUmla+"}, cal: \\textcal{"+testTextUmla+"}, scr: \\textscr{"+testTextUmla+"}, bb: \\textbb{"+testTextUmla+"}, frak: \\textfrak{"+testTextUmla+"}, ");
+    ui->cmbTestset->addItem("math: fonts", "base: $"+testText+"$, rm: $\\mathrm{"+testText+"}$, sf: $\\mathsf{"+testText+"}$, tt: $\\mathtt{"+testText+"}$, cal: $\\mathcal{"+testText+"}$, scr: $\\mathscr{"+testText+"}$, bb: $\\mathbb{"+testText+"}$, frak: $\\mathfrak{"+testText+"}$, ");
+    ui->cmbTestset->addItem("math: umlaute", "$"+umla_math+"$");
+    ui->cmbTestset->addItem("math: umlaute and \\text{...}", "\\${\\backslash}text{...}\\$: $\\text{"+umla+"}\\ \\ \\ \\$...\\$: "+umla+"$");
+    ui->cmbTestset->addItem("math: umlaute and fonts", "base: $"+testTextUmla_math+"$, rm: $\\mathrm{"+testTextUmla_math+"}$, sf: $\\mathsf{"+testTextUmla_math+"}$, tt: $\\mathtt{"+testTextUmla_math+"}$, cal: $\\mathcal{"+testTextUmla_math+"}$, scr: $\\mathscr{"+testTextUmla_math+"}$, bb: $\\mathbb{"+testTextUmla_math+"}$, frak: $\\mathfrak{"+testTextUmla_math+"}$, ");
     ui->cmbTestset->addItem("math: simple relations", "$a{\\leq}b$, $a{\\geq}b$, $a{\\equiv}b$, $a=b$, $a{\\neq}b$, $a<b$, $a>b$");
     const auto wsExample=[](const QStringList& spaces, const QString before, const QString& after)->QString {
         QString s;
@@ -46,6 +56,7 @@ TestForm::TestForm(QWidget *parent) :
     ui->cmbTestset->addItem("math: named symbols 7", "oslash: $\\oslash$\\ cap: $\\cap$\\ land: $\\land$\\ cup: $\\cup$\\ lor: $\\lor$\\ supset: $\\supset$\\ supseteq: $\\supseteq$\\ supsetnot: $\\supsetnot$\\ subset: $\\subset$");
     ui->cmbTestset->addItem("math: named symbols 8", "subseteq: $\\subseteq$\\ in: $\\in$\\ notin: $\\notin$\\ cdot: $\\cdot$\\ wedge: $\\wedge$\\ vee: $\\vee$\\ cong: $\\cong$\\ bot: $\\bot$");
     ui->cmbTestset->addItem("math: named symbols with special fallback-drawing", "\\infty\\ \\prod\\ \\coprod\\ \\nexists\\ \\sum\\ \\varnothing\\ \\exists\\ \\forall\\ \\neq\\ \\ni\\ \\alpha\\beta\\Omega");
+    ui->cmbTestset->addItem("text: named symbols from custom fonts", "\\HandRight\\HandLeft");
     ui->cmbTestset->addItem("math: symbols", "$\\ll\\gg\\leq\\geq\\leftrightarrow\\leftarrow\\rightarrow\\to\\uparrow\\downarrow\\updownarrow\\Leftrightarrow\\iff\\Leftarrow\\Rightarrow\\Uparrow\\Downarrow\\Updownarrow\\pm\\mp\\nexists\\ni\\notni\\circ\\sim\\emptyset\\odot\\ominus\\subsetnot\\bot\\leftharpoonup\\rightharpoonup\\upharpoonleft\\downharpoonleft\\leftrightharpoon\\rightleftharpoon\\coprod\\leftharpoondown\\rightharpoondown\\upharpoonright\\downharpoonright\\nwarrow\\nearrow\\searrow\\swarrow\\mapsto\\div\\multimap\\maporiginal\\mapimage\\times\\propto\\bullet\\neq\\ne\\equiv\\approx\\otimes\\oplus\\oslash\\cap\\land\\cup\\lor\\supset\\supseteq\\supsetnot\\subset\\subseteq\\in\\notin\\cdot\\wedge\\vee\\cong\\bot$");
     ui->cmbTestset->addItem("math: std dev", "$\\sigma_x=\\sqrt{\\langle (x-\\langle x\\rangle)^2\\rangle}=\\sqrt{\\frac{1}{N-1}\\cdot\\left( \\sum_{i=1}^N{x_i}^2-\\frac{1}{N}\\cdot\\left(\\sum_{i=1}^Nx_i\\right)^2\\right)}$");
     ui->cmbTestset->addItem("math: std dev 2", "$\\sigma_x=\\sqrt{\\langle (x-\\langle x\\rangle)^2\\rangle}=\\sqrt{\\frac{1}{N-1}\\cdot\\left( \\sum_{i=1}^Nx_i^2-\\frac{1}{N}\\cdot\\left(\\sum_{i=1}^Nx_i\\right)^2\\right)}$");
@@ -56,7 +67,7 @@ TestForm::TestForm(QWidget *parent) :
     ui->cmbTestset->addItem("text 1", "text \\mathbf{bold}");
     ui->cmbTestset->addItem("text 2", "text \\mathbf{bold}\\textcolor{red}{RED}");
     const auto mathDecoExample=[](const QString& deco)->QString { return "\\"+deco+"{x}\\"+deco+"{i}\\"+deco+"{X}\\"+deco+"{\\psi}\\"+deco+"{abc}"; };
-    ui->cmbTestset->addItem("decoration: math", "$"+mathDecoExample("vec")+" -- "+mathDecoExample("dot")+" -- "+mathDecoExample("ddot")+" -- "+mathDecoExample("ocirc")+" -- "+mathDecoExample("overline")+" -- "+mathDecoExample("underline")+" -- "+mathDecoExample("hat")+" -- "+mathDecoExample("widehat")+" -- "+mathDecoExample("check")+" -- "+mathDecoExample("widecheck")+" -- "+mathDecoExample("breve")+" -- "+mathDecoExample("tilde")+" -- "+mathDecoExample("widetilde")+" -- "+mathDecoExample("uul")+" -- "+mathDecoExample("ool")+" -- "+mathDecoExample("bar")+" -- "+mathDecoExample("arrow")+" -- "+mathDecoExample("cancel")+" -- "+mathDecoExample("bcancel")+" -- "+mathDecoExample("xcancel")+" -- "+mathDecoExample("sout")+"$");
+    ui->cmbTestset->addItem("decoration: math", "$"+mathDecoExample("vec")+" -- "+mathDecoExample("grave")+" -- "+mathDecoExample("acute")+" -- "+mathDecoExample("dot")+" -- "+mathDecoExample("ddot")+" -- "+mathDecoExample("ocirc")+" -- "+mathDecoExample("overline")+" -- "+mathDecoExample("underline")+" -- "+mathDecoExample("hat")+" -- "+mathDecoExample("widehat")+" -- "+mathDecoExample("check")+" -- "+mathDecoExample("widecheck")+" -- "+mathDecoExample("breve")+" -- "+mathDecoExample("tilde")+" -- "+mathDecoExample("widetilde")+" -- "+mathDecoExample("uul")+" -- "+mathDecoExample("ool")+" -- "+mathDecoExample("bar")+" -- "+mathDecoExample("arrow")+" -- "+mathDecoExample("cancel")+" -- "+mathDecoExample("bcancel")+" -- "+mathDecoExample("xcancel")+" -- "+mathDecoExample("sout")+"$");
     ui->cmbTestset->addItem("decoration: text", "Text \\ul{underlined Text Equator} -- \\ol{overlined Text Equator} -- \\sout{striked out Text Equator} -- \\cancel{canceled out Text Equator} -- \\bcancel{b-canceled out Text Equator} -- \\xcancel{x-canceled out Text Equator}");
     ui->cmbTestset->addItem("mathtest", "This is normal text: $this is math:\\langle r^2(\\tau)\\rangle=\\left\\langle (\\vec{r}(t)-\\vec{r}(t+\\tau) )^2\\right\\rangle\\ \\ \\ g(\\tau)=\\frac{1}{N}\\cdot\\left(1+\\frac{2}{3}\\frac{\\langle r^2(\\tau)\\rangle}{w_{xy}^2}\\right)^{-1}  \\lfloor\\rfloor\\lceil\\rceil\\langle\\rangle\\left\\{\\vec{a}\\left|\\|\\vec{a}\\|_2\\geq2\\right.\\right\\} \\vec{r}\\vec{R}\\frac{\\sqrt{\\sqrt{\\sqrt{\\sum_{i=0}^\\infty \\hat{i}^2}+y^\\alpha}+1}}{\\dot{v}\\equiv\\ddot{r}}\\argmin_{\\vec{k}}\\sum_{\\sqrt{i}=0}^{N}\\int_{x_0}^{x_1}\\left(\\left(\\left(x\\right)\\right)\\right)\\underbrace{\\left[\\left\\{\\frac{\\partial f}{\\partial x}\\right\\}\\cdot\\frac{1}{2}\\right]}{\\text{underbraced text \\hbar}}\\cdots\\frac{\\sqrt{\\sum_{i=0}^2 \\hat{i}^2}+y^\\alpha}{\\dot{v}\\equiv\\ddot{r}}, \\hat{t}\\hat{T} \\overbrace{\\left|\\sqrt{x\\cdot Y}\\right|}{\\propto\\bbN\\circ\\bbZ}   \\left<\\arrow{x(\\tau)}\\cdot\\vec{R}(t+\\bar{\\tau})\\right>   \\alpha\\beta\\gamma\\delta\\epsilon\\Gamma\\Delta\\Theta\\Omega  \\left\\_\\left~\\cbrt{\\hbar\\omega}\\right~\\right\\_$");
     ui->cmbTestset->addItem("math: upper/lower parantheses test:", "$\\text{bblabla} \\frac{1}{2}\\cdot\\left(\\frac{1}{\\mathrm{e}^x+\\mathrm{e}^{-x}}\\right)\\cdot\\left(\\frac{1}{\\frac{1+2}{5+x}}\\right)\\cdot\\left(\\frac{1}{\\exp\\left[-\\frac{y^2}{\\sqrt{x}}\\right]\\cdot\\exp\\left[-\\frac{1}{\\frac{1}{2}}\\right]}\\right) $");
@@ -69,6 +80,8 @@ TestForm::TestForm(QWidget *parent) :
     ui->cmbTestset->addItem("math: arrowtest 2", "$\\nwarrow \\nearrow \\searrow \\swarrow \\mapsto \\leftharpoonup \\rightharpoonup \\upharpoonleft \\downharpoonleft \\leftrightharpoon \\rightleftharpoon \\leftharpoondown \\rightharpoondown \\upharpoonright \\downharpoonright $");
     ui->cmbTestset->addItem("math-font: greek letters", "$\\alpha\\beta\\gamma\\delta\\epsilon\\varepsilon\\zeta\\eta\\theta\\vartheta\\iota\\kappa\\lambda\\mu\\nu\\xi\\pi\\varpi\\rho\\varrho\\sigma\\varsigma\\tau\\upsilon\\phi\\varphi\\chi\\psi\\omega\\Omega\\Gamma\\Delta\\Theta\\Lambda\\Xi\\Pi\\Sigma\\Upsilon\\Phi\\Psi$");
     ui->cmbTestset->addItem("text-font: greek letters", "\\alpha\\beta\\gamma\\delta\\epsilon\\varepsilon\\zeta\\eta\\theta\\vartheta\\iota\\kappa\\lambda\\mu\\nu\\xi\\pi\\varpi\\rho\\varrho\\sigma\\varsigma\\tau\\upsilon\\phi\\varphi\\chi\\psi\\omega\\Omega\\Gamma\\Delta\\Theta\\Lambda\\Xi\\Pi\\Sigma\\Upsilon\\Phi\\Psi");
+    ui->cmbTestset->addItem("math-font: upgreek letters", "$\\upalpha\\upbeta\\upgamma\\updelta\\upepsilon\\upvarepsilon\\upzeta\\upeta\\uptheta\\upvartheta\\upiota\\upkappa\\uplambda\\upmu\\upnu\\upxi\\uppi\\upvarpi\\uprho\\upvarrho\\upsigma\\upvarsigma\\uptau\\upupsilon\\upphi\\upvarphi\\upchi\\uppsi\\upomega\\upOmega\\upGamma\\upDelta\\upTheta\\upLambda\\upXi\\upPi\\upSigma\\upUpsilon\\upPhi\\upPsi$");
+    ui->cmbTestset->addItem("text-font: upgreek letters", "\\upalpha\\upbeta\\upgamma\\updelta\\upepsilon\\upvarepsilon\\upzeta\\upeta\\uptheta\\upvartheta\\upiota\\upkappa\\uplambda\\upmu\\upnu\\upxi\\uppi\\upvarpi\\uprho\\upvarrho\\upsigma\\upvarsigma\\uptau\\upupsilon\\upphi\\upvarphi\\upchi\\uppsi\\upomega\\upOmega\\upGamma\\upDelta\\upTheta\\upLambda\\upXi\\upPi\\upSigma\\upUpsilon\\upPhi\\upPsi");
     ui->cmbTestset->addItem("math-font: blackboard", "$\\mathbb{ABCDEFGHIJKLMNOPQRSTUVWXYZ120}$");
     ui->cmbTestset->addItem("math-font: bf", "$\\mathbf{ABCDEFGHIJKLMNOPQRSTUVWXYZ120}$");
     ui->cmbTestset->addItem("math-font: it", "$\\mathit{ABCDEFGHIJKLMNOPQRSTUVWXYZ120}$");
@@ -188,7 +201,7 @@ TestForm::TestForm(QWidget *parent) :
     ui->cmbTestset->addItem("math: operator test (textmode)", "x=0\\ \\ y>0\\ \\ x+y\\ \\ -1\\ \\ x-2\\ \\ x\\cdot y\\ \\ x\\geq 4\\ \\ x~4");
     ui->cmbTestset->addItem("math: operator test (mathmode)", "$x=0\\ \\ y>0\\ \\ x+y\\ \\ -1\\ \\ x-2\\ \\ x\\cdot y\\ \\ x\\geq 4\\ \\ x~4$");
     ui->cmbTestset->addItem("text: color test", "\\textcolor{red}{RED}\\textcolor{blue}{BLUE}");
-    ui->cmbTestset->addItem("text: boxed test", "test: \\boxed{boxed text} in the middle");
+    ui->cmbTestset->addItem("text: boxed test", "test: {\\backslash}boxed: \\boxed{boxed text} {\\backslash}doublebox: \\doublebox{boxed text} {\\backslash}ovalbox: \\ovalbox{boxed text} {\\backslash}Ovalbox: \\Ovalbox{boxed text} {\\backslash}ovaldoublebox: \\ovaldoublebox{boxed text} {\\backslash}colorbox\\{red\\}: \\colorbox{red}{boxed text} {\\backslash}shaded\\{AliceBlue\\}: \\shaded{AliceBlue}{boxed text} {\\backslash}fcolorbox\\{red\\}\\{AliceBlue\\}: \\fcolorbox{red}{AliceBlue}{boxed text} in the middle");
     ui->cmbTestset->addItem("mathboxed test", "$\\fbox{2^{2^{\\colorbox{red}{2^{x}}}}}$");
     ui->cmbTestset->addItem("axiom of power test", "$\\forall A \\, \\exists P \\, \\forall B \\, [B \\in P \\iff \\forall C \\, (C \\in B \\Rightarrow C \\in A)]$");
     ui->cmbTestset->addItem("math: De Morgan's law", "$\\neg(P\\land Q)\\iff(\\neg P)\\lor(\\neg Q)$ or $\\overline{\\bigcap_{i \\in I} A_{i}}\\equiv\\bigcup_{i \\in I} \\overline{A_{i}}$ or $\\overline{A \\cup B}\\equiv\\overline{A} \\cap \\overline{B}$");
@@ -290,7 +303,7 @@ TestForm::~TestForm()
     delete ui;
 }
 
-#define W 3000
+#define W 4000
 #define H 2000
 #define X1 15
 #define Y1 50
@@ -414,7 +427,8 @@ QTreeWidgetItem *TestForm::createTree(JKQTMathTextNode *node, QTreeWidgetItem* p
     JKQTMathTextWhitespaceNode* spN=dynamic_cast<JKQTMathTextWhitespaceNode*>(node);
     JKQTMathTextSymbolNode* symN=dynamic_cast<JKQTMathTextSymbolNode*>(node);
     JKQTMathTextListNode* lstN=dynamic_cast<JKQTMathTextListNode*>(node);
-    JKQTMathTextInstruction1Node* inst1N=dynamic_cast<JKQTMathTextInstruction1Node*>(node);
+    JKQTMathTextModifiedTextPropsInstructionNode* inst1N=dynamic_cast<JKQTMathTextModifiedTextPropsInstructionNode*>(node);
+    JKQTMathTextBoxInstructionNode* inst1B=dynamic_cast<JKQTMathTextBoxInstructionNode*>(node);
     JKQTMathTextSubscriptNode* subN=dynamic_cast<JKQTMathTextSubscriptNode*>(node);
     JKQTMathTextSuperscriptNode* superN=dynamic_cast<JKQTMathTextSuperscriptNode*>(node);
     JKQTMathTextBraceNode* braceN=dynamic_cast<JKQTMathTextBraceNode*>(node);
@@ -462,8 +476,11 @@ QTreeWidgetItem *TestForm::createTree(JKQTMathTextNode *node, QTreeWidgetItem* p
         name=QString("MTsubscriptNode");
         if (subN->getChild()) ti->addChild(createTree(subN->getChild(), ti));
     } else if (inst1N)  {
-        name=QString("MTinstruction1Node: \'%1\' (subsuper=%2").arg(inst1N->getName()).arg(inst1N->isSubSuperscriptAboveBelowNode());
+        name=QString("ModTxtPropsInstructionNode: \'%1\' (subsuper=%2, params=%3)").arg(inst1N->getInstructionName()).arg(inst1N->isSubSuperscriptAboveBelowNode()).arg(inst1N->getParameters().join("/"));
         if (inst1N->getChild()) ti->addChild(createTree(inst1N->getChild(), ti));
+    } else if (inst1B)  {
+        name=QString("BoxInstructionNode: \'%1\' (subsuper=%2, params=%3)").arg(inst1B->getInstructionName()).arg(inst1B->isSubSuperscriptAboveBelowNode()).arg(inst1B->getParameters().join("/"));
+        if (inst1B->getChild()) ti->addChild(createTree(inst1B->getChild(), ti));
     } else if (lstN)  {
         name=QString("MTlistNode");
         QList<JKQTMathTextNode*> list=lstN->getChildren();

@@ -123,6 +123,13 @@ class JKQTMathTextNode; // forward
       - \c \\tt{...} \c \\texttt{...} \c \\mathtt{...} : draw text in typewriter font \image html jkqtmathtext/jkqtmathtext_fonts.png
       - \c \\textcolor{color}{...} \c \\color{color} \c \\mathcolor{color}{...} : draw colored text \image html jkqtmathtext/jkqtmathtext_colored.png
       - \c \\boxed{...} : draw text with a box around it \image html jkqtmathtext/jkqtmathtext_boxed.png
+      - \c \\doublebox{...} : draw text with a rounded box around it \image html jkqtmathtext/jkqtmathtext_doublebox.png
+      - \c \\ovalbox{...} : draw text with a rounded box around it \image html jkqtmathtext/jkqtmathtext_ovalbox.png
+      - \c \\Ovalbox{...} : draw a thick oval box \image html jkqtmathtext/jkqtmathtext_oovalbox.png
+      - \c \\ovaldoublebox{...} : draw a double oval box \image html jkqtmathtext/jkqtmathtext_ovaldoublebox.png
+      - \c \\colorbox{bordercolor}{...} : draw a colored box \image html jkqtmathtext/jkqtmathtext_colorbox.png
+      - \c \\shaded{backgroundcolor}{...} : draw a filled box \image html jkqtmathtext/jkqtmathtext_shaded.png
+      - \c \\fcolorbox{bordercolor}{backgroundcolor}{...} : draw a colored, filled box \image html jkqtmathtext/jkqtmathtext_fcolorbox.png
       - \c \\colorbox{color}{...} : draw a colored box around text \image html jkqtmathtext/jkqtmathtext_colorbox.png
       - \c \\alpha ... : display the according greek letter \image html jkqtmathtext/jkqtmathtext_greek.png
       - \c ^{...} \c _{...} : display the contents of braces in superscript/subscript \image html jkqtmathtext/jkqtmathtext_supersub.png
@@ -133,7 +140,7 @@ class JKQTMathTextNode; // forward
                                           symbols may differ (there are not all symbols defined in the MS Windows Symbol
                                           font!). Best coverage should be given by Unicode font encoding with a good
                                           unicode font installed!<br>\image html jkqtmathtext/jkqtmathtext_symbols.png
-      - <code>\\vec{x} \\dot{x} \\ddot{x} \\overline{x} \\underline{x} \\hat{x} \\tilde{x} \\uul{x} \\ool{x} \\bar{x} \\arrow{x} </code>: Decorations over/under symbols \image html jkqtmathtext/jkqtmathtext_mathdeco.png
+      - <code>\\vec{x} \\dot{x} \\ddot{x} \\overline{x} \\underline{x} \\hat{x} \\tilde{x} \\uul{x} \\ool{x} \\bar{x} \\arrow{x} \\widehat{x} \\widetilde{x} ...</code>: Decorations over/under symbols \image html jkqtmathtext/jkqtmathtext_mathdeco.png
       - <code>\\verb{don't parse this _aaa\\LaTeX} </code>: interpret enclosed text as verbose \image html jkqtmathtext/jkqtmathtext_verb.png
     .
 
@@ -813,11 +820,29 @@ class JKQTMATHTEXT_LIB_EXPORT JKQTMathText : public QObject {
          *  \param quitOnClosingBracket if \c true, quits on encountering a MTTclosebracket token
          */
         JKQTMathTextNode* parseLatexString(bool get, JKQTMathTextBraceType quitOnClosingBrace=JKQTMathTextBraceType::MTBTAny, const QString& quitOnEnvironmentEnd=QString(""), bool quitOnClosingBracket=false);
+        /** \brief parses a list of string-arguments, i.e. \c {p1}{p2}{...}
+         *
+         *  \param get call getToken() at the start, otherwise it is expected that currentToken==MTTopenbrace
+         *  \param Nparams the number of parameters to expect
+         *  \param[out] foundError will be set to \c true if an error occured (unexpected token) or \c false otherwise
+         *  \return the list of parameter strings with Nparam entries or an empty or partial list on error
+         */
+        QStringList parseStringParams(bool get, size_t Nparams, bool *foundError=nullptr);
+        /** \brief parses a single instruction (including it's parameters)
+         *
+         *  \param[out] _foundError will be set to \c true if an error occured (unexpected token) or \c false otherwise
+         *  \param[out] getNew returns \c true if the parser has to call getToken() to go on
+         *  \return the instruction node or \c nullptr on error (then also \a _foundError is set \c true )
+         *  \note This method expects the current token currentToken to be MTTinstruction
+         */
+        JKQTMathTextNode* parseInstruction(bool *_foundError=nullptr, bool* getNew=nullptr);
         /** \brief parse a LaTeX math environment */
         JKQTMathTextNode* parseMath(bool get);
 
         /** \brief used by the tokenizer. type of the current token */
         tokenType currentToken;
+        /** \brief the JKQTMathTextBraceType associated with the last \c \\right command the parser encountered */
+        JKQTMathTextBraceType lastRightBraceType;
         /** \brief used by the tokenizer. Name of the current token, id applicable */
         QString currentTokenName;
         /** \brief used by the tokenizer. Points to the currently read character in parseString */

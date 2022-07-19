@@ -48,7 +48,7 @@ class JKQTMATHTEXT_LIB_EXPORT JKQTMathTextDecoratedNode: public JKQTMathTextSing
             MTDwidehat,  /*!< \brief full-width hat over block \image html jkqtmathtext/MTDwidehat.png */
             MTDcheck,  /*!< \brief small v over block \image html jkqtmathtext/MTDcheck.png */
             MTDwidecheck,  /*!< \brief full-width v over block \image html jkqtmathtext/MTDwidecheck.png */
-            MTDbreve,  /*!< \brief small tilde over block \image html jkqtmathtext/MTDbreve.png */
+            MTDbreve,  /*!< \brief small cup (breve) over block \image html jkqtmathtext/MTDbreve.png */
             MTDocirc,  /*!< \brief single circle over block \image html jkqtmathtext/MTDocirc.png */
             MTDdot,  /*!< \brief single dot over block \image html jkqtmathtext/MTDvec.png */
             MTDddot,  /*!< \brief double dot over block \image html jkqtmathtext/MTDddot.png */
@@ -60,6 +60,8 @@ class JKQTMATHTEXT_LIB_EXPORT JKQTMathTextDecoratedNode: public JKQTMathTextSing
             MTDdoubleunderline,  /*!< \brief double underline under block \image html jkqtmathtext/MTDdoubleunderline.png */
             MTDtilde,  /*!< \brief small tilde over block \image html jkqtmathtext/MTDtilde.png */
             MTDwidetilde,  /*!< \brief full width tilde over block \image html jkqtmathtext/MTDwidetilde.png */
+            MTDacute,  /*!< \brief small acute accent over block \image html jkqtmathtext/MTDacute.png */
+            MTDgrave,  /*!< \brief small grave accent over block \image html jkqtmathtext/MTDgrave.png */
             MTDcancel,  /*!< \brief cancel text with sloped line \image html jkqtmathtext/MTDcancel.png */
             MTDbcancel,  /*!< \brief cancel text with backward sloped line \image html jkqtmathtext/MTDbcancel.png */
             MTDxcancel,  /*!< \brief cancel text with X \image html jkqtmathtext/MTDxcancel.png */
@@ -68,6 +70,15 @@ class JKQTMATHTEXT_LIB_EXPORT JKQTMathTextDecoratedNode: public JKQTMathTextSing
         /** \brief convert a DecorationType into a string
          */
         static QString DecorationType2String(DecorationType mode);
+        /** \brief returns the FracType corresponding to \a instructionName
+         *  \see JKQTMathTextFracNode::FracType
+         */
+        static DecorationType InstructionName2DecorationType(const QString& mode);
+
+        /** \brief returns true, if the given \a instructionName can be converted to a FracType
+         *  \see JKQTMathTextFracNode::FracType
+         */
+        static bool supportsInstructionName(const QString& instructionName);
 
         JKQTMathTextDecoratedNode(JKQTMathText* parent, DecorationType decoration, JKQTMathTextNode* child);
         virtual ~JKQTMathTextDecoratedNode() override;
@@ -84,6 +95,10 @@ class JKQTMATHTEXT_LIB_EXPORT JKQTMathTextDecoratedNode: public JKQTMathTextSing
         virtual void getSizeInternal(QPainter& painter, JKQTMathTextEnvironment currentEv, double& width, double& baselineHeight, double& overallHeight, double& strikeoutPos, const JKQTMathTextNodeSize* prevNodeSize=nullptr) override;
         /** \brief type of decoration that is added to the child node */
         DecorationType decoration;
+        /** \brief lists all supported instructions */
+        static QHash<QString, DecorationType> instructions;
+        /** \biref fills instructions */
+        static void fillInstructions();
 };
 #endif // JKQTMATHTEXTDECORATEDNODE_H
 

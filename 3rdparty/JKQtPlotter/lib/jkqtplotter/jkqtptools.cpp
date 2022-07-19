@@ -1,9 +1,6 @@
 /*
-Copyright (c) 2008-2020 Jan W. Krieger (<jan@jkrieger.de>)
+    Copyright (c) 2008-2022 Jan W. Krieger (<jan@jkrieger.de>)
 
-    
-
-    
 
     This software is free software: you can redistribute it and/or modify
     it under the terms of the GNU Lesser General Public License (LGPL) as published by
@@ -31,14 +28,6 @@ Copyright (c) 2008-2020 Jan W. Krieger (<jan@jkrieger.de>)
 #include <QKeyEvent>
 #include <QAction>
 #include <QLocale>
-#include <QDialog>
-#include <QCheckBox>
-#include <QGridLayout>
-#include <QLabel>
-#include <QPrinter>
-#include <QHeaderView>
-#include <QPrintDialog>
-#include <QDialogButtonBox>
 #include <cstring>
 #include <cstdlib>
 #include <cstdio>

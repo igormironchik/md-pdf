@@ -1,5 +1,5 @@
 /*
-    Copyright (c) 2008-2020 Jan W. Krieger (<jan@jkrieger.de>)
+    Copyright (c) 2008-2022 Jan W. Krieger (<jan@jkrieger.de>)
 
     
 
@@ -26,6 +26,7 @@
 #include <QPainter>
 #include "jkqtplotter/jkqtptools.h"
 #include "jkqtplotter/jkqtplotter_imexport.h"
+#include "jkqtplotter/jkqtplotter_configmacros.h"
 #include "jkqtplotter/jkqtpgraphsbase.h"
 #include "jkqtplotter/jkqtpgraphsbasestylingmixins.h"
 
@@ -40,7 +41,9 @@
 
  */
 class JKQTPLOTTER_LIB_EXPORT JKQTPGraphViolinplotStyleMixin: public JKQTPGraphLineStyleMixin, public JKQTPGraphFillStyleMixin {
-        Q_GADGET
+#ifndef JKQTPLOTTER_WORKAROUND_QGADGET_BUG
+      Q_GADGET
+#endif
     public:
 
 

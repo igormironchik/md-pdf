@@ -31,59 +31,52 @@ environment:
     USE_CMAKE: true
  
   matrix:
-    - QTABI: msvc2019_64
+    - APPVEYOR_JOB_NAME: Win, VS2019-64bit, Qt5.15, QMake
+      QTABI: msvc2019_64
       COMPILER: MSVC
       QTVER: 5.15
       CMAKE_GENERATOR: "Visual Studio 16 2019"
       CMAKE_BUILDFLAGS: /verbosity:minimal /maxcpucount
+      APPVEYOR_BUILD_WORKER_IMAGE: Visual Studio 2019
+      USE_CMAKE: false
       
-    - QTABI: msvc2019_64
+    - APPVEYOR_JOB_NAME: Win, VS2019-64bit, Qt5.15, CMake
+      QTABI: msvc2019_64
+      COMPILER: MSVC
+      QTVER: 5.15
+      CMAKE_GENERATOR: "Visual Studio 16 2019"
+      CMAKE_BUILDFLAGS: /verbosity:minimal /maxcpucount
+      APPVEYOR_BUILD_WORKER_IMAGE: Visual Studio 2019
+      
+    - APPVEYOR_JOB_NAME: Win, VS2019-64bit, Qt6.3, CMake
+      QTABI: msvc2019_64
       COMPILER: MSVC
       QTVER: 6.3
       CMAKE_GENERATOR: "Visual Studio 16 2019"
       CMAKE_BUILDFLAGS: /verbosity:minimal /maxcpucount
+      APPVEYOR_BUILD_WORKER_IMAGE: Visual Studio 2019
       
-#    - QTABI: mingw81_64
-#      COMPILER: MinGW
-#      MINGWDIR: C:\Qt\Tools\mingw810_64
-#      QTVER: 5.15
-#      CMAKE_GENERATOR: "MinGW Makefiles"
-#
-    - QTABI: gcc_64
+    - APPVEYOR_JOB_NAME: Linux, GCC-64bit, Qt5.15, CMake
+      QTABI: gcc_64
       COMPILER: GCC
       QTVER: 5.15
       CMAKE_GENERATOR: "Unix Makefiles"
-
-    - QTABI: gcc_64
+      APPVEYOR_BUILD_WORKER_IMAGE: Ubuntu2004
+      
+    - APPVEYOR_JOB_NAME: Linux, GCC-64bit, Qt6.2, CMake
+      QTABI: gcc_64
       COMPILER: GCC
       QTVER: 6.2
       CMAKE_GENERATOR: "Unix Makefiles"
+      APPVEYOR_BUILD_WORKER_IMAGE: Ubuntu2004
       
-image:
-  # AppVeyor builds are ordered by the image list:
-  - Visual Studio 2019
-  - Ubuntu2004
-
-matrix:
-  exclude:
-    # Exclude invalid options
-    - image: Visual Studio 2019
-      QTABI: gcc_64
-    - image: Visual Studio 2019
-      QTABI: mingw53_32
-    - image: Visual Studio 2019
-      QTABI: msvc2015
-    - image: Ubuntu2004
-      QTABI: mingw81_64
-    - image: Ubuntu2004
-      QTABI: msvc2019_64
-    - image: Ubuntu2004
-      QTABI: msvc2015_64
-    - image: Ubuntu2004
-      QTABI: msvc2015
-    - image: Ubuntu2004
-      QTABI: mingw53_32
-
+    - APPVEYOR_JOB_NAME: MacOS, CLANG-64bit, Qt6.2, CMake
+      QTABI: macos
+      COMPILER: CLANG
+      QTVER: 6.2
+      CMAKE_GENERATOR: "Unix Makefiles"
+      APPVEYOR_BUILD_WORKER_IMAGE: macos-monterey
+      
 
 for:
   # Windows (MinGW 8.1 & MSVC2019)
@@ -136,12 +129,11 @@ for:
       - cmd: cd build
       - cmd: if %USE_CMAKE%==true cmake --version 
       - cmd: if %USE_CMAKE%==true cmake -G "%CMAKE_GENERATOR%" "-DCMAKE_PREFIX_PATH=%QTDIR%;%CIMG_INCLUDE_DIR%" .. 
-      - cmd: if %USE_CMAKE%==true cmake --build . --config "%CONFIGURATION%" -- %CMAKE_BUILDFLAGS% 
+      - cmd: if %USE_CMAKE%==true cmake --build . --config "%CONFIGURATION%" -j%NUMBER_OF_PROCESSORS% -- %CMAKE_BUILDFLAGS%
       - cmd: if %USE_CMAKE%==false qmake.exe -v 
       - cmd: if %USE_CMAKE%==false qmake.exe CONFIG+=%CONFIGURATION% ..\JKQtPlotterBuildAllExamples.pro 
       - cmd: if %USE_CMAKE%==false call %MAKETOOL% 
       - cmd: cd ..
-
 
 
 
@@ -151,7 +143,7 @@ for:
     matrix:
       only:
         - image: Ubuntu2004
-            
+        
     init:
       - sh: echo == INIT SYSTEM ENVIRONMENT ======================================================================
       - sh: echo _NPROCESSORS_ONLN=$(getconf _NPROCESSORS_ONLN)
@@ -170,10 +162,6 @@ for:
       - sh: echo QTDIR=$QTDIR
       - sh: echo QT_DIR=$QT_DIR
       - sh: echo Qt5_DIR=$Qt5_DIR
-      - sh: ls /home/appveyor
-      - sh: ls /home/appveyor/Qt
-      - sh: ls /home/appveyor/Qt/5.15
-      - sh: ls /home/appveyor/Qt/5.15/gcc_64
       - sh: echo PATH=$PATH
       - sh: sudo apt-get update -y
       # Install OpenCV
@@ -192,4 +180,46 @@ for:
       - sh: cmake --version 
       - sh: cmake -G "$CMAKE_GENERATOR" "-DCMAKE_PREFIX_PATH=$QTDIR" .. 
       - sh: echo --- Build using CMake ------------------------------------------------------------------------------- 
-      - sh: cmake --build . --config "$CONFIGURATION" -- $CMAKE_BUILDFLAGS 
+      - sh: cmake --build . --config "$CONFIGURATION" -j$(getconf _NPROCESSORS_ONLN)  -- $CMAKE_BUILDFLAGS
+
+
+
+
+
+
+
+
+  #  MacOS (Monterey)
+  - 
+    matrix:
+      only:
+        - image: macos-monterey
+            
+    init:
+      - sh: echo == INIT SYSTEM ENVIRONMENT ======================================================================
+      - sh: echo _NPROCESSORS_ONLN=$(getconf _NPROCESSORS_ONLN)
+      - sh: echo APPVEYOR_BUILD_WORKER_IMAGE=$APPVEYOR_BUILD_WORKER_IMAGE
+      - sh: echo QTABI=$QTABI
+      - sh: echo CMAKE_GENERATOR=$CMAKE_GENERATOR
+
+    install:
+      # Init compiler environment
+      - sh: echo == INIT COMPILER ENVIRONMENT ====================================================================
+      - sh: export QTDIR=$HOME/Qt/$QTVER/$QTABI/
+      - sh: export QT_DIR=$HOME/Qt/$QTVER/$QTABI/
+      - sh: export Qt5_DIR=$QTDIR/lib/cmake
+      - sh: echo QTDIR=$QTDIR
+      - sh: echo QT_DIR=$QT_DIR
+      - sh: echo Qt5_DIR=$Qt5_DIR
+      - sh: echo PATH=$PATH
+      # Install OpenCV
+ 
+    build_script:
+      - sh: echo == BUILD JKQtPlotter ============================================================================
+      - sh: mkdir build
+      - sh: cd build
+      - sh: echo --- Run CMake Configure ----------------------------------------------------------------------------- 
+      - sh: cmake --version 
+      - sh: cmake -G "$CMAKE_GENERATOR" "-DCMAKE_PREFIX_PATH=$QTDIR" .. 
+      - sh: echo --- Build using CMake ------------------------------------------------------------------------------- 
+      - sh: cmake --build . --config "$CONFIGURATION" -j$(getconf _NPROCESSORS_ONLN)  -- $CMAKE_BUILDFLAGS

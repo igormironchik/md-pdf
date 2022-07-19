@@ -24,6 +24,8 @@ set(SOURCES
   ${CMAKE_CURRENT_LIST_DIR}/jkqtmathtext.cpp
   ${CMAKE_CURRENT_LIST_DIR}/jkqtmathtexttools.cpp
   ${CMAKE_CURRENT_LIST_DIR}/jkqtmathtextlabel.cpp
+)
+set(SOURCES_NODES
   ${CMAKE_CURRENT_LIST_DIR}/nodes/jkqtmathtextnode.cpp
   ${CMAKE_CURRENT_LIST_DIR}/nodes/jkqtmathtexttextnode.cpp
   ${CMAKE_CURRENT_LIST_DIR}/nodes/jkqtmathtextbracenode.cpp
@@ -46,6 +48,10 @@ set(HEADERS
   $<INSTALL_INTERFACE:jkqtmathtexttools.h>
   $<BUILD_INTERFACE:${CMAKE_CURRENT_LIST_DIR}/jkqtmathtextlabel.h>
   $<INSTALL_INTERFACE:jkqtmathtextlabel.h>
+  $<BUILD_INTERFACE:${CMAKE_CURRENT_LIST_DIR}/jkqtmathtext_imexport.h>
+  $<INSTALL_INTERFACE:jkqtmathtext_imexport.h>
+)
+set(HEADERS_NODES
   $<BUILD_INTERFACE:${CMAKE_CURRENT_LIST_DIR}/nodes/jkqtmathtextnode.h>
   $<INSTALL_INTERFACE:nodes/jkqtmathtextnode.h>
   $<BUILD_INTERFACE:${CMAKE_CURRENT_LIST_DIR}/nodes/jkqtmathtexttextnode.h>
@@ -72,8 +78,6 @@ set(HEADERS
   $<INSTALL_INTERFACE:nodes/jkqtmathtextnodetools.h>
   $<BUILD_INTERFACE:${CMAKE_CURRENT_LIST_DIR}/nodes/jkqtmathtextwhitespacenode.h>
   $<INSTALL_INTERFACE:nodes/jkqtmathtextwhitespacenode.h>
-  $<BUILD_INTERFACE:${CMAKE_CURRENT_LIST_DIR}/jkqtmathtext_imexport.h>
-  $<INSTALL_INTERFACE:jkqtmathtext_imexport.h>
 )
 
 if(JKQtPlotter_BUILD_INCLUDE_XITS_FONTS)
@@ -85,37 +89,42 @@ endif(JKQtPlotter_BUILD_INCLUDE_XITS_FONTS)
 
 include(CMakePackageConfigHelpers)
 
-if(JKQtPlotter_BUILD_SHARED_LIBS)
-    add_library(${libsh_name} SHARED  ${SOURCES} ${RESOURCES} ${HEADERS} )
-    set_property(TARGET ${libsh_name} PROPERTY VERSION "${PROJECT_VERSION}")
-    set_property(TARGET ${libsh_name} PROPERTY OUTPUT_NAME  "${libsh_name_decorated}")
-    target_link_libraries(${libsh_name} PUBLIC Qt${QT_VERSION_MAJOR}::Core Qt${QT_VERSION_MAJOR}::Gui Qt${QT_VERSION_MAJOR}::Widgets Qt${QT_VERSION_MAJOR}::PrintSupport JKQTCommonSharedLib)
-    target_compile_definitions(${libsh_name} PUBLIC JKQTMATHTEXT_LIB_IN_DLL)
-    target_compile_definitions(${libsh_name} PRIVATE JKQTMATHTEXT_LIB_EXPORT_LIBRARY)
+function(JKQtMathText_setDefaultLibOptions TARGETNAME)
+    set_property(TARGET ${TARGETNAME} PROPERTY VERSION "${PROJECT_VERSION}")
+    target_link_libraries(${TARGETNAME} PUBLIC Qt${QT_VERSION_MAJOR}::Core Qt${QT_VERSION_MAJOR}::Gui Qt${QT_VERSION_MAJOR}::Widgets)
     if(${QT_VERSION_MAJOR} VERSION_LESS "6")
-        set_property(TARGET ${libsh_name} PROPERTY CXX_STANDARD 11)
-        set_property(TARGET ${libsh_name} PROPERTY CXX_STANDARD_REQUIRED TRUE)
-        target_compile_features(${libsh_name} PUBLIC cxx_std_11)
+        set_property(TARGET ${TARGETNAME} PROPERTY CXX_STANDARD 11)
+        set_property(TARGET ${TARGETNAME} PROPERTY CXX_STANDARD_REQUIRED TRUE)
+        target_compile_features(${TARGETNAME} PUBLIC cxx_std_11)
     else()
-        set_property(TARGET ${libsh_name} PROPERTY CXX_STANDARD 17)
-        set_property(TARGET ${libsh_name} PROPERTY CXX_STANDARD_REQUIRED TRUE)
-        target_compile_features(${libsh_name} PUBLIC cxx_std_17)
+        set_property(TARGET ${TARGETNAME} PROPERTY CXX_STANDARD 17)
+        set_property(TARGET ${TARGETNAME} PROPERTY CXX_STANDARD_REQUIRED TRUE)
+        target_compile_features(${TARGETNAME} PUBLIC cxx_std_17)
     endif()
     if(MINGW)
       # COMPILER-SETTINGS FOR MINGW
-      target_compile_options(${libsh_name} PUBLIC -fexceptions)
+      target_compile_options(${TARGETNAME} PUBLIC -fexceptions)
     elseif(MSVC)
       # COMPILER-SETTINGS FOR MS VISUAL C++
-      target_compile_options(${libsh_name} PUBLIC /EHsc)
-      target_compile_definitions(${libsh_name} PUBLIC NOMINMAX)
+      target_compile_options(${TARGETNAME} PUBLIC /EHsc)
+      target_compile_definitions(${TARGETNAME} PUBLIC NOMINMAX)
     endif()
-    target_include_directories(${libsh_name} PUBLIC
+    target_include_directories(${TARGETNAME} PUBLIC
         $<BUILD_INTERFACE:${CMAKE_CURRENT_LIST_DIR}/../>
-        $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}>  
+        $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}>
     )
     if(JKQtPlotter_BUILD_INCLUDE_XITS_FONTS)
-        target_compile_definitions(${libsh_name} PRIVATE JKQTMATHTEXT_COMPILED_WITH_XITS)
+        target_compile_definitions(${TARGETNAME} PRIVATE JKQTMATHTEXT_COMPILED_WITH_XITS)
     endif(JKQtPlotter_BUILD_INCLUDE_XITS_FONTS)
+endfunction()
+
+if(JKQtPlotter_BUILD_SHARED_LIBS)
+    add_library(${libsh_name} SHARED  ${SOURCES} ${RESOURCES} ${HEADERS} ${SOURCES_NODES} ${HEADERS_NODES} )
+    JKQtMathText_setDefaultLibOptions(${libsh_name})
+    set_property(TARGET ${libsh_name} PROPERTY OUTPUT_NAME  "${libsh_name_decorated}")
+    target_link_libraries(${libsh_name} PUBLIC JKQTCommonSharedLib)
+    target_compile_definitions(${libsh_name} PUBLIC JKQTMATHTEXT_LIB_IN_DLL)
+    target_compile_definitions(${libsh_name} PRIVATE JKQTMATHTEXT_LIB_EXPORT_LIBRARY)
     set_target_properties(${libsh_name} PROPERTIES WINDOWS_EXPORT_ALL_SYMBOLS "ON")
     write_basic_package_version_file(${CMAKE_CURRENT_BINARY_DIR}/${libsh_name}Version.cmake 
                                      VERSION ${PROJECT_VERSION} 
@@ -123,34 +132,11 @@ if(JKQtPlotter_BUILD_SHARED_LIBS)
 endif()
 
 if(JKQtPlotter_BUILD_STATIC_LIBS)
-    add_library(${lib_name} STATIC ${SOURCES} ${RESOURCES} ${HEADERS})
-    set_property(TARGET ${lib_name} PROPERTY VERSION "${PROJECT_VERSION}")
+    add_library(${lib_name} STATIC ${SOURCES} ${RESOURCES} ${HEADERS} ${SOURCES_NODES} ${HEADERS_NODES})
+    JKQtMathText_setDefaultLibOptions(${lib_name})
     set_property(TARGET ${lib_name} PROPERTY OUTPUT_NAME  "${lib_name_decorated}")
-    if(${QT_VERSION_MAJOR} VERSION_LESS "6")
-        set_property(TARGET ${lib_name} PROPERTY CXX_STANDARD 11)
-        set_property(TARGET ${lib_name} PROPERTY CXX_STANDARD_REQUIRED TRUE)
-        target_compile_features(${lib_name} PUBLIC cxx_std_11)
-    else()
-        set_property(TARGET ${lib_name} PROPERTY CXX_STANDARD 17)
-        set_property(TARGET ${lib_name} PROPERTY CXX_STANDARD_REQUIRED TRUE)
-        target_compile_features(${lib_name} PUBLIC cxx_std_17)
-    endif()
-    if(MINGW)
-      # COMPILER-SETTINGS FOR MINGW
-      target_compile_options(${lib_name} PUBLIC -fexceptions)
-    elseif(MSVC)
-      # COMPILER-SETTINGS FOR MS VISUAL C++
-      target_compile_options(${lib_name} PUBLIC /EHsc)
-      target_compile_definitions(${lib_name} PUBLIC NOMINMAX)
-    endif()
-    if(JKQtPlotter_BUILD_INCLUDE_XITS_FONTS)
-        target_compile_definitions(${lib_name} PRIVATE JKQTMATHTEXT_COMPILED_WITH_XITS)
-    endif(JKQtPlotter_BUILD_INCLUDE_XITS_FONTS)
-    target_link_libraries(${lib_name} PUBLIC Qt${QT_VERSION_MAJOR}::Core Qt${QT_VERSION_MAJOR}::Gui Qt${QT_VERSION_MAJOR}::Widgets Qt${QT_VERSION_MAJOR}::PrintSupport JKQTCommonLib)
-	  target_include_directories(${lib_name} PUBLIC
-        $<BUILD_INTERFACE:${CMAKE_CURRENT_LIST_DIR}/../>
-        $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}>  
-    )
+
+    target_link_libraries(${lib_name} PUBLIC JKQTCommonLib)
     write_basic_package_version_file(${CMAKE_CURRENT_BINARY_DIR}/${lib_name}Version.cmake
                                      VERSION ${PROJECT_VERSION} 
                                      COMPATIBILITY AnyNewerVersion )    
@@ -202,8 +188,11 @@ if(JKQtPlotter_BUILD_STATIC_LIBS)
 endif(JKQtPlotter_BUILD_STATIC_LIBS)
 
 install(FILES ${HEADERS}
-		DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/${libIncludeSubdir}
-		COMPONENT Headers)
+                DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/${libIncludeSubdir}
+                COMPONENT Headers)
+install(FILES ${HEADERS_NODES}
+                DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/${libIncludeSubdir}/nodes
+                COMPONENT Headers)
 
 configure_file(${PROJECT_SOURCE_DIR}/readme.txt.in ${CMAKE_CURRENT_BINARY_DIR}/${lib_name}_Readme.txt @ONLY)
 install(FILES "${CMAKE_CURRENT_BINARY_DIR}/${lib_name}_Readme.txt" DESTINATION doc/JKQtPlotter )
