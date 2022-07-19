@@ -406,7 +406,7 @@ ENDIF(NOT PODOFO_BUILD_LIB_ONLY)
 FIND_PACKAGE(OpenSSL)
 
 FIND_PACKAGE(Freetype REQUIRED)
-MESSAGE("Found freetype library at ${Freetype_LIB}, headers ${Freetype_INCLUDE_DIR}")
+MESSAGE("Found freetype library at ${Freetype_LIBRARIES}, headers ${Freetype_INCLUDE_DIRS}")
 INCLUDE_DIRECTORIES(${Freetype_INCLUDE_DIRS})
 
 SET(stlport_libraries_if_use_stlport)
