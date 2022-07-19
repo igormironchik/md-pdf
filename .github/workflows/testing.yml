@@ -149,65 +149,65 @@ jobs:
     - name: Test
       run: ctest --output-on-failure --verbose
 
-#  macos:
-#    name: macos
-#    runs-on: macos-11
+  macos:
+    name: macos
+    runs-on: macos-11
 
-#    strategy:
-#      fail-fast: true
-#      matrix:
-#        language: ['cpp']
+    strategy:
+      fail-fast: true
+      matrix:
+        language: ['cpp']
 
-#    steps:
-#    - name: Checkout repository
-#      uses: actions/checkout@v2
-#      with:
-#        fetch-depth: 2
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v2
+      with:
+        fetch-depth: 2
 
-#    - run: git checkout HEAD^2
-#      if: ${{ github.event_name == 'pull_request' }}
+    - run: git checkout HEAD^2
+      if: ${{ github.event_name == 'pull_request' }}
 
-#    - run: git submodule update --init --recursive
+    - run: git submodule update --init --recursive
 
-#    - run: brew update
+    - run: brew update
 
-#    - run: brew install imagemagick@6
+    - run: brew install imagemagick@6
 
-#    - run: brew uninstall imagemagick
+    - run: brew uninstall imagemagick
 
-#    - run: cp -r /usr/local/opt/imagemagick@6/bin /usr/local
+    - run: cp -r /usr/local/opt/imagemagick@6/bin /usr/local
 
-#    - run: cp -r /usr/local/opt/imagemagick@6/lib /usr/local
+    - run: cp -r /usr/local/opt/imagemagick@6/lib /usr/local
 
-#    - run: cp -r /usr/local/opt/imagemagick@6/include /usr/local
+    - run: cp -r /usr/local/opt/imagemagick@6/include /usr/local
 
-#    - run: cp -r /usr/local/opt/imagemagick@6/etc /usr/local
+    - run: cp -r /usr/local/opt/imagemagick@6/etc /usr/local
 
-#    - run: cp -r /usr/local/opt/imagemagick@6/share /usr/local
+    - run: cp -r /usr/local/opt/imagemagick@6/share /usr/local
 
-#    - name: Test ImageMagick
-#      run: convert -version
+    - name: Test ImageMagick
+      run: convert -version
 
-#    - name: Install Qt
-#      uses: jurplel/install-qt-action@v2
-#      with:
-#        version: '6.3.1'
+    - name: Install Qt
+      uses: jurplel/install-qt-action@v2
+      with:
+        version: '6.3.1'
 
-#    - name: Install Conan
-#      id: conan
-#      uses: turtlebrowser/get-conan@main
+    - name: Install Conan
+      id: conan
+      uses: turtlebrowser/get-conan@main
 
-#    - name: Install dependencies with Conan
-#      run: conan install . --build=missing
+    - name: Install dependencies with Conan
+      run: conan install . --build=missing
 
-#    - name: Generate Makefiles
-#      run: cmake -DMDPDF_USE_CONAN=ON -DCMAKE_BUILD_TYPE=Relese .
+    - name: Generate Makefiles
+      run: cmake -DMDPDF_USE_CONAN=ON -DCMAKE_BUILD_TYPE=Relese .
 
-#    - name: Build
-#      run: make
+    - name: Build
+      run: make
 
-#    - name: Test
-#      run: |
-#        export QT_QPA_PLATFORM=offscreen
-#        export DYLD_LIBRARY_PATH=`cat ${{ github.workspace }}/path.txt`:$DYLD_LIBRARY_PATH
-#        ctest --output-on-failure --verbose
+    - name: Test
+      run: |
+        export QT_QPA_PLATFORM=offscreen
+        export DYLD_LIBRARY_PATH=`cat ${{ github.workspace }}/path.txt`:$DYLD_LIBRARY_PATH
+        ctest --output-on-failure --verbose
