@@ -175,8 +175,6 @@ jobs:
 
     - run: brew uninstall imagemagick
 
-    - run: brew install fontconfig
-
     - run: cp -r /usr/local/opt/imagemagick@6/bin /usr/local
 
     - run: cp -r /usr/local/opt/imagemagick@6/lib /usr/local
