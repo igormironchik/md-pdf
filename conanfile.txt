@@ -4,7 +4,6 @@ freetype/2.12.1@
 libjpeg/9d@
 libpng/1.6.37@
 zlib/1.2.12@
-fontconfig/2.13.93@
 
 [generators]
 cmake

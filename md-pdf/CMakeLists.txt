@@ -66,5 +66,5 @@ target_link_libraries( syntax Qt6::Core )
 
 add_executable( md-pdf-gui WIN32 ${GUI_SRC} )
 
-target_link_libraries( md-pdf-gui md-parser syntax widgets ${PODOFO_LIB} ${ImageMagick_LIBRARIES}
-	JKQTMathTextSharedLib JKQTCommonSharedLib Qt6::Widgets Qt6::Network Qt6::Core )
+target_link_libraries( md-pdf-gui md-parser syntax widgets ${ImageMagick_LIBRARIES}
+	JKQTMathTextSharedLib JKQTCommonSharedLib Qt6::Widgets Qt6::Network Qt6::Core ${PODOFO_LIB} )

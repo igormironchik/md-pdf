@@ -33,6 +33,7 @@ endif()
 
 set( PODOFO_BUILD_LIB_ONLY ON )
 
+set( PODOFO_BUILD_SHARED ON CACHE INTERNAL "" FORCE )
 add_subdirectory( 3rdparty/podofo-trunk )
 
 set( BUILD_EXAMPLES OFF CACHE INTERNAL "" FORCE )
@@ -42,6 +43,8 @@ find_package( JPEG )
 find_package( PNG )
 find_package( BZip2 )
 find_package( Brotli )
+find_package( EXPAT )
+find_package( Freetype )
 
 
 if( NOT JPEG_LIBS )
