@@ -39,21 +39,12 @@ add_subdirectory( 3rdparty/podofo-trunk )
 set( BUILD_EXAMPLES OFF CACHE INTERNAL "" FORCE )
 add_subdirectory( 3rdparty/widgets )
 
-find_package( JPEG )
-find_package( PNG )
+find_package( JPEG REQUIRED )
+find_package( PNG REQUIRED )
 find_package( BZip2 )
 find_package( Brotli )
 find_package( EXPAT )
 find_package( Freetype )
-
-
-if( NOT JPEG_LIBS )
-	message( FATAL_ERROR "libjpeg is required!" )
-endif()
-
-if( NOT PNG_LIBS )
-	message( FATAL_ERROR "libpng is required!" )
-endif()
 
 set( JKQtPlotter_BUILD_EXAMPLES OFF CACHE INTERNAL "" FORCE )
 add_subdirectory( 3rdparty/JKQtPlotter )
