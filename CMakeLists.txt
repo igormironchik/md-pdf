@@ -30,9 +30,6 @@ set( CMAKE_CXX_STANDARD_REQUIRED ON )
 if( MDPDF_USE_CONAN )
 	include( ${CMAKE_CURRENT_BINARY_DIR}/conanbuildinfo.cmake )
 	conan_basic_setup()
-
-	configure_file( ${CMAKE_CURRENT_SOURCE_DIR}/path.ps1.in ${CMAKE_CURRENT_SOURCE_DIR}/path.ps1 )
-	configure_file( ${CMAKE_CURRENT_SOURCE_DIR}/path.txt.in ${CMAKE_CURRENT_SOURCE_DIR}/path.txt )
 endif()
 
 set( PODOFO_BUILD_LIB_ONLY ON )
@@ -46,6 +43,7 @@ find_package( LIBJPEG )
 find_package( PNG )
 find_package( BZip2 )
 find_package( Brotli )
+find_package( Fontconfig )
 
 
 if( NOT LIBJPEG_FOUND )
@@ -60,6 +58,11 @@ set( JKQtPlotter_BUILD_EXAMPLES OFF CACHE INTERNAL "" FORCE )
 add_subdirectory( 3rdparty/JKQtPlotter )
 
 add_subdirectory( md-pdf )
+
+if( MDPDF_USE_CONAN )
+	configure_file( ${CMAKE_CURRENT_SOURCE_DIR}/path.ps1.in ${CMAKE_CURRENT_SOURCE_DIR}/path.ps1 )
+	configure_file( ${CMAKE_CURRENT_SOURCE_DIR}/path.txt.in ${CMAKE_CURRENT_SOURCE_DIR}/path.txt )
+endif()
 
 enable_testing()
 

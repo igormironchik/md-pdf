@@ -5,3 +5,4 @@ echo "@CONAN_BIN_DIRS_LIBPNG@" | Out-File -FilePath $env:GITHUB_PATH -Encoding u
 echo "@CONAN_BIN_DIRS_BZIP2@" | Out-File -FilePath $env:GITHUB_PATH -Encoding utf8 -Append
 echo "@CONAN_BIN_DIRS_BROTLI@" | Out-File -FilePath $env:GITHUB_PATH -Encoding utf8 -Append
 echo "@CONAN_BIN_DIRS_ZLIB@" | Out-File -FilePath $env:GITHUB_PATH -Encoding utf8 -Append
+echo "@CONAN_BIN_DIRS_FONTCONFIG@" | Out-File -FilePath $env:GITHUB_PATH -Encoding utf8 -Append
