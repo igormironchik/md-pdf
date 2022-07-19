@@ -6,8 +6,7 @@ project( md-pdf )
 include( ExternalProject )
 
 set( CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} ${CMAKE_CURRENT_BINARY_DIR}
-	${CMAKE_CURRENT_SOURCE_DIR}/cmake
-	${CMAKE_CURRENT_SOURCE_DIR}/3rdparty/podofo-trunk/cmake/modules )
+	${CMAKE_CURRENT_SOURCE_DIR}/cmake )
 
 set( CMAKE_ARCHIVE_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/lib )
 set( CMAKE_LIBRARY_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/lib )
@@ -39,18 +38,17 @@ add_subdirectory( 3rdparty/podofo-trunk )
 set( BUILD_EXAMPLES OFF CACHE INTERNAL "" FORCE )
 add_subdirectory( 3rdparty/widgets )
 
-find_package( LIBJPEG )
+find_package( JPEG )
 find_package( PNG )
 find_package( BZip2 )
 find_package( Brotli )
-find_package( Fontconfig )
 
 
-if( NOT LIBJPEG_FOUND )
+if( NOT JPEG_LIBS )
 	message( FATAL_ERROR "libjpeg is required!" )
 endif()
 
-if( NOT PNG_FOUND )
+if( NOT PNG_LIBS )
 	message( FATAL_ERROR "libpng is required!" )
 endif()
 
