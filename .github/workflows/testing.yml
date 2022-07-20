@@ -210,5 +210,5 @@ jobs:
       run: |
         export QT_QPA_PLATFORM=offscreen
         export DYLD_LIBRARY_PATH=`cat ${{ github.workspace }}/path.txt`:$DYLD_LIBRARY_PATH
-        export DYLD_LIBRARY_PATH=${{ github.workspace }}/../Qt/6.3.1/macos/lib:$DYLD_LIBRARY_PATH
+        export DYLD_FRAMEWORK_PATH=${{ github.workspace }}/../Qt/6.3.1/macos/lib:$DYLD_FRAMEWORK_PATH
         ctest --output-on-failure --verbose
