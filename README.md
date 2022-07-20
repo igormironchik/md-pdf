@@ -42,7 +42,8 @@ Also ImageMagick6 is required.
 With these dependencies installed just open CMakeLists.txt in QtCreator and run build.
 
 You can use Conan to install dependencies, only ImageMagick should be installed by hands, as in
-Conan ImageMagick available version is 7 only, and not all platforms are supported. In case
+Conan ImageMagick available version is 7 only, and not all platforms are supported. And
+Fontconfig should be installed in system, as using Fontconfig from Conan leads to ugly UI. In case
 using Conan as dependencies manager define `MDPDF_USE_CONAN` to CMake. Good luck!
 
 # Example
@@ -55,8 +56,6 @@ Good example of work of this application is
 ![](mdpdf.png)
 
 # Known issues
-
- * Building with Clang and Qt6 fails, due to [QTBUG-104874](https://bugreports.qt.io/browse/QTBUG-104874).
  
  * I do not render HTML tags in Markdown.
 
