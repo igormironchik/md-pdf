@@ -10,3 +10,5 @@
 /**/*.moc
 /**/ui_*.h
 /**/qrc_*.cpp
+path.ps1
+path.txt
