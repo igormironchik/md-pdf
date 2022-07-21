@@ -46,6 +46,10 @@ Conan ImageMagick available version is 7 only, and not all platforms are support
 Fontconfig should be installed in system, as using Fontconfig from Conan leads to ugly UI. In case
 using Conan as dependencies manager define `MDPDF_USE_CONAN` to CMake. Good luck!
 
+Hey, QtCreator 7.0.2 can pick up `conanfile.txt` and do the trick...
+
+And one more thing - don't use `jom`.
+
 # Example
 
 Good example of work of this application is
