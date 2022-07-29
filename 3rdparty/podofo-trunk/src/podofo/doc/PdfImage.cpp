@@ -31,6 +31,12 @@
  *   files in the program, then also delete it here.                       *
  ***************************************************************************/
 
+/*
+	This file was changed by Igor Mironchik (igor dot mironchik at gmail dot com)
+
+	September 22, 2021.
+*/
+
 #include "PdfImage.h"
 
 #include "base/PdfDefinesPrivate.h"
