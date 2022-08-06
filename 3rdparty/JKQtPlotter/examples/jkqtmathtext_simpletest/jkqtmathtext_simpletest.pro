@@ -4,16 +4,18 @@ TEMPLATE = app
 SOURCES += jkqtmathtext_simpletest.cpp
 
 CONFIG += link_prl qt
-QT += core gui xml  svg
+QT += core gui 
 greaterThan(QT_MAJOR_VERSION, 4): QT += widgets printsupport
 
 
 DEPENDPATH += ../../lib  ../../qmake/staticlib/jkqtmathtextlib
 INCLUDEPATH += ../../lib
 CONFIG (debug, debug|release) {
-    LIBS += -L../../qmake/staticlib/jkqtmathtextlib/debug -ljkqtmathtextlib_debug
+    DEPENDPATH += ../../qmake/staticlib/jkqtmathtextlib/debug
+    LIBS += -L../../qmake/staticlib/jkqtmathtextlib/debug -L../../../qmake/staticlib/jkqtmathtextlib/debug -ljkqtmathtextlib_debug
 } else {
-    LIBS += -L../../qmake/staticlib/jkqtmathtextlib/release -ljkqtmathtextlib
+    DEPENDPATH += ../../qmake/staticlib/jkqtmathtextlib/release
+    LIBS += -L../../qmake/staticlib/jkqtmathtextlib/release -L../../../qmake/staticlib/jkqtmathtextlib/release -ljkqtmathtextlib
 }
 message("LIBS = $$LIBS")
 

@@ -17,11 +17,17 @@ add_executable(${EXENAME} WIN32 ${SOURCES} ${HEADERS} ${RESOURCES} ${UIS})
 target_include_directories(${EXENAME} PRIVATE ../../lib)
 if(JKQtPlotter_BUILD_STATIC_LIBS)
     target_link_libraries(${EXENAME} JKQTPlotterLib)
+
 elseif(JKQtPlotter_BUILD_SHARED_LIBS)
     target_link_libraries(${EXENAME} JKQTPlotterSharedLib)
+
 endif()
 target_link_libraries(${EXENAME} Threads::Threads)
 
+# precomiled headers to speed up compilation
+if (JKQtPlotter_BUILD_WITH_PRECOMPILED_HEADERS)
+  target_precompile_headers(${EXENAME} REUSE_FROM jkqtptest_simpletest)
+endif (JKQtPlotter_BUILD_WITH_PRECOMPILED_HEADERS)
 
 # Installation
 install(TARGETS ${EXENAME} RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR})

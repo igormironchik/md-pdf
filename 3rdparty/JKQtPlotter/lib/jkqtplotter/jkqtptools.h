@@ -43,10 +43,11 @@
 #include <cstdint>
 #include <stdexcept>
 #include <cctype>
+#include <QColor>
 #include "jkqtcommon/jkqtpstringtools.h"
 #include "jkqtcommon/jkqtpdebuggingtools.h"
 #include "jkqtcommon/jkqtpmathtools.h"
-#include "jkqtcommon/jkqtpalgorithms.h"
+#include "jkqtcommon_statistics_and_math/jkqtpalgorithms.h"
 #include "jkqtcommon/jkqtpcodestructuring.h"
 
 
@@ -303,7 +304,7 @@ public:
         LighterColor,
         InvertColor
     };
-    /** \brif specifies how the color should change */
+    /** \brief specifies how the color should change */
     ColorChangeMode colorModification;
     /** \brief replacement color when colorModification==ColorChangeMode::ReplaceColor */
     QColor targetColor;

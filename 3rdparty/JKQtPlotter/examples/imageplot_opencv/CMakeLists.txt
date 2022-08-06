@@ -1,8 +1,10 @@
 cmake_minimum_required(VERSION 3.16)
-find_package( OpenCV  )
+if(NOT DEFINED OpenCV_FOUND)
+  find_package( OpenCV QUITE )
+endif()
+set(EXAMPLE_NAME imageplot_opencv)
 if(OpenCV_FOUND)
 
-    set(EXAMPLE_NAME imageplot_opencv)
     set(EXENAME jkqtptest_${EXAMPLE_NAME})
 
     message( STATUS "..   Building Example ${EXAMPLE_NAME}" )
@@ -23,6 +25,11 @@ if(OpenCV_FOUND)
     include_directories(${EXENAME}  ${OpenCV_INCLUDE_DIRS} )
     target_link_libraries(${EXENAME} ${OpenCV_LIBS} )
 
+    # precomiled headers to speed up compilation
+    if (JKQtPlotter_BUILD_WITH_PRECOMPILED_HEADERS)
+      target_precompile_headers(${EXENAME} REUSE_FROM jkqtptest_simpletest)
+    endif (JKQtPlotter_BUILD_WITH_PRECOMPILED_HEADERS)
+
     # Installation
     install(TARGETS ${EXENAME} RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR})
     
@@ -32,5 +39,6 @@ if(OpenCV_FOUND)
     #Installation of OpenCV DLLs on Windows
     jkqtplotter_deployopencv(${EXENAME})
 
-
+else()
+  message( STATUS "..   SKIPPING Example ${EXAMPLE_NAME}, OpenCV not found" )
 endif(OpenCV_FOUND)

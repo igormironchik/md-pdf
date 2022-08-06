@@ -419,7 +419,7 @@ JKQTPLOTTER_LIB_EXPORT void initJKQTPlotterResources();
  * \section JKQTPLOTTER_USEQTCREATOR  How to use JKQTPlotter in the Qt Form Designer
  *
  * As JKQTPlotter is a standard Qt widget, you can also use it in Qt UI-files designed with the Qt From Designer (e.g. from within QTCreator).
- * For this to work you have to use the <a href="http://doc.qt.io/archives/qt-4.8/designer-using-custom-widgets.html">Promote QWidget"-feature</a> of the form designer. The steps you need to take are detailed below:
+ * For this to work you have to use the <a href="https://doc.qt.io/qt-6/designer-using-custom-widgets.html">Promote QWidget"-feature</a> of the form designer. The steps you need to take are detailed below:
  * <ol>
  *   <li> add a new UI-file to your project and open it in the Form Editor. Then right-click the form and select `Promote Widgets ...`:
  *
@@ -1766,9 +1766,9 @@ QT_BEGIN_NAMESPACE
  *  \ingroup jkqtpplottersupprt
 */
 #if QT_VERSION >= QT_VERSION_CHECK(6,0,0)
-inline size_t qHash(const QPair<Qt::MouseButton,Qt::KeyboardModifiers> &key, size_t seed=0) {
+inline size_t qHash(const QPair<Qt::MouseButton,Qt::KeyboardModifiers> &key, size_t /*seed=0*/) {
 #else
-inline uint qHash(const QPair<Qt::MouseButton,Qt::KeyboardModifiers> &key, uint seed=0) {
+inline uint qHash(const QPair<Qt::MouseButton,Qt::KeyboardModifiers> &key, uint /*seed=0*/) {
 #endif
     return static_cast<uint>(key.first)+static_cast<uint>(key.second);
 }

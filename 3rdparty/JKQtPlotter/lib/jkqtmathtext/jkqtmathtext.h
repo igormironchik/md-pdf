@@ -50,6 +50,9 @@ class JKQTMathTextNode; // forward
     The class does not depend on any library, except Qt. 
     In particular it actually parses a LaTeX string and draws it in pure C++. It does NOT rely
     on an installed LaTeX for the rendering!
+
+    \see See \ref jkqtmathtext_supportedlatex for a description of the supported LaTeX subset
+         and \ref jkqtmathtext_renderingmodel for a description of the rendering model.
     
     \section JKQTMathTextUsage Usage
     \subsection JKQTMathTextUsageDirect Direct Usage
@@ -98,97 +101,10 @@ class JKQTMathTextNode; // forward
     \section JKQTMathTextExamples Examples
 
     Examples for the usage of this class can be found here: 
-      - \ref JKQTMathTextSimpleExample 
+      - \ref JKQTMathTextSimpleExample
+      - \ref JKQTMathTextTestApp
     .
 
-
-    \section JKQTMathTextSuppoertedLaTeX Supported LaTeX Subset
-    \subsection JKQTMathTextSuppoertedLaTeXSimple Simple Instructions
-    The supported LaTeX subset is listes below. Please note that some commands are used differently than in actual LaTeX.
-    For example \c \\bf is just a renamed form of \c \\textbf and used as \c \\bf{...} and NOT as \c {\\bf...} .
-
-      - \c $ : enter/leave math mode
-      - \c \\bf{...} \c \\textbf{...} \c \\mathbf{...}:  draw the contained text in bold face \image html jkqtmathtext/jkqtmathtext_bold.png
-      - \c \\it{...} \c \\textit{...} \c \\mathit{...} :  draw the contained text in italic face \image html jkqtmathtext/jkqtmathtext_italic.png
-      - \c \\rm{...} \c \\textrm{...} \c \\mathrm{...} \c \\mbox{...} :  draw the contained text in normal upright roman font face \image html jkqtmathtext/jkqtmathtext_fonts.png
-      - \c \\sf{...} \c \\textsf{...} \c \\mathsf{...} :  draw the contained text in normal upright sans-serif font face \image html jkqtmathtext/jkqtmathtext_fonts.png
-      - \c \\script{...} \c \\textscript{...} \c \\mathscript{...} :  draw the contained text in a script font face \image html jkqtmathtext/jkqtmathtext_fonts.png
-      - \c \\sc{...} : draw the text in small caps \image html jkqtmathtext/jkqtmathtext_sc.png
-      - \c \\ul{...} \c \\underline{...} \c \\underlined{...} : draw the text with underlining \image html jkqtmathtext/jkqtmathtext_ul.png
-      - \c \\sout{...} : strike out the text \image html jkqtmathtext/MTDstrike.png
-      - \c \\cancel{...} : slanted strike out the text \image html jkqtmathtext/MTDcancel.png
-      - \c \\bcancel{...} : back-strike out the text \image html jkqtmathtext/MTDbcancel.png
-      - \c \\xcancel{...} : x-strike out the text \image html jkqtmathtext/MTDxcancel.png
-      - \c \\ol{...} \c \\overline{...} \c \\overlined{...} : draw the text with overlining \image html jkqtmathtext/jkqtmathtext_ol.png
-      - \c \\tt{...} \c \\texttt{...} \c \\mathtt{...} : draw text in typewriter font \image html jkqtmathtext/jkqtmathtext_fonts.png
-      - \c \\textcolor{color}{...} \c \\color{color} \c \\mathcolor{color}{...} : draw colored text \image html jkqtmathtext/jkqtmathtext_colored.png
-      - \c \\boxed{...} : draw text with a box around it \image html jkqtmathtext/jkqtmathtext_boxed.png
-      - \c \\doublebox{...} : draw text with a rounded box around it \image html jkqtmathtext/jkqtmathtext_doublebox.png
-      - \c \\ovalbox{...} : draw text with a rounded box around it \image html jkqtmathtext/jkqtmathtext_ovalbox.png
-      - \c \\Ovalbox{...} : draw a thick oval box \image html jkqtmathtext/jkqtmathtext_oovalbox.png
-      - \c \\ovaldoublebox{...} : draw a double oval box \image html jkqtmathtext/jkqtmathtext_ovaldoublebox.png
-      - \c \\colorbox{bordercolor}{...} : draw a colored box \image html jkqtmathtext/jkqtmathtext_colorbox.png
-      - \c \\shaded{backgroundcolor}{...} : draw a filled box \image html jkqtmathtext/jkqtmathtext_shaded.png
-      - \c \\fcolorbox{bordercolor}{backgroundcolor}{...} : draw a colored, filled box \image html jkqtmathtext/jkqtmathtext_fcolorbox.png
-      - \c \\colorbox{color}{...} : draw a colored box around text \image html jkqtmathtext/jkqtmathtext_colorbox.png
-      - \c \\alpha ... : display the according greek letter \image html jkqtmathtext/jkqtmathtext_greek.png
-      - \c ^{...} \c _{...} : display the contents of braces in superscript/subscript \image html jkqtmathtext/jkqtmathtext_supersub.png
-        <br>Special subscript/superscript typesetting applies, when the sub/super follows \c \\sum \c \\Prod ...: \image html jkqtmathtext/jkqtmathtext_specialsubsuper.png
-      - \c \\{ / \\} : display opening/closing brace
-      - \c \\_ : display underscore
-      - \c \\sum \c \\prod \c \\int ... : plot special symbol. Note that depending on the fontEncoding the available
-                                          symbols may differ (there are not all symbols defined in the MS Windows Symbol
-                                          font!). Best coverage should be given by Unicode font encoding with a good
-                                          unicode font installed!<br>\image html jkqtmathtext/jkqtmathtext_symbols.png
-      - <code>\\vec{x} \\dot{x} \\ddot{x} \\overline{x} \\underline{x} \\hat{x} \\tilde{x} \\uul{x} \\ool{x} \\bar{x} \\arrow{x} \\widehat{x} \\widetilde{x} ...</code>: Decorations over/under symbols \image html jkqtmathtext/jkqtmathtext_mathdeco.png
-      - <code>\\verb{don't parse this _aaa\\LaTeX} </code>: interpret enclosed text as verbose \image html jkqtmathtext/jkqtmathtext_verb.png
-    .
-
-    \subsection JKQTMathTextSuppoertedLaTeXBraces Braces ...
-    Braces in math mode are adjusted in size, so they are a small bit (factor \c brace_factor ) larger than the contents.
-    To enable this you have to write braces with \c \\left and \c \\right. These types of braces are defined (slight
-    differences to LaTeX standard):
-      - \c \\left( \c \\right) : default meaning (), \image html jkqtmathtext/jkqtmathtext_brace_round.png
-      - \c \\left[ \c \\right] : default meaning [], \image html jkqtmathtext/jkqtmathtext_brace_rect.png
-      - \c \\left\\{ \c \\right\\} : default meaning {}, \image html jkqtmathtext/jkqtmathtext_brace_curly.png
-      - \c \\left< \c \\right> : "averaging" braces , \image html jkqtmathtext/jkqtmathtext_brace_tri.png
-      - \c \c \\left\\lfloor \c \\right\\rfloor : floor braces , \image html jkqtmathtext/jkqtmathtext_brace_floor.png
-      - \c \\left~ \c \\right~ \c \\left\\lceil \c \\right\\rceil : ceil braces , \image html jkqtmathtext/jkqtmathtext_brace_ceil.png
-      - \c \\left| \c \\right| : absolute value braces | |, \image html jkqtmathtext/jkqtmathtext_brace_oneline.png
-      - \code \left\| \right\| \endcode : norm braces || ||, \image html jkqtmathtext/jkqtmathtext_brace_dblline.png
-      - You can use \c \\left. or \c \\right. to have only right or only left brace
-    .
-
-    \subsection JKQTMathTextSuppoertedLaTeXRoots Roots
-    There are also instructions that allow to write roots:
-      - <code>$\\sqrt{1+\\sqrt{1+x}}$</code> \image html jkqtmathtext/jkqtmathtext_sqrt.png
-      - <code>$\\sqrt[3]{1+\\sqrt[3]{1+x}}$</code> \image html jkqtmathtext/jkqtmathtext_cbrt.png
-    .
-
-    \subsection JKQTMathTextSuppoertedLaTeXUnderOver Undersetting, Oversetting, Underbraces, Overbraces ...
-    There are also instructions that allow to under/overset braces, arrows, ...:
-      - <code>$\\underbrace{x+x+...+x}{k\\ \\mathrm{times}}$</code> \image html jkqtmathtext/jkqtmathtext_brace_underbrace.png
-      - <code>$\\overbrace{x+x+...+x}{k\\ \\mathrm{times}}$</code> \image html jkqtmathtext/jkqtmathtext_brace_overbrace.png
-      - <code>$\\underbracket{x+x+...+x}{k\\ \\mathrm{times}}$</code> \image html jkqtmathtext/MTFMunderbracket.png
-      - <code>$\\overbracket{x+x+...+x}{k\\ \\mathrm{times}}$</code> \image html jkqtmathtext/MTFMoverbracket.png
-      - <code>$\\overset{main}{over}$</code> \image html jkqtmathtext/jkqtmathtext_brace_overset.png
-      - <code>$\\underset{main}{under}$</code> \image html jkqtmathtext/jkqtmathtext_brace_underset.png
-    .
-
-    \subsection JKQTMathTextSuppoertedLaTeXMatrix Matrix/Array Type Instructions
-    Several Matrix/Array-typed LaTeX instructions are supported:
-      - <code>$\\frac{...}{...}$</code>, <code>$\\tfrac{...}{...}$</code> (70% smaller font), <code>$\\dfrac{...}{...}$</code> \image html jkqtmathtext/jkqtmathtext_brace_frac.png
-      - <code>$\\sfrac{...}{...}$</code> \image html jkqtmathtext/MTFMsfrac.png
-      - <code>$\\stfrac{...}{...}$</code> (70% smaller font) \image html jkqtmathtext/MTFMstfrac.png
-      - <code>$\\stackrel{...}{...}$ $\\binom{...}{...}$</code> \image html jkqtmathtext/jkqtmathtext_brace_stackrel.png
-      - <code>$\\begin{cases} ... & ... \\\\ ... & ... \\end{cases}$</code> \image html jkqtmathtext/jkqtmathtext_brace_begincases.png
-      - <code>$\\begin{array} a & b & ...\\\\ c & d & ...\\end{array}$</code> <code>$\\begin{matrix} a & b & ...\\\\ c & d & ...\\end{matrix}$</code> \image html jkqtmathtext/jkqtmathtext_array.png
-      - <code>$\\begin{pmatrix} a & b & ...\\\\ c & d & ...\\end{pmatrix}$</code> \image html jkqtmathtext/jkqtmathtext_pmatrix.png
-      - <code>$\\begin{bmatrix} a & b & ...\\\\ c & d & ...\\end{bmatrix}$</code> \image html jkqtmathtext/jkqtmathtext_bmatrix.png
-      - <code>$\\begin{Bmatrix} a & b & ...\\\\ c & d & ...\\end{Bmatrix}$</code> \image html jkqtmathtext/jkqtmathtext_bbmatrix.png
-      - <code>$\\begin{vmatrix} a & b & ...\\\\ c & d & ...\\end{vmatrix}$</code> \image html jkqtmathtext/jkqtmathtext_vmatrix.png
-      - <code>$\\begin{Vmatrix} a & b & ...\\\\ c & d & ...\\end{Vmatrix}$</code> \image html jkqtmathtext/jkqtmathtext_vvmatrix.png
-    .
 
     \section JKQTMathTextSuppoertedFonts Font Handling
     
@@ -206,14 +122,14 @@ class JKQTMathTextNode; // forward
     .
 
     These fonts are generic font classes, which font is actually used can be configured in JKQTMathText class with the \c set...() functions mentioned above. You can also use these functions to set the fonts used for math rendering in math-mode:
-      - useSTIX() use the STIX fonts from <a href="https://www.stixfonts.org/">https://www.stixfonts.org/</a> in math-mode<br>\image html jkqtmathtext/jkqtmathparser_stix.png
-      - useXITS() use the XITS fonts from <a href="https://github.com/alif-type/xits">https://github.com/alif-type/xits</a> in math-mode. These are included by default in this library and also activated by default.<br>\image html jkqtmathtext/jkqtmathparser_xits.png
-      - useASANA() use the ASANA fonts from <a href="https://ctan.org/tex-archive/fonts/Asana-Math/">https://ctan.org/tex-archive/fonts/Asana-Math/</a> in math-mode<br>\image html jkqtmathtext/jkqtmathparser_asana.png
-      - useAnyUnicode() use generic Unicode fonts, e.g. "Arial" and "Times New Roman" in math-mode. You should use fonts that contain as many of the mathematical symbols as possible to ensure good rendering results.<br>using "Times New Roman": \image html jkqtmathtext/jkqtmathparser_timesnewroman.png
-        <br>using "Arial": \image html jkqtmathtext/jkqtmathparser_arial.png
-        <br>using "Courier New": \image html jkqtmathtext/jkqtmathparser_couriernew.png
-        <br>using "Comic Sans MS": \image html jkqtmathtext/jkqtmathparser_comicsans.png
-        <br>using "Old English Text": \image html jkqtmathtext/jkqtmathparser_OldEnglish.png
+      - useSTIX() use the STIX fonts from <a href="https://www.stixfonts.org/">https://www.stixfonts.org/</a> in math-mode<br>\image html jkqtmathtext/jkqtmathtext_stix.png
+      - useXITS() use the XITS fonts from <a href="https://github.com/alif-type/xits">https://github.com/alif-type/xits</a> in math-mode. These are included by default in this library and also activated by default.<br>\image html jkqtmathtext/jkqtmathtext_xits.png
+      - useASANA() use the ASANA fonts from <a href="https://ctan.org/tex-archive/fonts/Asana-Math/">https://ctan.org/tex-archive/fonts/Asana-Math/</a> in math-mode<br>\image html jkqtmathtext/jkqtmathtext_asana.png
+      - useAnyUnicode() use generic Unicode fonts, e.g. "Arial" and "Times New Roman" in math-mode. You should use fonts that contain as many of the mathematical symbols as possible to ensure good rendering results.<br>using "Times New Roman": \image html jkqtmathtext/jkqtmathtext_timesnewroman.png
+        <br>using "Arial": \image html jkqtmathtext/jkqtmathtext_arial.png
+        <br>using "Courier New": \image html jkqtmathtext/jkqtmathtext_couriernew.png
+        <br>using "Comic Sans MS": \image html jkqtmathtext/jkqtmathtext_comicsans.png
+        <br>using "Old English Text": \image html jkqtmathtext/jkqtmathtext_OldEnglish.png
     .
 
     Math-mode is activated by enclosing your equation in \c $...$ or \c \\[...\\] . This mode is optimized for mathematical equations. Here is an example of the difference:
@@ -285,7 +201,7 @@ class JKQTMATHTEXT_LIB_EXPORT JKQTMathText : public QObject {
          *
          *  \param painter the <a href="http://doc.qt.io/qt-5/qpainter.html">QPainter</a> to use for drawing
          *  \param rect rectangle to draw the text/expression into (see sketch below)
-         *  \param flags alignment within \a rect (see below), use e.g. \c Qt::AlignHCenter|Qt::AlignVCenter to center the expression inside \a rect
+         *  \param flags alignment within \a rect (see below), use e.g. <tt>Qt::AlignHCenter | Qt::AlignVCenter</tt> to center the expression inside \a rect
          *  \param drawBoxes if \c true boxes defining the size of each node are drawn, example output: \image html jkqtmathtext/jkqtmathtext_drawboxes.png
          *
          *  These options are interpreted for \a flags (dark-red is the rectangle \a rect):
@@ -425,7 +341,7 @@ class JKQTMATHTEXT_LIB_EXPORT JKQTMathText : public QObject {
          *
          * use STIX (1.x/2.x) fonts from <a href="https://www.stixfonts.org/">https://www.stixfonts.org/</a> in math-mode
          *
-         * \image html jkqtmathtext/stix.png
+         * \image html jkqtmathtext/jkqtmathtext_stix.png
          */
         bool useSTIX(bool mathModeOnly=true);
 
@@ -434,7 +350,7 @@ class JKQTMATHTEXT_LIB_EXPORT JKQTMathText : public QObject {
          * use XITS fonts from <a href="https://github.com/alif-type/xits">https://github.com/alif-type/xits</a> in math-mode.
          * These are included by default in this library and also activated by default.
          *
-         * \image html jkqtmathtext/xits.png
+         * \image html jkqtmathtext/jkqtmathtext_xits.png
          *
          * \note The XITS fonts can be compiled into JKQTPlotter, when the CMake-option \c is set to ON (default: ON).
          *       Then the XITS fonts are added as Qt-Ressources to the library binary.
@@ -447,7 +363,7 @@ class JKQTMATHTEXT_LIB_EXPORT JKQTMathText : public QObject {
          *
          * use the ASANA fonts from <a href="https://ctan.org/tex-archive/fonts/Asana-Math/">https://ctan.org/tex-archive/fonts/Asana-Math/</a> in math-mode
          *
-         * \image html jkqtmathtext/asana.png
+         * \image html jkqtmathtext/jkqtmathtext_asana.png
          */
         bool useASANA(bool mathModeOnly=true);
 
@@ -457,11 +373,11 @@ class JKQTMATHTEXT_LIB_EXPORT JKQTMathText : public QObject {
          *       You should use fonts that contain as many of the mathematical symbols as possible
          *       to ensure good rendering results.
          *
-         * <code>useAnyUnicode("Times New Roman", "Times New Roman")</code>:<br>\image html jkqtmathtext/jkqtmathparser_timesnewroman.png  <br><br>
-         * <code>useAnyUnicode("Arial", "Arial")</code>:<br>\image html jkqtmathtext/jkqtmathparser_arial.png  <br><br>
-         * <code>useAnyUnicode("Courier New", "Courier New")</code>:<br>\image html jkqtmathtext/jkqtmathparser_couriernew.png  <br><br>
-         * <code>useAnyUnicode("Comic Sans MS", "Comic Sans MS")</code>:<br>\image html jkqtmathtext/jkqtmathparser_comicsans.png  <br><br>
-         * <code>useAnyUnicodeForTextOnly("Comic Sans MS", "Comic Sans MS");</code>:<br/>\image html jkqtmathparser_comicsans_textonly.png
+         * <code>useAnyUnicode("Times New Roman", "Times New Roman")</code>:<br>\image html jkqtmathtext/jkqtmathtext_timesnewroman.png  <br><br>
+         * <code>useAnyUnicode("Arial", "Arial")</code>:<br>\image html jkqtmathtext/jkqtmathtext_arial.png  <br><br>
+         * <code>useAnyUnicode("Courier New", "Courier New")</code>:<br>\image html jkqtmathtext/jkqtmathtext_couriernew.png  <br><br>
+         * <code>useAnyUnicode("Comic Sans MS", "Comic Sans MS")</code>:<br>\image html jkqtmathtext/jkqtmathtext_comicsans.png  <br><br>
+         * <code>useAnyUnicodeForTextOnly("Comic Sans MS", "Comic Sans MS");</code>:<br/>\image html jkqtmathtext/jkqtmathtext_comicsans_textonly.png
          */
         void useAnyUnicode(QString timesFont, const QString& sansFont, JKQTMathTextFontEncoding encodingTimes=JKQTMathTextFontEncoding::MTFEUnicode, JKQTMathTextFontEncoding encodingSans=JKQTMathTextFontEncoding::MTFEUnicode);
         /** \brief sets \a timesFont (with its encoding \a encodingTimes ) for serif-text and \a sansFont (with its encoding \a encodingSans ) for mathmode fonts only
@@ -476,8 +392,8 @@ class JKQTMATHTEXT_LIB_EXPORT JKQTMathText : public QObject {
          *
          *  \see useAnyUnicodeForMathOnly(), useAnyUnicode()
          *
-         * <code>useAnyUnicode("Comic Sans MS", "Comic Sans MS")</code>:<br>\image html jkqtmathtext/jkqtmathparser_comicsans.png  <br><br>
-         * <code>useAnyUnicodeForTextOnly("Comic Sans MS", "Comic Sans MS");</code>:<br/>\image html jkqtmathparser_comicsans_textonly.png
+         * <code>useAnyUnicode("Comic Sans MS", "Comic Sans MS")</code>:<br>\image html jkqtmathtext/jkqtmathtext_comicsans.png  <br><br>
+         * <code>useAnyUnicodeForTextOnly("Comic Sans MS", "Comic Sans MS");</code>:<br/>\image html jkqtmathtext/jkqtmathtext_comicsans_textonly.png
          */
         void useAnyUnicodeForTextOnly(QString timesFont, const QString& sansFont, JKQTMathTextFontEncoding encodingTimes=JKQTMathTextFontEncoding::MTFEUnicode, JKQTMathTextFontEncoding encodingSans=JKQTMathTextFontEncoding::MTFEUnicode);
 
@@ -559,9 +475,9 @@ class JKQTMATHTEXT_LIB_EXPORT JKQTMathText : public QObject {
         void setUnderbraceBraceSizeXFactor(double __value);
         /** \copydoc underbrace_bracesize_xfactor */
         double getUnderbraceBraceSizeXFactor() const;
-        /** \copydoc undersetFactor */
+        /** \copydoc underset_factor */
         void setUndersetFactor(double __value);
-        /** \copydoc undersetFactor */ 
+        /** \copydoc underset_factor */
         double getUndersetFactor() const;
         /** \copydoc frac_factor */
         void setFracFactor(double __value);
@@ -702,7 +618,7 @@ class JKQTMATHTEXT_LIB_EXPORT JKQTMathText : public QObject {
          *  The next image demonstrates the effect of this property, which adds extra space
          *  around certain math operators in math mode:
          *
-         *  \image html jkqtmathparser_mathoperator_width_factor.png
+         *  \image html jkqtmathtext/jkqtmathtext_mathoperator_width_factor.png
          */
         double mathoperator_width_factor;
         /** \brief factor, used to increase the font size for big math operators, such as \c \\sum , \c \\prod , ...
@@ -737,12 +653,12 @@ class JKQTMATHTEXT_LIB_EXPORT JKQTMathText : public QObject {
 
         /** \brief scaling factor for font size of nominator and denominator of a fraction
          *
-         *  \image html jkqtmathtext_frac_factor.png
+         *  \image html jkqtmathtext/jkqtmathtext_frac_factor.png
          */
         double frac_factor;
         /** \brief scaling factor for font size of nominator and denominator of a nested fraction
          *
-         *  \image html jkqtmathtext_frac_factor.png
+         *  \image html jkqtmathtext/jkqtmathtext_frac_factor.png
          */
         double frac_nested_factor;
         /** \brief shift of denominator/nummerator away from central line of a frac
@@ -798,7 +714,12 @@ class JKQTMATHTEXT_LIB_EXPORT JKQTMathText : public QObject {
         enum tokenType {
             MTTnone, /*!< \brief no token */
             MTTtext, /*!< \brief a piece of general text */
-            MTTinstruction, /*!< \brief an instruction, started by \c "\\", e.g. \c "\textbf", ... */
+            MTTinstruction, /*!< \brief an instruction, started by \c "\", e.g. \c "\\textbf", ... */
+            MTTinstructionNewline,   /*!< \brief a newline instruction \c "\\" */
+            MTTinstructionVerbatim,  /*!< \brief a verbatim instruction, e.g. \c \\verb!verbatimtext! was found: currentTokenName will contain the text enclode by the verbatim delimiters */
+            MTTinstructionVerbatimVisibleSpace,  /*!< \brief a verbatim instruction that generates visible whitespaces, e.g. \c \\begin{verbatim}...\end{verbatim} was found: currentTokenName will contain the text enclode by the verbatim delimiters */
+            MTTinstructionBegin, /*!< \brief a \c '\\begin{...}' instruction, currentTokenName is the name of the environment */
+            MTTinstructionEnd, /*!< \brief a \c '\\end{...}' instruction, currentTokenName is the name of the environment */
             MTTunderscore,  /*!< \brief the character \c "_" */
             MTThat,  /*!< \brief the character \c "^" */
             MTTdollar,  /*!< \brief the character \c "$" */
@@ -807,16 +728,24 @@ class JKQTMATHTEXT_LIB_EXPORT JKQTMathText : public QObject {
             MTTopenbracket, /*!< \brief the character \c "[" */
             MTTclosebracket, /*!< \brief the character \c "]" */
             MTTwhitespace, /*!< \brief some whitespace */
-            MTTampersand  /*!< \brief the character \c "&" */
+            MTTampersand,  /*!< \brief the character \c "&" */
+            MTThyphen,  /*!< \brief the single hyphen character \c "-" in text-mode \note MTTendash and MTTemdash take precedence over MTThypen  */
+            MTTendash,  /*!< \brief the en-dash character sequence \c "--" in text-mode */
+            MTTemdash,  /*!< \brief the em-dash character sequence \c "---" in text-mode */
+
         };
+        /** \biref convert a tokenType into a string, e.g. for debugging output */
+        static QString tokenType2String(tokenType type);
 
         /** \brief tokenizer for the LaTeX parser */
         tokenType getToken();
+        /** \brief returns some characters to the Tokenizer */
+        void giveBackToTokenizer(size_t count);
         /** \brief parse a LaTeX string
          *
          *  \param get if \c true this calls getToken()
          *  \param quitOnClosingBrace if unequal MTBTAny, this returns if the given closing brace is found
-         *  \param quitOnEnvironmentEnd wuit if \end{quitOnEnvironmentEnd} is found
+         *  \param quitOnEnvironmentEnd wuit if \c \\end{quitOnEnvironmentEnd} is found
          *  \param quitOnClosingBracket if \c true, quits on encountering a MTTclosebracket token
          */
         JKQTMathTextNode* parseLatexString(bool get, JKQTMathTextBraceType quitOnClosingBrace=JKQTMathTextBraceType::MTBTAny, const QString& quitOnEnvironmentEnd=QString(""), bool quitOnClosingBracket=false);
@@ -828,6 +757,15 @@ class JKQTMATHTEXT_LIB_EXPORT JKQTMathText : public QObject {
          *  \return the list of parameter strings with Nparam entries or an empty or partial list on error
          */
         QStringList parseStringParams(bool get, size_t Nparams, bool *foundError=nullptr);
+        /** \brief parses a string, i.e. a sequence of text and whitespaces. returns after any other token was found */
+        QString parseSingleString(bool get);
+        /** \brief read all text without tokenizing, until the sequence \a endsequence is found.
+         *
+         *  \param get if \c true the functions begins by reading a new character, otherwise the current character is used as first character
+         *  \param endsequence the sequence, ending the read
+         *  \return the read string, excluding the  \a endsequence
+         */
+        QString readUntil(bool get, const QString& endsequence);
         /** \brief parses a single instruction (including it's parameters)
          *
          *  \param[out] _foundError will be set to \c true if an error occured (unexpected token) or \c false otherwise

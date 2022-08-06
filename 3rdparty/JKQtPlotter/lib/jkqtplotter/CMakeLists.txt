@@ -199,15 +199,10 @@ function(JKQtPlottter_setDefaultLibOptions TARGETNAME)
         target_link_libraries(${TARGETNAME} PUBLIC Qt${QT_VERSION_MAJOR}::PrintSupport)
         target_compile_definitions(${TARGETNAME} PUBLIC JKQTPLOTTER_HAS_PRINTSUPPORT)
     endif()
-    if(${QT_VERSION_MAJOR} VERSION_LESS "6")
-        set_property(TARGET ${TARGETNAME} PROPERTY CXX_STANDARD 11)
-        set_property(TARGET ${TARGETNAME} PROPERTY CXX_STANDARD_REQUIRED TRUE)
-        target_compile_features(${TARGETNAME} PUBLIC cxx_std_11)
-    else()
-        set_property(TARGET ${TARGETNAME} PROPERTY CXX_STANDARD 17)
-        set_property(TARGET ${TARGETNAME} PROPERTY CXX_STANDARD_REQUIRED TRUE)
-        target_compile_features(${TARGETNAME} PUBLIC cxx_std_17)
-    endif()
+    set_property(TARGET ${TARGETNAME} PROPERTY CXX_STANDARD ${JKQtPlotter_QT_CXX_STANDARD})
+    set_property(TARGET ${TARGETNAME} PROPERTY CXX_STANDARD_REQUIRED ${JKQtPlotter_QT_CXX_STANDARD_REQUIRED})
+    target_compile_features(${TARGETNAME} PUBLIC ${JKQtPlotter_QT_CXX_COMPILE_FEATURE})
+
     if(MINGW)
       # COMPILER-SETTINGS FOR MINGW
       target_compile_options(${TARGETNAME} PUBLIC -fexceptions)
@@ -220,6 +215,13 @@ function(JKQtPlottter_setDefaultLibOptions TARGETNAME)
         $<BUILD_INTERFACE:${CMAKE_CURRENT_LIST_DIR}/../>
         $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}>
     )
+
+    # precomiled headers to speed up compilation
+    if (JKQtPlotter_BUILD_WITH_PRECOMPILED_HEADERS)
+      target_precompile_headers(${TARGETNAME} PRIVATE ${CMAKE_CURRENT_LIST_DIR}/private/jkqtplotter_precomp.h)
+      target_sources(${TARGETNAME} PRIVATE ${CMAKE_CURRENT_LIST_DIR}/private/jkqtplotter_precomp.h)
+    endif (JKQtPlotter_BUILD_WITH_PRECOMPILED_HEADERS)
+
 endfunction()
 
 
@@ -235,7 +237,7 @@ if(JKQtPlotter_BUILD_SHARED_LIBS)
     )
     JKQtPlottter_setDefaultLibOptions(${libsh_name})
     set_property(TARGET ${libsh_name} PROPERTY OUTPUT_NAME  "${libsh_name_decorated}")
-    target_link_libraries(${libsh_name} PUBLIC JKQTCommonSharedLib JKQTMathTextSharedLib)
+    target_link_libraries(${libsh_name} PUBLIC JKQTCommonSharedLib JKQTCommonStatisticsAndMathSharedLib JKQTMathTextSharedLib)
     target_compile_definitions(${libsh_name} PUBLIC JKQTPLOTTER_LIB_IN_DLL)
     target_compile_definitions(${libsh_name} PRIVATE JKQTPLOTTER_LIB_EXPORT_LIBRARY)
     set_target_properties(${libsh_name} PROPERTIES WINDOWS_EXPORT_ALL_SYMBOLS "ON")
@@ -248,7 +250,7 @@ if(JKQtPlotter_BUILD_STATIC_LIBS)
     add_library(${lib_name} STATIC ${SOURCES_BASE} ${SOURCES_GRAPHS} ${SOURCES_GUI} ${RESOURCES} ${HEADERS_BASE} ${HEADERS_GRAPHS} ${HEADERS_GUI})
     JKQtPlottter_setDefaultLibOptions(${lib_name})
     set_property(TARGET ${lib_name} PROPERTY OUTPUT_NAME  "${lib_name_decorated}")
-    target_link_libraries(${lib_name} PUBLIC JKQTCommonLib JKQTMathTextLib)
+    target_link_libraries(${lib_name} PUBLIC JKQTCommonLib JKQTCommonStatisticsAndMathLib JKQTMathTextLib)
     write_basic_package_version_file(${CMAKE_CURRENT_BINARY_DIR}/${lib_name}Version.cmake
                                      VERSION ${PROJECT_VERSION} 
                                      COMPATIBILITY AnyNewerVersion )    

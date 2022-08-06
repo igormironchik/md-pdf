@@ -46,7 +46,7 @@ class JKQTMATHTEXT_LIB_EXPORT JKQTMathTextInstruction1Node: public JKQTMathTextS
     public:
         explicit JKQTMathTextInstruction1Node(JKQTMathText* parent, const QString& name, JKQTMathTextNode* child, const QStringList& parameters=QStringList());
         virtual ~JKQTMathTextInstruction1Node() override;
-        /** \copydoc name */
+        /** \copydoc instructionName */
         const QString& getInstructionName() const;
         /** \copydoc parameters */
         const QStringList& getParameters() const;
@@ -57,6 +57,67 @@ class JKQTMATHTEXT_LIB_EXPORT JKQTMathTextInstruction1Node: public JKQTMathTextS
         QStringList parameters;
 };
 
+
+
+/** \brief subclass representing a simple instruction node which only accepts string arguments, not LaTeX arguments
+ *         i.e. it represents instructions like \c \\unicode{...}, ...
+ *  \ingroup jkqtmathtext_items
+ */
+class JKQTMATHTEXT_LIB_EXPORT JKQTMathTextSimpleInstructionNode: public JKQTMathTextNode {
+    public:
+        explicit JKQTMathTextSimpleInstructionNode(JKQTMathText* parent, const QString& name, const QStringList& parameters=QStringList());
+        virtual ~JKQTMathTextSimpleInstructionNode() override;
+        /** \copydoc JKQTMathTextNode::getTypeName() */
+        virtual QString getTypeName() const override;
+        /** \copydoc JKQTMathTextNode::draw() */
+        virtual double draw(QPainter& painter, double x, double y, JKQTMathTextEnvironment currentEv, const JKQTMathTextNodeSize* prevNodeSize=nullptr) override;
+        /** \copydoc JKQTMathTextNode::toHtml() */
+        virtual bool toHtml(QString& html, JKQTMathTextEnvironment currentEv, JKQTMathTextEnvironment defaultEv) override;
+        /** \copydoc instructionName */
+        const QString& getInstructionName() const;
+        /** \copydoc parameters */
+        const QStringList& getParameters() const;
+
+        /** \brief returns true, if the given \a instructionName can be represented by this node
+         *  \see instructions
+         */
+        static bool supportsInstructionName(const QString& instructionName);
+        /** \brief returns the number of additional string parameters, required for the given \a instructionName
+         *  \see instructions
+         */
+        static size_t countParametersOfInstruction(const QString& instructionName);
+
+    protected:
+        /** \copydoc JKQTMathTextNode::getSizeInternal() */
+        virtual void getSizeInternal(QPainter& painter, JKQTMathTextEnvironment currentEv, double& width, double& baselineHeight, double& overallHeight, double& strikeoutPos, const JKQTMathTextNodeSize* prevNodeSize=nullptr) override;
+        /** \brief defines the implementation of an instruction represented by JKQTMathTextModifiedTextPropsInstructionNode */
+        struct InstructionProperties {
+            /** \brief this functor implements the instruction */
+            typedef std::function<QString(const QStringList& parameters)> EvaluateInstructionFunctor;
+            /** \brief default constructor, creates a NOP-instruction that does nothing */
+            InstructionProperties();
+            /** \brief constructor which gets a functor \a _modifier and a number of required parameters \a _NParams */
+            InstructionProperties(const EvaluateInstructionFunctor& _evaluator, size_t _NParams=0);
+            /** \brief number of parameters for this node */
+            size_t NParams;
+            /** \brief output of the instruction */
+            EvaluateInstructionFunctor evaluator;
+        };
+
+        /** \brief fills instructions
+         *
+         *  \note this is the customization point for new instructions!
+         */
+        static void fillInstructions();
+        /** \brief defines all implemented instructions in this node */
+        static QHash<QString, InstructionProperties> instructions;
+        /** \brief executes the instruction on \a ev */
+        QString executeInstruction() const;
+        /** \brief instruction name */
+        QString instructionName;
+        /** \brief additional string-parameters */
+        QStringList parameters;
+};
 
 
 /** \brief subclass representing an instruction node which modifies the current font (as defined in JKQTMathTextEnvironment),
@@ -71,7 +132,6 @@ class JKQTMATHTEXT_LIB_EXPORT JKQTMathTextModifiedTextPropsInstructionNode: publ
         virtual QString getTypeName() const override;
         /** \copydoc JKQTMathTextNode::draw() */
         virtual double draw(QPainter& painter, double x, double y, JKQTMathTextEnvironment currentEv, const JKQTMathTextNodeSize* prevNodeSize=nullptr) override;
-        /** \brief convert node to HTML and returns \c true on success */
         /** \copydoc JKQTMathTextNode::toHtml() */
         virtual bool toHtml(QString& html, JKQTMathTextEnvironment currentEv, JKQTMathTextEnvironment defaultEv) override;
 
@@ -129,7 +189,6 @@ class JKQTMATHTEXT_LIB_EXPORT JKQTMathTextBoxInstructionNode: public JKQTMathTex
         virtual QString getTypeName() const override;
         /** \copydoc JKQTMathTextNode::draw() */
         virtual double draw(QPainter& painter, double x, double y, JKQTMathTextEnvironment currentEv, const JKQTMathTextNodeSize* prevNodeSize=nullptr) override;
-        /** \brief convert node to HTML and returns \c true on success */
         /** \copydoc JKQTMathTextNode::toHtml() */
         virtual bool toHtml(QString& html, JKQTMathTextEnvironment currentEv, JKQTMathTextEnvironment defaultEv) override;
 
@@ -162,9 +221,9 @@ class JKQTMATHTEXT_LIB_EXPORT JKQTMathTextBoxInstructionNode: public JKQTMathTex
             static ModifyEnvironmentFunctor NoModification;
             /** \brief this functor returns the QPen to use for the box outline */
             typedef std::function<QPen(JKQTMathTextEnvironment& ev, const QStringList& parameters, JKQTMathText* parent)> GetBoxPenFunctor;
-            /** \bbrief generates a QPen with the lineWidth associated with the QFont of the environment (using QFontMetricsF::lineWidth() ) */
+            /** \brief generates a QPen with the lineWidth associated with the QFont of the environment (using QFontMetricsF::lineWidth() ) */
             static GetBoxPenFunctor DefaultPen;
-            /** \bbrief generates an invisible pen with 0 width */
+            /** \brief generates an invisible pen with 0 width */
             static GetBoxPenFunctor NoPen;
             /** \brief this functor returns the QBrush to use for the box fill */
             typedef std::function<QBrush(JKQTMathTextEnvironment& ev, const QStringList& parameters, JKQTMathText* parent)> GetBoxBrushFunctor;

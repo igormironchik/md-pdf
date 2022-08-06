@@ -9,10 +9,18 @@ CONFIG += create_prl
 
 #DEFINES += JKQTBP_AUTOTIMER
 
-include(../../../lib/jkqtpcommon.pri)
-include(../../../lib/jkqtplotter.pri)
+include(../../../lib/jkqtcommon.pri)
+include(../../../lib/jkqtcommon_statistics_and_math.pri)
 include(../../../lib/jkqtmathtext.pri)
 include(../../../lib/jkqtfastplotter.pri)
+include(../../../lib/jkqtplotter.pri)
 
 win32-msvc*: DEFINES += _USE_MATH_DEFINES
 win32-msvc*: DEFINES += NOMINMAX
+
+
+
+include(../../../lib/jkqtplotter_pch.pri)
+precompile_header:!isEmpty(PRECOMPILED_HEADER) {
+  DEFINES += USING_PCH
+}

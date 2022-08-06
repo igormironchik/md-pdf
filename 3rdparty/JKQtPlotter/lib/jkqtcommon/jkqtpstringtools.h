@@ -24,8 +24,8 @@
 #include "jkqtcommon/jkqtcommon_imexport.h"
 #include <QString>
 #include <QLocale>
-#include <QPainter>
-
+#include <string>
+#include <QtGlobal>
 
 /** \brief converts a QT::PenStyle into a string
  * \ingroup jkqtptools_string
@@ -48,6 +48,12 @@ JKQTCOMMON_LIB_EXPORT QString jkqtp_QBrushStyle2String(Qt::BrushStyle style);
 JKQTCOMMON_LIB_EXPORT Qt::BrushStyle jkqtp_String2QBrushStyle(const QString& style);
 
 
+/** \brief converts a Unicode codepoint into a UTF8-sequence
+ * \ingroup jkqtptools_string
+ *
+ * \see https://stackoverflow.com/questions/19968705/unsigned-integer-as-utf-8-value
+ */
+JKQTCOMMON_LIB_EXPORT std::string jkqtp_UnicodeToUTF8(uint32_t codepoint);
 
 /** \brief convert a double to a string, using the loacle "C"
  * \ingroup jkqtptools_string
@@ -238,7 +244,58 @@ JKQTCOMMON_LIB_EXPORT QString jkqtp_floattohtmlqstr(double data, int past_comma=
  */
 JKQTCOMMON_LIB_EXPORT std::string jkqtp_chartostr(char data);
 
+/** \brief replace all linebreaks by \c "\\n" , \c "\\r" ...
+ * \ingroup jkqtptools_string
+ */
+JKQTCOMMON_LIB_EXPORT QString jkqtp_backslashEscape(const QString& txt);
 
+
+/*! \brief convert a QList<QVariant> to a string
+    \ingroup jkqtptools_string
+
+*/
+JKQTCOMMON_LIB_EXPORT QString jkVariantListToString(const QList<QVariant>& data, const QString& separator=QString(", "));
+
+
+/*! \brief filename-ize a string, i.e. replace every non-number and non-character (and also not <code> _ -</code>) character to \c _
+    \ingroup jkqtptools_string */
+JKQTCOMMON_LIB_EXPORT QString jkqtp_filenameize(const QString& data);
+
+/** \brief create a valid variable name from the string, i.e. a string with only characters and digits and \c '_'. ALso the first character has to be a charcter.
+ *  \ingroup jkqtptools_string */
+JKQTCOMMON_LIB_EXPORT QString jkqtp_toValidVariableName(const QString& input);
+
+/** \brief convert a <a href="http://doc.qt.io/qt-5/qt.html#KeyboardModifier-enum">Qt::KeyboardModifiers</a> to a <a href="http://doc.qt.io/qt-5/qstring.html">QString</a>
+ *  \ingroup jkqtptools_string
+ *
+ * \param modifiers the object to convert
+ * \param useNONE if \c true the function will return \c "NONE" if \c modifiers==Qt::NoMofifiers. Otherwise the function will return an empty string ( jkqtp_String2KeyboardModifiers() can cope with both variants)
+ *
+ *  \see jkqtp_String2KeyboardModifiers()
+ */
+JKQTCOMMON_LIB_EXPORT QString jkqtp_KeyboardModifiers2String(Qt::KeyboardModifiers modifiers, bool useNONE=true);
+
+/** \brief convert a <a href="http://doc.qt.io/qt-5/qstring.html">QString</a> (created by jkqtp_KeyboardModifiers2String() ) to <a href="http://doc.qt.io/qt-5/qt.html#KeyboardModifier-enum">Qt::KeyboardModifiers</a>
+ *  \ingroup jkqtptools_string
+ *
+ *  \see jkqtp_KeyboardModifiers2String()
+ */
+JKQTCOMMON_LIB_EXPORT Qt::KeyboardModifiers jkqtp_String2KeyboardModifiers(const QString& modifiers);
+/** \brief convert a <a href="http://doc.qt.io/qt-5/qt.html#MouseButton-enum">Qt::MouseButton</a> to a <a href="http://doc.qt.io/qt-5/qstring.html">QString</a>
+ *  \ingroup jkqtptools_string
+ *
+ * \param button the object to convert
+ * \param useNONE if \c true the function will return \c "NONE" if \c button==Qt::NoButton. Otherwise the function will return an empty string ( jkqtp_String2MouseButton() can cope with both variants)
+ *
+ *  \see jkqtp_MouseButton2String()
+ */
+JKQTCOMMON_LIB_EXPORT QString jkqtp_MouseButton2String(Qt::MouseButton button, bool useNONE=true);
+/** \brief convert a <a href="http://doc.qt.io/qt-5/qstring.html">QString</a> (created by jkqtp_MouseButton2String() ) to <a href="http://doc.qt.io/qt-5/qt.html#MouseButton-enum">Qt::MouseButton</a>
+ *  \ingroup jkqtptools_string
+ *
+ *  \see jkqtp_MouseButton2String()
+ */
+JKQTCOMMON_LIB_EXPORT Qt::MouseButton jkqtp_String2MouseButton(const QString &button);
 
 
 #endif // JKQTPSTRINGTOOLS_H_INCLUDED
