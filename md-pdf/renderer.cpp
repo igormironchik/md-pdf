@@ -2474,13 +2474,15 @@ LoadImageFromNetwork::loadImpl()
 void
 LoadImageFromNetwork::loadFinished()
 {
-	if( m_url.toString().toLower().endsWith( QStringLiteral( "svg" ) ) )
+	const auto data = m_reply->readAll();
+	const auto svg = QString( data.mid( 0, 4 ).toLower() );
+
+	if( svg == QStringLiteral( "<svg" ) )
 	{
 		try {
 			Magick::Image img;
-			Magick::Color c(0x0, 0x0, 0x0, 0xFFFF);
+			Magick::Color c( 0x00, 0x00, 0x00, 0xFFFF );
 			img.backgroundColor( c );
-			const auto data = m_reply->readAll();
 			QTemporaryFile file( QStringLiteral( "XXXXXX.svg" ) );
 			if( file.open() )
 			{
@@ -2499,7 +2501,7 @@ LoadImageFromNetwork::loadFinished()
 		}
 	}
 	else
-		m_img.loadFromData( m_reply->readAll() );
+		m_img.loadFromData( data );
 
 	m_reply->deleteLater();
 
