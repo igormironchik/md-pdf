@@ -2989,3 +2989,65 @@ TEST_CASE( "066" )
 	REQUIRE( m->expr() == QStringLiteral( "x = {-b \\pm \\sqrt{b^2-4ac} \\over 2a}" ) );
 	REQUIRE( !m->isInline() );
 }
+
+TEST_CASE( "067" )
+{
+	MD::Parser parser;
+
+	auto doc = parser.parse( QStringLiteral( "tests/parser/data/067.md" ) );
+
+	REQUIRE( doc->isEmpty() == false );
+	REQUIRE( doc->items().size() == 3 );
+
+	{
+		REQUIRE( doc->items().at( 1 )->type() == MD::ItemType::Paragraph );
+
+		auto p = static_cast< MD::Paragraph* > ( doc->items().at( 1 ).data() );
+
+		REQUIRE( p->items().size() == 1 );
+
+		REQUIRE( p->items().at( 0 )->type() == MD::ItemType::Text );
+
+		auto t = static_cast< MD::Text* > ( p->items().at( 0 ).data() );
+
+		REQUIRE( t->opts() == MD::TextOption::TextWithoutFormat );
+		REQUIRE( t->text() == QStringLiteral( "Paragraph" ) );
+	}
+
+	REQUIRE( doc->items().at( 2 )->type() == MD::ItemType::List );
+
+	auto l = static_cast< MD::List* > ( doc->items().at( 2 ).data() );
+
+	REQUIRE( l->items().size() == 1 );
+
+	REQUIRE( l->items().at( 0 )->type() == MD::ItemType::ListItem );
+
+	auto item = static_cast< MD::ListItem* > ( l->items().at( 0 ).data() );
+
+	REQUIRE( item->listType() == MD::ListItem::Unordered );
+
+	REQUIRE( item->items().size() == 2 );
+
+	{
+		REQUIRE( item->items().at( 0 )->type() == MD::ItemType::Paragraph );
+
+		auto p = static_cast< MD::Paragraph* > ( item->items().at( 0 ).data() );
+
+		REQUIRE( p->items().size() == 1 );
+
+		REQUIRE( p->items().at( 0 )->type() == MD::ItemType::Text );
+
+		auto t = static_cast< MD::Text* > ( p->items().at( 0 ).data() );
+
+		REQUIRE( t->opts() == MD::TextOption::TextWithoutFormat );
+		REQUIRE( t->text() == QStringLiteral( "List item" ) );
+	}
+
+	{
+		REQUIRE( item->items().at( 1 )->type() == MD::ItemType::Code );
+
+		auto c = static_cast< MD::Code* > ( item->items().at( 1 ).data() );
+
+		REQUIRE( c->text() == QStringLiteral( "Code" ) );
+	}
+}

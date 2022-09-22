@@ -3069,7 +3069,9 @@ PdfRenderer::drawListItem( PdfAuxData & pdfData, const RenderOpts & renderOpts,
 			{
 				const auto where = drawParagraph( pdfData, renderOpts,
 					static_cast< MD::Paragraph* > ( it->data() ),
-					doc, offset, ( it == item->items().cbegin() && firstInList ), heightCalcOpt,
+					doc, offset,
+					( it == item->items().cbegin() && firstInList ) || it != item->items().cbegin(),
+					heightCalcOpt,
 					scale, inFootnote );
 
 				ret.append( where.first );

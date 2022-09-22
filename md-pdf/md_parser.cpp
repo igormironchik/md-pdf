@@ -742,6 +742,8 @@ Parser::parse( StringListStream & stream, QSharedPointer< Block > parent,
 		if( prevIndent != indent )
 			indents.insert( indent );
 
+		const qsizetype currentIndent = indent;
+
 		const auto ns = skipSpaces( 0, line );
 
 		if( type == BlockType::CodeIndentedBySpaces && ns > 3 )
@@ -897,6 +899,9 @@ Parser::parse( StringListStream & stream, QSharedPointer< Block > parent,
 					html.continueHtml = ( emptyLinesCount <= 0 );
 
 				type = lineType;
+
+				if( type == BlockType::List || type == BlockType::ListWithFirstEmptyLine )
+					indents.insert( currentIndent );
 			}
 
 			fragment.append( { line, { currentLineNumber, htmlCommentClosed } } );
