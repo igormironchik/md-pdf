@@ -21,8 +21,10 @@
 */
 
 #include <md-pdf/renderer.hpp>
-#include <md-pdf/md_parser.hpp>
-#include <md-pdf/md_doc.hpp>
+
+// md4qt include.
+#include <md_parser.hpp>
+#include <md_doc.hpp>
 
 #include <test_const.hpp>
 

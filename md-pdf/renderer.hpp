@@ -23,8 +23,8 @@
 #ifndef MD_PDF_RENDERER_HPP_INCLUDED
 #define MD_PDF_RENDERER_HPP_INCLUDED
 
-// md-pdf include.
-#include "md_doc.hpp"
+// md4qt include.
+#include <md_doc.hpp>
 
 // Qt include.
 #include <QColor>

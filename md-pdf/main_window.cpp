@@ -20,9 +20,11 @@
 	along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
+// md4qt include.
+#include <md_parser.hpp>
+
 // md-pdf include.
 #include "main_window.hpp"
-#include "md_parser.hpp"
 #include "renderer.hpp"
 #include "progress.hpp"
 #include "const.hpp"

@@ -18,12 +18,6 @@ if( ENABLE_COVERAGE )
 	set( CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} --coverage" )
 endif( ENABLE_COVERAGE )
 
-set( LIB_SRC md_doc.hpp
-    md_doc.cpp
-    md_parser.hpp
-    md_parser.cpp
-	md_entities_map.hpp )
-
 set( GUI_SRC main.cpp
 	main_window.cpp
 	main_window.hpp
@@ -51,20 +45,17 @@ include_directories( ${CMAKE_CURRENT_SOURCE_DIR}
 	${CMAKE_CURRENT_SOURCE_DIR}/../3rdparty/widgets/include
 	${CMAKE_CURRENT_BINARY_DIR}/../3rdparty/podofo-trunk
 	${ImageMagick_INCLUDE_DIRS}
-	${CMAKE_CURRENT_SOURCE_DIR}/../3rdparty/JKQtPlotter/lib )
+	${CMAKE_CURRENT_SOURCE_DIR}/../3rdparty/JKQtPlotter/lib
+	${CMAKE_CURRENT_SOURCE_DIR}/../3rdparty/md4qt/src )
 
 link_directories( ${CMAKE_CURRENT_BINARY_DIR}/../3rdparty/podofo-trunk/src/podofo
 	${CMAKE_CURRENT_BINARY_DIR}/../3rdparty/podofo-trunk/src )
 
-add_library( md-parser STATIC ${LIB_SRC} )
-
 add_library( syntax STATIC ${LIB_SYNTAX_SRC} )
-
-target_link_libraries( md-parser Qt6::Core )
 
 target_link_libraries( syntax Qt6::Core )
 
 add_executable( md-pdf-gui WIN32 ${GUI_SRC} )
 
-target_link_libraries( md-pdf-gui md-parser syntax widgets ${ImageMagick_LIBRARIES}
+target_link_libraries( md-pdf-gui md4qt syntax widgets ${ImageMagick_LIBRARIES}
 	JKQTMathTextSharedLib JKQTCommonSharedLib Qt6::Widgets Qt6::Network Qt6::Core ${PODOFO_LIB} )
