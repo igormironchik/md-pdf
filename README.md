@@ -63,6 +63,10 @@ Good example of work of this application is
  
  * I do not render HTML tags in Markdown.
 
+ * Some LaTeX Math expressions can be wrongly rendered. I use very good
+ library `JKQtPlotter` to render LaTeX Math, and not everything is
+ implemented there. But most common math things are done.
+
  * I don't support Chinese, as they don't use spaces. I don't know theirs rules, to adapt
  algorithms.
    
