@@ -102,13 +102,15 @@ void JKQTPSymbolComboBox::setCurrentSymbol(JKQTPGraphSymbols symbol)
 
 void JKQTPSymbolComboBox::addSymbol(JKQTPGraphSymbols symbol, const QString &name)
 {
-    QPixmap pix(12,12);
+    const qreal dpr = devicePixelRatioF();
+    QPixmap pix(12*dpr,12*dpr);
+    pix.setDevicePixelRatio(dpr);
     pix.fill(Qt::transparent);
     JKQTPEnhancedPainter p;
     p.begin(&pix);
     p.setRenderHint(JKQTPEnhancedPainter::Antialiasing);
     p.setRenderHint(JKQTPEnhancedPainter::TextAntialiasing);
-    JKQTPPlotSymbol(p, 6,6,symbol,10,1,QColor("blue"), QColor("blue").lighter());
+    JKQTPPlotSymbol(p, 6.0*dpr,6.0*dpr,symbol,10.0*dpr,1,QColor("blue"), QColor("blue").lighter(),font().family());
     p.end();
     addItem(QIcon(pix), name, JKQTPGraphSymbols2String(symbol));
 }
@@ -176,15 +178,17 @@ void JKQTPLinePlotStyleComboBox::refill()
 
 void JKQTPLinePlotStyleComboBox::addSymbol(JKQTPGraphSymbols symbol, bool line, const QString &name, const QVariant &data)
 {
-    QPixmap pix(12,12);
+    const qreal dpr = devicePixelRatioF();
+    QPixmap pix(12*dpr,12*dpr);
+    pix.setDevicePixelRatio(dpr);
     pix.fill(Qt::transparent);
     JKQTPEnhancedPainter p;
     p.begin(&pix);
     p.setRenderHint(JKQTPEnhancedPainter::Antialiasing);
     p.setRenderHint(JKQTPEnhancedPainter::TextAntialiasing);
-    JKQTPPlotSymbol(p, 6,6,symbol,7,1,QColor("blue"), QColor("blue").lighter());
+    JKQTPPlotSymbol(p, 6.0*dpr,6.0*dpr,symbol,7.0*dpr,1,QColor("blue"), QColor("blue").lighter(), font().family());
     p.setPen(QColor("blue"));
-    if (line) p.drawLine(0,6,12,6);
+    if (line) p.drawLine(0,6*dpr,12*dpr,6*dpr);
     p.end();
     addItem(QIcon(pix), name, data);
 }
@@ -341,10 +345,15 @@ JKQTPCALabelTypeComboBox::JKQTPCALabelTypeComboBox(QWidget *parent):
     setEditable(false);
     addLabelType(JKQTPCALTexponent, tr("exponent"), QIcon(":/JKQTPlotter/jkqtp_ticks_exp.png"));
     addLabelType(JKQTPCALTdefault, tr("default"), QIcon(":/JKQTPlotter/jkqtp_ticks_default.png"));
+    addLabelType(JKQTPCALTscientific, tr("scientific"), QIcon(":/JKQTPlotter/jkqtp_ticks_scientific.png"));
     addLabelType(JKQTPCALTexponentCharacter, tr("character"), QIcon(":/JKQTPlotter/jkqtp_ticks_expchar.png"));
+    addLabelType(JKQTPCALTprintf, tr("printf"), QIcon(":/JKQTPlotter/jkqtp_ticks_printf.png"));
     addLabelType(JKQTPCALTtime, tr("time"), QIcon(":/JKQTPlotter/jkqtp_ticks_time.png"));
     addLabelType(JKQTPCALTdate, tr("date"), QIcon(":/JKQTPlotter/jkqtp_ticks_date.png"));
     addLabelType(JKQTPCALTdatetime, tr("datetime"), QIcon(":/JKQTPlotter/jkqtp_ticks_datetime.png"));
+    addLabelType(JKQTPCALTfrac, tr("fraction"), QIcon(":/JKQTPlotter/jkqtp_ticks_frac.png"));
+    addLabelType(JKQTPCALTsfrac, tr("\\sfrac fraction"), QIcon(":/JKQTPlotter/jkqtp_ticks_sfrac.png"));
+    addLabelType(JKQTPCALTslashfrac, tr("slash fraction"), QIcon(":/JKQTPlotter/jkqtp_ticks_slashfrac.png"));
     setCurrentIndex(0);
 }
 
@@ -369,6 +378,8 @@ JKQTPCADrawModeComboBox::JKQTPCADrawModeComboBox(QWidget *parent):
 {
     setEditable(false);
     addDrawMode(JKQTPCADMcomplete, tr("complete"), QIcon(":/JKQTPlotter/jkqtp_axis_complete.png"));
+    addDrawMode(JKQTPCADMcompleteMaxArrow, tr("complete with max arrow"), QIcon(":/JKQTPlotter/jkqtp_axis_complete_maxarrow.png"));
+    addDrawMode(JKQTPCADMcompleteMinMaxArrow, tr("complete wih min&max arrows"), QIcon(":/JKQTPlotter/jkqtp_axis_complete_minmaxarrow.png"));
     addDrawMode(JKQTPCADMLineTicksTickLabels, tr("line+tick+labels"), QIcon(":/JKQTPlotter/jkqtp_axis_ticksandlabels.png"));
     addDrawMode(JKQTPCADMLineTicks, tr("line+tick"), QIcon(":/JKQTPlotter/jkqtp_axis_ticks.png"));
     addDrawMode(JKQTPCADMLine, tr("line"), QIcon(":/JKQTPlotter/jkqtp_axis_line.png"));
@@ -492,14 +503,16 @@ void JKQTPLinePlotStyleWithSymbolSizeComboBox::refill()
 
 void JKQTPLinePlotStyleWithSymbolSizeComboBox::addSymbol(JKQTPGraphSymbols symbol, bool line, double symbolSize, const QString &name, const QVariant &data)
 {
-    int pixSize=qMax(16.0, 1.2*symbolSize);
+    const qreal dpr = devicePixelRatioF();
+    int pixSize=qMax(16.0, 1.2*symbolSize)*dpr;
     QPixmap pix(pixSize, pixSize);
+    pix.setDevicePixelRatio(dpr);
     pix.fill(Qt::transparent);
     JKQTPEnhancedPainter p;
     p.begin(&pix);
     p.setRenderHint(JKQTPEnhancedPainter::Antialiasing);
     p.setRenderHint(JKQTPEnhancedPainter::TextAntialiasing);
-    JKQTPPlotSymbol(p, double(pixSize)/2.0,double(pixSize)/2.0,symbol,symbolSize,1,QColor("blue"), QColor("blue").lighter());
+    JKQTPPlotSymbol(p, double(pixSize)/2.0,double(pixSize)/2.0,symbol,symbolSize,1,QColor("blue"), QColor("blue").lighter(), font().family());
     p.setPen(QColor("blue"));
     if (line) p.drawLine(QLineF(0,double(pixSize)/2.0,pixSize,double(pixSize)/2.0));
     p.end();

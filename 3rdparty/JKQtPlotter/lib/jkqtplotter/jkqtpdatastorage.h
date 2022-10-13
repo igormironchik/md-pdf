@@ -50,7 +50,7 @@ class JKQTPColumnBackInserter; // forward declaration
 
 
 /** \brief the types of data in one JKQTdatastoreItem
- * \ingroup jkqtpdatastorage
+ * \ingroup jkqtpdatastorage_classes
  *
  * \c JKQTPSingleColumn:
  * \verbatim
@@ -86,7 +86,7 @@ enum class JKQTPDatastoreItemFormat {
 };
 
 /** \brief This class manages data columns (with entries of type \c double ), used by JKQTPlotter/JKQTBasePlotter to represent data for plots
-  *  \ingroup jkqtpdatastorage
+  *  \ingroup jkqtpdatastorage_classes
   *
   *  \see \ref JKQTPlotterBasicJKQTPDatastore for a detailed description of how to use this class for data management!
   *
@@ -99,13 +99,13 @@ enum class JKQTPDatastoreItemFormat {
   *  as a 2D image. In the latter case, the data is assumed to be ordered in row-major ordering (i.e. row for row).
   *
   *  You can generate new columns e.g. by:
-  *    - addColumn() which either generates internally managed (and extensible) columns, or accepts a simple \c double* pointer
+  *  <ul>
+  *    <li> addColumn() which either generates internally managed (and extensible) columns, or accepts a simple \c double* pointer
   *      to external. In the latter case owner-ship may be transferred to the datastore, but can also retain externally.
-  *    - addImageColumn() adds a column that should be interpreted as an image with given width and height (i.e. a row-major
+  *    <li> addImageColumn() adds a column that should be interpreted as an image with given width and height (i.e. a row-major
   *      matrix with \c width columns and \c height rows.
-  *    - copyColumn() duplicates an existing column
-  *    - addCopiedColumn() copies an external dataset into the datastore. e.g. with code like:
-  *
+  *    <li> copyColumn() duplicates an existing column
+  *    <li> addCopiedColumn() copies an external dataset into the datastore. e.g. with code like:
   *        \code{.cpp}
   *           QVector<double> X, Y;
   *           const int Ndata=100;
@@ -119,17 +119,16 @@ enum class JKQTPDatastoreItemFormat {
   *          linegraph->setXColumn(datastore->addCopiedColumn(X, "x"));
   *          linegraph->setYColumn(datastore->addCopiedColumn(Y, "y"));
   *        \endcode
-  *
-  *   - addLinearColumn() adds a column with linearly increasing numbers (in a given range)
-  *   - addLogColumn() and addDecadeLogColumn() add columns with logarithmically spaced values
-  *   - addLinearGridColumns() adds two columns which represent x- and y- coordinates of points
+  *   <li> addLinearColumn() adds a column with linearly increasing numbers (in a given range)
+  *   <li> addLogColumn() and addDecadeLogColumn() add columns with logarithmically spaced values
+  *   <li> addLinearGridColumns() adds two columns which represent x- and y- coordinates of points
   *     on a rectangular grid (useful for calculating image data)
-  *   - addCalculatedColumn() calculates a column, based on row numbers and a C++ functor
-  *   - addColumnCalculatedFromColumn() calculates a column, based on another column data
-  *   - addCopiedMap() copies data from a std::map/QMap into two columns
-  *   - ... several more functions for specific cases exist.
-  *   - Also note that there are even library extensions that allow to import data directly from OpenCV matrices: JKQTPCopyCvMatToColumn()
-  * .
+  *   <li> addCalculatedColumn() calculates a column, based on row numbers and a C++ functor
+  *   <li> addColumnCalculatedFromColumn() calculates a column, based on another column data
+  *   <li> addCopiedMap() copies data from a std::map/QMap into two columns
+  *   <li> ... several more functions for specific cases exist.
+  *   <li> Also note that there are even library extensions that allow to import data directly from OpenCV matrices: JKQTPCopyCvMatToColumn()
+  * </ul>
   *
   * Of course columns can also be deleted by calling:
   *   - deleteColumn()
@@ -1435,7 +1434,7 @@ class JKQTPLOTTER_LIB_EXPORT JKQTPDatastore{
 
 
 /** \brief internally stores information about one data column. See JKQTPDatastore for more information.
- * \ingroup jkqtpdatastorage
+ * \ingroup jkqtpdatastorage_classes
  * \internal
  *
  * \see JKQTPDatastore
@@ -1644,7 +1643,7 @@ class JKQTPLOTTER_LIB_EXPORT JKQTPColumn {
 
 #pragma pack(push,1)
 /** \brief iterator over the data in the column of a JKQTPDatastore
- * \ingroup jkqtpdatastorage
+ * \ingroup jkqtpdatastorage_classes
  *
  * \see JKQTPColumn, JKQTPDatastore::begin(), JKQTPDatastore::end(), JKQTPDatastore, JKQTPConstColumnIterator
  */
@@ -1909,7 +1908,7 @@ class JKQTPColumnIterator {
 
 
 /** \brief iterator, which allows to insert into a column of a JKQTPDatastore
- * \ingroup jkqtpdatastorage
+ * \ingroup jkqtpdatastorage_classes
  *
  * \see JKQTPDatastore::backInserter(), JKQTPDatastore, http://www.cplusplus.com/reference/iterator/insert_iterator/
  */
@@ -1955,7 +1954,7 @@ class JKQTPColumnBackInserter {
 };
 
 /** \brief iterator over the data in the column of a JKQTPDatastore
- * \ingroup jkqtpdatastorage
+ * \ingroup jkqtpdatastorage_classes
  *
  * \see JKQTPColumn, JKQTPDatastore::begin(), JKQTPDatastore::end(), JKQTPDatastore, JKQTPColumnIterator
  */
@@ -2235,7 +2234,7 @@ class JKQTPColumnConstIterator {
 
 /** \brief this represents one chunk of memory which can represent one or more columns of data for JKQTBasePlotter.
  *         See JKQTPDatastore for more information.
- * \ingroup jkqtpdatastorage
+ * \ingroup jkqtpdatastorage_classes
  *
  * Each chunk of memory is pointed at by a simple double* pointer \c data. the memory layout of the memory layout of
  * the RAM segment pointed at by \c data is determined by the parameter \c dataformat:
@@ -2473,7 +2472,7 @@ class JKQTPLOTTER_LIB_EXPORT JKQTPDatastoreItem {
 
 
 /** \brief     QAbstractTableModel descendent that allows to view data in a JKQTPDatastore
- * \ingroup jkqtpdatastorage
+ * \ingroup jkqtpdatastorage_classes
  *
  * \see JKQTPDatastore
  */

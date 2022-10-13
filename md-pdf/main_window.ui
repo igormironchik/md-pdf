@@ -70,7 +70,7 @@
            <number>16</number>
           </property>
           <property name="value">
-           <number>14</number>
+           <number>8</number>
           </property>
          </widget>
         </item>
@@ -122,7 +122,7 @@
            <number>14</number>
           </property>
           <property name="value">
-           <number>12</number>
+           <number>8</number>
           </property>
          </widget>
         </item>
@@ -152,7 +152,7 @@
            <number>14</number>
           </property>
           <property name="value">
-           <number>14</number>
+           <number>8</number>
           </property>
          </widget>
         </item>
@@ -637,7 +637,7 @@
       <item>
        <widget class="QCheckBox" name="m_recursive">
         <property name="text">
-         <string>Process Markdown recursively</string>
+         <string>Load all linked Markdown files</string>
         </property>
         <property name="checked">
          <bool>true</bool>

@@ -146,7 +146,7 @@ void JKQTPColorPaletteStyleAndToolsMixin::cbDrawOutside(JKQTPEnhancedPainter& pa
          colorBarRightAxis->setOtherAxisWidth(cb.width());
          colorBarRightAxis->drawAxes(painter);
 
-         if ( JKQTPCADrawModeHasLine(colorBarRightAxis->getDrawMode1()) && JKQTPCADrawModeHasLine(colorBarRightAxis->getDrawMode2())) {
+         if ( colorBarRightAxis->getDrawMode1().testFlag(JKQTPCADMLine) && colorBarRightAxis->getDrawMode2().testFlag(JKQTPCADMLine)) {
              painter.setPen(p);
              painter.drawLine(QLineF(cb.topLeft(), cb.topRight()));
              painter.drawLine(QLineF(cb.bottomLeft(), cb.bottomRight()));
@@ -154,7 +154,7 @@ void JKQTPColorPaletteStyleAndToolsMixin::cbDrawOutside(JKQTPEnhancedPainter& pa
 
 
          cbParent->getMathText()->setFontSize(imageNameFontSize*cbParent->getFontSizeMultiplier());
-         cbParent->getMathText()->setFontRomanOrSpecial(imageNameFontName);
+         cbParent->getMathText()->setFontSpecial(imageNameFontName);
          cbParent->getMathText()->parse(imageName);
          cbParent->getMathText()->draw(painter, Qt::AlignHCenter|Qt::AlignVCenter, QRectF(rightSpace.x(), rightSpace.y(), rightSpace.width(), (rightSpace.height()-barHeight)/2),  cbParent->getCurrentPlotterStyle().debugShowTextBoxes);
 
@@ -205,7 +205,7 @@ void JKQTPColorPaletteStyleAndToolsMixin::cbDrawOutside(JKQTPEnhancedPainter& pa
          colorBarTopAxis->setOtherAxisWidth(cb.height());
          colorBarTopAxis->drawAxes(painter);
 
-         if ( JKQTPCADrawModeHasLine(colorBarTopAxis->getDrawMode1()) && JKQTPCADrawModeHasLine(colorBarTopAxis->getDrawMode2())) {
+         if ( colorBarTopAxis->getDrawMode1().testFlag(JKQTPCADMLine) && colorBarTopAxis->getDrawMode2().testFlag(JKQTPCADMLine)) {
              painter.setPen(p);
              painter.drawLine(QLineF(cb.topLeft(), cb.bottomLeft()));
              painter.drawLine(QLineF(cb.topRight(), cb.bottomRight()));
@@ -213,7 +213,7 @@ void JKQTPColorPaletteStyleAndToolsMixin::cbDrawOutside(JKQTPEnhancedPainter& pa
 
 
          cbParent->getMathText()->setFontSize(imageNameFontSize*cbParent->getFontSizeMultiplier());
-         cbParent->getMathText()->setFontRomanOrSpecial(imageNameFontName);
+         cbParent->getMathText()->setFontSpecial(imageNameFontName);
          cbParent->getMathText()->parse(imageName);
          cbParent->getMathText()->draw(painter, Qt::AlignHCenter|Qt::AlignVCenter, QRectF(topSpace.right()-(topSpace.width()-barWidth)/2, topSpace.y(), (topSpace.width()-barWidth)/2, topSpace.height()),  cbParent->getCurrentPlotterStyle().debugShowTextBoxes);
 
@@ -654,7 +654,7 @@ void JKQTPColorPaletteWithModifierStyleAndToolsMixin::cbDrawOutside(JKQTPEnhance
                 modifierColorBarRightAxis->setOtherAxisWidth(cb.height());
                 modifierColorBarRightAxis->drawAxes(painter);
             } else {
-                if ( JKQTPCADrawModeHasLine(colorBarRightAxis->getDrawMode1()) && JKQTPCADrawModeHasLine(colorBarRightAxis->getDrawMode2())) {
+                if ( colorBarRightAxis->getDrawMode1().testFlag(JKQTPCADMLine) && colorBarRightAxis->getDrawMode2().testFlag(JKQTPCADMLine)) {
                     painter.setPen(p);
                     painter.drawLine(QLineF(cb.topLeft(), cb.topRight()));
                     painter.drawLine(QLineF(cb.bottomLeft(), cb.bottomRight()));
@@ -662,7 +662,7 @@ void JKQTPColorPaletteWithModifierStyleAndToolsMixin::cbDrawOutside(JKQTPEnhance
             }
 
             cbParent->getMathText()->setFontSize(imageNameFontSize*cbParent->getFontSizeMultiplier());
-            cbParent->getMathText()->setFontRomanOrSpecial(cbParent->getCurrentPlotterStyle().defaultFontName);
+            cbParent->getMathText()->setFontSpecial(cbParent->getCurrentPlotterStyle().defaultFontName);
             cbParent->getMathText()->parse(imageName);
             cbParent->getMathText()->draw(painter, Qt::AlignHCenter|Qt::AlignVCenter, QRectF(rightSpace.x(), rightSpace.y(), rightSpace.width(), (rightSpace.height()-barHeight)/2),  cbParent->getCurrentPlotterStyle().debugShowTextBoxes);
 
@@ -707,7 +707,7 @@ void JKQTPColorPaletteWithModifierStyleAndToolsMixin::cbDrawOutside(JKQTPEnhance
                 modifierColorBarTopAxis->setOtherAxisWidth(cb.width());
                 modifierColorBarTopAxis->drawAxes(painter);
             } else {
-                if ( JKQTPCADrawModeHasLine(colorBarTopAxis->getDrawMode1()) && JKQTPCADrawModeHasLine(colorBarTopAxis->getDrawMode2())) {
+                if ( colorBarTopAxis->getDrawMode1().testFlag(JKQTPCADMLine) && colorBarTopAxis->getDrawMode2().testFlag(JKQTPCADMLine)) {
                     painter.setPen(p);
                     painter.drawLine(QLineF(cb.topLeft(), cb.bottomLeft()));
                     painter.drawLine(QLineF(cb.topRight(), cb.bottomRight()));
@@ -715,7 +715,7 @@ void JKQTPColorPaletteWithModifierStyleAndToolsMixin::cbDrawOutside(JKQTPEnhance
             }
 
             cbParent->getMathText()->setFontSize(imageNameFontSize*cbParent->getFontSizeMultiplier());
-            cbParent->getMathText()->setFontRomanOrSpecial(cbParent->getCurrentPlotterStyle().defaultFontName);
+            cbParent->getMathText()->setFontSpecial(cbParent->getCurrentPlotterStyle().defaultFontName);
             cbParent->getMathText()->parse(imageName);
             cbParent->getMathText()->draw(painter, Qt::AlignHCenter|Qt::AlignVCenter, QRectF(topSpace.right()-(topSpace.width()-barWidth)/2, topSpace.y(), (topSpace.width()-barWidth)/2, topSpace.height()),  cbParent->getCurrentPlotterStyle().debugShowTextBoxes);
 

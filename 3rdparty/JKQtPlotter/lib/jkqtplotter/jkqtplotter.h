@@ -73,74 +73,14 @@ JKQTPLOTTER_LIB_EXPORT void initJKQTPlotterResources();
  *
  * \section  JKQTPLOTTER_BASICUSAGE Basic Usage of JKQTPlotter
  *
- * JKQTPlotter is a plotter widget which wraps around a JKQTBasePlotter instanced that does the actual drawing.
- * A basic usage of JKQTPlotter looks like this:
+ * \copydetails jkqtplotter_general_usage_jkqtbaseplotter
  *
- * \code{.cpp}
- *     // create a new JKQTPlotter instance
- *     JKQTPlotter* plot = new JKQTPlotter(parentWidget);
- *
- *     // fill two vectors with dtaa for a graph:
- *     QVector<double> X, Y;
- *     fillDataVectors(X, Y);
- *
- *     // make data available to the internal datastore of the plotter:
- *     size_t columnX=plot->getDatastore()->addCopiedColumn(X, "x");
- *     size_t columnY=plot->getDatastore()->addCopiedColumn(Y, "y");
- *
- *     // create a graph/curve, which displays the data
- *     JKQTPXYLineGraph* graph1=new JKQTPXYLineGraph(plot);
- *     graph1->setXColumn(columnX);
- *     graph1->setYColumn(columnY);
- *     graph1->setTitle(QObject::tr("graph title"));
- *     plot->addGraph(graph1);
- *
- *     // autoscale the plot
- *     plot->zoomToFit();
- *     // alternatively set the axis dimension by hand:
- *     plot->setXY(-10,10,-10,10);
- * \endcode
- *
- * The result should look something like this:
- *
- * \image html jkqtplotter_simpletest1.png
- *
- * Starting from this basic example, you can observe several important principles:
- *   # Data is stored in an (internal) instance of JKQTPDatastore, which is accessible through
- *     JKQTPlotter::getDatastore().
- *     This datastore can either own its data (which is done here, as we copy the data into the store
- *     by calling JKQTPDatastore::addCopiedColumn(), or it can merely reference to the data (then
- *     data needs to be available as array of \c double values).
- *   # Naming conventions:
- *       - \b plot is the complete drawn image, including the axes, the graphs, the key and all other visual elements
- *       - <b>plot element</b> any sub element of the plot, e.g. a single coordinate axis, the key, but also any graph/curve
- *       - \b graph is a single curve/image/geometric element in the plot
- *       - <b>geometric element</b> is a special graph that does not represent a curve based on data from the JKQTPDatastore,
- *         but a single graphic element, like a rectangle/circle/line/..., some text, a single symbol
- *       - \b key is the legend of the plot
- *       - <b>coordinate axis</b> is each of the x- or y-axis (there might be addition axes, e.g. when showing a color-scale)
- *     .
- *   # Each graph is represented by a class derived from JKQTPPlotElement (in the example we instanciated a JKQTPXYLineGraph,
- *     which shows data as a scatter of symbols that may (or may not) be connected by a line).
- *     Creating the graph class does not yet add it to the plotter. To add it, call JKQTPlotter::addGraph(). Only
- *     after this sep, the graph is displayed. You can modify the apperance of the graph (e.g. colors,
- *     name in the key ...) by setting properties in the graph class instance.
- *   # You can auto-zoom the axis ranges of the plot by calling JKQTPlotter::zoomToFit(), or set them
- *     exlicitly by calling JKQTPlotter::setXY(). The user can later zoom in/out by the mouse (and other means).
- *     You can limit this zoom range by setting an absolute axis range, calling e.g. JKQTPlotter::setAbsoluteXY().
- *     The the user cannot zoom farther out than the given range(s).
- *   # If you want to style the plot itself, you need to set properties of the underlying JKQTBasePloter instance, which
- *     is accessible through JKQTPlotter::getPlotter(). If you want to style the coordinate axes, you can acces their
- *     representing objects by caling JKQTPlotter::getXAxis() or JKQTPlotter::getYAxis().
- * .
- *
- * \see \ref JKQTPlotterSimpleTest and \see JKQTPlotterQtCreator
  *
  * \section  JKQTPLOTTER_SYNCMULTIPLOT Synchronizing Several Plots
  *
  * Often a single plot is not sufficient, but several plots need to be aligned with respect to each other:
  *
- * \image html test_multiplot.png
+ * \image html multiplot.png
  *
  * In the Qt Window this is achieved by placing several JKQTPlotter objects into a <a href="http://doc.qt.io/qt-5/qgridlayout.html">QGridLayout</a>.
  * In order to support this alignment, also when exporting/printing a plot, and when the user interactions with the plot (e.g. zooming),
@@ -418,29 +358,20 @@ JKQTPLOTTER_LIB_EXPORT void initJKQTPlotterResources();
  *
  * \section JKQTPLOTTER_USEQTCREATOR  How to use JKQTPlotter in the Qt Form Designer
  *
- * As JKQTPlotter is a standard Qt widget, you can also use it in Qt UI-files designed with the Qt From Designer (e.g. from within QTCreator).
- * For this to work you have to use the <a href="https://doc.qt.io/qt-6/designer-using-custom-widgets.html">Promote QWidget"-feature</a> of the form designer. The steps you need to take are detailed below:
- * <ol>
- *   <li> add a new UI-file to your project and open it in the Form Editor. Then right-click the form and select `Promote Widgets ...`:
- *
- *        \image html uidesigner_step1.png
- *   </li>
- *   <li> In the dialog that opens, you have to define `JKQTPlotter` as a promotion to `QWidget` as shown below. Finally store the settings by clicking `Add` and closing the dialog with `Close`.
- *
- *        \image html uidesigner_step2.png
- *   </li>
- *   <li> Now you can add a `QWidget`from the side-bar to the form and then promote it to `JKQTPlotter`, by selecting and right-clicking the `QWidget` and then selecting `Promote To | JKQTPlotter`:
- *
- *        \image html uidesigner_step3.png
- *   </li>
- * </ol>
- *
- * \see \ref JKQTPlotterQtCreator <br> Also see \ref JKQTPlotterStyling for another example of using the Qt UI Designer with JKQTPlotter
- *
+ * \copydetails jkqtplotter_general_usage_qtcreator
  */
 class JKQTPLOTTER_LIB_EXPORT JKQTPlotter: public QWidget {
         Q_OBJECT
     public:
+        /** \brief sets the global resize delay in milliseconds \a delayMS. After calling this function all plots will use the new delay
+          *
+          * \see jkqtp_RESIZE_DELAY, setGlobalResizeDelay(), getGlobalResizeDelay(), resizeTimer */
+        static void setGlobalResizeDelay(int delayMS);
+        /** \brief returns the currently set global resize delay in milliseconds \a delayMS.
+          *
+          * \see jkqtp_RESIZE_DELAY, setGlobalResizeDelay(), getGlobalResizeDelay(), resizeTimer */
+        static int getGlobalResizeDelay();
+
         /** \brief class constructor
          *
          * If \a datastore_internal \c ==false, you can supply an external JKQTPDatastore with the parameter \a datast
@@ -553,6 +484,10 @@ class JKQTPLOTTER_LIB_EXPORT JKQTPlotter: public QWidget {
         /** \brief returns the size of the widget */
         QSize sizeHint() const;
 
+        /** \brief returns \c true, if the JKQTPlotter::resizeTimer is currently running and the widget is waiting for the resize-event to finish
+          *
+          * \see jkqtp_RESIZE_DELAY, setGlobalResizeDelay(), getGlobalResizeDelay(), resizeTimer */
+        bool isResizeTimerRunning() const;
 
 
 
@@ -937,6 +872,14 @@ class JKQTPLOTTER_LIB_EXPORT JKQTPlotter: public QWidget {
         /** \brief \copydoc actMouseLeftAsPanView */
         const QAction *getActMouseLeftAsPanView() const;
 
+        /** \brief save the current plot as a pixel image into a QImage with the given size */
+        inline QImage grabPixelImage(QSize size=QSize(), bool showPreview=false) {
+            return plotter->grabPixelImage(size,showPreview);
+        }
+        /** \brief copy the current plot as a pixel+svg image to the clipboard */
+        inline void copyPixelImage(bool showPreview=true) {
+            plotter->copyPixelImage(showPreview);
+        }
 
     public slots:
         /** \brief set the current plot magnification */
@@ -1041,6 +984,8 @@ class JKQTPLOTTER_LIB_EXPORT JKQTPlotter: public QWidget {
         inline void copyDataMatlab() {
             plotter->copyDataMatlab();
         }
+
+
         /** \brief this method zooms the graph so that all plotted datapoints are visible.
          *
          * \param zoomX if set \c true (default) zooms the x axis
@@ -1683,8 +1628,16 @@ class JKQTPLOTTER_LIB_EXPORT JKQTPlotter: public QWidget {
          * \see delayedResizeEvent()
          *
          * \image html jkqtplotter_fastresizing.gif
+         *
+         * \see jkqtp_RESIZE_DELAY, setGlobalResizeDelay(), getGlobalResizeDelay(), resizeTimer
          */
         QTimer resizeTimer;
+
+        /** \brief delay for  resizing in milliseconds
+         *
+         * \see jkqtp_RESIZE_DELAY, setGlobalResizeDelay(), getGlobalResizeDelay(), resizeTimer
+         */
+        static int jkqtp_RESIZE_DELAY;
 
         /** \brief destroys the internal contextMenu and optionally creates a new one
          *

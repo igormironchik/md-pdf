@@ -39,6 +39,9 @@ include(jkqtplotter_common_compilersettings)
 # include Qt with appropriate options to build this lib
 include(jkqtplotter_common_qtsettings)
 
+# additionnal common macros
+include(jkqtplotter_macros)
+
 
 
 # now add subdirectories with the library code ...
@@ -47,6 +50,12 @@ add_subdirectory(lib)
 if(JKQtPlotter_BUILD_EXAMPLES)
     add_subdirectory(examples)
 endif()
+
+if(JKQtPlotter_BUILD_TOOLS)
+    add_subdirectory(tools)
+endif()
+
+add_subdirectory(doc)
 
 
 

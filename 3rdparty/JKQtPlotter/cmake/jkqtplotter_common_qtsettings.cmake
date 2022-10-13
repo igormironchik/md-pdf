@@ -42,3 +42,11 @@ else()
     set(JKQtPlotter_QT_CXX_STANDARD_REQUIRED TRUE)
     set(JKQtPlotter_QT_CXX_COMPILE_FEATURE cxx_std_17)
 endif()
+
+if (JKQtPlotter_ENABLED_CXX20)
+    set(JKQtPlotter_QT_CXX_STANDARD 20)
+    set(JKQtPlotter_QT_CXX_STANDARD_REQUIRED TRUE)
+    set(JKQtPlotter_QT_CXX_COMPILE_FEATURE cxx_std_20)
+endif(JKQtPlotter_ENABLED_CXX20)
+
+set(JKQtPlotter_QT_BINDIR $<TARGET_FILE_DIR:Qt${QT_VERSION_MAJOR}::qmake>) # ${QT_DIR}../../../../bin

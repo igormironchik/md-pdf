@@ -1,7 +1,7 @@
 /*
     Copyright (c) 2008-2022 Jan W. Krieger (<jan@jkrieger.de>)
 
-    
+
 
     This software is free software: you can redistribute it and/or modify
     it under the terms of the GNU Lesser General Public License as published by
@@ -44,11 +44,15 @@
 #include <stdexcept>
 #include <cctype>
 #include <QColor>
+#include <QFlags>
 #include "jkqtcommon/jkqtpstringtools.h"
 #include "jkqtcommon/jkqtpdebuggingtools.h"
 #include "jkqtcommon/jkqtpmathtools.h"
 #include "jkqtcommon_statistics_and_math/jkqtpalgorithms.h"
 #include "jkqtcommon/jkqtpcodestructuring.h"
+#if __cplusplus >= 202002L
+# include <version>
+#endif
 
 
 
@@ -249,7 +253,7 @@ typedef QHash<Qt::KeyboardModifiers, JKQTPMouseMoveActions> JKQTPMouseMoveAction
 typedef JKQTPMouseMoveActionsHashMap::const_iterator JKQTPMouseMoveActionsHashMapIterator;
 
 /** \brief Specifies how a fill-color is derived from a given color
- * \ingroup jkqtpplotter_styling
+ * \ingroup jkqtpplotter_styling_classes
 
  */
 struct JKQTPLOTTER_LIB_EXPORT JKQTPColorDerivationMode {
@@ -341,7 +345,7 @@ public:
 };
 
 /** \brief use a JKQTPColorDerivationMode to derive a color from \a col as specified
- *  \ingroup jkqtpplotter_styling
+ *  \ingroup jkqtpplotter_styling_classes
  *
  *  \param mode the mode of how to modify the given color \a basecolor
  *  \param basecolor the color in which to base the derivation
@@ -351,7 +355,7 @@ public:
 JKQTPLOTTER_LIB_EXPORT QColor JKQTPGetDerivedColor(JKQTPColorDerivationMode mode, const QColor& basecolor);
 
 /** \brief construct a QColor, based on the given \a color, but with alpha set to the specified value \a alphaF
- *  \ingroup jkqtpplotter_styling
+ *  \ingroup jkqtpplotter_styling_classes
  *  \see QColorWithAlpha()
  */
 inline QColor QColorWithAlphaF(const QColor& color, qreal alphaF) {
@@ -361,7 +365,7 @@ inline QColor QColorWithAlphaF(const QColor& color, qreal alphaF) {
 }
 
 /** \brief construct a QColor, based on the given \a color, but with alpha set to the specified value \a alpha
- *  \ingroup jkqtpplotter_styling
+ *  \ingroup jkqtpplotter_styling_classes
  *  \see QColorWithAlphaF()
  */
 inline QColor QColorWithAlpha(const QColor& color, int alpha) {
@@ -371,55 +375,58 @@ inline QColor QColorWithAlpha(const QColor& color, int alpha) {
 }
 
 /** \brief convert a JKQTPColorDerivationMode to a <a href="http://doc.qt.io/qt-5/qstring.html">QString</a>
- *  \ingroup jkqtpplotter_styling
+ *  \ingroup jkqtpplotter_styling_classes
  *
  *  \see String2JKQTPColorDerivationMode(), JKQTPColorDerivationMode
  */
 JKQTPLOTTER_LIB_EXPORT QString JKQTPColorDerivationMode2String(JKQTPColorDerivationMode mode);
 /** \brief convert a <a href="http://doc.qt.io/qt-5/qstring.html">QString</a> (created by JKQTPColorDerivationMode2String() ) to JKQTPColorDerivationMode
- *  \ingroup jkqtpplotter_styling
+ *  \ingroup jkqtpplotter_styling_classes
  *
  *  \see JKQTPColorDerivationMode2String(), JKQTPColorDerivationMode
  */
 JKQTPLOTTER_LIB_EXPORT JKQTPColorDerivationMode String2JKQTPColorDerivationMode(const QString &mode);
 
 
-/** \brief display mode for an axis
- * \ingroup jkqtpplottersupprt */
-enum JKQTPCADrawMode {
-    JKQTPCADMcomplete=0, /*!< \brief draw axis with ticks, ticklabels and axis label */
-    JKQTPCADMLineTicksTickLabels, /*!< \brief draw axis with ticks, line and tick labels */
-    JKQTPCADMLineTicks, /*!< \brief draw axis with ticks and line */
-    JKQTPCADMLine, /*!< \brief draw axis as thick line */
-    JKQTPCADMTicksTickLabelsAxisLabel, /*!< \brief draw axis with ticks, tick labels and axisLabel */
-    JKQTPCADMTicksTickLabels, /*!< \brief draw axis with ticks and tick labels */
-    JKQTPCADMTickLabelsAxisLabel, /*!< \brief draw axis tick labels and axisLabel */
-    JKQTPCADMTickLabels, /*!< \brief draw axis tick labels */
-    JKQTPCADMTicks, /*!< \brief draw axis with ticks */
-    JKQTPCADMnone, /*!< \brief draw no axis */
+/** \brief drawing flags for a coordinate axis
+ * \ingroup jkqtpplottersupprt
+ *
+ * \note This enum provides the elements for \ref JKQTPCADrawMode, which is actually used
+ *       throughout the code.
+ *
+ * \see JKQTPCADrawMode, JKQTPCoordinateAxisStyle
+*/
+enum JKQTPCADrawModeElements {
+    JKQTPCADMLine=0x01, /*!< \brief draw axis as thick line  \image html axisstyle/JKQTPCADMLine.png */
+    JKQTPCADMTicks=0x02, /*!< \brief draw axis ticks  \image html axisstyle/JKQTPCADMTicks.png */
+    JKQTPCADMTickLabels=0x04, /*!< \brief draw axis tick labels  \image html axisstyle/JKQTPCADMTickLabels.png */
+    JKQTPCADMAxisLabel=0x08, /*!< \brief draw axis axis Label  \image html axisstyle/JKQTPCADMAxisLabel.png */
 
-    JKQTPCADMmax=JKQTPCADMnone
+    JKQTPCADMMaxArrow=0x0100, /*!< \brief an open arrow at the max-end of the axis  \image html axisstyle/JKQTPCADMMaxArrow.png */
+    JKQTPCADMMaxFilledArrow=0x0200, /*!< \brief draw a filled arrow at the max-end of the axis  \image html axisstyle/JKQTPCADMMaxFilledArrow.png */
+    JKQTPCADMMinArrow=0x1000, /*!< \brief an open arrow at the end of the axis at the min-end of the axis  \image html axisstyle/JKQTPCADMMinArrow.png */
+    JKQTPCADMMinFilledArrow=0x2000, /*!< \brief draw a filled arrow at the min-end of the axis  \image html axisstyle/JKQTPCADMMinFilledArrow.png */
+
+    JKQTPCADMLineTicksTickLabels=JKQTPCADMLine|JKQTPCADMTicks|JKQTPCADMTickLabels, /*!< \brief draw axis with ticks, line and tick labels  \image html axisstyle/JKQTPCADMLineTicksTickLabels.png */
+    JKQTPCADMLineTicks=JKQTPCADMLine|JKQTPCADMTicks, /*!< \brief draw axis with ticks and line  \image html axisstyle/JKQTPCADMLineTicks.png */
+    JKQTPCADMTicksTickLabelsAxisLabel=JKQTPCADMTicks|JKQTPCADMTickLabels|JKQTPCADMAxisLabel, /*!< \brief draw axis with ticks, tick labels and axisLabel  \image html axisstyle/JKQTPCADMTicksTickLabelsAxisLabel.png */
+    JKQTPCADMTicksTickLabels=JKQTPCADMTicks|JKQTPCADMTickLabels, /*!< \brief draw axis with ticks and tick labels  \image html axisstyle/JKQTPCADMTicksTickLabels.png */
+    JKQTPCADMTickLabelsAxisLabel=JKQTPCADMTickLabels|JKQTPCADMAxisLabel, /*!< \brief draw axis tick labels and axisLabel  \image html axisstyle/JKQTPCADMTickLabelsAxisLabel.png */
+    JKQTPCADMnone=0x0000, /*!< \brief draw no axis  \image html axisstyle/JKQTPCADMnone.png */
+    JKQTPCADMcomplete=JKQTPCADMLine|JKQTPCADMTicks|JKQTPCADMTickLabels|JKQTPCADMAxisLabel, /*!< \brief draw axis withline,  ticks, ticklabels and axis label  \image html axisstyle/JKQTPCADMcomplete.png */
+    JKQTPCADMcompleteMaxArrow=JKQTPCADMcomplete|JKQTPCADMMaxFilledArrow, /*!< \brief draw axis withline,  ticks, ticklabels and axis label and an arrow pointing to the max-side of the axis \image html axisstyle/JKQTPCADMcompleteMaxArrow.png */
+    JKQTPCADMcompleteMinMaxArrow=JKQTPCADMcomplete|JKQTPCADMMaxFilledArrow|JKQTPCADMMinFilledArrow, /*!< \brief draw axis withline,  ticks, ticklabels and axis label and arrows pointing to the min and max side of the axis  \image html axisstyle/JKQTPCADMcompleteMinMaxArrow.png */
 };
-
-/** \brief determines whether JKQTPCADrawMode has the line
- * \ingroup jkqtpplottersupprt
+/** \brief drawing mode for a coordinate axis
+ * \ingroup jkqtplotter_basegraphserrors
+ *
+ * \qFlagsNote{JKQTPCADrawMode,JKQTPCADrawModeElements}
+ *
+ * \see JKQTPCADrawModeElements, JKQTPCoordinateAxisStyle
  */
-JKQTPLOTTER_LIB_EXPORT bool JKQTPCADrawModeHasLine(JKQTPCADrawMode pos);
+Q_DECLARE_FLAGS(JKQTPCADrawMode, JKQTPCADrawModeElements)
+Q_DECLARE_OPERATORS_FOR_FLAGS(JKQTPCADrawMode)
 
-/** \brief determines whether JKQTPCADrawMode has ticks
- * \ingroup jkqtpplottersupprt
- */
-JKQTPLOTTER_LIB_EXPORT bool JKQTPCADrawModeHasTicks(JKQTPCADrawMode pos);
-
-/** \brief determines whether JKQTPCADrawMode has tick labels
- * \ingroup jkqtpplottersupprt
- */
-JKQTPLOTTER_LIB_EXPORT bool JKQTPCADrawModeHasTickLabels(JKQTPCADrawMode pos);
-
-/** \brief determines whether JKQTPCADrawMode has the axis label
- * \ingroup jkqtpplottersupprt
- */
-JKQTPLOTTER_LIB_EXPORT bool JKQTPCADrawModeHasAxisLabel(JKQTPCADrawMode pos);
 
 
 
@@ -437,14 +444,26 @@ JKQTPLOTTER_LIB_EXPORT JKQTPCADrawMode String2JKQTPCADrawMode(const QString& pos
 /** \brief display mode for the axis labels
  * \ingroup jkqtpplottersupprt */
 enum JKQTPCALabelType {
-    JKQTPCALTdefault, /*!< \brief simply print the numbers \image html JKQTPCALTdefault.png */
-    JKQTPCALTexponentCharacter, /*!< \brief print the numbers and show a unit character, i.e. 5&mu; for \f$ 5\cdot 10^{-6} \f$ , \c 3k for \f$ 3\cdot 10^3 \f$ ...  */
-    JKQTPCALTexponent, /*!< \brief show numbers in exponential for, e.g. \f$ 3\cdot 10^5 \f$ ... \image html JKQTPCALTexponent.png */
-    JKQTPCALTdate, /*!< \brief show numbers as dates \image html JKQTPCALTdate.png */
-    JKQTPCALTtime, /*!< \brief show numbers as times \image html JKQTPCALTtime.png*/
-    JKQTPCALTdatetime, /*!< \brief show numbers as times */
-
-    JKQTPCALTmax=JKQTPCALTdatetime
+    JKQTPCALTdefault=0, /*!< \brief simply print the numbers \image html axisstyle/JKQTPCALTdefault.png */
+    JKQTPCALTscientific, /*!< \brief print the numbers in scientific notation, e.g. \c "1.23e-4" \image html axisstyle/JKQTPCALTscientific.png */
+    JKQTPCALTexponentCharacter, /*!< \brief print the numbers and show a unit character, i.e. 5&mu; for \f$ 5\cdot 10^{-6} \f$ , \c 3k for \f$ 3\cdot 10^3 \f$ ... \image html axisstyle/JKQTPCALTexponentCharacter.png */
+    JKQTPCALTexponent, /*!< \brief show numbers in exponential for, e.g. \f$ 3\cdot 10^5 \f$ ... \image html axisstyle/JKQTPCALTexponent.png */
+    JKQTPCALTprintf, /*!< \brief generate axis label from an arbitrary "printf" formatting string (see e.g. https://en.wikipedia.org/wiki/Printf_format_string ). The first data parameter is the tick value as \c double an the second is tickUnitName as string. The following image shows an example for \c "y=%+.2f": \image html axisstyle/JKQTPCALTprintf.png */
+    JKQTPCALTdate, /*!< \brief show numbers as dates \image html axisstyle/JKQTPCALTdate.png */
+    JKQTPCALTtime, /*!< \brief show numbers as times \image html axisstyle/JKQTPCALTtime.png*/
+    JKQTPCALTdatetime, /*!< \brief show numbers as times \image html axisstyle/JKQTPCALTdatetime.png */
+    JKQTPCALTfrac, /*!< \brief show numbers as fraction, the number is first rounded to the given precision and then a fraction is calculated and displayed like \f$ \frac{1}{2} \f$ \image html axisstyle/JKQTPCALTfrac.png */
+    JKQTPCALTslashfrac, /*!< \brief show numbers as fraction, the number is first rounded to the given precision and then a fraction is calculated and displayed like \c 1/2 \image html axisstyle/JKQTPCALTslashfrac.png */
+    JKQTPCALTsfrac, /*!< \brief show numbers as fraction, the number is first rounded to the given precision and then a fraction is calculated and displayed using \c \\sfrac{1}{2} \image html axisstyle/JKQTPCALTsfrac.png */
+    JKQTPCALTintfrac, /*!< \brief show numbers as integral+fraction, the number is first rounded to the given precision and then a fraction is calculated and displayed like \f$ -3\frac{1}{2} \f$ \image html axisstyle/JKQTPCALTintfrac.png */
+    JKQTPCALTintslashfrac, /*!< \brief show numbers as integral+fraction, the number is first rounded to the given precision and then a fraction is calculated and displayed like \c 1/2 \image html axisstyle/JKQTPCALTintslashfrac.png */
+    JKQTPCALTintsfrac, /*!< \brief show numbers as integral+fraction, the number is first rounded to the given precision and then a fraction is calculated and displayed using \c \\sfrac{1}{2}  \image html axisstyle/JKQTPCALTintsfrac.png */
+#if defined(__cpp_lib_format) || DOXYGEN
+    JKQTPCALTformat, /*!< \brief generate axis label from an arbitrary "std::format" formatting string (see e.g. https://en.cppreference.com/w/cpp/utility/format/formatter#Standard_format_specification ). The first data parameter is the tick value as \c double an the second is tickUnitName as string. The following image shows an example for \c "\\texttt{{ y={:*^+8.1f}}}": \image html axisstyle/JKQTPCALTformat.png
+                                 \b NOte: This option is only available for C++20 and above, use the CMake option \c JKQtPlotter_ENABLED_CXX20=ON if your compiler supports this. */
+#endif
+    JKQTPCALTcount,
+    JKQTPCALTmax=JKQTPCALTcount-1
 };
 
 
@@ -452,9 +471,9 @@ enum JKQTPCALabelType {
 /** \brief mode of the axis ticks
  * \ingroup jkqtpplottersupprt */
 enum JKQTPLabelTickMode {
-    JKQTPLTMLinOrPower=0, /*!< \brief linear, or log, depending on whether the axis is log */
-    JKQTPLTMLin, /*!< \brief always linear (even for log-axes) */
-    JKQTPLTMPower, /*!< \brief powers (of the log-base) */
+    JKQTPLTMLinOrPower=0, /*!< \brief linear, or log, depending on whether the axis is log \image html axisstyle/JKQTPLTMLinOrPower.png */
+    JKQTPLTMLin, /*!< \brief always linear (even for log-axes) \image html axisstyle/JKQTPLTMLin.png */
+    JKQTPLTMPower, /*!< \brief powers (of the log-base) \image html axisstyle/JKQTPLTMPower.png */
 
     JKQTPLTMmax=JKQTPLTMPower
 };
@@ -571,24 +590,54 @@ struct JKQTPLOTTER_LIB_EXPORT JKQTPGridPrintingItem {
 
 
 
-/** \brief plot styles for the error information
+
+/** \brief specifies the plot styles for the error information, e.g. error bars, boxes, lines ...
  * \ingroup jkqtplotter_basegraphserrors
+ *
+ * \note This enum provides the elements for \ref JKQTPErrorPlotstyle, which is actually used
+ *       throughout the code.
+ *
+ * \see JKQTPErrorPlotstyle, JKQTPXGraphErrorData, JKQTPYGraphErrorData
  */
-enum JKQTPErrorPlotstyle {
-    JKQTPErrorEllipses=10,           /*!< \brief an ellipse spanned by the errors \image html JKQTPErrorEllipses.png */
-    JKQTPErrorBoxes=9,               /*!< \brief a box spanned by the errors \image html JKQTPErrorBoxes.png */
-    JKQTPErrorSimpleBarsPolygons=8,  /*!< \brief simplified error barsand polygons  for each data point \image html JKQTPErrorSimpleBarsPolygons.png */
-    JKQTPErrorSimpleBarsLines=7,     /*!< \brief simplified error bars and line for each data point \image html JKQTPErrorSimpleBarsLines.png */
-    JKQTPErrorSimpleBars=6,          /*!< \brief simplified error bars for each data point \image html JKQTPErrorSimpleBars.png */
-    JKQTPErrorLines=5,               /*!< \brief a second and third graph line above and below the actual data which indicates the error value \image html JKQTPErrorLines.png */
-    JKQTPErrorBars=4,                /*!< \brief error bars for each data point \image html JKQTPErrorBars.png */
-    JKQTPErrorPolygons=3,            /*!< \brief line error lines, but with filled range in between \image html JKQTPErrorPolygons.png */
-    JKQTPErrorBarsLines=2,           /*!< \brief error bars and lines for each data point \image html JKQTPErrorBarsLines.png */
-    JKQTPErrorBarsPolygons=1,        /*!< \brief error bars and polygons for each data point \image html JKQTPErrorBarsPolygons.png */
-    JKQTPNoError=0                   /*!< \brief don't show error information \image html JKQTPNoError.png */
+enum JKQTPErrorPlotstyleElements {
+    JKQTPNoError=0x00,                   /*!< \brief don't show error information \image html errorindicators/JKQTPNoError.png */
+    JKQTPErrorSimpleBars=0x01,          /*!< \brief simplified error bars for each data point \image html errorindicators/JKQTPErrorSimpleBars.png */
+    JKQTPErrorLines=0x04,               /*!< \brief a second and third graph line above and below the actual data which indicates the error value \image html errorindicators/JKQTPErrorLines.png */
+    JKQTPErrorPolygons=0x08,            /*!< \brief line error lines, but with filled range in between \image html errorindicators/JKQTPErrorPolygons.png */
+    JKQTPErrorEllipses=0x10,            /*!< \brief an ellipse spanned by the errors \image html errorindicators/JKQTPErrorEllipses.png */
+    JKQTPErrorBoxes=0x20,               /*!< \brief a box spanned by the errors \image html errorindicators/JKQTPErrorBoxes.png */
+
+    JKQTPErrorDirectionBoth=0x000,     /*!< \brief do not draw half error-bars, but in both directions (default) \image html errorindicators/JKQTPErrorBars.png */
+    JKQTPErrorDirectionOutwards=0x100, /*!< \brief used to specify the directon of half error bars: outwards pointing \image html errorindicators/JKQTPErrorHalfBarsOutwards.png */
+    JKQTPErrorDirectionInwards=0x200,  /*!< \brief used to specify the directon of half error bars: inwards pointing \image html errorindicators/JKQTPErrorHalfBarsInwards.png */
+    JKQTPErrorDirectionAbove=04200,    /*!< \brief used to specify the directon of half error bars: above pointing \image html errorindicators/JKQTPErrorHalfBarsAbove.png */
+    JKQTPErrorDirectionBelow=0x800,     /*!< \brief used to specify the directon of half error bars: below pointing \image html errorindicators/JKQTPErrorHalfBarsBelow.png */
+    JKQTPErrorIndicatorNone=0x0000,     /*!< \brief used to specify that error bars shall be un-decorated i.e. "simple error-bars" */
+    JKQTPErrorIndicatorBar=0x1000,      /*!< \brief used to specify that error bars shall be decorated by bars \image html errorindicators/JKQTPErrorIndicatorBar.png */
+    JKQTPErrorIndicatorArrows=0x2000,     /*!< \brief used to specify that error bars shall be decorated by arrows \image html errorindicators/JKQTPErrorIndicatorArrows.png */
+    JKQTPErrorIndicatorInwardArrows=0x4000,     /*!< \brief used to specify that error bars shall be decorated by arrows \image html errorindicators/JKQTPErrorIndicatorInwardArrows.png */
+
+    JKQTPErrorArrows=JKQTPErrorSimpleBars|JKQTPErrorIndicatorArrows,          /*!< \brief error bars decorated with arrows for each data point \image html errorindicators/JKQTPErrorArrows.png */
+    JKQTPErrorInwardArrows=JKQTPErrorSimpleBars|JKQTPErrorIndicatorInwardArrows,          /*!< \brief error bars decorated with inwards-pointing arrows for each data point \image html errorindicators/JKQTPErrorInwardArrows.png */
+    JKQTPErrorBars=JKQTPErrorSimpleBars|JKQTPErrorIndicatorBar,          /*!< \brief error bars for each data point \image html errorindicators/JKQTPErrorBars.png */
+    JKQTPErrorSimpleBarsPolygons=JKQTPErrorSimpleBars|JKQTPErrorPolygons,  /*!< \brief simplified error barsand polygons  for each data point \image html errorindicators/JKQTPErrorSimpleBarsPolygons.png */
+    JKQTPErrorSimpleBarsLines=JKQTPErrorSimpleBars|JKQTPErrorLines,     /*!< \brief simplified error bars and line for each data point \image html errorindicators/JKQTPErrorSimpleBarsLines.png */
+    JKQTPErrorHalfBarsOutwards=JKQTPErrorBars|JKQTPErrorDirectionOutwards,   /*!< \brief half error bars for each data point, pointing outwards \image html errorindicators/JKQTPErrorHalfBarsOutwards.png */
+    JKQTPErrorHalfBarsInwards=JKQTPErrorBars|JKQTPErrorDirectionInwards,    /*!< \brief half error bars for each data point, pointing inwards \image html errorindicators/JKQTPErrorHalfBarsInwards.png */
+    JKQTPErrorHalfBarsAbove=JKQTPErrorBars|JKQTPErrorDirectionAbove,      /*!< \brief half error bars for each data point, pointing up \image html errorindicators/JKQTPErrorHalfBarsAbove.png */
+    JKQTPErrorHalfBarsBelow=JKQTPErrorBars|JKQTPErrorDirectionBelow,      /*!< \brief half error bars for each data point, pointing down \image html errorindicators/JKQTPErrorHalfBarsBelow.png */
+    JKQTPErrorBarsLines=JKQTPErrorBars|JKQTPErrorLines,           /*!< \brief error bars and lines for each data point \image html errorindicators/JKQTPErrorBarsLines.png */
+    JKQTPErrorBarsPolygons=JKQTPErrorBars|JKQTPErrorPolygons,        /*!< \brief error bars and polygons for each data point \image html errorindicators/JKQTPErrorBarsPolygons.png */
 };
-
-
+/** \brief specifies the plot styles for the error information, e.g. error bars, boxes, lines ...
+ * \ingroup jkqtplotter_basegraphserrors
+ *
+ * \qFlagsNote{JKQTPErrorPlotstyle,JKQTPErrorPlotstyleElements}
+ *
+ * \see JKQTPErrorPlotstyleElements, JKQTPXGraphErrorData, JKQTPYGraphErrorData
+ */
+Q_DECLARE_FLAGS(JKQTPErrorPlotstyle, JKQTPErrorPlotstyleElements)
+Q_DECLARE_OPERATORS_FOR_FLAGS(JKQTPErrorPlotstyle)
 
 
 /** \brief converts a JKQTPErrorPlotstyle variable into a human-readable string

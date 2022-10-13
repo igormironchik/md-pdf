@@ -31,7 +31,12 @@
 #include <QString>
 #include <functional>
 
-
+#ifdef max
+#  undef max
+#endif
+#ifdef min
+#  undef min
+#endif
 
 /*! \brief \f$ \pi=3.14159... \f$
     \ingroup jkqtptools_math_basic
@@ -523,4 +528,15 @@ QString jkqtp_polynomialModel2Latex(PolyItP firstP, PolyItP lastP) {
     return str;
 }
 
+/*! \brief calculate the grwates common divisor (GCD) of \a a and \a b
+    \ingroup jkqtptools_math_basic
+
+    */
+JKQTCOMMON_LIB_EXPORT uint64_t jkqtp_gcd(uint64_t a, uint64_t b);
+
+/*! \brief calculates numeratur integer part \a intpart , \a num and denominator \a denom of a fraction, representing a given floating-point number \a input
+    \ingroup jkqtptools_math_basic
+
+    */
+JKQTCOMMON_LIB_EXPORT void jkqtp_estimateFraction(double input, int &sign, uint64_t &intpart, uint64_t& num, uint64_t& denom, unsigned int precision=9);
 #endif // jkqtpmathtools_H_INCLUDED

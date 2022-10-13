@@ -19,7 +19,6 @@
 
 #include "jkqtplotter/jkqtpgraphsbasestylingmixins.h"
 #include "jkqtplotter/jkqtpbaseplotter.h"
-#include "jkqtplotter/jkqtplotter.h"
 #include <QApplication>
 #include <QDebug>
 
@@ -55,6 +54,13 @@ JKQTPGraphLineStyleMixin::~JKQTPGraphLineStyleMixin()
 void JKQTPGraphLineStyleMixin::setLineColor(const QColor &__value)
 {
     m_linePen.setColor(__value);
+}
+
+void JKQTPGraphLineStyleMixin::setLineColor(const QColor &__value, double alpha)
+{
+    QColor c=__value;
+    c.setAlphaF(alpha);
+    setLineColor(c);
 }
 
 QColor JKQTPGraphLineStyleMixin::getLineColor() const
@@ -140,6 +146,13 @@ QPen JKQTPGraphLineStyleMixin::getLinePen(JKQTPEnhancedPainter& painter, JKQTBas
     return p;
 }
 
+
+QPen JKQTPGraphLineStyleMixin::getKeyLinePen(JKQTPEnhancedPainter& painter, const QRectF& rect, JKQTBasePlotter* parent) const {
+    QPen p=m_linePen;
+    p.setWidthF(getKeyLineWidthPx(painter, rect, parent));
+    return p;
+}
+
 QPen JKQTPGraphLineStyleMixin::getLinePenForRects(JKQTPEnhancedPainter &painter, JKQTBasePlotter *parent) const
 {
     QPen p=getLinePen(painter, parent);
@@ -155,6 +168,38 @@ QPen JKQTPGraphLineStyleMixin::getLinePenForRects(JKQTPEnhancedPainter &painter,
 
 
 
+JKQTPGraphLinesCompressionMixin::JKQTPGraphLinesCompressionMixin():
+    m_useNonvisibleLineCompression(false),
+    m_nonvisibleLineCompressionAgressiveness(1)
+{
+
+}
+
+JKQTPGraphLinesCompressionMixin::~JKQTPGraphLinesCompressionMixin()
+{
+
+}
+
+void JKQTPGraphLinesCompressionMixin::setUseNonvisibleLineCompression(bool _useNonvisibleLineCompression)
+{
+    m_useNonvisibleLineCompression=_useNonvisibleLineCompression;
+}
+
+bool JKQTPGraphLinesCompressionMixin::getUseNonvisibleLineCompression() const
+{
+    return m_useNonvisibleLineCompression;
+}
+
+void JKQTPGraphLinesCompressionMixin::setNonvisibleLineCompressionAgressiveness(double Agressiveness)
+{
+    m_nonvisibleLineCompressionAgressiveness=Agressiveness;
+}
+
+double JKQTPGraphLinesCompressionMixin::getNonvisibleLineCompressionAgressiveness() const
+{
+    return m_nonvisibleLineCompressionAgressiveness;
+}
+
 
 
 
@@ -168,6 +213,7 @@ JKQTPGraphSymbolStyleMixin::JKQTPGraphSymbolStyleMixin()
     m_symbolSize=12;
     m_symbolFillColor=m_symbolColor.lighter();
     m_symbolLineWidth=1;
+    m_symbolFontName=QGuiApplication::font().family();
 }
 
 void JKQTPGraphSymbolStyleMixin::initSymbolStyle(JKQTBasePlotter *parent, int& parentPlotStyle, JKQTPPlotStyleType styletype)
@@ -180,6 +226,7 @@ void JKQTPGraphSymbolStyleMixin::initSymbolStyle(JKQTBasePlotter *parent, int& p
         m_symbolLineWidth=pen.symbolLineWidthF();
         m_symbolType=pen.symbol();
         m_symbolFillColor=pen.symbolFillColor();
+        m_symbolFontName=parent->getDefaultTextFontName();
     }
 }
 
@@ -213,6 +260,12 @@ void JKQTPGraphSymbolStyleMixin::setSymbolColor(const QColor &__value)
     m_symbolColor=__value;
 }
 
+void JKQTPGraphSymbolStyleMixin::setSymbolColor(const QColor &__value, double alpha)
+{
+    m_symbolColor=__value;
+    m_symbolColor.setAlphaF(alpha);
+}
+
 QColor JKQTPGraphSymbolStyleMixin::getSymbolColor() const
 {
     return m_symbolColor;
@@ -223,9 +276,21 @@ void JKQTPGraphSymbolStyleMixin::setSymbolFillColor(const QColor &__value)
     m_symbolFillColor=__value;
 }
 
+void JKQTPGraphSymbolStyleMixin::setSymbolFillColor(const QColor &__value, double alpha)
+{
+    m_symbolFillColor=__value;
+    m_symbolFillColor.setAlphaF(alpha);
+}
+
 QColor JKQTPGraphSymbolStyleMixin::getSymbolFillColor() const
 {
     return m_symbolFillColor;
+}
+
+void JKQTPGraphSymbolStyleMixin::setSymbolAlpha(double alpha)
+{
+    m_symbolColor.setAlphaF(alpha);
+    m_symbolFillColor.setAlphaF(alpha);
 }
 
 void JKQTPGraphSymbolStyleMixin::setSymbolLineWidth(double __value)
@@ -236,6 +301,33 @@ void JKQTPGraphSymbolStyleMixin::setSymbolLineWidth(double __value)
 double JKQTPGraphSymbolStyleMixin::getSymbolLineWidth() const
 {
     return m_symbolLineWidth;
+}
+
+void JKQTPGraphSymbolStyleMixin::setSymbolFontName(const QString &__value)
+{
+    m_symbolFontName=__value;
+}
+
+QString JKQTPGraphSymbolStyleMixin::getSymbolFontName() const
+{
+    return m_symbolFontName;
+}
+
+double JKQTPGraphSymbolStyleMixin::getKeySymbolLineWidthPx(JKQTPEnhancedPainter& painter, const QRectF& keyRect, const JKQTBasePlotter *parent, double maxSymbolSizeFracton) const
+{
+    const double minSize=qMin(keyRect.width(), keyRect.height());
+    double symbolWidth=parent->pt2px(painter, this->getSymbolLineWidth()*parent->getLineWidthMultiplier());
+    double symbolSize=getKeySymbolSizePx(painter, keyRect, parent, maxSymbolSizeFracton);
+    if (symbolWidth>0.3*symbolSize) symbolWidth=0.3*symbolSize;
+    return symbolWidth;
+}
+
+double JKQTPGraphSymbolStyleMixin::getKeySymbolSizePx(JKQTPEnhancedPainter& painter, const QRectF& keyRect, const JKQTBasePlotter *parent, double maxSymbolSizeFracton) const
+{
+    const double minSize=qMin(keyRect.width(), keyRect.height());
+    double symbolSize=parent->pt2px(painter, this->getSymbolSize());
+    if (symbolSize>minSize*maxSymbolSizeFracton) symbolSize=minSize*maxSymbolSizeFracton;
+    return symbolSize;
 }
 
 QPen JKQTPGraphSymbolStyleMixin::getSymbolPen(JKQTPEnhancedPainter& painter, JKQTBasePlotter* parent) const {
@@ -254,25 +346,20 @@ QBrush JKQTPGraphSymbolStyleMixin::getSymbolBrush(JKQTPEnhancedPainter& /*painte
     return b;
 }
 
-void JKQTPGraphSymbolStyleMixin::plotStyledSymbol(JKQTBasePlotter* parent, JKQTPEnhancedPainter &painter, double x, double y) const
+QFont JKQTPGraphSymbolStyleMixin::getSymbolFont() const
 {
-    JKQTPPlotSymbol(painter, x, y,m_symbolType, parent->pt2px(painter, m_symbolSize), parent->pt2px(painter, m_symbolLineWidth*parent->getLineWidthMultiplier()), m_symbolColor, m_symbolFillColor);
+    QFont f(m_symbolFontName, m_symbolSize);
+    f.setStyleStrategy(QFont::PreferDefault);
+    return f;
 }
 
-void JKQTPGraphSymbolStyleMixin::plotStyledSymbol(JKQTBasePlotter* parent, JKQTPEnhancedPainter &painter, double x, double y, JKQTPGraphSymbols type) const
-{
-    JKQTPPlotSymbol(painter, x, y,type, parent->pt2px(painter, m_symbolSize), parent->pt2px(painter, m_symbolLineWidth*parent->getLineWidthMultiplier()), m_symbolColor, m_symbolFillColor);
-}
 
-void JKQTPGraphSymbolStyleMixin::plotStyledSymbol(JKQTBasePlotter* parent, JKQTPEnhancedPainter &painter, double x, double y, double symbolSize) const
-{
-    JKQTPPlotSymbol(painter, x, y,m_symbolType, symbolSize, parent->pt2px(painter, m_symbolLineWidth*parent->getLineWidthMultiplier()), m_symbolColor, m_symbolFillColor);
-}
 
-void JKQTPGraphSymbolStyleMixin::plotStyledSymbol(JKQTBasePlotter* parent, JKQTPEnhancedPainter &painter, double x, double y, QColor color, QColor fillColor) const
-{
-    JKQTPPlotSymbol(painter, x, y,m_symbolType, parent->pt2px(painter, m_symbolSize), parent->pt2px(painter, m_symbolLineWidth*parent->getLineWidthMultiplier()), color, fillColor);
-}
+
+
+
+
+
 
 
 
@@ -341,6 +428,13 @@ void JKQTPGraphFillStyleMixin::setFillColor(const QColor &__value)
     m_fillBrush.setColor(m_fillColor);
 }
 
+void JKQTPGraphFillStyleMixin::setFillColor(const QColor &__value, double alpha)
+{
+    m_fillColor=__value;
+    m_fillColor.setAlphaF(alpha);
+    m_fillBrush.setColor(m_fillColor);
+}
+
 QColor JKQTPGraphFillStyleMixin::getFillColor() const
 {
     return m_fillBrush.color();
@@ -401,9 +495,23 @@ void JKQTPGraphLineStyleMixin::setHighlightingLineColor(const QColor &__value)
     m_highlightingLineColor=__value;
 }
 
+void JKQTPGraphLineStyleMixin::setHighlightingLineColor(const QColor &__value, double alpha)
+{
+    m_highlightingLineColor=__value;
+    m_highlightingLineColor.setAlphaF(alpha);
+}
+
 QColor JKQTPGraphLineStyleMixin::getHighlightingLineColor() const
 {
     return m_highlightingLineColor;
+}
+
+double JKQTPGraphLineStyleMixin::getKeyLineWidthPx(JKQTPEnhancedPainter &painter, const QRectF &keyRect, const JKQTBasePlotter *parent) const
+{
+    const double minSize=qMin(keyRect.width(), keyRect.height());
+    double lineWidth=parent->pt2px(painter, this->getLineWidth()*parent->getLineWidthMultiplier());
+    if (lineWidth>0.4*minSize) lineWidth=0.4*minSize;
+    return lineWidth;
 }
 
 QPen JKQTPGraphLineStyleMixin::getHighlightingLinePen(JKQTPEnhancedPainter &painter, JKQTBasePlotter *parent) const
@@ -465,6 +573,12 @@ QString JKQTPGraphTextStyleMixin::getTextFontName() const
 void JKQTPGraphTextStyleMixin::setTextColor(const QColor &__value)
 {
     m_textColor=__value;
+}
+
+void JKQTPGraphTextStyleMixin::setTextColor(const QColor &__value, double alpha)
+{
+    m_textColor=__value;
+    m_textColor.setAlphaF(alpha);
 }
 
 QColor JKQTPGraphTextStyleMixin::getTextColor() const

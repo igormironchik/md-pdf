@@ -51,63 +51,8 @@ QString JKQTMathTextSymbolNode::getTypeName() const
 }
 
 
-void JKQTMathTextSymbolNode::getSizeInternal(QPainter& painter, JKQTMathTextEnvironment currentEv, double& width, double& baselineHeight, double& overallHeight, double& strikeoutPos, const JKQTMathTextNodeSize* prevNodeSize) {
-    double dummy1, dummy2;
-    getSymbolSizeInternal(painter, currentEv, width, baselineHeight, overallHeight, strikeoutPos, dummy1, dummy2, prevNodeSize);
-}
-
-void JKQTMathTextSymbolNode::getSymbolSizeInternal(QPainter &painter, JKQTMathTextEnvironment currentEv, double &width, double &baselineHeight, double &overallHeight, double &strikeoutPos, double &subSuperXCorrection, double &subBesidesXCorrection, const JKQTMathTextNodeSize */*prevNodeSize*/)
-{
-    const auto fullProps=symbols.value(symbolName, SymbolFullProps());
-    const GlobalSymbolFlags globalFlags=fullProps.globalFlags;
-    const auto drawProps=fullProps.getDrawingData(currentEv, parentMathText);
-    const QFont f=drawProps.first;
-    const QFontMetricsF fm(f);
-    const JKQTMathTextSymbolNode::SymbolProps symprops=drawProps.second;
-    const SymbolFlags symflags=symprops.flags;
-    const QString sym=symprops.symbol;
-    const QRectF tbr=getTightBoundingRect(fm, sym, globalFlags);
-    const QRectF br=getBoundingRect(fm, sym, globalFlags);
-    const QRectF tbrNoSymbol=JKQTMathTextGetTightBoundingRect(f, "X", painter.device());
-    const QRectF mintbr=JKQTMathTextGetTightBoundingRect(f, "(", painter.device());
-    //const double yShift=symprops.yShiftFactor*tbr.height();
-
-
-    if (currentEv.insideMath) {
-        width=qMax(br.width(), mintbr.width());
-        if (has(globalFlags, SmallExtendWidthInMathmode)) {
-            if (!symprops.getSymbolSingleChar().isNull()) width=width*(1.0+(parentMathText->getMathoperatorWidthFactor()-1.0)/2.0);
-            else width=width+mintbr.width();
-        } else if (has(globalFlags, ExtendWidthInMathmode)) {
-            if (!symprops.getSymbolSingleChar().isNull()) width=width*parentMathText->getMathoperatorWidthFactor();
-            else width=width+mintbr.width();
-        }
-    } else {
-        width=br.width();
-    }
-    if (!sym.isEmpty()) {
-        overallHeight=tbr.height();
-        baselineHeight=tbr.height()-tbr.bottom();
-    } else {
-        overallHeight=tbrNoSymbol.height();
-        baselineHeight=tbrNoSymbol.height()-tbrNoSymbol.bottom();
-        width=tbrNoSymbol.width();
-    }
-    const double oldDescent=overallHeight-baselineHeight;
-
-    if (has(symflags, HeightIsAscent)) {
-        baselineHeight=fm.ascent();
-        overallHeight=baselineHeight+oldDescent;
-    }
-    if (has(symflags, RotateSymbol90)) {
-        width=qMax(overallHeight, width);
-    }
-    strikeoutPos=fm.strikeOutPos();
-
-    if (has(globalFlags, IntLikeSymbolCorrection)) {
-        subSuperXCorrection=parentMathText->getIntSubSuperXCorrectionFactor()*tbr.width();
-        subBesidesXCorrection=parentMathText->getIntSubBesidesXCorrectionXFactor()*JKQTMathTextGetTightBoundingRect(f, "X", painter.device()).width();
-    }
+JKQTMathTextNodeSize JKQTMathTextSymbolNode::getSizeInternal(QPainter& painter, JKQTMathTextEnvironment currentEv) const {
+    return getSymbolSize(painter, currentEv);
 }
 
 QRectF JKQTMathTextSymbolNode::getBoundingRect(const QFontMetricsF &fm, const QString &text, GlobalSymbolFlags globalFlags)
@@ -193,12 +138,9 @@ void JKQTMathTextSymbolNode::drawText(QPainter &p, const QString &text, GlobalSy
 }
 
 
-double JKQTMathTextSymbolNode::draw(QPainter& painter, double x, double y, JKQTMathTextEnvironment currentEv, const JKQTMathTextNodeSize* /*prevNodeSize*/) {
-    doDrawBoxes(painter, x, y, currentEv);
-    double width=0;
-    double baselineHeight=0;
-    double overallHeight=0, strikeoutPos=0;
-    getSize(painter, currentEv, width, baselineHeight, overallHeight, strikeoutPos);
+double JKQTMathTextSymbolNode::draw(QPainter& painter, double x, double y, JKQTMathTextEnvironment currentEv) const {
+    const NodeSize s=getSymbolSize(painter, currentEv);
+    doDrawBoxes(painter, x, y, s);
 
     const auto fullProps=symbols.value(symbolName, SymbolFullProps());
     const GlobalSymbolFlags globalFlags=fullProps.globalFlags;
@@ -215,11 +157,12 @@ double JKQTMathTextSymbolNode::draw(QPainter& painter, double x, double y, JKQTM
     //const QRectF br=getBoundingRect(fm, sym, globalFlags);
     const QRectF tbrNoSymbol=JKQTMathTextGetTightBoundingRect(f, "X", painter.device());
     const double yShift=symprops.yShiftFactor*tbr.height();
-    const double xShift=(width-tbr.width())/2.0;
+    const double xShift=(s.width-tbr.width())/2.0;
     const QPointF x0(x+xShift-tbr.x(), y+yShift);
-    const double italic_xcorrection=tbr.width()-tbrNonItalic.width();
+    double italic_xcorrection=fabs(tbr.width()-tbrNonItalic.width());
+    if (fabs(italic_xcorrection)<1e-6) italic_xcorrection=double(fm.boundingRect(' ').width())*0.4;
 
-    //qDebug()<<"SYMB::draw(): symbolName="<<symbolName<<" font="<<f<<" sym="<<sym<<" yShiftFactor="<<symprops.yShiftFactor;
+    //std::cout<<"SYMB::draw(): symbolName="<<symbolName.toStdString()<<" font="<<f.family().toStdString()<<" sym="<<sym.toStdString()<<"(0x"<<std::hex<<((sym.size()==0)?uint64_t(0):uint64_t(sym[0].unicode()))<<") yShiftFactor="<<symprops.yShiftFactor<<"\n";
 
     if (!sym.isEmpty()) {
         // if the symbol has been recognized in the constructor: draw the symbol
@@ -232,8 +175,8 @@ double JKQTMathTextSymbolNode::draw(QPainter& painter, double x, double y, JKQTM
             //qDebug()<<"  -> DrawLeftHBar or DrawRightHBar";
             painter.save(); auto __finalpaint=JKQTPFinally([&painter]() {painter.restore();});
             painter.setPen(QPen(currentEv.color, fm.lineWidth()));
-            const double ybar=-(fm.xHeight()+fm.ascent())/2.0;
-            const double deltaybar=(fm.ascent()-fm.xHeight())*0.25;
+            const double ybar=-fm.xHeight()*1.1;
+            const double deltaybar=fm.xHeight()*0.2;
             const double barwidth=tbrNonItalic.width()/2.0;
             const double xbarstart=(has(symflags, DrawLeftHBar))?italic_xcorrection:(tbr.width()-barwidth);
             painter.drawLine(xbarstart, ybar, xbarstart+barwidth, ybar-deltaybar);
@@ -249,11 +192,11 @@ double JKQTMathTextSymbolNode::draw(QPainter& painter, double x, double y, JKQTM
         }
         if (has(symflags, DrawSlash)) {
             //qDebug()<<"  -> DrawSlash";
-            painter.drawText(QPointF((width-fm.boundingRect('/').width())/2.0,0),"/");
+            painter.drawText(QPointF((s.width-fm.boundingRect('/').width())/2.0,0),"/");
         }
         if (has(symflags, DrawBackSlash)) {
             //qDebug()<<"  -> DrawBackSlash";
-            painter.drawText(QPointF((width-fm.boundingRect('\\').width())/2.0,0),"\\");
+            painter.drawText(QPointF((s.width-fm.boundingRect('\\').width())/2.0,0),"\\");
         }
         /*painter.save();
         painter.setPen(QPen(QColor("red"), 0.5, Qt::DotLine));
@@ -268,10 +211,10 @@ double JKQTMathTextSymbolNode::draw(QPainter& painter, double x, double y, JKQTM
         painter.drawRect(QRectF(x0.x(), x0.y()-tbrNoSymbol.height(), tbrNoSymbol.width(), tbrNoSymbol.height()));
     }
 
-    return x+width;
+    return x+s.width;
 }
 
-bool JKQTMathTextSymbolNode::toHtml(QString &html, JKQTMathTextEnvironment currentEv, JKQTMathTextEnvironment defaultEv) {
+bool JKQTMathTextSymbolNode::toHtml(QString &html, JKQTMathTextEnvironment currentEv, JKQTMathTextEnvironment defaultEv) const {
     bool ok=true;
     const auto props=symbols.value(symbolName, SymbolFullProps());
     QString s=props.html.symbol;
@@ -287,22 +230,80 @@ QString JKQTMathTextSymbolNode::getSymbolName() const {
     return this->symbolName;
 }
 
-void JKQTMathTextSymbolNode::getSymbolSize(QPainter &painter, JKQTMathTextEnvironment currentEv, double &width, double &baselineHeight, double &overallHeight, double &strikeoutPos, double &subSuperXCorrection, double &subBesidesXCorrection, const JKQTMathTextNodeSize *prevNodeSize)
+JKQTMathTextSymbolNode::NodeSize JKQTMathTextSymbolNode::getSymbolSize(QPainter &painter, JKQTMathTextEnvironment currentEv) const
 {
-    double w=width, b=baselineHeight, o=overallHeight, s=strikeoutPos;
-    getSymbolSizeInternal(painter, currentEv, w, b, o, s, subSuperXCorrection, subBesidesXCorrection, prevNodeSize);
+    NodeSize s;
 
-    if (w<1e5) width=w;
-    if (b<1e5) baselineHeight=b;
-    if (o<1e5) overallHeight=o;
-    if (s<1e5) strikeoutPos=s;
+    const auto fullProps=symbols.value(symbolName, SymbolFullProps());
+    const GlobalSymbolFlags globalFlags=fullProps.globalFlags;
+    const auto drawProps=fullProps.getDrawingData(currentEv, parentMathText);
+    const QFont f=drawProps.first;
+    const QFontMetricsF fm(f);
+    const JKQTMathTextSymbolNode::SymbolProps symprops=drawProps.second;
+    const SymbolFlags symflags=symprops.flags;
+    const QString sym=symprops.symbol;
+    const QRectF tbr=getTightBoundingRect(fm, sym, globalFlags);
+    const QRectF br=getBoundingRect(fm, sym, globalFlags);
+    const QRectF tbrNoSymbol=JKQTMathTextGetTightBoundingRect(f, "X", painter.device());
+    const QRectF mintbr=JKQTMathTextGetTightBoundingRect(f, "(", painter.device());
+    const QRectF dottbr=JKQTMathTextGetTightBoundingRect(f, ".", painter.device());
+    //const double yShift=symprops.yShiftFactor*tbr.height();
 
+    if (currentEv.insideMath) {
+        s.width=qMax(br.width(), mintbr.width());
+        if (has(globalFlags, SmallExtendWidthInMathmode)) {
+            if (!symprops.getSymbolSingleChar().isNull()) s.width=s.width*(1.0+(parentMathText->getMathoperatorWidthFactor()-1.0)/5.0);
+            else s.width=s.width+mintbr.width()*0.15;
+        } else if (has(globalFlags, ExtendWidthInMathmode)) {
+            if (!symprops.getSymbolSingleChar().isNull()) s.width=s.width*parentMathText->getMathoperatorWidthFactor();
+            else s.width=s.width+mintbr.width()*0.5;
+        }
+    } else {
+        s.width=br.width();
+    }
+    if (!sym.isEmpty()) {
+        s.overallHeight=tbr.height();
+        s.baselineHeight=tbr.height()-tbr.bottom();
+    } else {
+        s.overallHeight=tbrNoSymbol.height();
+        s.baselineHeight=tbrNoSymbol.height()-tbrNoSymbol.bottom();
+        s.width=tbrNoSymbol.width();
+    }
+    const double oldDescent=s.overallHeight-s.baselineHeight;
+
+    if (has(symflags, HeightIsAscent)) {
+        s.baselineHeight=fm.ascent();
+        s.overallHeight=s.baselineHeight+oldDescent;
+    }
+    if (has(symflags, RotateSymbol90)) {
+        s.width=qMax(s.overallHeight, s.width);
+    }
+    s.strikeoutPos=fm.strikeOutPos();
+
+    if (has(globalFlags, IntLikeSymbolCorrection)) {
+        if (has(globalFlags, SubSuperscriptBelowAboveSymbol)) {
+            s.subSuperAboveBelowXCorrection=parentMathText->getIntSubSuperXCorrectionFactor()*tbr.width();
+        }
+        s.baselineXCorrection=-parentMathText->getIntSubBesidesXCorrectionXFactor()*JKQTMathTextGetTightBoundingRect(f, "X", painter.device()).width();
+        s.topXCorrection=dottbr.width();
+    }
+    if (has(globalFlags, SubscriptCorrection) && sym.size()>0) {
+        s.baselineXCorrection=fm.rightBearing(sym[sym.size()-1]);
+    }
+
+    return s;
 }
 
 bool JKQTMathTextSymbolNode::hasSymbol(const QString &symbolName)
 {
     fillSymbolTables();
     return symbols.contains(symbolName);
+}
+
+QStringList JKQTMathTextSymbolNode::getSymbols()
+{
+    fillSymbolTables();
+    return symbols.keys();
 }
 
 bool JKQTMathTextSymbolNode::isSubSuperscriptBelowAboveSymbol(const QString &symbolName)
@@ -312,6 +313,24 @@ bool JKQTMathTextSymbolNode::isSubSuperscriptBelowAboveSymbol(const QString &sym
         return has(symbols[symbolName].globalFlags, SubSuperscriptBelowAboveSymbol);
     }
     return false;
+}
+
+bool JKQTMathTextSymbolNode::isExtendedWidthSymbol(const QString &symbolName)
+{
+    fillSymbolTables();
+    if (symbols.contains(symbolName)) {
+        return has(symbols[symbolName].globalFlags, ExtendWidthInMathmode) ||  has(symbols[symbolName].globalFlags, SmallExtendWidthInMathmode);
+    }
+    return false;
+}
+
+int JKQTMathTextSymbolNode::getSymbolLength(const QString &symbolName)
+{
+    fillSymbolTables();
+    if (symbols.contains(symbolName)) {
+        return symbols[symbolName].props.value(MTFEUnicode, symbols[symbolName].props.value(MTFEStandard, SymbolProps())).symbol.size();
+    }
+    return 0;
 }
 
 
@@ -351,6 +370,16 @@ JKQTMathTextSymbolNode::SymbolFullProps JKQTMathTextSymbolNode::MathOperatorText
     return SymbolFullProps(SymbolProps(op, ItalicOff|BoldOff|HeightIsAscent, 1.0, 0.0)).addGlobalFlags(ExtendWidthInMathmode|MakeWhitespaceHalf).addHtml(ophtml, ItalicOff|BoldOff|HeightIsAscent, 1.0, 0.0);
 }
 
+JKQTMathTextSymbolNode::SymbolFullProps JKQTMathTextSymbolNode::NarrowMathOperatorText(const QString &op)
+{
+    return NarrowMathOperatorText(op, op);
+}
+
+JKQTMathTextSymbolNode::SymbolFullProps JKQTMathTextSymbolNode::NarrowMathOperatorText(const QString &op, const QString &ophtml)
+{
+    return SymbolFullProps(SymbolProps(op, ItalicOff|BoldOff|HeightIsAscent, 1.0, 0.0)).addGlobalFlags(SmallExtendWidthInMathmode|MakeWhitespaceHalf).addHtml(ophtml, ItalicOff|BoldOff|HeightIsAscent, 1.0, 0.0);
+}
+
 JKQTMathTextSymbolNode::SymbolFullProps JKQTMathTextSymbolNode::MathOperatorSymbolUnicode(const QString &unicode)
 {
     return SymbolFullProps(MTFEUnicode, SymbolProps(unicode, ItalicOff|BoldOff, 1.0, 0.0)).addGlobalFlags(ExtendWidthInMathmode|MakeWhitespaceHalf);
@@ -371,9 +400,14 @@ JKQTMathTextSymbolNode::SymbolFullProps JKQTMathTextSymbolNode::NarrowMathOperat
     return SymbolFullProps(MTFEStandard, SymbolProps(symbol, ItalicOff|BoldOff, 1.0, 0.0)).addHtml(symbol, ItalicOff|BoldOff, 1.0, 0.0).addGlobalFlags(SmallExtendWidthInMathmode|MakeWhitespaceHalf);
 }
 
-JKQTMathTextSymbolNode::SymbolFullProps JKQTMathTextSymbolNode::GreekLetter_WinSymbol_Unicode_Html(const QString &letterWinSymbol, const QString &letterUnicode, const QString &html)
+JKQTMathTextSymbolNode::SymbolFullProps JKQTMathTextSymbolNode::MathGreekLetter_WinSymbol_Unicode_Html(const QString &letterWinSymbol, const QString &letterUnicode, const QString &html)
 {
-    return SymbolFullProps(MTFEUnicode, SymbolProps(letterUnicode), MTFEWinSymbol, SymbolProps(letterWinSymbol), html);
+    return SymbolFullProps(MTFEUnicode, SymbolProps(letterUnicode, ItalicOn), MTFEWinSymbol, SymbolProps(letterWinSymbol, ItalicOn), html);
+}
+
+JKQTMathTextSymbolNode::SymbolFullProps JKQTMathTextSymbolNode::AsOutsiudeGreekLetter_WinSymbol_Unicode_Html(const QString &letterWinSymbol, const QString &letterUnicode, const QString &html)
+{
+    return SymbolFullProps(MTFEUnicode, SymbolProps(letterUnicode, AsOutside), MTFEWinSymbol, SymbolProps(letterWinSymbol, AsOutside), html);
 }
 
 JKQTMathTextSymbolNode::SymbolFullProps JKQTMathTextSymbolNode::UprightGreekLetter_WinSymbol_Unicode_Html(const QString &letterWinSymbol, const QString &letterUnicode, const QString &html)
@@ -383,8 +417,8 @@ JKQTMathTextSymbolNode::SymbolFullProps JKQTMathTextSymbolNode::UprightGreekLett
 
 void JKQTMathTextSymbolNode::addGreekLetterVariants_WinSymbol_Unicode_Html(const QString &baseInstructionName, const QString &letterWinSymbol, const QString &letterUnicode, const QString &html)
 {
-    symbols[baseInstructionName]=GreekLetter_WinSymbol_Unicode_Html(letterWinSymbol, letterUnicode, html);
-    symbols["text"+baseInstructionName]=GreekLetter_WinSymbol_Unicode_Html(letterWinSymbol, letterUnicode, html);
+    symbols[baseInstructionName]=MathGreekLetter_WinSymbol_Unicode_Html(letterWinSymbol, letterUnicode, html).addGlobalFlags(SubscriptCorrection);
+    symbols["text"+baseInstructionName]=AsOutsiudeGreekLetter_WinSymbol_Unicode_Html(letterWinSymbol, letterUnicode, html);
     symbols["up"+baseInstructionName]=UprightGreekLetter_WinSymbol_Unicode_Html(letterWinSymbol, letterUnicode, html);
 }
 
@@ -396,6 +430,12 @@ JKQTMathTextSymbolNode::SymbolFullProps JKQTMathTextSymbolNode::StdSymbol(const 
 JKQTMathTextSymbolNode::SymbolFullProps JKQTMathTextSymbolNode::UnicodeSymbol(const QString &symbol, SymbolFlags _flags, double _fontScalingFactor, double _yShiftFactor)
 {
     return SymbolFullProps(MTFEUnicode, SymbolProps(symbol, _flags, _fontScalingFactor, _yShiftFactor));
+}
+
+JKQTMathTextSymbolNode::SymbolFullProps JKQTMathTextSymbolNode::UprightSymbolStd(const QString &symbol)
+{
+    QString html=symbol;
+    return UprightSymbolStd(symbol, html);
 }
 
 JKQTMathTextSymbolNode::SymbolFullProps JKQTMathTextSymbolNode::UnicodeSymbol(const QString &symbol, const QString &html)
@@ -411,6 +451,13 @@ JKQTMathTextSymbolNode::SymbolFullProps JKQTMathTextSymbolNode::StdSymbol(const 
 JKQTMathTextSymbolNode::SymbolFullProps JKQTMathTextSymbolNode::UprightSymbolStd(const QString &symbol, const QString &html)
 {
     return SymbolFullProps(MTFEStandard, SymbolProps(symbol, ItalicOff), html, ItalicOff);
+}
+
+JKQTMathTextSymbolNode::SymbolFullProps JKQTMathTextSymbolNode::UprightSymbolUnicode(const QString &symbol)
+{
+    QString html=symbol;
+    return UprightSymbolUnicode(symbol, html);
+
 }
 
 JKQTMathTextSymbolNode::SymbolFullProps JKQTMathTextSymbolNode::UprightSymbolUnicode(const QString &symbol, const QString &html)
@@ -461,6 +508,7 @@ void JKQTMathTextSymbolNode::fillSymbolTables()
     symbols["|"]=SimpleUprightTextSymbol("||", "&Vert;").addUprightUnicode(QChar(0x2016));
     symbols["}"]=SimpleUprightTextSymbol("}");
     symbols["AC"]=UprightSymbolUnicode(QChar(0x223F)).addUprightHtml("&acd;").addUprightStd("~");
+    symbols["circonflex"]=SimpleTextSymbol("^");
     symbols["aa"]=SimpleTextSymbol(QChar(0xE5));
     symbols["ae"]=SimpleTextSymbol(QChar(0xE6));
     symbols["AE"]=SimpleTextSymbol(QChar(0xC6));
@@ -473,7 +521,7 @@ void JKQTMathTextSymbolNode::fillSymbolTables()
     symbols["o"]=SimpleTextSymbol(QChar(0xF8)).addHtml("&oslash;");
     symbols["O"]=SimpleTextSymbol(QChar(0xD8)).addHtml("&Oslash;");
     { auto s=UprightSymbolUnicode(QChar(0x212B)).addUprightStd(QChar(0xC5));
-      symbols["Angstrom"]=s; symbols["Angstroem"]=s; }
+      symbols["Angstrom"]=s; symbols["angstrom"]=s; }
     { auto s=UnicodeSymbol(QChar(0x2136)).addHtml("&beth;");
       symbols["Beth"]=s; symbols["Bet"]=s; symbols["beth"]=s; symbols["bet"]=s; }
     symbols["Box"]=UprightSymbolUnicode(QChar(0x25A1));
@@ -494,22 +542,26 @@ void JKQTMathTextSymbolNode::fillSymbolTables()
     symbols["backslash"]=SimpleTextSymbol("\\");
     symbols["benzene"]=UprightSymbolUnicode(QChar(0x232C));
     symbols["benzenr"]=UprightSymbolUnicode(QChar(0x23E3));
-    symbols["blacksquare"]=UprightSymbolUnicode(QChar(0x220E)).addHtml("&squ;");
+    symbols["blacksquare"]=UprightSymbolUnicode(QChar(0x220E)).addUprightHtml("&squ;");
     { auto s=UprightSymbolUnicode(QChar(0x231E));
         symbols["blcorner"]=s; symbols["llcorner"]=s; }
     { auto s=UprightSymbolUnicode(QChar(0x231F));
         symbols["brcorner"]=s; symbols["lrcorner"]=s; }
     { auto s=UprightSymbolUnicode(QChar(0x2022)).addUprightHtml("&bull;").addUprightWinSymbol(QChar(0xB7));
         symbols["bullet"]=s; symbols["textbullet"]=s; }
-    symbols["cdots"]=UnicodeSymbol(QChar(0x22EF)).addHtml("&middot;&middot;&middot;").addStd(QString(3, QChar(0xB7)));
+    symbols["cdots"]=UprightSymbolUnicode(QChar(0x22EF)).addUprightHtml("&middot;&middot;&middot;").addUprightStd(QString(3, QChar(0xB7)));
     { auto s=UnicodeSymbol(QChar(0x2103)).addUprightStd("°C").addUprightHtml("&deg;C");
-        symbols["celsius"]=s; symbols["degC"]=s; }
+        symbols["celsius"]=s; symbols["degC"]=s; symbols["degreeCelsius"]=s; }
+    symbols["ell"]=UprightSymbolUnicode(QChar(0x2113), "&ell;");
+    symbols["wp"]=UprightSymbolUnicode(QChar(0x2118), "&wp;").addGlobalFlags(SubscriptCorrection);
+    symbols["mho"]=UprightSymbolUnicode(QChar(0x2127), "&mho;");
+    symbols["lozenge"]=UprightSymbolUnicode(QChar(0x25CA), "&loz;");
     symbols["cent"]=SimpleTextSymbol(QChar(0xA2), "&cent;");
     symbols["checkmark"]=UprightSymbolStd(QChar(0x2713)).addUprightHtml("&check;");
     symbols["circ"]=UprightSymbolStd(QChar(0x2218)).addUprightHtml("&SmallCircle;").addStd("o", ItalicOff,0.7, -0.25);
     symbols["co"]=UprightSymbolUnicode(QChar(0x2105));
-    { auto s=SimpleTextSymbol(QChar(0xA5), "&copy;");
-        symbols["copyright"]=s; symbols["textcopyright"]=s; }
+    { auto s=SimpleTextSymbol(QChar(0xA9), "&copy;");
+        symbols["copyright"]=s; symbols["textcopyright"]=s; symbols["circledC"]=s; }
     { auto s=UprightSymbolUnicode(QChar(0x2020)).addUprightHtml("&dagger;");
         symbols["dagger"]=s; symbols["dag"]=s; symbols["textdagger"]=s; }
     { auto s=UprightSymbolUnicode(QChar(0x2021)).addUprightHtml("&ddagger;");
@@ -522,6 +574,7 @@ void JKQTMathTextSymbolNode::fillSymbolTables()
     { auto s=SimpleTextSymbol(QChar(0x24), "&dollar;");
         symbols["dollar"]=s; symbols["$"]=s; }
     symbols["dprime"]=UnicodeSymbol(QChar(0x2033)).addHtml("&Prime;").addStd("''");
+    symbols["complement"] = SymbolFullProps(SymbolProps("C", Upright|BoldOff), "C", Upright|BoldOff).addUnicode(QChar(0x2201), Upright|BoldOff);
     symbols["ee"] = SymbolFullProps(SymbolProps("e", Upright|BoldOff), "e", Upright|BoldOff);
     { auto s=UnicodeSymbol(QChar(0x2026)).addHtml("&mldr;").addWinSymbol(QChar(0xBC)).addStd("...");
         symbols["ellipsis"]=s; symbols["dots"]=s; symbols["ldots"]=s; }
@@ -532,7 +585,7 @@ void JKQTMathTextSymbolNode::fillSymbolTables()
     symbols["female"]=UnicodeSymbol(QChar(0x2640)).addHtml("&female;");
     symbols["flq"]=UnicodeSymbol(QChar(0x2039)).addHtml("&lsaquo;").addStd("<");
     symbols["flqq"]=UnicodeSymbol(QChar(0x00AB)).addHtml("&laquo;").addStd(QChar(0xAB));
-    symbols["frown"]=UnicodeSymbol(QChar(0x2322)).addHtml("&frown;");
+    //symbols["frown"]=UnicodeSymbol(QChar(0x2322)).addHtml("&frown;");
     symbols["frq"]=UnicodeSymbol(QChar(0x203A)).addHtml("&rsaquo;").addStd(">");
     symbols["frqq"]=UnicodeSymbol(QChar(0x00BB)).addHtml("&raquo;").addStd(QChar(0xBB));
     { auto s=UnicodeSymbol(QChar(0x2137)).addHtml("&gimel;");
@@ -541,18 +594,16 @@ void JKQTMathTextSymbolNode::fillSymbolTables()
     symbols["glqq"]=UnicodeSymbol(QChar(0x201C)).addHtml("&OpenCurlyDoubleQuote;").addStd("\"");
     symbols["grq"]=UnicodeSymbol(QChar(0x2019)).addHtml("&CloseCurlyQuote;").addStd("'");
     symbols["grqq"]=UnicodeSymbol(QChar(0x201D)).addHtml("&CloseCurlyDoubleQuote;").addStd("\"");
-    symbols["hbar"]=UprightSymbolUnicode(QChar(0x210F)).addUprightHtml("&hbar;").addStd("h", ItalicOn|DrawLeftHBar);
+    symbols["hbar"]=UprightSymbolUnicode(QChar(0x210F)).addUprightHtml("&hbar;").addStd("h", ItalicOn|DrawLeftHBar).addGlobalFlags(SubscriptCorrection);
     symbols["hexagon"]=UprightSymbolUnicode(QChar(0x2394));
     symbols["ii"] = SymbolFullProps(SymbolProps("i", Upright|BoldOff), "i", Upright|BoldOff);
-    symbols["infty"]=UnicodeSymbol(QChar(0x221E)).addHtml("&infin;").addWinSymbol(QChar(0xA5)).addStd("8", RotateSymbol90);
+    symbols["infty"]=UprightSymbolUnicode(QChar(0x221E)).addUprightHtml("&infin;").addUprightWinSymbol(QChar(0xA5)).addUprightStd("8", RotateSymbol90);
     symbols["langle"]=UprightSymbolUnicode(QChar(0x2329)).addWinSymbol(QChar(0xE1));
-    symbols["lceil"]=UprightSymbolUnicode(QChar(0x2308)).addHtml("&LeftCeiling;").addWinSymbol(QChar(0xE9));
-    { auto s=SimpleTextSymbol("...").addUnicode(QChar(0x2026)).addWinSymbol(QChar(0xB6));
-        symbols["ldots"]=s; symbols["dots"]=s; }
-    symbols["lfloor"]=UprightSymbolUnicode(QChar(0x230A)).addHtml("&LeftFloor;").addWinSymbol(QChar(0xEB));
+    symbols["lceil"]=UprightSymbolUnicode(QChar(0x2308)).addUprightHtml("&LeftCeiling;").addUprightWinSymbol(QChar(0xE9));
+    symbols["lfloor"]=UprightSymbolUnicode(QChar(0x230A)).addUprightHtml("&LeftFloor;").addUprightWinSymbol(QChar(0xEB));
     symbols["lightning"]=UnicodeSymbol(QChar(0x21AF));
     symbols["male"]=UnicodeSymbol(QChar(0x2642)).addHtml("&male;");
-    symbols["measuredangle"]=UprightSymbolUnicode(QChar(0x2221)).addHtml("&measuredangle;");
+    symbols["measuredangle"]=UprightSymbolUnicode(QChar(0x2221)).addUprightHtml("&measuredangle;");
     symbols["micro"] = SimpleTextSymbol(QChar(0xB5), "&micro;");
     symbols["ohm"]=UprightSymbolUnicode(QChar(0x2126)).addUprightHtml("&Omega;").addUprightWinSymbol(QChar(0x57));
     symbols["partial"]=UprightSymbolUnicode(QChar(0x2202)).addUprightHtml("&part;").addUprightWinSymbol(QChar(0xB6));
@@ -561,14 +612,16 @@ void JKQTMathTextSymbolNode::fillSymbolTables()
     symbols["pound"]=SimpleTextSymbol(QChar(0xA3), "&pound;");
     symbols["pound"]=UnicodeSymbol(QChar(0x00A3));
     symbols["prime"]=UnicodeSymbol(QChar(0x2032)).addHtml("&prime;").addStd("'");
-    symbols["rangle"]=UprightSymbolUnicode(QChar(0x232A)).addWinSymbol(QChar(0xF1));
-    symbols["rceil"]=UprightSymbolUnicode(QChar(0x2309)).addHtml("&RightCeiling;").addWinSymbol(QChar(0xF9));
-    { auto s=SimpleTextSymbol(QChar(0xAA), "&reg;");
+    symbols["arcminute"]=UnicodeSymbol(QChar(0x2032)).addHtml("&prime;").addStd("'");
+    symbols["arcsecond"]=UnicodeSymbol(QChar(0x2033)).addHtml("&dprime;").addStd("'");
+    symbols["rangle"]=UprightSymbolUnicode(QChar(0x232A)).addUprightWinSymbol(QChar(0xF1));
+    symbols["rceil"]=UprightSymbolUnicode(QChar(0x2309)).addUprightHtml("&RightCeiling;").addUprightWinSymbol(QChar(0xF9));
+    { auto s=SimpleTextSymbol(QChar(0xAE), "&reg;");
         symbols["registered"]=s; symbols["textregistered"]=s; symbols["circledR"]=s; }
-    symbols["rfloor"]=UprightSymbolUnicode(QChar(0x230B)).addHtml("&RightFloor;").addWinSymbol(QChar(0xFB));
-    symbols["rightangle"]=UprightSymbolUnicode(QChar(0x221F)).addHtml("&angrt;");
-    symbols["smile"]=UprightSymbolUnicode(QChar(0x2323)).addHtml("&smile;");
-    symbols["sphericalangle"]=UprightSymbolUnicode(QChar(0x2222)).addHtml("&angsph;");
+    symbols["rfloor"]=UprightSymbolUnicode(QChar(0x230B)).addUprightHtml("&RightFloor;").addUprightWinSymbol(QChar(0xFB));
+    symbols["rightangle"]=UprightSymbolUnicode(QChar(0x221F)).addUprightHtml("&angrt;");
+    //symbols["smile"]=UprightSymbolUnicode(QChar(0x2323)).addUprightHtml("&smile;");
+    symbols["sphericalangle"]=UprightSymbolUnicode(QChar(0x2222)).addUprightHtml("&angsph;");
     symbols["star"]=UprightSymbolUnicode(QChar(0x22C6));
     symbols["tcohm"]=UnicodeSymbol(QChar(0x2126));
     { auto s=UnicodeSymbol(QChar(0x2014), "&#11840;");
@@ -604,46 +657,46 @@ void JKQTMathTextSymbolNode::fillSymbolTables()
     /**************************************************************************************
      * STANDARD MathOperator Strings
      **************************************************************************************/
-    symbols["Pr"] = MathOperatorText("Pr");
-    symbols["acos"] = MathOperatorText("acos").addGlobalFlags(SubSuperscriptBelowAboveSymbol);
-    symbols["arccos"] = MathOperatorText("arccos").addGlobalFlags(SubSuperscriptBelowAboveSymbol);
-    symbols["arcsin"] = MathOperatorText("arcsin").addGlobalFlags(SubSuperscriptBelowAboveSymbol);
-    symbols["arctan"] = MathOperatorText("arctan").addGlobalFlags(SubSuperscriptBelowAboveSymbol);
-    symbols["arg"] = MathOperatorText("arg").addGlobalFlags(SubSuperscriptBelowAboveSymbol);
-    symbols["argmax"] = MathOperatorText("arg max", "arg&thinsp;max").addGlobalFlags(SubSuperscriptBelowAboveSymbol);
-    symbols["argmin"] = MathOperatorText("arg min", "arg&thinsp;min").addGlobalFlags(SubSuperscriptBelowAboveSymbol);
-    symbols["asin"] = MathOperatorText("asin").addGlobalFlags(SubSuperscriptBelowAboveSymbol);
-    symbols["atan"] = MathOperatorText("atan").addGlobalFlags(SubSuperscriptBelowAboveSymbol);
-    symbols["cos"] = MathOperatorText("cos").addGlobalFlags(SubSuperscriptBelowAboveSymbol);
-    symbols["cosh"] = MathOperatorText("cosh").addGlobalFlags(SubSuperscriptBelowAboveSymbol);
-    symbols["cot"] = MathOperatorText("cot").addGlobalFlags(SubSuperscriptBelowAboveSymbol);
-    symbols["coth"] = MathOperatorText("coth").addGlobalFlags(SubSuperscriptBelowAboveSymbol);
-    symbols["coth"] = MathOperatorText("coth").addGlobalFlags(SubSuperscriptBelowAboveSymbol);
-    symbols["deg"] = MathOperatorText("deg").addGlobalFlags(SubSuperscriptBelowAboveSymbol);
-    symbols["det"] = MathOperatorText("det").addGlobalFlags(SubSuperscriptBelowAboveSymbol);
-    symbols["dim"] = MathOperatorText("dim").addGlobalFlags(SubSuperscriptBelowAboveSymbol);
-    symbols["exp"] = MathOperatorText("exp").addGlobalFlags(SubSuperscriptBelowAboveSymbol);
-    symbols["gcd"] = MathOperatorText("gcd").addGlobalFlags(SubSuperscriptBelowAboveSymbol);
-    symbols["hom"] = MathOperatorText("hom").addGlobalFlags(SubSuperscriptBelowAboveSymbol);
-    symbols["ker"] = MathOperatorText("ker").addGlobalFlags(SubSuperscriptBelowAboveSymbol);
-    symbols["lb"] = MathOperatorText("lb").addGlobalFlags(SubSuperscriptBelowAboveSymbol);
-    symbols["ld"] = MathOperatorText("ld").addGlobalFlags(SubSuperscriptBelowAboveSymbol);
-    symbols["lim"] = MathOperatorText("lim").addGlobalFlags(SubSuperscriptBelowAboveSymbol);
-    symbols["liminf"] = MathOperatorText("lim inf", "lim&thinsp;inf").addGlobalFlags(SubSuperscriptBelowAboveSymbol);
-    symbols["limsup"] = MathOperatorText("lim sup", "lim&thinsp;sup").addGlobalFlags(SubSuperscriptBelowAboveSymbol);
-    symbols["ln"] = MathOperatorText("ln").addGlobalFlags(SubSuperscriptBelowAboveSymbol);
-    symbols["log"] = MathOperatorText("log").addGlobalFlags(SubSuperscriptBelowAboveSymbol);
-    symbols["max"] = MathOperatorText("max").addGlobalFlags(SubSuperscriptBelowAboveSymbol);
-    symbols["median"] = MathOperatorText("median").addGlobalFlags(SubSuperscriptBelowAboveSymbol);
-    symbols["min"] = MathOperatorText("min").addGlobalFlags(SubSuperscriptBelowAboveSymbol);
-    symbols["mod"] = MathOperatorText("mod").addGlobalFlags(SubSuperscriptBelowAboveSymbol);
-    symbols["sec"] = MathOperatorText("sec").addGlobalFlags(SubSuperscriptBelowAboveSymbol);
-    symbols["sgn"] = MathOperatorText("sgn").addGlobalFlags(SubSuperscriptBelowAboveSymbol);
-    symbols["sign"] = MathOperatorText("sign").addGlobalFlags(SubSuperscriptBelowAboveSymbol);
-    symbols["sin"] = MathOperatorText("sin").addGlobalFlags(SubSuperscriptBelowAboveSymbol);
-    symbols["sinh"] = MathOperatorText("sinh").addGlobalFlags(SubSuperscriptBelowAboveSymbol);
-    symbols["tan"] = MathOperatorText("tan").addGlobalFlags(SubSuperscriptBelowAboveSymbol);
-    symbols["tanh"] = MathOperatorText("tanh").addGlobalFlags(SubSuperscriptBelowAboveSymbol);
+    symbols["Pr"] = NarrowMathOperatorText("Pr");
+    symbols["acos"] = NarrowMathOperatorText("acos");
+    symbols["arccos"] = NarrowMathOperatorText("arccos");
+    symbols["arcsin"] = NarrowMathOperatorText("arcsin");
+    symbols["arctan"] = NarrowMathOperatorText("arctan");
+    symbols["arg"] = NarrowMathOperatorText("arg").addGlobalFlags(SubSuperscriptBelowAboveSymbol);
+    symbols["argmax"] = NarrowMathOperatorText("arg max", "arg&thinsp;max").addGlobalFlags(SubSuperscriptBelowAboveSymbol);
+    symbols["argmin"] = NarrowMathOperatorText("arg min", "arg&thinsp;min").addGlobalFlags(SubSuperscriptBelowAboveSymbol);
+    symbols["asin"] = NarrowMathOperatorText("asin");
+    symbols["atan"] = NarrowMathOperatorText("atan");
+    symbols["cos"] = NarrowMathOperatorText("cos");
+    symbols["cosh"] = NarrowMathOperatorText("cosh");
+    symbols["cot"] = NarrowMathOperatorText("cot");
+    symbols["coth"] = NarrowMathOperatorText("coth");
+    symbols["coth"] = NarrowMathOperatorText("coth");
+    symbols["deg"] = NarrowMathOperatorText("deg");
+    symbols["det"] = NarrowMathOperatorText("det");
+    symbols["dim"] = NarrowMathOperatorText("dim");
+    symbols["exp"] = NarrowMathOperatorText("exp");
+    symbols["gcd"] = NarrowMathOperatorText("gcd");
+    symbols["hom"] = NarrowMathOperatorText("hom");
+    symbols["ker"] = NarrowMathOperatorText("ker");
+    symbols["lb"] = NarrowMathOperatorText("lb");
+    symbols["ld"] = NarrowMathOperatorText("ld");
+    symbols["lim"] = NarrowMathOperatorText("lim").addGlobalFlags(SubSuperscriptBelowAboveSymbol);
+    symbols["liminf"] = NarrowMathOperatorText("lim inf", "lim&thinsp;inf").addGlobalFlags(SubSuperscriptBelowAboveSymbol).addGlobalFlags(SubscriptCorrection);
+    symbols["limsup"] = NarrowMathOperatorText("lim sup", "lim&thinsp;sup").addGlobalFlags(SubSuperscriptBelowAboveSymbol).addGlobalFlags(SubscriptCorrection);
+    symbols["ln"] = NarrowMathOperatorText("ln");
+    symbols["log"] = NarrowMathOperatorText("log");
+    symbols["max"] = NarrowMathOperatorText("max");
+    symbols["median"] = NarrowMathOperatorText("median");
+    symbols["min"] = NarrowMathOperatorText("min");
+    symbols["mod"] = NarrowMathOperatorText("mod");
+    symbols["sec"] = NarrowMathOperatorText("sec");
+    symbols["sgn"] = NarrowMathOperatorText("sgn");
+    symbols["sign"] = NarrowMathOperatorText("sign");
+    symbols["sin"] = NarrowMathOperatorText("sin");
+    symbols["sinh"] = NarrowMathOperatorText("sinh");
+    symbols["tan"] = NarrowMathOperatorText("tan");
+    symbols["tanh"] = NarrowMathOperatorText("tanh");
 
     /**************************************************************************************
      * STANDARD MathOperator Symbols
@@ -663,17 +716,23 @@ void JKQTMathTextSymbolNode::fillSymbolTables()
     symbols["Updownarrow"]=UprightSymbolUnicode(QChar(0x21D5)).addUprightHtml("&Updownarrow;");
     symbols["approx"]=MathOperatorSymbolUnicode(QChar(0x2248)).addMathOperatorHtml("&asymp;").addMathOperatorWinSymbol(QChar(0xBB));
     symbols["bbC"]=UnicodeSymbol(QChar(0x2102));
-    symbols["bbH"]=MathOperatorSymbolUnicode(QChar(0x210D));
-    symbols["bbN"]=MathOperatorSymbolUnicode(QChar(0x2115));
-    symbols["bbP"]=MathOperatorSymbolUnicode(QChar(0x2119));
-    symbols["bbQ"]=MathOperatorSymbolUnicode(QChar(0x211A));
-    symbols["bbR"]=MathOperatorSymbolUnicode(QChar(0x211D));
-    symbols["bbZ"]=MathOperatorSymbolUnicode(QChar(0x2124));
+    symbols["bbH"]=UnicodeSymbol(QChar(0x210D));
+    symbols["bbN"]=UnicodeSymbol(QChar(0x2115));
+    symbols["bbP"]=UnicodeSymbol(QChar(0x2119));
+    symbols["bbQ"]=UnicodeSymbol(QChar(0x211A));
+    symbols["bbR"]=UnicodeSymbol(QChar(0x211D));
+    symbols["bbZ"]=UnicodeSymbol(QChar(0x2124));
     symbols["because"]=MathOperatorSymbolUnicode(QChar(0x2235)).addMathOperatorHtml("&because;");
-    symbols["bigcap"]=NarrowMathOperatorSymbolUnicode(QChar(0x22C2)).addMathOperatorHtml("&int;").addMathOperatorWinSymbol(QChar(0xC7), 1.8).addGlobalFlags(SubSuperscriptBelowAboveSymbol);
-    symbols["bigcup"]=NarrowMathOperatorSymbolUnicode(QChar(0x22C3)).addMathOperatorHtml("&int;").addMathOperatorWinSymbol(QChar(0xC8), 1.8).addGlobalFlags(SubSuperscriptBelowAboveSymbol);
-    symbols["bighat"]=NarrowMathOperatorSymbolUnicode(QChar(0x22C0)).addMathOperatorHtml("&int;").addMathOperatorWinSymbol(QChar(0xD9), 1.8).addGlobalFlags(SubSuperscriptBelowAboveSymbol);
-    symbols["bigvee"]=NarrowMathOperatorSymbolUnicode(QChar(0x22C1)).addMathOperatorHtml("&int;").addMathOperatorWinSymbol(QChar(0xDA), 1.8).addGlobalFlags(SubSuperscriptBelowAboveSymbol);
+    symbols["bigcap"]=NarrowMathOperatorSymbolUnicode(QChar(0x22C2)).addMathOperatorHtml("&Intersection;").addMathOperatorWinSymbol(QChar(0xC7), 1.8).addGlobalFlags(SubSuperscriptBelowAboveSymbol);
+    symbols["bigcup"]=NarrowMathOperatorSymbolUnicode(QChar(0x22C3)).addMathOperatorHtml("&xcup;").addMathOperatorWinSymbol(QChar(0xC8), 1.8).addGlobalFlags(SubSuperscriptBelowAboveSymbol);
+    { auto s=NarrowMathOperatorSymbolUnicode(QChar(0x22C0)).addMathOperatorHtml("&Wedge;").addMathOperatorWinSymbol(QChar(0xD9), 1.8).addGlobalFlags(SubSuperscriptBelowAboveSymbol);
+        symbols["bigwedge"]=s; symbols["bighat"]=s; }
+    symbols["bigvee"]=NarrowMathOperatorSymbolUnicode(QChar(0x22C1)).addMathOperatorHtml("&xvee;").addMathOperatorWinSymbol(QChar(0xDA), 1.8).addGlobalFlags(SubSuperscriptBelowAboveSymbol);
+    symbols["bigotimes"]=NarrowMathOperatorSymbolUnicode(QChar(0x2A02)).addMathOperatorHtml("&bigotimes;").addMathOperatorWinSymbol(QChar(0xC4), 1.8).addGlobalFlags(SubSuperscriptBelowAboveSymbol);
+    symbols["bigoplus"]=NarrowMathOperatorSymbolUnicode(QChar(0x2A01)).addMathOperatorHtml("&bigoplus;").addMathOperatorWinSymbol(QChar(0xC5), 1.8).addGlobalFlags(SubSuperscriptBelowAboveSymbol);
+    symbols["bigodot"]=NarrowMathOperatorSymbolUnicode(QChar(0x2A00)).addMathOperatorHtml("&bigodot;").addGlobalFlags(SubSuperscriptBelowAboveSymbol);
+    symbols["biguplus"]=NarrowMathOperatorSymbolUnicode(QChar(0x2A04)).addMathOperatorHtml("&biguplus;").addGlobalFlags(SubSuperscriptBelowAboveSymbol);
+    symbols["bigsqcup"]=NarrowMathOperatorSymbolUnicode(QChar(0x2A06)).addMathOperatorHtml("&bigsqcup;").addGlobalFlags(SubSuperscriptBelowAboveSymbol);
     { auto s=MathOperatorSymbolUnicode(QChar(0x22A5)).addMathOperatorHtml("&UpTee;");
         symbols["bot"]=s; symbols["perp"]=s; }
     { auto s=MathOperatorSymbolUnicode(QChar(0x2229)).addMathOperatorHtml("&cap;").addMathOperatorWinSymbol(QChar(0xC7));
@@ -683,7 +742,7 @@ void JKQTMathTextSymbolNode::fillSymbolTables()
     symbols["coprod"]=NarrowMathOperatorSymbolUnicode(QChar(0x2210)).addMathOperatorHtml("&Coproduct;").addWinSymbol(QChar(0xD5), ItalicOff|BoldOff|FlipSymbolUpDown, 1.8, 0.1).addGlobalFlags(SubSuperscriptBelowAboveSymbol);
     { auto s=MathOperatorSymbolUnicode(QChar(0x222A)).addMathOperatorHtml("&cup;").addMathOperatorWinSymbol(QChar(0xC8));
         symbols["cup"]=s; symbols["lor"]=s; }
-    symbols["ddots"]=MathOperatorSymbolUnicode(QChar(0x22F1)).addMathOperatorHtml("&dtdot;");
+    symbols["ddots"]=UprightSymbolUnicode(QChar(0x22F1)).addMathOperatorHtml("&dtdot;");
     symbols["div"]=MathOperatorSymbolUnicode(QChar(0x00F7)).addMathOperatorHtml("&div;").addMathOperatorWinSymbol(QChar(0xB8));
     symbols["downarrow"]=UprightSymbolUnicode(QChar(0x2193)).addUprightHtml("&ShortDownArrow;").addUprightWinSymbol(QChar(0xAF));
     symbols["downharpoonleft"]=UprightSymbolUnicode(QChar(0x21C3)).addUprightHtml("&LeftDownVector;");
@@ -691,13 +750,13 @@ void JKQTMathTextSymbolNode::fillSymbolTables()
     { auto s=MathOperatorSymbolUnicode(QChar(0x2205)).addMathOperatorHtml("&varnothing;").addMathOperatorWinSymbol(QChar(0xC6)).addStd("0", BoldOff|ItalicOff|DrawSlash);
         symbols["emptyset"]=s; symbols["varnothing"]=s; }
     symbols["equiv"]=MathOperatorSymbolUnicode(QChar(0x2261)).addMathOperatorHtml("&equiv;").addMathOperatorWinSymbol(QChar(0xBA));
-    symbols["exists"]=MathOperatorSymbolUnicode(QChar(0x2203)).addMathOperatorHtml("&exist;").addMathOperatorWinSymbol(QChar(0x24)).addStd("E", ItalicOff|BoldOff|FlipSymbolLeftRight);
-    symbols["forall"]=MathOperatorSymbolUnicode(QChar(0x2200)).addMathOperatorHtml("&forall;").addMathOperatorWinSymbol(QChar(0x22)).addStd("A", ItalicOff|BoldOff|FlipSymbolUpDown);
+    symbols["exists"]=NarrowMathOperatorSymbolUnicode(QChar(0x2203)).addMathOperatorHtml("&exist;").addMathOperatorWinSymbol(QChar(0x24)).addStd("E", ItalicOff|BoldOff|FlipSymbolLeftRight);
+    symbols["forall"]=NarrowMathOperatorSymbolUnicode(QChar(0x2200)).addMathOperatorHtml("&forall;").addMathOperatorWinSymbol(QChar(0x22)).addStd("A", ItalicOff|BoldOff|FlipSymbolUpDown).addGlobalFlags(SubscriptCorrection);
     { auto s=MathOperatorSymbolUnicode(QChar(0x2265)).addMathOperatorHtml("&GreaterEqual;").addMathOperatorWinSymbol(QChar(0xB3));
         symbols["geq"]=s; symbols["ge"]=s; }
     symbols["geqq"]=MathOperatorSymbolUnicode(QChar(0x2267)).addMathOperatorHtml("&GreaterFullEqual;");
     symbols["gg"]=MathOperatorSymbolUnicode(QChar(0x226B)).addMathOperatorHtml("&NestedGreaterGreater;").addMathOperatorStd(">>");
-    symbols["iddots"]=MathOperatorSymbolUnicode(QChar(0x22F0)).addMathOperatorHtml("&utdot;");
+    symbols["iddots"]=UprightSymbolUnicode(QChar(0x22F0)).addMathOperatorHtml("&utdot;");
     { auto s=UprightSymbolUnicode(QChar(0x21D4)).addUprightHtml("&DoubleLeftRightArrow;").addUprightWinSymbol(QChar(0xDB));
         symbols["iff"]=s; symbols["Leftrightarrow"]=s; }
     symbols["iiint"]=NarrowMathOperatorSymbolUnicode(QChar(0x222D)).addGlobalFlags(IntLikeSymbolCorrection | SubSuperscriptBelowAboveSymbol).addMathOperatorHtml("&tint;").addMathOperatorWinSymbol(QString(3, QChar(0xF2)), 1.8, 0.1);
@@ -705,6 +764,12 @@ void JKQTMathTextSymbolNode::fillSymbolTables()
     symbols["in"]=MathOperatorSymbolUnicode(QChar(0x2208)).addMathOperatorHtml("&isin;").addMathOperatorWinSymbol(QChar(0xCE));
     symbols["int"]=NarrowMathOperatorSymbolUnicode(QChar(0x222B)).addGlobalFlags(IntLikeSymbolCorrection | SubSuperscriptBelowAboveSymbol).addMathOperatorHtml("&int;").addMathOperatorWinSymbol(QChar(0xF2), 1.8, 0.1);
     symbols["leftarrow"]=UprightSymbolUnicode(QChar(0x2190)).addUprightHtml("&larr;").addUprightWinSymbol(QChar(0xAC));
+    symbols["longleftarrow"]=UprightSymbolUnicode(QChar(0x27F5)).addUprightHtml("&longleftarrow;");
+    symbols["longrightarrow"]=UprightSymbolUnicode(QChar(0x27F6)).addUprightHtml("&longrightarrow;");
+    symbols["longleftrightarrow"]=UprightSymbolUnicode(QChar(0x27F7)).addUprightHtml("&longleftrightarrow;");
+    symbols["Longleftarrow"]=UprightSymbolUnicode(QChar(0x27F8)).addUprightHtml("&DoubleLongLeftArrow;");
+    symbols["Longrightarrow"]=UprightSymbolUnicode(QChar(0x27F9)).addUprightHtml("&DoubleLongRightArrow;");
+    symbols["Longleftrightarrow"]=UprightSymbolUnicode(QChar(0x27FA)).addUprightHtml("&Longleftrightarrow;");
     symbols["leftharpoondown"]=UprightSymbolUnicode(QChar(0x21BD)).addUprightHtml("&leftharpoondown;");
     symbols["leftharpoonup"]=UprightSymbolUnicode(QChar(0x21BC)).addUprightHtml("&LeftVector;");
     symbols["leftrightarrow"]=UprightSymbolUnicode(QChar(0x2194)).addUprightHtml("&harr;").addUprightWinSymbol(QChar(0xAB));
@@ -720,17 +785,17 @@ void JKQTMathTextSymbolNode::fillSymbolTables()
     symbols["mid"]=MathOperatorSymbolUnicode(QChar(0x2223)).addMathOperatorHtml("&VerticalBar;").addMathOperatorWinSymbol(QChar(0xBD)).addMathOperatorStd("|");
     symbols["mp"]=MathOperatorSymbolUnicode(QChar(0x2213)).addMathOperatorHtml("&mp;").addWinSymbol(QChar(0xB1),ItalicOff|BoldOff|FlipSymbolUpDown).addStd(QChar(0xB1),ItalicOff|BoldOff|FlipSymbolUpDown);
     symbols["multimap"]=MathOperatorSymbolUnicode(QChar(0x22B8)).addMathOperatorHtml("&mumap;");
-    symbols["nabla"]=MathOperatorSymbolUnicode(QChar(0x2207)).addMathOperatorHtml("&nabla;").addMathOperatorWinSymbol(QChar(0xD1));
-    symbols["ne"]=MathOperatorSymbolUnicode(QChar(0x2260)).addMathOperatorHtml("&ne;").addMathOperatorWinSymbol(QChar(0xB9));
+    symbols["nabla"]=NarrowMathOperatorSymbolUnicode(QChar(0x2207)).addMathOperatorHtml("&nabla;").addMathOperatorWinSymbol(QChar(0xD1)).addGlobalFlags(IntLikeSymbolCorrection);
+    symbols["ne"]=NarrowMathOperatorSymbolUnicode(QChar(0x2260)).addMathOperatorHtml("&ne;").addMathOperatorWinSymbol(QChar(0xB9));
     symbols["nearrow"]=UprightSymbolUnicode(QChar(0x2197)).addUprightHtml("&UpperRightArrow;");
     { auto s=MathOperatorSymbolUnicode(QChar(0x00AC)).addMathOperatorHtml("&not;").addMathOperatorWinSymbol(QChar(0xD8));
         symbols["neg"]=s; symbols["lnot"]=s; }
     symbols["neq"]=MathOperatorSymbolUnicode(QChar(0x2260)).addMathOperatorHtml("&ne;").addMathOperatorWinSymbol(QChar(0xB9)).addStd("=", ItalicOff|BoldOff|DrawSlash);
-    symbols["nexists"]=MathOperatorSymbolUnicode(QChar(0x2204)).addMathOperatorHtml("&NotExists;").addStd("E", ItalicOff|BoldOff|FlipSymbolLeftRight|DrawSlash).addMathOperatorWinSymbol(QChar(0x24), ItalicOff|BoldOff|DrawSlash);
-    symbols["ni"]=MathOperatorSymbolUnicode(QChar(0x220B)).addMathOperatorHtml("&ReverseElement;").addMathOperatorWinSymbol(QChar(0xCE), ItalicOff|BoldOff|FlipSymbolLeftRight);
-    symbols["nmid"]=MathOperatorSymbolUnicode(QChar(0x2224)).addMathOperatorHtml("&NotVerticalBar;");
-    symbols["notin"]=MathOperatorSymbolUnicode(QChar(0x2209)).addMathOperatorHtml("&notin;").addMathOperatorWinSymbol(QChar(0xCF));
-    symbols["notni"]=MathOperatorSymbolUnicode(QChar(0x220C)).addMathOperatorHtml("&NotReverseElement;");
+    symbols["nexists"]=NarrowMathOperatorSymbolUnicode(QChar(0x2204)).addMathOperatorHtml("&NotExists;").addStd("E", ItalicOff|BoldOff|FlipSymbolLeftRight|DrawSlash).addMathOperatorWinSymbol(QChar(0x24), ItalicOff|BoldOff|DrawSlash);
+    symbols["ni"]=NarrowMathOperatorSymbolUnicode(QChar(0x220B)).addMathOperatorHtml("&ReverseElement;").addMathOperatorWinSymbol(QChar(0xCE), ItalicOff|BoldOff|FlipSymbolLeftRight);
+    symbols["nmid"]=NarrowMathOperatorSymbolUnicode(QChar(0x2224)).addMathOperatorHtml("&NotVerticalBar;");
+    symbols["notin"]=NarrowMathOperatorSymbolUnicode(QChar(0x2209)).addMathOperatorHtml("&notin;").addMathOperatorWinSymbol(QChar(0xCF));
+    symbols["notni"]=NarrowMathOperatorSymbolUnicode(QChar(0x220C)).addMathOperatorHtml("&NotReverseElement;");
     symbols["nparallel"]=MathOperatorSymbolUnicode(QChar(0x2226)).addMathOperatorHtml("&NotDoubleVerticalBar;");
     symbols["nwarrow"]=UprightSymbolUnicode(QChar(0x2196)).addUprightHtml("&UpperLeftArrow;");
     symbols["odot"]=MathOperatorSymbolUnicode(QChar(0x2299)).addMathOperatorHtml("&odot;");
@@ -741,7 +806,7 @@ void JKQTMathTextSymbolNode::fillSymbolTables()
     symbols["oplus"]=MathOperatorSymbolUnicode(QChar(0x2295)).addMathOperatorHtml("&CirclePlus;").addMathOperatorWinSymbol(QChar(0xC5));
     symbols["oslash"]=MathOperatorSymbolUnicode(QChar(0x2298)).addMathOperatorHtml("&osol;");
     symbols["otimes"]=MathOperatorSymbolUnicode(QChar(0x2297)).addMathOperatorHtml("&CircleTimes;").addMathOperatorWinSymbol(QChar(0xC4));
-    symbols["parallel"]=MathOperatorSymbolUnicode(QChar(0x2225)).addMathOperatorHtml("&shortparallel;").addMathOperatorStd("||");
+    symbols["parallel"]=NarrowMathOperatorSymbolUnicode(QChar(0x2225)).addMathOperatorHtml("&shortparallel;").addMathOperatorStd("||");
     symbols["pm"] = MathOperatorSymbol(QChar(0xB1), "&plusmn;").addMathOperatorWinSymbol(QChar(0xB1));
     symbols["prec"]=MathOperatorSymbolUnicode(QChar(0x227A)).addMathOperatorHtml("&prec;");
     symbols["prod"]=NarrowMathOperatorSymbolUnicode(QChar(0x220F)).addMathOperatorWinSymbol(QChar(0xD5), 1.8, 0.1).addMathOperatorHtml("&prod;").addGlobalFlags(SubSuperscriptBelowAboveSymbol);
@@ -770,15 +835,21 @@ void JKQTMathTextSymbolNode::fillSymbolTables()
     symbols["times"] = MathOperatorSymbol(QChar(0xD7), "&times;").addMathOperatorWinSymbol(QChar(0xB4));
     { auto s=UprightSymbolUnicode(QChar(0x2192)).addUprightHtml("&rarr;").addUprightWinSymbol(QChar(0xAE));
       symbols["to"]=s; symbols["rightarrow"]=s; }
-    symbols["top"]=MathOperatorSymbolUnicode(QChar(0x22A4)).addMathOperatorHtml("&top;").addMathOperatorWinSymbol(QChar(0x5E));
-    symbols["triangle"]=MathOperatorSymbolUnicode(QChar(0x2206));
+    symbols["top"]=MathOperatorSymbolUnicode(QChar(0x22A4)).addMathOperatorHtml("&top;").addMathOperatorWinSymbol(QChar(0x5E)).addUprightStd("T");
+    symbols["triangle"]=NarrowMathOperatorSymbolUnicode(QChar(0x2206));
     symbols["uparrow"]=UprightSymbolUnicode(QChar(0x2191)).addUprightHtml("&ShortUpArrow;").addUprightWinSymbol(QChar(0xAD));
     symbols["updownarrow"]=UprightSymbolUnicode(QChar(0x2195)).addUprightHtml("&updownarrow;");
     symbols["upharpoonleft"]=UprightSymbolUnicode(QChar(0x21BF)).addUprightHtml("&LeftUpVector;");
     symbols["upharpoonright"]=UprightSymbolUnicode(QChar(0x21BE)).addUprightHtml("&RightUpVector;");
-    symbols["vartriangleleft"]=MathOperatorSymbolUnicode(QChar(0x22B2)).addMathOperatorHtml("&LeftTriangle;");
-    symbols["vdots"]=MathOperatorSymbolUnicode(QChar(0x22EE)).addMathOperatorHtml("&vellip;");
+    symbols["vartriangleleft"]=NarrowMathOperatorSymbolUnicode(QChar(0x22B2)).addMathOperatorHtml("&LeftTriangle;");
+    symbols["vdots"]=UprightSymbolUnicode(QChar(0x22EE)).addMathOperatorHtml("&vellip;");
     symbols["vee"]=MathOperatorSymbolUnicode(QChar(0x2228)).addMathOperatorHtml("&vee;").addMathOperatorWinSymbol(QChar(0xDA));
+    symbols["vdash"]=MathOperatorSymbolUnicode(QChar(0x22A2)).addMathOperatorHtml("&vdash;");
+    symbols["dashv"]=MathOperatorSymbolUnicode(QChar(0x22A3)).addMathOperatorHtml("&dashv;");
+    symbols["vDash"]=MathOperatorSymbolUnicode(QChar(0x22A8)).addMathOperatorHtml("&DoubleRightTee;");
+    symbols["nvdash"]=MathOperatorSymbolUnicode(QChar(0x22AC)).addMathOperatorHtml("&nvdash;");
+    symbols["Vdash"]=MathOperatorSymbolUnicode(QChar(0x22A9)).addMathOperatorHtml("&Vdash;");
+    symbols["models"]=MathOperatorSymbolUnicode(QChar(0x22A7)).addMathOperatorHtml("&models;");
     symbols["wedge"]=MathOperatorSymbolUnicode(QChar(0x2227)).addMathOperatorHtml("&wedge;").addMathOperatorWinSymbol(QChar(0xD9));
 
 
@@ -810,12 +881,12 @@ void JKQTMathTextSymbolNode::fillSymbolTables()
     addGreekLetterVariants_WinSymbol_Unicode_Html("varsigma", "V", QChar(0x3C2),"&varsigma;");
     addGreekLetterVariants_WinSymbol_Unicode_Html("tau", "t", QChar(0x3C4),"&tau;");
     addGreekLetterVariants_WinSymbol_Unicode_Html("upsilon", "u", QChar(0x3C5),"&upsilon;");
-    addGreekLetterVariants_WinSymbol_Unicode_Html("phi", "f", QChar(0x3D5),"&straightphi;");
-    addGreekLetterVariants_WinSymbol_Unicode_Html("varphi", "j", QChar(0x3C6),"&phi;");
+    addGreekLetterVariants_WinSymbol_Unicode_Html("phi", "f", QChar(0x3C5),"&straightphi;");
+    addGreekLetterVariants_WinSymbol_Unicode_Html("varphi", "j", QChar(0x3D6),"&phi;");
     addGreekLetterVariants_WinSymbol_Unicode_Html("chi", "c", QChar(0x3C7),"&chi;");
     addGreekLetterVariants_WinSymbol_Unicode_Html("psi", "y", QChar(0x3C8),"&psi;");
     addGreekLetterVariants_WinSymbol_Unicode_Html("omega", "w", QChar(0x3C9),"&omega;");
-    addGreekLetterVariants_WinSymbol_Unicode_Html("Gamma", "G", QChar(0x3A9),"&Gamma;");
+    addGreekLetterVariants_WinSymbol_Unicode_Html("Gamma", "G", QChar(0x3A3),"&Gamma;");
     addGreekLetterVariants_WinSymbol_Unicode_Html("Delta", "D", QChar(0x394),"&Delta;");
     addGreekLetterVariants_WinSymbol_Unicode_Html("Theta", "Q", QChar(0x398),"&Theta;");
     addGreekLetterVariants_WinSymbol_Unicode_Html("Lambda", "L", QChar(0x39B),"&Lambda;");
@@ -1140,10 +1211,44 @@ QPair<QFont, JKQTMathTextSymbolNode::SymbolProps> JKQTMathTextSymbolNode::Symbol
 
 
     outFont=currentEv.getFont(parent);
+    outFont.setStyleStrategy(QFont::PreferDefault);
     if (outProps.fontScalingFactor!=1) outFont.setPointSizeF(outFont.pointSizeF()*outProps.fontScalingFactor);
     if (has(outProps.flags, ItalicOn)) outFont.setItalic(true);
     if (has(outProps.flags, ItalicOff)) outFont.setItalic(false);
     if (has(outProps.flags, BoldOn)) outFont.setBold(true);
     if (has(outProps.flags, BoldOff)) outFont.setBold(false);
     return QPair<QFont, SymbolProps>(outFont, outProps);
+}
+
+JKQTMathTextSymbolNode::NodeSize::NodeSize():
+    JKQTMathTextNodeSize(),
+    subSuperAboveBelowXCorrection(0.0)
+{
+
+}
+
+JKQTMathTextSymbolNode::NodeSize &JKQTMathTextSymbolNode::NodeSize::operator=(const JKQTMathTextNodeSize &other)
+{
+    subSuperAboveBelowXCorrection=0;
+    JKQTMathTextNodeSize::operator=(other);
+    return *this;
+}
+
+JKQTMathTextSymbolNode::NodeSize &JKQTMathTextSymbolNode::NodeSize::operator=(const NodeSize &other)
+{
+    subSuperAboveBelowXCorrection=other.subSuperAboveBelowXCorrection;
+    JKQTMathTextNodeSize::operator=(other);
+    return *this;
+}
+
+JKQTMathTextSymbolNode::NodeSize::NodeSize(const JKQTMathTextNodeSize &other):
+    NodeSize()
+{
+    operator=(other);
+}
+
+JKQTMathTextSymbolNode::NodeSize::NodeSize(const NodeSize &other):
+    NodeSize()
+{
+    operator=(other);
 }

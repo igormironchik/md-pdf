@@ -4,6 +4,7 @@
  * \ref JKQTPlotterParsedFunctionPlot
  */
 
+#include "jkqtpexampleapplication.h"
 #include <QApplication>
 #include <QLineEdit>
 #include <QCheckBox>
@@ -18,12 +19,8 @@
 int main(int argc, char* argv[])
 {
         
-#if QT_VERSION >= QT_VERSION_CHECK(5,6,0) &&  QT_VERSION < QT_VERSION_CHECK(6,0,0)
-
-    QApplication::setAttribute(Qt::AA_EnableHighDpiScaling); // DPI support
-    QCoreApplication::setAttribute(Qt::AA_UseHighDpiPixmaps); //HiDPI pixmaps
-#endif
-    QApplication app(argc, argv);
+    JKQTPAppSettingController highDPIController(argc, argv);
+    JKQTPExampleApplication app(argc, argv);
 
 
     // 1. create a window that conatins a line-edit to edit a function
@@ -59,7 +56,7 @@ int main(int argc, char* argv[])
     //    the graph is updated:
     auto updateGraphFunctor=
        [=]() {
-            parsedFunc->setTitle(QString("user function: \\verb{"+edit->text()+"}, p_1=%1, p_2=%2").arg(spinP1->value()).arg(spinP2->value()));
+            parsedFunc->setTitle(QString("user function: \\verb!"+edit->text()+"!, p_1=%1, p_2=%2").arg(spinP1->value()).arg(spinP2->value()));
             parsedFunc->setFunction(edit->text());
             parsedFunc->setParamsV(spinP1->value(), spinP2->value());
             parsedFunc->setDisplaySamplePoints(check->isChecked());
@@ -84,7 +81,7 @@ int main(int argc, char* argv[])
 
     // show window and make it a decent size
     mainWin.show();
-    mainWin.resize(600,400);
+    mainWin.resize(600/mainWin.devicePixelRatioF(),400/mainWin.devicePixelRatioF());
 
     return app.exec();
 }

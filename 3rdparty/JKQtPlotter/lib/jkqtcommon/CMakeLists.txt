@@ -39,6 +39,8 @@ set(HEADERS
   $<INSTALL_INTERFACE:jkqtcommon_imexport.h>
   $<BUILD_INTERFACE:${CMAKE_CURRENT_LIST_DIR}/jkqtpdebuggingtools.h>
   $<INSTALL_INTERFACE:jkqtpdebuggingtools.h>
+  $<BUILD_INTERFACE:${CMAKE_CURRENT_LIST_DIR}/jkqtpmathtools.h>
+  $<INSTALL_INTERFACE:jkqtpmathtools.h>
   $<BUILD_INTERFACE:${CMAKE_CURRENT_LIST_DIR}/jkqtpstringtools.h>
   $<INSTALL_INTERFACE:jkqtpstringtools.h>
   $<BUILD_INTERFACE:${CMAKE_CURRENT_LIST_DIR}/jkqtpcodestructuring.h>
@@ -55,6 +57,8 @@ set(HEADERS
   $<INSTALL_INTERFACE:jkqttools.h>
   $<BUILD_INTERFACE:${CMAKE_CURRENT_LIST_DIR}/jkqtpicons.h>
   $<INSTALL_INTERFACE:jkqtpicons.h>
+  $<BUILD_INTERFACE:${CMAKE_CURRENT_LIST_DIR}/jkqtpgeometrytools.h>
+  $<INSTALL_INTERFACE:jkqtpgeometrytools.h>
 )
 
 include(CMakePackageConfigHelpers)
@@ -110,52 +114,19 @@ endif()
 
 # Installation
 if(JKQtPlotter_BUILD_SHARED_LIBS)
-    install(TARGETS ${libsh_name} EXPORT ${libsh_name}_TARGETS
-        RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
-        ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}
-        LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
-        INCLUDES DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/${libIncludeSubdir}
-    )
-
-    set(JKQTP_CURRENT_TARGET_FILENAME "${libsh_name}Targets.cmake")
-    configure_file(LibTarget.cmake.in "${CMAKE_CURRENT_BINARY_DIR}/${libsh_name}Config.cmake" @ONLY)
-    install(EXPORT ${libsh_name}_TARGETS
-        FILE "${JKQTP_CURRENT_TARGET_FILENAME}"
-        DESTINATION lib/cmake
-    )
-
-    install(FILES "${CMAKE_CURRENT_BINARY_DIR}/${libsh_name}Version.cmake"
-                    DESTINATION lib/cmake  )
-    install(FILES "${CMAKE_CURRENT_BINARY_DIR}/${libsh_name}Config.cmake"
-                                DESTINATION lib/cmake  )
+    jkqtplotter_installlibrary(${libsh_name} ${libIncludeSubdir} "Shared")
 endif(JKQtPlotter_BUILD_SHARED_LIBS)
 
 if(JKQtPlotter_BUILD_STATIC_LIBS)
-    install(TARGETS ${lib_name} EXPORT ${lib_name}_TARGETS
-        RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
-        ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}
-        LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
-        INCLUDES DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/${libIncludeSubdir}
-    )
-    set(JKQTP_CURRENT_TARGET_FILENAME "${lib_name}Targets.cmake")
-    configure_file(LibTarget.cmake.in "${CMAKE_CURRENT_BINARY_DIR}/${lib_name}Config.cmake" @ONLY)
-    install(EXPORT ${lib_name}_TARGETS
-        FILE "${JKQTP_CURRENT_TARGET_FILENAME}"
-        DESTINATION lib/cmake
-    )
-
-    install(FILES "${CMAKE_CURRENT_BINARY_DIR}/${lib_name}Version.cmake"
-                    DESTINATION lib/cmake  )
-    install(FILES "${CMAKE_CURRENT_BINARY_DIR}/${lib_name}Config.cmake"
-                                DESTINATION lib/cmake  )
-
+    jkqtplotter_installlibrary(${lib_name} ${libIncludeSubdir} "")
 endif(JKQtPlotter_BUILD_STATIC_LIBS)
 
 install(FILES ${HEADERS}
         DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/${libIncludeSubdir}
         COMPONENT Headers)
 
-configure_file(${PROJECT_SOURCE_DIR}/readme.txt.in ${CMAKE_CURRENT_BINARY_DIR}/${lib_name}_Readme.txt @ONLY)
-install(FILES "${CMAKE_CURRENT_BINARY_DIR}/${lib_name}_Readme.txt" DESTINATION doc/JKQtPlotter )
-install(FILES "${PROJECT_SOURCE_DIR}/LICENSE" DESTINATION doc/JKQtPlotter RENAME "${lib_name}_LICENSE.txt" )
+
+configure_file(${PROJECT_SOURCE_DIR}/readme.txt.in ${CMAKE_CURRENT_BINARY_DIR}/${libBasename}_Readme.txt @ONLY)
+install(FILES "${CMAKE_CURRENT_BINARY_DIR}/${libBasename}_Readme.txt" DESTINATION doc/JKQtPlotter )
+install(FILES "${PROJECT_SOURCE_DIR}/LICENSE" DESTINATION doc/JKQtPlotter RENAME "${libBasename}_LICENSE.txt" )
 

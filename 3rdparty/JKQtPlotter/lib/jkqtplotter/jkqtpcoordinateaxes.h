@@ -39,9 +39,9 @@ class JKQTBasePlotter;
 /*! \brief this virtual class is the base for any type of coordinate axis, to be drawn by JKQTBasePlotter.
     \ingroup jkqtpbaseplotter_elements
 
-    This class implements all the functionality needed for a coordinate axis:
+    Class derived from JKQTPCoordinateAxis implements all the functionality needed for a coordinate axis:
       - transform world to screen coordinates and vice versa
-      - draw the axis (implemented by child classes!) with these elements: axis lines, JKQTPCoordinateAxisStyle::ticks, tick labels, axis label, x/y=0 axis
+      - draw the axis (implemented by child classes!) with these elements: axis lines, ticks, tick labels, axis label, x/y=0 axis
       - measure the axes in screen coordinates
       - load and save the settings to an ini file
     .
@@ -115,12 +115,11 @@ class JKQTBasePlotter;
     \see You can find example here: \ref JKQTPlotterImagePlotQImageRGB and \ref JKQTPlotterImagePlotRGBOpenCV
 
 
-    \section jkqtplotter_base_grids_baseelemenets Axis JKQTPCoordinateAxisStyle::Ticks and Grids
-
-    This section explains how this component draws the JKQTPCoordinateAxisStyle::ticks on coordinate axes and the grids that may be drawn below
+    \section jkqtplotter_base_grids_baseelemenets Axis Ticks and Grids
+    This section explains how this component draws the ticks on coordinate axes and the grids that may be drawn below
     the plots. In principle both - grids and axes - are drawn the same way, i.e. with the same step widths. There are
-    two types of JKQTPCoordinateAxisStyle::ticks and grids: The major and the minor JKQTPCoordinateAxisStyle::ticks/grids. The major JKQTPCoordinateAxisStyle::ticks also show a label that denotes the
-    value they represent. Between two major JKQTPCoordinateAxisStyle::ticks the axis shows \a JKQTPCoordinateAxisStyle::minorTicks  small JKQTPCoordinateAxisStyle::ticks that are not
+    two types of ticks and grids: The major and the minor ticks/grids. The major ticks also show a label that denotes the
+    value they represent. Between two major ticks the axis shows \a JKQTPCoordinateAxisStyle::minorTicks  small ticks that are not
     accompanied by a label. The next image shows an example of an axis:
 
       \image html plot_axis_ticksandlabels.png
@@ -135,21 +134,36 @@ class JKQTBasePlotter;
     For grids applies the same. There are two grids that are drawn in different styles (often the major grid is drawn
     thicker and darker than the minor grid).
 
-    The minor JKQTPCoordinateAxisStyle::ticks and grid lines are generated automatically, depending in the setting of \a JKQTPCoordinateAxisStyle::minorTicks.
-    These properties give the number of minor JKQTPCoordinateAxisStyle::ticks between two major JKQTPCoordinateAxisStyle::ticks, so if the major JKQTPCoordinateAxisStyle::ticks are at 1,2,3,... and you
-    want minor JKQTPCoordinateAxisStyle::ticks at 1.1, 1.2, 1.3,... then you will have to set \c JKQTPCoordinateAxisStyle::minorTicks=9 as there are nine JKQTPCoordinateAxisStyle::ticks between two major
-    JKQTPCoordinateAxisStyle::ticks. So the minor tick spacing is calculated as: \f[ \Delta\mbox{MinorTicks}=\frac{\Delta\mbox{ticks}}{\mbox{minorTicks}+1} \f]
+    The minor ticks and grid lines are generated automatically, depending in the setting of \a JKQTPCoordinateAxisStyle::minorTicks.
+    These properties give the number of minor ticks between two major ticks, so if the major ticks are at 1,2,3,... and you
+    want minor ticks at 1.1, 1.2, 1.3,... then you will have to set \c JKQTPCoordinateAxisStyle::minorTicks=9 as there are nine ticks between two major
+    ticks. So the minor tick spacing is calculated as: \f[ \Delta\mbox{MinorTicks}=\frac{\Delta\mbox{ticks}}{\mbox{minorTicks}+1} \f]
 
-    The same applies for logarithmic axes. If the major JKQTPCoordinateAxisStyle::ticks are at 1,10,100,... and you set \c JKQTPCoordinateAxisStyle::minorTicks=9 the program will
-    generate 9 equally spaced minor JKQTPCoordinateAxisStyle::ticks in between, so you have minor JKQTPCoordinateAxisStyle::ticks at 2,3,4,...,11,12,13,... This results in a standard
-    logarithmic axis. If you set \c JKQTPCoordinateAxisStyle::minorTicks=1 then you will get minor JKQTPCoordinateAxisStyle::ticks at 5,15,150,...
+    The same applies for logarithmic axes. If the major ticks are at 1,10,100,... and you set \c JKQTPCoordinateAxisStyle::minorTicks=9 the program will
+    generate 9 equally spaced minor ticks in between, so you have minor ticks at 2,3,4,...,11,12,13,... This results in a standard
+    logarithmic axis. If you set \c JKQTPCoordinateAxisStyle::minorTicks=1 then you will get minor ticks at 5,15,150,...
 
       \image html plot_logaxis_ticksandlabels.png
 
     The major tick-tick distances of linear axes may be calculated automatically in a way that the axis shows at least a given
-    number of JKQTPCoordinateAxisStyle::ticks \c JKQTPCoordinateAxisStyle::minTicks. The algorithm takes that tick spacing that will give a number of JKQTPCoordinateAxisStyle::ticks per axis
+    number of ticks \c JKQTPCoordinateAxisStyle::minTicks. The algorithm takes that tick spacing that will give a number of ticks per axis
     nearest but \c ">=" to the given \c JKQTPCoordinateAxisStyle::minTicks. The Algorithm is described in detail with the function
     calcLinearTickSpacing(). To activate this automatic tick spacing you have to set <code>autoAxisSpacing=true</code>.
+
+    \section jkqtplotter_coordinateaxes_tickscaling Axis Tick Units/Scaling
+    In some cases it is desired to put the axis ticks not at 1,2,3,... but rather at \f$ 1\pi \f$ , \f$ 2\pi \f$ , \f$ 3\pi \f$  or any other
+    unit than \f$ pi \f$ ,i.e.:
+
+      \image html axisstyle/axis_unit_scaling_none.png "no axis scaling (default case)"
+      \image html axisstyle/axis_unit_scaling_pi.png "pi-axis scaling (default case)"
+
+    You can use these methods to set such a factor:
+      - setTickUnitFactor() for the actual factor and setTickUnitName() for a name, added to the tick label
+      - setTickUnit() sets factor and name in one call
+      - setTickUnitPi() shortcut to set pi-scaling
+      - resetTickUnit() resets to no-scaling (default case)
+    .
+
  */
 class JKQTPLOTTER_LIB_EXPORT JKQTPCoordinateAxis: public QObject {
         Q_OBJECT
@@ -171,7 +185,7 @@ class JKQTPLOTTER_LIB_EXPORT JKQTPCoordinateAxis: public QObject {
         virtual void saveSettings(QSettings& settings, const QString& group=QString("plots/axes/")) const;
 
 
-        /** \brief return x-pixel coordinate from time coordinate */
+        /** \brief return x-pixel coordinate from x coordinate */
         inline double x2p(double x) const {
             double r=0;
             if (logAxis) {
@@ -187,7 +201,7 @@ class JKQTPLOTTER_LIB_EXPORT JKQTPCoordinateAxis: public QObject {
             }
         }
 
-        /** \brief return time coordinate coordinate from x-pixel */
+        /** \brief return x coordinate from x-pixel */
         inline double p2x(double x) const {
             double xx=x;
             if (inverted) {
@@ -218,10 +232,10 @@ class JKQTPLOTTER_LIB_EXPORT JKQTPCoordinateAxis: public QObject {
         /** \brief add a new tick label to the axis */
         void addAxisTickLabels(const double* x, const QString* label, int items);
 
-        /** \brief returns the size of the left/bottom axis in pt */
+        /** \brief returns the size of the left/bottom axis in pixels */
         virtual QSizeF getSize1(JKQTPEnhancedPainter& painter)=0;
 
-        /** \brief returns the size of the right/top axis in pt */
+        /** \brief returns the size of the right/top axis in pixels */
         virtual QSizeF getSize2(JKQTPEnhancedPainter& painter)=0;
 
         /** \brief draw axes  */
@@ -249,10 +263,14 @@ class JKQTPLOTTER_LIB_EXPORT JKQTPCoordinateAxis: public QObject {
         inline double getUserTickSpacing() const { return this->userTickSpacing; }
         /** \copydoc userLogTickSpacing */
         inline double getUserLogTickSpacing() const { return this->userLogTickSpacing; }
-        /** \copydoc JKQTPCoordinateAxisStyle::labelType */
-        inline JKQTPCALabelType getLabelType() const { return this->axisStyle.labelType; }
+        /** \copydoc JKQTPCoordinateAxisStyle::tickLabelType */
+        inline JKQTPCALabelType getTickLabelType() const { return this->axisStyle.tickLabelType; }
         /** \copydoc axisLabel */
         inline QString getAxisLabel() const { return this->axisLabel; }
+        /** \copydoc tickUnitFactor */
+        inline double getTickUnitFactor() const { return this->tickUnitFactor; }
+        /** \copydoc tickUnitName */
+        inline QString getTickUnitName() const { return this->tickUnitName; }
         /** \copydoc JKQTPCoordinateAxisStyle::labelPosition */
         inline JKQTPLabelPosition getLabelPosition() const { return this->axisStyle.labelPosition; }
         /** \copydoc JKQTPCoordinateAxisStyle::labelFontSize */
@@ -271,10 +289,22 @@ class JKQTPLOTTER_LIB_EXPORT JKQTPCoordinateAxis: public QObject {
         inline unsigned int getMinorTicks() const { return this->axisStyle.minorTicks; }
         /** \copydoc JKQTPCoordinateAxisStyle::tickOutsideLength */
         inline double getTickOutsideLength() const { return this->axisStyle.tickOutsideLength; }
+        /** \copydoc JKQTPCoordinateAxisStyle::arrowSizeFactor */
+        inline double getArrowSizeFactor() const { return this->axisStyle.arrowSizeFactor; }
         /** \copydoc JKQTPCoordinateAxisStyle::minorTickOutsideLength */
         inline double getMinorTickOutsideLength() const { return this->axisStyle.minorTickOutsideLength; }
         /** \copydoc JKQTPCoordinateAxisStyle::axisColor */
         inline QColor getAxisColor() const { return this->axisStyle.axisColor; }
+        /** \copydoc JKQTPCoordinateAxisStyle::labelColor */
+        inline QColor getLabelColor() const { return this->axisStyle.labelColor; }
+        /** \copydoc JKQTPCoordinateAxisStyle::minorTickColor */
+        inline QColor getMinorTickColor() const { return this->axisStyle.minorTickColor; }
+        /** \copydoc JKQTPCoordinateAxisStyle::minorTickLabelColor */
+        inline QColor getMinorTickLabelColor() const { return this->axisStyle.minorTickLabelColor; }
+        /** \copydoc JKQTPCoordinateAxisStyle::tickColor */
+        inline QColor getTickColor() const { return this->axisStyle.tickColor; }
+        /** \copydoc JKQTPCoordinateAxisStyle::tickLabelColor */
+        inline QColor getTickLabelColor() const { return this->axisStyle.tickLabelColor; }
         /** \copydoc JKQTPCoordinateAxisStyle::showZeroAxis */
         inline bool getShowZeroAxis() const { return this->axisStyle.showZeroAxis; }
         /** \copydoc JKQTPGridStyle::lineColor */
@@ -295,9 +325,19 @@ class JKQTPLOTTER_LIB_EXPORT JKQTPCoordinateAxis: public QObject {
         inline QString getTickDateFormat() const { return this->axisStyle.tickDateFormat; }
         /** \copydoc JKQTPCoordinateAxisStyle::tickDateTimeFormat */
         inline QString getTickDateTimeFormat() const { return this->axisStyle.tickDateTimeFormat; }
+        /** \copydoc JKQTPCoordinateAxisStyle::tickPrintfFormat */
+        inline QString getTickPrintfFormat() const { return this->axisStyle.tickPrintfFormat; }
         /** \copydoc JKQTPCoordinateAxisStyle::tickMode */
         inline JKQTPLabelTickMode getTickMode() const { return this->axisStyle.tickMode; }
+#if __cplusplus >= 202002L
+# ifdef __cpp_lib_format
+        /** \copydoc JKQTPCoordinateAxisStyle::tickFormatFormat */
+        inline QString getTickFormatfFormat() const { return this->axisStyle.tickFormatFormat; }
+# endif
+#endif
 
+        /** \copydoc JKQTPCoordinateAxisStyle::drawMode0 */
+        inline JKQTPCADrawMode getDrawMode0() const { return this->axisStyle.drawMode0; }
         /** \copydoc JKQTPCoordinateAxisStyle::drawMode1 */
         inline JKQTPCADrawMode getDrawMode1() const { return this->axisStyle.drawMode1; }
         /** \copydoc JKQTPCoordinateAxisStyle::drawMode2 */
@@ -407,6 +447,8 @@ class JKQTPLOTTER_LIB_EXPORT JKQTPCoordinateAxis: public QObject {
         virtual bool getParentOtheraxisInverted() const=0;
         /** \brief pixel offset of (perpendicular) other axis (needed for grids) */
         virtual double getParentOtheraxisOffset() const=0;
+        /** \brief calls x2p() of the other axis (or returns \c NAN if the other axis does not exist */
+        virtual double parentOtherAxisX2P(double x) const =0;
 
     public slots:
         /** \brief set range of plot axis */
@@ -440,8 +482,8 @@ class JKQTPLOTTER_LIB_EXPORT JKQTPCoordinateAxis: public QObject {
         /** \copydoc userLogTickSpacing */
         void setUserLogTickSpacing (double __value);
 
-        /** \copydoc JKQTPCoordinateAxisStyle::labelType */
-        void setLabelType (JKQTPCALabelType __value);
+        /** \copydoc JKQTPCoordinateAxisStyle::tickLabelType */
+        void setTickLabelType (JKQTPCALabelType __value);
 
         /** \copydoc JKQTPCoordinateAxisStyle::tickMode */
         void setTickMode (JKQTPLabelTickMode __value);
@@ -450,6 +492,28 @@ class JKQTPLOTTER_LIB_EXPORT JKQTPCoordinateAxis: public QObject {
 
         /** \copydoc axisLabel */
         void setAxisLabel (const QString& __value);
+
+        /** \copydoc tickUnitName */
+        void setTickUnitName(const QString& __value);
+
+        /** \copydoc tickUnitFactor */
+        void setTickUnitFactor(double __value);
+        /** \brief sets tickUnitFactor and tickUnitName in one call
+         *
+         *  \see calls setTickUnitName() and setTickUnitFactor()
+         */
+        void setTickUnit(double factor, const QString& name);
+        /** \brief sets pi-scaling for tickUnitFactor and tickUnitName in one call
+         *
+         *  \image html axisstyle/axis_unit_scaling_pi.png
+         *  \see calls setTickUnitName() and setTickUnitFactor()
+         */
+        void setTickUnitPi();
+        /** \brief resets tickUnitFactor and tickUnitName in one call
+         *
+         *  \see calls setTickUnit(), setTickUnitName() and setTickUnitFactor()
+         */
+        void resetTickUnit();
 
         /** \copydoc JKQTPCoordinateAxisStyle::labelPosition */
         void setLabelPosition (JKQTPLabelPosition __value);
@@ -467,7 +531,14 @@ class JKQTPLOTTER_LIB_EXPORT JKQTPCoordinateAxis: public QObject {
         /** \copydoc JKQTPCoordinateAxisStyle::tickDateTimeFormat */
         void setTickDateTimeFormat (const QString& __value);
 
-
+        /** \copydoc JKQTPCoordinateAxisStyle::tickPrintfFormat */
+        void setTickPrintfFormat(const QString& __value);
+#if __cplusplus >= 202002L
+# ifdef __cpp_lib_format
+        /** \copydoc JKQTPCoordinateAxisStyle::tickFormatFormat */
+        void setTickFormatFormat(const QString& __value);
+# endif
+#endif
         /** \copydoc JKQTPCoordinateAxisStyle::tickLabelFontSize */
         void setTickLabelFontSize (double __value);
 
@@ -509,9 +580,13 @@ class JKQTPLOTTER_LIB_EXPORT JKQTPCoordinateAxis: public QObject {
 
         /** \copydoc JKQTPGridStyle::lineColor */
         void setGridColor(const QColor& __value);
+        /** \copydoc JKQTPGridStyle::lineColor */
+        void setGridColor(const QColor& __value, double alpha);
 
         /** \copydoc JKQTPGridStyle::lineColor */
         void setMinorGridColor(const QColor& __value);
+        /** \copydoc JKQTPGridStyle::lineColor */
+        void setMinorGridColor(const QColor& __value, double alpha);
 
         /** \copydoc JKQTPGridStyle::lineWidth */
         void setGridWidth (double __value);
@@ -528,6 +603,8 @@ class JKQTPLOTTER_LIB_EXPORT JKQTPCoordinateAxis: public QObject {
 
         /** \copydoc JKQTPCoordinateAxisStyle::drawMode1 */
         void setDrawMode1 (JKQTPCADrawMode __value);
+        /** \copydoc JKQTPCoordinateAxisStyle::drawMode0 */
+        void setDrawMode0 (JKQTPCADrawMode __value);
 
         /** \copydoc JKQTPCoordinateAxisStyle::drawMode2 */
         void setDrawMode2(JKQTPCADrawMode __value);
@@ -561,8 +638,22 @@ class JKQTPLOTTER_LIB_EXPORT JKQTPCoordinateAxis: public QObject {
 
         /** \copydoc JKQTPCoordinateAxisStyle::tickLabelAngle */
         void setTickLabelAngle(double __value);
+        /** \copydoc JKQTPCoordinateAxisStyle::arrowSizeFactor */
+        void setArrowSizeFactor(double f) ;
+        /** \copydoc JKQTPCoordinateAxisStyle::labelColor */
+        void setLabelColor(QColor c) ;
+        /** \copydoc JKQTPCoordinateAxisStyle::minorTickColor */
+        void setMinorTickColor(QColor c) ;
+        /** \copydoc JKQTPCoordinateAxisStyle::minorTickLabelColor */
+        void setMinorTickLabelColor(QColor c) ;
+        /** \copydoc JKQTPCoordinateAxisStyle::tickColor */
+        void setTickColor(QColor c);
+        /** \copydoc JKQTPCoordinateAxisStyle::tickLabelColor */
+        void setTickLabelColor(QColor c) ;
 
     protected:
+        /** \brief returns the size of the zero axis in pixels, the first part of the return-value is the lhs size and the second part the rhs size */
+        virtual std::pair<QSizeF, QSizeF> getSize0(JKQTPEnhancedPainter& painter) ;
         /** \brief indicates whether one of the parameters has changed sinse the last recalculation of tickSpacing ... */
         bool paramsChanged;
         /** \brief can be used to switch off calcPlotScaling() temporarily, while modifying some properties
@@ -588,6 +679,10 @@ class JKQTPLOTTER_LIB_EXPORT JKQTPCoordinateAxis: public QObject {
         const JKQTMathText* getParentMathText() const;
 
 
+        /** \brief convert a float to a string using \a format (\c f|e|E|g|G ) with given number of decimals after comma \a past_comma and optional removal of trailing zeros behind decimal separator \a remove_trail0. Uses current local, disables not use Group-Separator */
+        QString floattostringWithFormat(const QLocale & loc, double data, char format, int past_comma, bool remove_trail0=true) const;
+        /** \brief convert a float to a string using \a format (\c f|e|E|g|G ) with given number of decimals after comma \a past_comma and optional removal of trailing zeros behind decimal separator \a remove_trail0. Uses current local, disables not use Group-Separator */
+        QString floattostringWithFormat(double data, char format, int past_comma, bool remove_trail0=true) const;
         /** \brief convert a float to a tick label string */
         QString floattolabel(double data) const;
 
@@ -595,9 +690,9 @@ class JKQTPLOTTER_LIB_EXPORT JKQTPCoordinateAxis: public QObject {
         QString floattolabel(double data, int past_comma) const;
         /** \brief parent plotter class */
         JKQTBasePlotter* parent;
-        /** \brief current view: minimum of time axis */
+        /** \brief current view: minimum of axis */
         double axismin;
-        /** \brief current view: maximum of time axis */
+        /** \brief current view: maximum of axis */
         double axismax;
 
         /** \brief absoulte minimum of axis (axismin/axismax xan not be set below this) */
@@ -615,18 +710,18 @@ class JKQTPLOTTER_LIB_EXPORT JKQTPCoordinateAxis: public QObject {
         /** \brief absolute minimum range width, feature switched off when <0 */
         double axisMinWidth;
 
-        /** \brief <b>calculated property:</b> width of plot on time axis (calculated by calcPlotScaling() )
+        /** \brief <b>calculated property:</b> width of plot on axis (calculated by calcPlotScaling() )
          *
          * \see calcPlotScaling(), calcTickSpacing()
          */
         double width;
 
-        /** \brief <b>calculated property:</b> time axis scaling factor (calculated by calcPlotScaling() )
+        /** \brief <b>calculated property:</b> axis scaling factor (calculated by calcPlotScaling() )
          *
          * \see calcPlotScaling(), calcTickSpacing()
          */
         double scale;
-        /** \brief <b>calculated property:</b> time axis offset (calculated by calcPlotScaling() )
+        /** \brief <b>calculated property:</b> axis offset (calculated by calcPlotScaling() )
          *
          * \see calcPlotScaling(), calcTickSpacing()
          */
@@ -676,6 +771,12 @@ class JKQTPLOTTER_LIB_EXPORT JKQTPCoordinateAxis: public QObject {
 
         /** \brief axis label of the axis */
         QString axisLabel;
+
+        /** \brief tick values are the actual x/y-coordiniate, divided by this value (e.g. pu \f$ \pi \f$ to have an axis with values <tt>0, pi, 2pi, 3pi ...</tt>) */
+        double tickUnitFactor;
+
+        /** \brief name of the factor tickUnitFactor. This string is used in tick-labels to write e.g. \c "2pi" instead of 6.28... */
+        QString tickUnitName;
 
 
         /** \brief calculates the tick spacing for a linear axis that spans \a awidth and that should
@@ -738,6 +839,13 @@ class JKQTPLOTTER_LIB_EXPORT JKQTPCoordinateAxis: public QObject {
         /** \brief calculates the maximum width and height (returned as QSize) of all tick labels.
          *         Ascent and descent may also be returned in the two additional pointer arguments- */
         QSizeF getMaxTickLabelSize(JKQTPEnhancedPainter& painter, double* ascent=nullptr, double* descent=nullptr);
+        /** \brief draw the axis line \a l (pointing from axismin to axismax) optionally decorated as specified by \a drawMode using JKQTPEnhancedPainter \a painter */
+        void drawAxisLine(JKQTPEnhancedPainter& painter, const QLineF& l, JKQTPCADrawMode drawMode) const;
+
+        /** \brief calculate the position of the zero-axis (and whether to draw  it or not) */
+        double getZeroAxisPos(bool*  drawZeroAxis=nullptr);
+
+
 };
 
 
@@ -747,6 +855,10 @@ class JKQTPLOTTER_LIB_EXPORT JKQTPCoordinateAxis: public QObject {
 /*! \brief implements a vertical axis, based on JKQTPCoordinateAxis (for most of documentation: see JKQTPCoordinateAxis).
     \ingroup jkqtpbaseplotter_elements
 
+    The positioning of the different axis elements depends on the psition of the "other" axis (here x-axis),
+    i.e. the corresponding vertical axis:
+
+    \image html JKQTPHorizontalAxisPositioning.png
  */
 class JKQTPLOTTER_LIB_EXPORT JKQTPVerticalAxis: public JKQTPCoordinateAxis {
         Q_OBJECT
@@ -755,39 +867,82 @@ class JKQTPLOTTER_LIB_EXPORT JKQTPVerticalAxis: public JKQTPCoordinateAxis {
         /** \brief class constructor */
         JKQTPVerticalAxis(JKQTBasePlotter* parent);
 
-        /** \brief returns the size of the left/bottom axis in pt */
+        /** \brief returns the size of the left axis in pixels */
         virtual QSizeF getSize1(JKQTPEnhancedPainter& painter) override;
 
-        /** \brief returns the size of the right/top axis in pt */
+        /** \brief returns the size of the right axis in pixels */
         virtual QSizeF getSize2(JKQTPEnhancedPainter& painter) override;
 
-        /** \brief draw axes */
+        /** copydoc JKQTPCoordinateAxis::drawAxes() */
         virtual void drawAxes(JKQTPEnhancedPainter& painter) override;
 
-        /** \brief draw grids  */
+        /** copydoc JKQTPCoordinateAxis::drawGrids() */
         virtual void drawGrids(JKQTPEnhancedPainter& painter) override;
 
 
-        /** \brief width of the plot in the direction of the axis */
+        /** copydoc JKQTPCoordinateAxis::getParentPlotWidth() */
         virtual double getParentPlotWidth() const override;
-        /** \brief offset of the plot in the direction of the axis */
+        /** copydoc JKQTPCoordinateAxis::getParentPlotOffset() */
         virtual double getParentPlotOffset() const override;
-        /** \brief pixel of other (perpendicular) axis (needed for grids) */
+        /** copydoc JKQTPCoordinateAxis::getParentOtheraxisWidth() */
         virtual double getParentOtheraxisWidth() const override;
+        /** copydoc JKQTPCoordinateAxis::getParentOtheraxisInverted() */
         virtual bool getParentOtheraxisInverted() const override;
-        /** \brief pixel offset of (perpendicular) other axis (needed for grids) */
+        /** copydoc JKQTPCoordinateAxis::getParentOtheraxisOffset() */
         virtual double getParentOtheraxisOffset() const override;
+        /** copydoc JKQTPCoordinateAxis::parentOtherAxisX2P() */
+        virtual double parentOtherAxisX2P(double x) const override;
 
     protected:
-        virtual void drawTickLabel1(JKQTPEnhancedPainter& painter, double xx, double yy, const QString &label, double fontSize) ;
-        virtual void drawTickLabel2(JKQTPEnhancedPainter& painter, double xx, double yy, const QString &label, double fontSize) ;
+        /** copydoc JKQTPCoordinateAxis::getSize0() */
+        virtual std::pair<QSizeF,QSizeF> getSize0(JKQTPEnhancedPainter& painter) override;
+        /** \brief draw a tick label on the left axis 1 with text \a label (with optional rotation) at ( \a xx , \a yy ) (in pixel)
+         *
+         *  \param painter the JKQTPEnhancedPainter used for drawing
+         *  \param xx the exact position of the tick in pixels
+         *  \param yy the exact position of the tick in pixels
+         *  \param labelOffset offset of the label from ( \a xx , \a yy ) in pt, this is typically equal to \c tickOuterLength+tickLabelDistance
+         *  \param label text to display
+         *  \param fontSize the fontSize of the label (in pt)
+         *  \param isMinor indicates whether  the axis tick is a minor tick
+         */
+        void drawTickLabel1(JKQTPEnhancedPainter& painter, double xx, double yy, double labelOffset, const QString &label, double fontSize, bool isMinor=false) ;
+        /** \brief draw a tick label on the right axis 2 with text \a label (with optional rotation) at ( \a xx , \a yy ) (in pixel)
+         *
+         *  \param painter the JKQTPEnhancedPainter used for drawing
+         *  \param xx the exact position of the tick in pixels
+         *  \param yy the exact position of the tick in pixels
+         *  \param labelOffset offset of the label from ( \a xx , \a yy ) in pt, this is typically equal to \c tickOuterLength+tickLabelDistance
+         *  \param label text to display
+         *  \param fontSize the fontSize of the label (in pt)
+         *  \param isMinor indicates whether  the axis tick is a minor tick
+         */
+        void drawTickLabel2(JKQTPEnhancedPainter& painter, double xx, double yy, double labelOffset, const QString &label, double fontSize, bool isMinor=false) ;
+        /** \brief draw the axis label using \a painter for axis 1 at \c x= \a left and \c y= \a bottom. \a labelMax is the maximum Size of all tick labels */
+        void drawAxisLabel1(JKQTPEnhancedPainter &painter, double left, double bottom, QSizeF labelMax, JKQTPCADrawMode drawMode);
+        /** \brief draw the axis label using \a painter for axis 2 at \c x= \a right and \c y= \a bottom. \a labelMax is the maximum Size of all tick labels */
+        void drawAxisLabel2(JKQTPEnhancedPainter &painter, double right, double bottom, QSizeF labelMax, JKQTPCADrawMode drawMode);
 };
 
 
 /*! \brief implements a position-indipendent vertical axis, based on JKQTPCoordinateAxis (for most of documentation: see JKQTPCoordinateAxis).
     \ingroup jkqtpbaseplotter_elements
 
-    This axis may be draw at a user-supplied position (used e.g. for color bar axes)
+
+    This axis may be draw at a user-supplied position (used e.g. for color bar axes).
+    The axis positioning parameters are supplied via the constructor,or setter methods.
+
+    \image html JKQTPVerticalIndependentAxisPositioning.png
+
+    Basically this class overwrites several virtual methods as follows:
+      - getParentPlotWidth() returns axisWidth, provided in the connstructor or via setParentPlotWidth()
+      - getParentPlotOffset() returns axisOffset, provided in the connstructor or via setParentPlotOffset()
+      - getParentOtheraxisWidth() returns otherAxisWidth, provided in the connstructor or via setParentPlotOtheraxisWidth()
+      - getParentOtheraxisOffset() returns otherAxisOffset, provided in the connstructor or via setParentPlotOtheraxisOffset()
+    .
+
+    If it is paired with another axis, the parameters of that axis have to be given explizitly in the constructor or with  setters.
+
  */
 class JKQTPLOTTER_LIB_EXPORT JKQTPVerticalIndependentAxis: public JKQTPVerticalAxis {
         Q_OBJECT
@@ -795,16 +950,19 @@ class JKQTPLOTTER_LIB_EXPORT JKQTPVerticalIndependentAxis: public JKQTPVerticalA
     public:
         /** \brief class constructor */
         JKQTPVerticalIndependentAxis(double axisOffset, double axisWidth, double otherAxisOffset, double otherAxisWidth, JKQTBasePlotter* parent);
-         /** \brief width of the plot in the direction of the axis */
+
+        /** copydoc JKQTPCoordinateAxis::getParentPlotWidth() */
         virtual double getParentPlotWidth() const override;
-        /** \brief offset of the plot in the direction of the axis */
+        /** copydoc JKQTPCoordinateAxis::getParentPlotOffset() */
         virtual double getParentPlotOffset() const override;
-        /** \brief pixel of other (perpendicular) axis (needed for grids) */
+        /** copydoc JKQTPCoordinateAxis::getParentOtheraxisWidth() */
         virtual double getParentOtheraxisWidth() const override;
-        /** \brief returns whether the other axis is inverted */
+        /** copydoc JKQTPCoordinateAxis::getParentOtheraxisInverted() */
         virtual bool getParentOtheraxisInverted() const override;
-        /** \brief pixel offset of (perpendicular) other axis (needed for grids) */
+        /** copydoc JKQTPCoordinateAxis::getParentOtheraxisOffset() */
         virtual double getParentOtheraxisOffset() const override;
+        /** copydoc JKQTPCoordinateAxis::parentOtherAxisX2P() */
+        virtual double parentOtherAxisX2P(double x) const override;
     public slots:
         /** \brief set the axis offset */
         virtual void setAxisOffset(double __value) ;
@@ -835,6 +993,10 @@ class JKQTPLOTTER_LIB_EXPORT JKQTPVerticalIndependentAxis: public JKQTPVerticalA
 /*! \brief implements a horizontal axis, based on JKQTPCoordinateAxis (for most of documentation: see JKQTPCoordinateAxis).
     \ingroup jkqtpbaseplotter_elements
 
+    The positioning of the different axis elements depends on the psition of the "other"  axis (here y-axis),
+    i.e. the corresponding vertical axis:
+
+    \image html JKQTPHorizontalAxisPositioning.png
  */
 class JKQTPLOTTER_LIB_EXPORT JKQTPHorizontalAxis: public JKQTPCoordinateAxis {
         Q_OBJECT
@@ -843,33 +1005,65 @@ class JKQTPLOTTER_LIB_EXPORT JKQTPHorizontalAxis: public JKQTPCoordinateAxis {
         /** \brief class constructor */
         JKQTPHorizontalAxis(JKQTBasePlotter* parent);
 
-        /** \brief returns the size of the left/bottom axis in pt */
+        /** \brief returns the size of the bottom axis in pixels */
         virtual QSizeF getSize1(JKQTPEnhancedPainter& painter) override;
 
-        /** \brief returns the size of the right/top axis in pt */
+        /** \brief returns the size of the top axis in pixels */
         virtual QSizeF getSize2(JKQTPEnhancedPainter& painter) override;
 
-        /** \brief draw axes */
+        /** copydoc JKQTPCoordinateAxis::drawAxes() */
         virtual void drawAxes(JKQTPEnhancedPainter& painter) override;
 
-        /** \brief draw grids  */
+        /** copydoc JKQTPCoordinateAxis::drawGrids() */
         virtual void drawGrids(JKQTPEnhancedPainter& painter) override;
 
-        /** \brief width of the plot in the direction of the axis */
+
+        /** copydoc JKQTPCoordinateAxis::getParentPlotWidth() */
         virtual double getParentPlotWidth() const override;
-        /** \brief offset of the plot in the direction of the axis */
+        /** copydoc JKQTPCoordinateAxis::getParentPlotOffset() */
         virtual double getParentPlotOffset() const override;
-        /** \brief pixel of other (perpendicular) axis (needed for grids) */
+        /** copydoc JKQTPCoordinateAxis::getParentOtheraxisWidth() */
         virtual double getParentOtheraxisWidth() const override;
-        /** \brief returns whether the other axis is inverted */
+        /** copydoc JKQTPCoordinateAxis::getParentOtheraxisInverted() */
         virtual bool getParentOtheraxisInverted() const override;
-        /** \brief pixel offset of (perpendicular) other axis (needed for grids) */
+        /** copydoc JKQTPCoordinateAxis::getParentOtheraxisOffset() */
         virtual double getParentOtheraxisOffset() const override;
+        /** copydoc JKQTPCoordinateAxis::parentOtherAxisX2P() */
+        virtual double parentOtherAxisX2P(double x) const override;
 
     protected:
-
-        virtual void drawTickLabel1(JKQTPEnhancedPainter& painter, double xx, double yy, const QString &label, double fontSize, double ascentMax, double descentMax) ;
-        virtual void drawTickLabel2(JKQTPEnhancedPainter& painter, double xx, double yy, const QString &label, double fontSize, double ascentMax, double descentMax) ;
+        /** copydoc JKQTPCoordinateAxis::getSize0() */
+        virtual std::pair<QSizeF, QSizeF> getSize0(JKQTPEnhancedPainter& painter) override;
+        /** \brief draw a tick label on the lower axis 1 with text \a label (with optional rotation) at ( \a xx , \a yy ) (in pixel)
+         *
+         *  \param painter the JKQTPEnhancedPainter used for drawing
+         *  \param xx the exact position of the tick in pixels
+         *  \param yy the exact position of the tick in pixels
+         *  \param labelOffset offset of the label from ( \a xx , \a yy ) in pt, this is typically equal to \c tickOuterLength+tickLabelDistance
+         *  \param label text to display
+         *  \param fontSize the fontSize of the label (in pt)
+         *  \param ascentMax maximum ascent of all tick labels
+         *  \param descentMax maximum descent of all tick labels
+         *  \param isMinor indicates whether  the axis tick is a minor tick
+         */
+        void drawTickLabel1(JKQTPEnhancedPainter& painter, double xx, double yy, double labelOffset, const QString &label, double fontSize, double ascentMax, double descentMax, bool isMinor=false) ;
+        /** \brief draw a tick label on the upper axis 2 with text \a label (with optional rotation) at ( \a xx , \a yy ) (in pixel)
+         *
+         *  \param painter the JKQTPEnhancedPainter used for drawing
+         *  \param xx the exact position of the tick in pixels
+         *  \param yy the exact position of the tick in pixels
+         *  \param labelOffset offset of the label from ( \a xx , \a yy ) in pt, this is typically equal to \c tickOuterLength+tickLabelDistance
+         *  \param label text to display
+         *  \param fontSize the fontSize of the label (in pt)
+         *  \param ascentMax maximum ascent of all tick labels
+         *  \param descentMax maximum descent of all tick labels
+         *  \param isMinor indicates whether  the axis tick is a minor tick
+         */
+        void drawTickLabel2(JKQTPEnhancedPainter& painter, double xx, double yy, double labelOffset, const QString &label, double fontSize, double ascentMax, double descentMax, bool isMinor=false) ;
+        /** \brief draw the axis label using \a painter for axis 1 at \c x= \a left and \c y= \a bottom. \a labelMax is the maximum Size of all tick labels */
+        void drawAxisLabel1(JKQTPEnhancedPainter &painter, double left, double bottom, QSizeF labelMax, JKQTPCADrawMode drawMode);
+        /** \brief draw the axis label using \a painter for axis 2 at \c x= \a left and \c y= \a top. \a labelMax is the maximum Size of all tick labels */
+        void drawAxisLabel2(JKQTPEnhancedPainter &painter, double left, double top, QSizeF labelMax, JKQTPCADrawMode drawMode);
 
 };
 
@@ -877,7 +1071,20 @@ class JKQTPLOTTER_LIB_EXPORT JKQTPHorizontalAxis: public JKQTPCoordinateAxis {
 /*! \brief implements a position-indipendent horizontal axis, based on JKQTPCoordinateAxis (for most of documentation: see JKQTPCoordinateAxis).
     \ingroup jkqtpbaseplotter_elements
 
-    This axis may be draw at a user-supplied position (used e.g. for color bar axes)
+    This axis may be draw at a user-supplied position (used e.g. for color bar axes).
+    The axis positioning parameters are supplied via the constructor,or setter methods.
+
+    \image html JKQTPHorizontalIndependentAxisPositioning.png
+
+    Basically this class overwrites several virtual methods as follows:
+      - getParentPlotWidth() returns axisWidth, provided in the connstructor or via setParentPlotWidth()
+      - getParentPlotOffset() returns axisOffset, provided in the connstructor or via setParentPlotOffset()
+      - getParentOtheraxisWidth() returns otherAxisWidth, provided in the connstructor or via setParentPlotOtheraxisWidth()
+      - getParentOtheraxisOffset() returns otherAxisOffset, provided in the connstructor or via setParentPlotOtheraxisOffset()
+    .
+
+    If it is paired with another axis, the parameters of that axis have to be given explizitly in the constructor or with  setters.
+
  */
 class JKQTPLOTTER_LIB_EXPORT JKQTPHorizontalIndependentAxis: public JKQTPHorizontalAxis {
         Q_OBJECT
@@ -885,6 +1092,19 @@ class JKQTPLOTTER_LIB_EXPORT JKQTPHorizontalIndependentAxis: public JKQTPHorizon
     public:
         /** \brief class constructor */
         JKQTPHorizontalIndependentAxis(double axisOffset, double axisWidth, double otherAxisOffset, double otherAxisWidth, JKQTBasePlotter* parent);
+
+        /** copydoc JKQTPCoordinateAxis::getParentPlotWidth() */
+        virtual double getParentPlotWidth() const override;
+        /** copydoc JKQTPCoordinateAxis::getParentPlotOffset() */
+        virtual double getParentPlotOffset() const override;
+        /** copydoc JKQTPCoordinateAxis::getParentOtheraxisWidth() */
+        virtual double getParentOtheraxisWidth() const override;
+        /** copydoc JKQTPCoordinateAxis::getParentOtheraxisInverted() */
+        virtual bool getParentOtheraxisInverted() const override;
+        /** copydoc JKQTPCoordinateAxis::getParentOtheraxisOffset() */
+        virtual double getParentOtheraxisOffset() const override;
+        /** copydoc JKQTPCoordinateAxis::parentOtherAxisX2P() */
+        virtual double parentOtherAxisX2P(double x) const override;
     public slots:
         /** \brief set the axis offset */
         virtual void setAxisOffset(double __value);
@@ -894,18 +1114,11 @@ class JKQTPLOTTER_LIB_EXPORT JKQTPHorizontalIndependentAxis: public JKQTPHorizon
         virtual void setOtherAxisOffset(double __value);
         /** \brief set the other axis width */
         virtual void setOtherAxisWidth(double __value);
+        /** \brief set whether the other axis is inverted */
         virtual void setOtherAxisInverted(bool __value);
+
     protected:
-        /** \brief width of the plot in the direction of the axis */
-        virtual double getParentPlotWidth() const override;
-        /** \brief offset of the plot in the direction of the axis */
-        virtual double getParentPlotOffset() const override;
-        /** \brief pixel of other (perpendicular) axis (needed for grids) */
-        virtual double getParentOtheraxisWidth() const override;
-        /** \brief returns whether the other axis is inverted */
-        virtual bool getParentOtheraxisInverted() const override;
-        /** \brief pixel offset of (perpendicular) other axis (needed for grids) */
-        virtual double getParentOtheraxisOffset() const override;
+
 
         /** \brief the offset of the axis */
         double axisOffset;

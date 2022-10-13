@@ -1,7 +1,7 @@
 /*
     Copyright (c) 2008-2022 Jan W. Krieger (<jan@jkrieger.de>)
 
-    
+
 
     This software is free software: you can redistribute it and/or modify
     it under the terms of the GNU Lesser General Public License (LGPL) as published by
@@ -23,7 +23,9 @@
 #include "jkqtplotter/jkqtpbaseplotter.h"
 #include <stdlib.h>
 #include <QDebug>
+#include <QMarginsF>
 #include <iostream>
+#include "jkqtcommon/jkqtpdrawingtools.h"
 #include "jkqtplotter/jkqtptools.h"
 #include "jkqtplotter/jkqtpimagetools.h"
 #include "jkqtplotter/graphs/jkqtpimage.h"
@@ -41,155 +43,112 @@
 
 
 
-JKQTPXYLineGraph::JKQTPXYLineGraph(JKQTPlotter* parent):
-    JKQTPXYLineGraph(parent->getPlotter())
+
+
+
+
+
+JKQTPXYScatterGraph::JKQTPXYScatterGraph(JKQTPlotter* parent):
+    JKQTPXYScatterGraph(parent->getPlotter())
 {
 }
 
-JKQTPXYLineGraph::JKQTPXYLineGraph(JKQTBasePlotter* parent):
+JKQTPXYScatterGraph::JKQTPXYScatterGraph(JKQTBasePlotter* parent):
     JKQTPXYGraph(parent)
 {
     sortData=JKQTPXYGraph::Unsorted;
-    drawLine=true;
 
-    initLineStyle(parent, parentPlotStyle, JKQTPPlotStyleType::Default);
     initSymbolStyle(parent, parentPlotStyle, JKQTPPlotStyleType::Default);
 }
 
-void JKQTPXYLineGraph::draw(JKQTPEnhancedPainter& painter) {
+void JKQTPXYScatterGraph::draw(JKQTPEnhancedPainter& painter) {
 #ifdef JKQTBP_AUTOTIMER
-    JKQTPAutoOutputTimer jkaaot("JKQTPXYLineGraph::draw");
+    JKQTPAutoOutputTimer jkaaot("JKQTPXYScatterGraph::draw");
 #endif
     if (parent==nullptr) return;
     const JKQTPDatastore* datastore=parent->getDatastore();
     if (datastore==nullptr) return;
 
-    //qDebug()<<"JKQTPXYLineGraph::draw();";
+    //qDebug()<<"JKQTPXYScatterGraph::draw();";
 
     drawErrorsBefore(painter);
     {
-        //qDebug()<<"JKQTPXYLineGraph::draw(): "<<1;
+        //qDebug()<<"JKQTPXYScatterGraph::draw(): "<<1;
         painter.save(); auto __finalpaint=JKQTPFinally([&painter]() {painter.restore();});
-        //qDebug()<<"JKQTPXYLineGraph::draw(): "<<2;
+        //qDebug()<<"JKQTPXYScatterGraph::draw(): "<<2;
 
-        const QPen p=getLinePen(painter, parent);
-        const QPen penSelection=getHighlightingLinePen(painter, parent);
+        const auto symType=getSymbolType();
+        const double xmin=transformX(parent->getXAxis()->getMin());
+        const double xmax=transformX(parent->getXAxis()->getMax());
+        const double ymin=transformY(parent->getYAxis()->getMin());
+        const double ymax=transformY(parent->getYAxis()->getMax());
+        const double symbolSize=parent->pt2px(painter, getSymbolSize());
+        const QMarginsF clipMargins=(symType==JKQTPNoSymbol)?QMarginsF(0,0,0,0):QMarginsF(symbolSize,symbolSize,symbolSize,symbolSize);
+        const QRectF cliprect=QRectF(qMin(xmin,xmax),qMin(ymin,ymax),fabs(xmax-xmin),fabs(ymax-ymin))+clipMargins;
 
 
         int imax=0;
         int imin=0;
         if (getIndexRange(imin, imax)) {
-
-
-            std::vector<QPolygonF> vec_linesP;
-            vec_linesP.push_back(QPolygonF());
-            intSortData();
             for (int iii=imin; iii<imax; iii++) {
                 const int i=qBound(imin, getDataIndex(iii), imax);
                 const double xv=datastore->get(static_cast<size_t>(xColumn),static_cast<size_t>(i));
                 const double yv=datastore->get(static_cast<size_t>(yColumn),static_cast<size_t>(i));
                 const double x=transformX(xv);
                 const double y=transformY(yv);
-                //qDebug()<<"JKQTPXYLineGraph::draw(): (xv, yv) =    ( "<<xv<<", "<<yv<<" )";
+                //qDebug()<<"JKQTPXYScatterGraph::draw(): (xv, yv) =    ( "<<xv<<", "<<yv<<" )";
                 if (JKQTPIsOKFloat(xv) && JKQTPIsOKFloat(yv)  &&  JKQTPIsOKFloat(x) && JKQTPIsOKFloat(y)) {
 
-                    if (isHighlighted() && getSymbolType()!=JKQTPNoSymbol) {
+                    //if (isHighlighted() && getSymbolType()!=JKQTPNoSymbol) {
                         //JKQTPPlotSymbol(painter, x, y, JKQTPFilledCircle, parent->pt2px(painter, symbolSize*1.5), parent->pt2px(painter, symbolWidth*parent->getLineWidthMultiplier()), penSelection.color(), penSelection.color());
-                    }
+                    //}
                     if ((!parent->getXAxis()->isLogAxis() || xv>0.0) && (!parent->getYAxis()->isLogAxis() || yv>0.0) ) {
-                        plotStyledSymbol(parent, painter, x, y);
-                        if (drawLine) {
-                            vec_linesP[vec_linesP.size()-1] << QPointF(x,y);
-                        }
-                    } else {
-                        vec_linesP.push_back(QPolygonF());
+                        if (symType!=JKQTPNoSymbol && cliprect.contains(x,y)) plotStyledSymbol(parent, painter, x, y);
                     }
                 }
             }
-            //qDebug()<<"JKQTPXYLineGraph::draw(): "<<4<<" lines="<<lines.size();
-            //qDebug()<<"JKQTPXYLineGraph::draw(): "<<5<<"  p="<<painter.pen();
-            for (auto &linesP : vec_linesP) {
-                if (linesP.size()>0) {
-                    if (isHighlighted()) {
-                        painter.setPen(penSelection);
-                        //painter.drawLines(lines);
-                        painter.drawPolyline(linesP);
-                    }
-                    painter.setPen(p);
-                    //painter.drawLines(lines);
-                    painter.drawPolyline(linesP);
-                }
-            }
-            //qDebug()<<"JKQTPXYLineGraph::draw(): "<<6;
+
         }
     }
-    //qDebug()<<"JKQTPXYLineGraph::draw(): "<<7;
+    //qDebug()<<"JKQTPXYScatterGraph::draw(): "<<7;
     drawErrorsAfter(painter);
-    //qDebug()<<"JKQTPXYLineGraph::draw() ... done";
+    //qDebug()<<"JKQTPXYScatterGraph::draw() ... done";
 }
 
-void JKQTPXYLineGraph::drawKeyMarker(JKQTPEnhancedPainter& painter, QRectF& rect) {
-    const double minSize=qMin(rect.width(), rect.height());
-    const double maxSize=qMax(rect.width(), rect.height());
-    double symbolSize=parent->pt2px(painter, this->getSymbolSize());
-    if (symbolSize>minSize*0.9) symbolSize=minSize*0.9;
-    double symbolWidth=parent->pt2px(painter, this->getSymbolLineWidth()*parent->getLineWidthMultiplier());
-    if (symbolWidth>0.3*symbolSize) symbolWidth=0.3*symbolSize;
-    double lineWidth=parent->pt2px(painter, this->getLineWidth()*parent->getLineWidthMultiplier());
-    if (lineWidth>0.5*maxSize) lineWidth=0.5*maxSize;
-
+void JKQTPXYScatterGraph::drawKeyMarker(JKQTPEnhancedPainter& painter, QRectF& rect) {
     painter.save(); auto __finalpaint=JKQTPFinally([&painter]() {painter.restore();});
-    QPen p=getLinePen(painter, parent);
-    p.setColor(getKeyLabelColor());
-    p.setStyle(getLineStyle());
-    p.setWidthF(lineWidth);
-    painter.setPen(p);
-    double y=rect.top()+rect.height()/2.0;
-    if (drawLine) painter.drawLine(QLineF(rect.left(), y, rect.right(), y));
-    JKQTPPlotSymbol(painter, rect.left()+rect.width()/2.0, rect.top()+rect.height()/2.0, getSymbolType(), symbolSize, symbolWidth, getKeyLabelColor(), getSymbolFillColor());
-
+    JKQTPPlotSymbol(painter, rect.left()+rect.width()/2.0, rect.top()+rect.height()/2.0, getSymbolType(), getKeySymbolSizePx(painter, rect, parent), getKeySymbolLineWidthPx(painter, rect, parent), getKeyLabelColor(), getSymbolFillColor(),getSymbolFont());
 }
 
-QColor JKQTPXYLineGraph::getKeyLabelColor() const {
+QColor JKQTPXYScatterGraph::getKeyLabelColor() const {
     return getSymbolColor();
 }
 
-void JKQTPXYLineGraph::setDrawLine(bool __value)
+void JKQTPXYScatterGraph::setColor(QColor c)
 {
-    this->drawLine = __value;
-}
-
-bool JKQTPXYLineGraph::getDrawLine() const
-{
-    return this->drawLine;
-}
-
-void JKQTPXYLineGraph::setColor(QColor c)
-{
-    setLineColor(c);
     setSymbolColor(c);
     setSymbolFillColor(JKQTPGetDerivedColor(parent->getCurrentPlotterStyle().graphsStyle.defaultGraphStyle.fillColorDerivationMode, c));
     c.setAlphaF(0.5);
-    setHighlightingLineColor(c);
 }
 
 
-JKQTPXYLineErrorGraph::JKQTPXYLineErrorGraph(JKQTBasePlotter *parent):
-    JKQTPXYLineGraph(parent)
+
+JKQTPXYScatterErrorGraph::JKQTPXYScatterErrorGraph(JKQTBasePlotter *parent):
+    JKQTPXYScatterGraph(parent)
 {
     setErrorColorFromGraphColor(getSymbolColor());
     initErrorStyle(parent, parentPlotStyle);
 }
 
-JKQTPXYLineErrorGraph::JKQTPXYLineErrorGraph(JKQTPlotter *parent):
-    JKQTPXYLineErrorGraph(parent->getPlotter())
+JKQTPXYScatterErrorGraph::JKQTPXYScatterErrorGraph(JKQTPlotter *parent):
+    JKQTPXYScatterErrorGraph(parent->getPlotter())
 {
 
 }
 
-bool JKQTPXYLineErrorGraph::getXMinMax(double &minx, double &maxx, double &smallestGreaterZero) {
+bool JKQTPXYScatterErrorGraph::getXMinMax(double &minx, double &maxx, double &smallestGreaterZero) {
     if (xErrorColumn<0 || xErrorStyle==JKQTPNoError) {
-        return JKQTPXYLineGraph::getXMinMax(minx, maxx, smallestGreaterZero);
+        return JKQTPXYScatterGraph::getXMinMax(minx, maxx, smallestGreaterZero);
     } else {
         bool start=true;
         minx=0;
@@ -224,9 +183,9 @@ bool JKQTPXYLineErrorGraph::getXMinMax(double &minx, double &maxx, double &small
     return false;
 }
 
-bool JKQTPXYLineErrorGraph::getYMinMax(double &miny, double &maxy, double &smallestGreaterZero) {
+bool JKQTPXYScatterErrorGraph::getYMinMax(double &miny, double &maxy, double &smallestGreaterZero) {
     if (yErrorColumn<0 || yErrorStyle==JKQTPNoError) {
-        return JKQTPXYLineGraph::getYMinMax(miny, maxy, smallestGreaterZero);
+        return JKQTPXYScatterGraph::getYMinMax(miny, maxy, smallestGreaterZero);
     } else {
         bool start=true;
         miny=0;
@@ -261,12 +220,12 @@ bool JKQTPXYLineErrorGraph::getYMinMax(double &miny, double &maxy, double &small
     return false;
 }
 
-bool JKQTPXYLineErrorGraph::usesColumn(int c) const
+bool JKQTPXYScatterErrorGraph::usesColumn(int c) const
 {
-    return JKQTPXYLineGraph::usesColumn(c)||JKQTPXYGraphErrors::errorUsesColumn(c);
+    return JKQTPXYScatterGraph::usesColumn(c)||JKQTPXYGraphErrors::errorUsesColumn(c);
 }
 
-void JKQTPXYLineErrorGraph::drawErrorsBefore(JKQTPEnhancedPainter &painter)
+void JKQTPXYScatterErrorGraph::drawErrorsBefore(JKQTPEnhancedPainter &painter)
 {
     intSortData();
     if (sortData==JKQTPXYGraph::Unsorted) plotErrorIndicators(painter, parent, this, xColumn, yColumn);
@@ -289,11 +248,11 @@ void JKQTPXYLineErrorGraph::drawErrorsBefore(JKQTPEnhancedPainter &painter)
 
 
 
-
-
 JKQTPXYParametrizedScatterGraph::JKQTPXYParametrizedScatterGraph(JKQTBasePlotter *parent):
-    JKQTPXYLineGraph(parent),
-    JKQTPColorPaletteStyleAndToolsMixin(parent)
+    JKQTPXYGraph(parent),
+    JKQTPColorPaletteStyleAndToolsMixin(parent),
+    drawLine(false),
+    drawLineInForeground(true)
 {
     sizeColumn=-1;
     colorColumn=-1;
@@ -354,6 +313,7 @@ void JKQTPXYParametrizedScatterGraph::draw(JKQTPEnhancedPainter &painter)
         QVector<QColor> linecols;
         QVector<QColor> linecolss;
         QVector<double> linewidths;
+        QVector<SymbolDescription> symbols;
         //qDebug()<<"JKQTPXYLineGraph::draw(): "<<3<<" imin="<<imin<<" imax="<<imax;
         {
             painter.save(); auto __finalpaintinner=JKQTPFinally([&painter]() {painter.restore();});
@@ -406,9 +366,10 @@ void JKQTPXYParametrizedScatterGraph::draw(JKQTPEnhancedPainter &painter)
 
                     if ((!parent->getXAxis()->isLogAxis() || xv>0.0) && (!parent->getYAxis()->isLogAxis() || yv>0.0) ) {
                         if (isHighlighted() && getSymbolType()!=JKQTPNoSymbol && symbolColumn<0) {
-                            JKQTPPlotSymbol(painter, x, y, JKQTPFilledCircle,symbSize, parent->pt2px(painter, getSymbolLineWidth()*parent->getLineWidthMultiplier()), penSelection.color(), penSelection.color());
+                            JKQTPPlotSymbol(painter, x, y, JKQTPFilledCircle,symbSize*1.25, parent->pt2px(painter, getSymbolLineWidth()*parent->getLineWidthMultiplier()), penSelection.color(), penSelection.color(),getSymbolFont());
                         } else {
-                            JKQTPPlotSymbol(painter, x, y, getLocalSymbolType(i), symbSize, parent->pt2px(painter, getSymbolLineWidth()*parent->getLineWidthMultiplier()), symbColor, symbFillColor);
+                            if (drawLineInForeground) JKQTPPlotSymbol(painter, x, y, getLocalSymbolType(i), symbSize, parent->pt2px(painter, getSymbolLineWidth()*parent->getLineWidthMultiplier()), symbColor, symbFillColor,getSymbolFont());
+                            else symbols.push_back({x, y, getLocalSymbolType(i), symbSize, symbColor, symbFillColor});
                         }
                     }
 
@@ -435,7 +396,7 @@ void JKQTPXYParametrizedScatterGraph::draw(JKQTPEnhancedPainter &painter)
                 } else {
                     pp.setColor(getHighlightingLineColor());
                     painter.setPen(pp);
-                    painter.drawPolyline(linesP);
+                    painter.drawPolylineFast(linesP);
                 }
             }
             QPen pp=p;
@@ -449,9 +410,11 @@ void JKQTPXYParametrizedScatterGraph::draw(JKQTPEnhancedPainter &painter)
             } else {
                 pp.setColor(getHighlightingLineColor());
                 painter.setPen(pp);
-                painter.drawPolyline(linesP);
+                painter.drawPolylineFast(linesP);
             }
-
+        }
+        for (auto& s: symbols) {
+            JKQTPPlotSymbol(painter, s.x, s.y, s.type, s.size, parent->pt2px(painter, getSymbolLineWidth()*parent->getLineWidthMultiplier()), s.color, s.fillColor, getSymbolFont());
         }
     }
 
@@ -460,14 +423,8 @@ void JKQTPXYParametrizedScatterGraph::draw(JKQTPEnhancedPainter &painter)
 
 void JKQTPXYParametrizedScatterGraph::drawKeyMarker(JKQTPEnhancedPainter &painter, QRectF &rect)
 {
-    const double minSize=qMin(rect.width(), rect.height());
-    const double maxSize=qMax(rect.width(), rect.height());
-    double symbolSize1=parent->pt2px(painter, this->getSymbolSize());
-    if (symbolSize1>minSize*0.9) symbolSize1=minSize*0.9;
-    if (symbolSize1<minSize*0.6) symbolSize1=minSize*0.6;
-    double symbolSize2=parent->pt2px(painter, this->getSymbolSize()*0.75);
-    if (symbolSize2>minSize*0.6) symbolSize2=minSize*0.5;
-    if (symbolSize2<minSize*0.5) symbolSize2=minSize*0.5;
+    double symbolSize1=getKeySymbolSizePx(painter, rect, parent, 0.75);
+    double symbolSize2=symbolSize1*0.8;
 
     if (sizeColumn<0) {
         symbolSize2=symbolSize1;
@@ -495,12 +452,15 @@ void JKQTPXYParametrizedScatterGraph::drawKeyMarker(JKQTPEnhancedPainter &painte
     if (symbolColumn>=0) {
         symbol1=JKQTPFilledCircle;
         symbol2=JKQTPFilledRect;
+        JKQTPDatastore* datastore=parent->getDatastore();
+        if (datastore && datastore->getRows(symbolColumn)>0) {
+            symbol1=getLocalSymbolType(0);
+            symbol2=getLocalSymbolType(datastore->getRows(symbolColumn)-1);
+        }
+
     }
 
-    double symbolWidth=parent->pt2px(painter, this->getSymbolLineWidth()*0.7*parent->getLineWidthMultiplier());
-    if (symbolWidth>0.2*getSymbolLineWidth()) symbolWidth=0.3*getSymbolLineWidth();
-    double lineWidth=parent->pt2px(painter, this->getSymbolLineWidth()*0.7*parent->getLineWidthMultiplier());
-    if (lineWidth>0.1*maxSize) lineWidth=0.1*maxSize;
+    const double lineWidth=getKeyLineWidthPx(painter, rect, parent)*0.75;
 
     painter.save(); auto __finalpaint=JKQTPFinally([&painter]() {painter.restore();});
     QPen p=painter.pen();
@@ -508,13 +468,14 @@ void JKQTPXYParametrizedScatterGraph::drawKeyMarker(JKQTPEnhancedPainter &painte
     p.setStyle(getLineStyle());
     p.setWidthF(lineWidth);
     painter.setPen(p);
-    double x1=rect.left()+symbolSize1/2.0;
-    double y1=rect.top()+symbolSize1/2.0;
-    double x2=rect.right()-symbolSize2/2.0;
-    double y2=rect.bottom()-symbolSize2/2.0;
-    JKQTPPlotSymbol(painter, x1, y1, symbol1, symbolSize1, symbolWidth, color1, JKQTPGetDerivedColor(symbolFillDerivationMode, color1));
-    JKQTPPlotSymbol(painter, x2, y2, symbol2, symbolSize2, symbolWidth, color2, JKQTPGetDerivedColor(symbolFillDerivationMode, color2));
-    if (drawLine) painter.drawLine(QLineF(x1,y1, x2,y2));
+    const double x1=rect.left()+symbolSize1/2.0;
+    const double y1=rect.top()+symbolSize1/2.0;
+    const double x2=rect.right()-symbolSize2/2.0;
+    const double y2=rect.bottom()-symbolSize2/2.0;
+    if (drawLine && !drawLineInForeground) painter.drawLine(QLineF(x1,y1, x2,y2));
+    JKQTPPlotSymbol(painter, x1, y1, symbol1, symbolSize1, getKeySymbolLineWidthPx(painter, rect, parent,0.5), color1, JKQTPGetDerivedColor(symbolFillDerivationMode, color1),getSymbolFont());
+    JKQTPPlotSymbol(painter, x2, y2, symbol2, symbolSize2, getKeySymbolLineWidthPx(painter, rect, parent,0.5), color2, JKQTPGetDerivedColor(symbolFillDerivationMode, color2),getSymbolFont());
+    if (drawLine && drawLineInForeground) painter.drawLine(QLineF(x1,y1, x2,y2));
 
 }
 
@@ -727,19 +688,19 @@ void JKQTPXYParametrizedScatterGraph::setSymbolFillDerivationMode(JKQTPColorDeri
 
 void JKQTPXYParametrizedScatterGraph::setParent(JKQTBasePlotter *parent)
 {
-    JKQTPXYLineGraph::setParent(parent);
+    JKQTPXYGraph::setParent(parent);
     cbSetParent(parent);
 }
 
 void JKQTPXYParametrizedScatterGraph::getOutsideSize(JKQTPEnhancedPainter &painter, int &leftSpace, int &rightSpace, int &topSpace, int &bottomSpace)
 {
-    JKQTPXYLineGraph::getOutsideSize(painter, leftSpace, rightSpace, topSpace, bottomSpace);
+    JKQTPXYGraph::getOutsideSize(painter, leftSpace, rightSpace, topSpace, bottomSpace);
     if (showColorBar&& colorColumn>=0 && !colorColumnContainsRGB) cbGetOutsideSize(painter, leftSpace, rightSpace, topSpace, bottomSpace);
 }
 
 void JKQTPXYParametrizedScatterGraph::drawOutside(JKQTPEnhancedPainter &painter, QRect leftSpace, QRect rightSpace, QRect topSpace, QRect bottomSpace)
 {
-    JKQTPXYLineGraph::drawOutside(painter, leftSpace, rightSpace, topSpace, bottomSpace);
+    JKQTPXYGraph::drawOutside(painter, leftSpace, rightSpace, topSpace, bottomSpace);
     if (showColorBar&& colorColumn>=0 && !colorColumnContainsRGB) cbDrawOutside(painter, leftSpace, rightSpace, topSpace, bottomSpace);
 }
 
@@ -782,7 +743,36 @@ void JKQTPXYParametrizedScatterGraph::cbGetDataMinMax(double &dmin, double &dmax
 
 bool JKQTPXYParametrizedScatterGraph::usesColumn(int c) const
 {
-    return (c==colorColumn) || (c==sizeColumn) || (c==symbolColumn) || (c==linewidthColumn) || JKQTPXYLineGraph::usesColumn(c);
+    return (c==colorColumn) || (c==sizeColumn) || (c==symbolColumn) || (c==linewidthColumn) || JKQTPXYGraph::usesColumn(c);
+}
+
+void JKQTPXYParametrizedScatterGraph::setDrawLine(bool __value)
+{
+    drawLine=__value;
+}
+
+bool JKQTPXYParametrizedScatterGraph::getDrawLine() const
+{
+    return drawLine;
+}
+
+void JKQTPXYParametrizedScatterGraph::setDrawLineInForeground(bool __value)
+{
+    drawLineInForeground=__value;
+}
+
+bool JKQTPXYParametrizedScatterGraph::getDrawLineInForeground() const
+{
+    return drawLineInForeground;
+}
+
+void JKQTPXYParametrizedScatterGraph::setColor(QColor c)
+{
+    setLineColor(c);
+    setSymbolColor(c);
+    setSymbolFillColor(JKQTPGetDerivedColor(parent->getCurrentPlotterStyle().graphsStyle.defaultGraphStyle.fillColorDerivationMode, c));
+    c.setAlphaF(0.5);
+    setHighlightingLineColor(c);
 }
 
 
@@ -863,7 +853,7 @@ JKQTPXYParametrizedErrorScatterGraph::JKQTPXYParametrizedErrorScatterGraph(JKQTP
 bool JKQTPXYParametrizedErrorScatterGraph::getXMinMax(double &minx, double &maxx, double &smallestGreaterZero)
 {
     if (xErrorColumn<0 || xErrorStyle==JKQTPNoError) {
-        return JKQTPXYLineGraph::getXMinMax(minx, maxx, smallestGreaterZero);
+        return JKQTPXYGraph::getXMinMax(minx, maxx, smallestGreaterZero);
     } else {
         bool start=true;
         minx=0;
@@ -901,7 +891,7 @@ bool JKQTPXYParametrizedErrorScatterGraph::getXMinMax(double &minx, double &maxx
 bool JKQTPXYParametrizedErrorScatterGraph::getYMinMax(double &miny, double &maxy, double &smallestGreaterZero)
 {
     if (yErrorColumn<0 || yErrorStyle==JKQTPNoError) {
-        return JKQTPXYLineGraph::getYMinMax(miny, maxy, smallestGreaterZero);
+        return JKQTPXYGraph::getYMinMax(miny, maxy, smallestGreaterZero);
     } else {
         bool start=true;
         miny=0;

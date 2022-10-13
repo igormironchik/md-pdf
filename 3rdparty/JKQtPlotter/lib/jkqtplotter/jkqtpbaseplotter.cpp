@@ -120,7 +120,7 @@ JKQTBasePlotter::textSizeData JKQTBasePlotter::getTextSizeDetail(const QString &
     JKQTBasePlotter::textSizeKey  dh(fontName, fontSize, text, painter.device());
     if (s_TextSizeDataCache.contains(dh)) return s_TextSizeDataCache[dh];
     JKQTBasePlotter::textSizeData d;
-    mathText.setFontRomanOrSpecial(fontName);
+    mathText.setFontSpecial(fontName);
     mathText.setFontSize(fontSize);
     mathText.parse(text);
     mathText.getSizeDetail(painter, d.width, d.ascent, d.descent, d.strikeoutPos);
@@ -458,7 +458,7 @@ void JKQTBasePlotter::setMaintainAspectRatio(bool value) {
 
 void JKQTBasePlotter::setMaintainAxisAspectRatio(bool value) {
     maintainAxisAspectRatio=value;
-    setAspectRatio(axisAspectRatio);
+    setAspectRatio(aspectRatio);
     redrawPlot();
 }
 
@@ -1015,6 +1015,7 @@ JKQTBasePlotter::JKQTPPen JKQTBasePlotter::getPlotStyle(int i, JKQTPPlotStyleTyp
     Qt::BrushStyle basebrushStyle=plotterStyle.graphsStyle.defaultGraphFillStyles[brushI];
     JKQTPGraphSymbols baseSymbol=plotterStyle.graphsStyle.defaultGraphSymbols[symbolI];
     QColor baseColor=plotterStyle.graphsStyle.defaultGraphColors[colorI];
+    double baseWidth=baseProps.defaultLineWidth;
     if (type==JKQTPPlotStyleType::Annotation || type==JKQTPPlotStyleType::Geometric) {
         baseColor=plotterStyle.graphsStyle.annotationStyle.defaultColor;
         basePenStyle=plotterStyle.graphsStyle.annotationStyle.defaultLineStyle;
@@ -1024,8 +1025,13 @@ JKQTBasePlotter::JKQTPPen JKQTBasePlotter::getPlotStyle(int i, JKQTPPlotStyleTyp
     if (type==JKQTPPlotStyleType::Barchart || type==JKQTPPlotStyleType::Boxplot || type==JKQTPPlotStyleType::Impulses) {
         basePenStyle=Qt::SolidLine;
     }
+    if (type==JKQTPPlotStyleType::Barchart) {
+        basebrushStyle=Qt::SolidPattern;
+    }
     if (type==JKQTPPlotStyleType::Boxplot) {
         basebrushStyle=Qt::SolidPattern;
+    }
+    if (type==JKQTPPlotStyleType::Impulses) {
     }
     const QColor lineColor=JKQTPGetDerivedColor(baseProps.graphColorDerivationMode, baseColor);
     const QColor errorColor=JKQTPGetDerivedColor(baseProps.errorColorDerivationMode, baseColor);
@@ -1035,7 +1041,7 @@ JKQTBasePlotter::JKQTPPen JKQTBasePlotter::getPlotStyle(int i, JKQTPPlotStyleTyp
     p.setSymbolType(baseSymbol);
     p.setFillStyle(basebrushStyle);
     p.setErrorFillStyle(Qt::SolidPattern);
-    p.setWidthF(qMax(JKQTPlotterDrawingTools::ABS_MIN_LINEWIDTH, baseProps.defaultLineWidth));
+    p.setWidthF(qMax(JKQTPlotterDrawingTools::ABS_MIN_LINEWIDTH, baseWidth));
     p.setFillColor(JKQTPGetDerivedColor(baseProps.fillColorDerivationMode, baseColor));
     p.setErrorLineColor(errorColor);
     p.setErrorFillColor(JKQTPGetDerivedColor(baseProps.errorFillColorDerivationMode, baseColor));
@@ -1275,7 +1281,7 @@ void JKQTBasePlotter::drawPlot(JKQTPEnhancedPainter& painter) {
 
     if (!plotLabel.isEmpty()) {
         mathText.setFontSize(plotterStyle.plotLabelFontSize*fontSizeMultiplier);
-        mathText.setFontRomanOrSpecial(plotterStyle.plotLabelFontName);
+        mathText.setFontSpecial(plotterStyle.plotLabelFontName);
 
         mathText.parse(plotLabel);
         double a=0,d=0,so=0,w=0;
@@ -1508,6 +1514,7 @@ void JKQTBasePlotter::print(QPrinter* printer, bool displayPreview) {
         p->setPageOrientation(QPageLayout::Portrait);
     }
 
+    emit beforeExporting();; auto __finalpaint=JKQTPFinally([&]() { emit afterExporting();});
     printpreviewNew(p, false, -1.0, -1.0, displayPreview);
 
     if (delP) delete p;
@@ -1738,7 +1745,6 @@ bool JKQTBasePlotter::printpreviewNew(QPaintDevice* paintDevice, bool setAbsolut
     plotterStyle.widgetBackgroundBrush=bc;
     paintMagnification=oldP;
 
-    mathText.setUseUnparsed(false);
 
     return res;
 
@@ -1966,6 +1972,7 @@ void JKQTBasePlotter::printpreviewPaintRequested(QPrinter* printer) {
     }
 
     JKQTPEnhancedPainter painter;
+    painter.setPainterFlag(JKQTPEnhancedPainter::VectorPainting);
     painter.begin(printer);
     if (!printSetAbsolutePageSize) {
 #ifdef SHOW_JKQTPLOTTER_DEBUG
@@ -2066,6 +2073,7 @@ void JKQTBasePlotter::printpreviewPaintRequestedNewPaintDevice(QPaintDevice *pai
     if (printer) painter.begin(printer);
     else if (svg) painter.begin(svg);
     else painter.begin(paintDevice);
+    if (printer||svg) painter.setPainterFlag(JKQTPEnhancedPainter::VectorPainting);
 #else
     painter.begin(paintDevice);
 #endif
@@ -3645,6 +3653,7 @@ void JKQTBasePlotter::saveAsPDF(const QString& filename, bool displayPreview) {
     }
 
     if (!fn.isEmpty()) {
+        emit beforeExporting();; auto __finalpaint=JKQTPFinally([&]() { emit afterExporting();});
         QPrinter* printer=new QPrinter;
         bool doLandscape=widgetWidth>widgetHeight;
         if (gridPrinting) {
@@ -3744,7 +3753,8 @@ void JKQTBasePlotter::saveImage(const QString& filename, bool displayPreview) {
                 QFile::copy(fn, tempFM);
             }
 
-            mathText.setUseUnparsed(!jkqtpPaintDeviceAdapters[adapterID]->useLatexParser());
+
+            emit beforeExporting();; auto __finalpaint=JKQTPFinally([&]() { emit afterExporting();});
 
             gridPrintingCalc();
             QPaintDevice* paintDevice=jkqtpPaintDeviceAdapters[adapterID]->createPaintdevice(fn, jkqtp_roundTo<int>(gridPrintingSize.width()), jkqtp_roundTo<int>(gridPrintingSize.height()));
@@ -3819,7 +3829,7 @@ void JKQTBasePlotter::saveAsPixelImage(const QString& filename, bool displayPrev
             form="XPM";
         }*/
 
-
+        emit beforeExporting();; auto __finalpaint=JKQTPFinally([&]() { emit afterExporting();});
         gridPrintingCalc();
         //std::cout<<gridPrintingSize.width()<<", "<<gridPrintingSize.height()<<std::endl;
 
@@ -3850,43 +3860,91 @@ void JKQTBasePlotter::saveAsPixelImage(const QString& filename, bool displayPrev
             if (form=="NONE") png.save(fn);
             else png.save(fn, form.toLatin1().data());
         }
+
     }
 }
 
-
-void JKQTBasePlotter::copyPixelImage() {
-    /*qDebug()<<gridPrintingSize.width()<<", "<<gridPrintingSize.height();
-    qDebug()<<widgetWidth<<", "<<widgetHeight;
-    qDebug()<<paintMagnification;*/
-   /* QImage png(gridPrintingSize, QImage::Format_ARGB32);
-    {
-        JKQTPEnhancedPainter painter;
-        painter.begin(&png);
-        painter.setRenderHint(JKQTPEnhancedPainter::Antialiasing);
-        painter.setRenderHint(JKQTPEnhancedPainter::TextAntialiasing);
-        painter.setRenderHint(JKQTPEnhancedPainter::SmoothPixmapTransform);
-        painter.setRenderHint(JKQTPEnhancedPainter::HighQualityAntialiasing);
-        //calcPlotScaling(painter);
-        gridPaint(painter, gridPrintingSize);
-        painter.end();
+QImage JKQTBasePlotter::grabPixelImage(QSize size, bool showPreview)
+{
+    gridPrintingCalc();
+    //std::cout<<gridPrintingSize.width()<<", "<<gridPrintingSize.height()<<std::endl;
+    printSizeX_Millimeter=gridPrintingSize.width();
+    printSizeY_Millimeter=gridPrintingSize.height();
+    if (!showPreview) {
+        printSizeX_Millimeter=widgetWidth;
+        printSizeY_Millimeter=widgetHeight;
     }
+    emit beforeExporting();; auto __finalpaint=JKQTPFinally([&]() { emit afterExporting();});
+    if (!showPreview||exportpreview(gridPrintingSize, false)) {
 
-    QClipboard *clipboard = QApplication::clipboard();
-    qDebug()<<"clipboard before adding content:\n"<<clipboard->mimeData()->formats();
-    clipboard->setImage(png);
-    qDebug()<<"clipboard after adding content:\n"<<clipboard->mimeData()->formats();
+        QApplication::setOverrideCursor(QCursor(Qt::WaitCursor));
+        if (size.isEmpty() || size.isNull() || !size.isValid() || size.width()*size.height()==0) size=QSizeF(double(printSizeX_Millimeter), double(printSizeY_Millimeter)).toSize();
+        QImage png(size, QImage::Format_ARGB32);
+        {
+            png.fill(Qt::transparent);
+            JKQTPEnhancedPainter painter;
+            painter.begin(&png);
+            painter.setRenderHint(JKQTPEnhancedPainter::Antialiasing);
+            painter.setRenderHint(JKQTPEnhancedPainter::TextAntialiasing);
+            painter.setRenderHint(JKQTPEnhancedPainter::SmoothPixmapTransform);
+    #if (QT_VERSION<QT_VERSION_CHECK(6, 0, 0))
+            painter.setRenderHint(JKQTPEnhancedPainter::NonCosmeticDefaultPen, true);
+            painter.setRenderHint(JKQTPEnhancedPainter::HighQualityAntialiasing);
+    #endif
 
-*/
+            /*calcPlotScaling(painter);
+            gridPaint(painter, png.rect().size());*/
+            exportpreviewPaintRequested(painter, QSizeF(printSizeX_Millimeter, printSizeY_Millimeter).toSize());
+            painter.end();
+        }
+        QApplication::restoreOverrideCursor();
+
+        return png;
+    }
+    return QImage();
+
+}
+
+
+void JKQTBasePlotter::copyPixelImage(bool showPreview) {
 
     gridPrintingCalc();
     //std::cout<<gridPrintingSize.width()<<", "<<gridPrintingSize.height()<<std::endl;
     printSizeX_Millimeter=gridPrintingSize.width();
     printSizeY_Millimeter=gridPrintingSize.height();
 
-    if (exportpreview(gridPrintingSize, false)) {
+    emit beforeExporting();; auto __finalpaint=JKQTPFinally([&]() { emit afterExporting();});
+    if (!showPreview||exportpreview(gridPrintingSize, false)) {
         QApplication::setOverrideCursor(QCursor(Qt::WaitCursor));
 
-        //if (exportpreview(gridPrintingSize, false)) {
+        QByteArray svgdata;
+            {
+
+                QBuffer buffer(&svgdata);
+                QSvgGenerator* svg=new QSvgGenerator;
+                svg->setResolution(96);
+                //svg->setResolution(300);
+                QSize size=QSizeF(printSizeX_Millimeter, printSizeX_Millimeter).toSize();
+                double factor=double(size.width())/double(widgetWidth)*paintMagnification;
+                // TODO: CORRECT THIS
+                //qDebug()<<size;
+                svg->setSize(size);
+                svg->setOutputDevice(&buffer);
+                JKQTPEnhancedPainter painter;
+                painter.setPainterFlag(JKQTPEnhancedPainter::VectorPainting);
+                painter.begin(svg);
+                painter.scale(factor,factor);
+                printAspect=printSizeY_Millimeter/printSizeX_Millimeter;
+                exportpreviewPaintRequested(painter, QSizeF(widgetWidth/paintMagnification, widgetWidth/paintMagnification*printAspect).toSize());
+                painter.end();
+                delete svg;
+
+            }
+
+        if (!showPreview) {
+            printSizeX_Millimeter=widgetWidth;
+            printSizeY_Millimeter=widgetHeight;
+        }
         QImage png(QSizeF(double(printSizeX_Millimeter), double(printSizeY_Millimeter)).toSize(), QImage::Format_ARGB32);
             {
                 png.fill(Qt::transparent);
@@ -3905,55 +3963,30 @@ void JKQTBasePlotter::copyPixelImage() {
                 exportpreviewPaintRequested(painter, QSizeF(printSizeX_Millimeter, printSizeY_Millimeter).toSize());
                 painter.end();
             }
-        QByteArray svgdata;
-            {
-
-                QBuffer buffer(&svgdata);
-                QSvgGenerator* svg=new QSvgGenerator;
-                svg->setResolution(96);
-                //svg->setResolution(300);
-                QSize size=QSizeF(printSizeX_Millimeter, printSizeX_Millimeter).toSize();
-                double factor=double(size.width())/double(widgetWidth)*paintMagnification;
-                // TODO: CORRECT THIS
-                //qDebug()<<size;
-                svg->setSize(size);
-                svg->setOutputDevice(&buffer);
-                JKQTPEnhancedPainter painter;
-                painter.begin(svg);
-                painter.scale(factor,factor);
-                printAspect=printSizeY_Millimeter/printSizeX_Millimeter;
-                exportpreviewPaintRequested(painter, QSizeF(widgetWidth/paintMagnification, widgetWidth/paintMagnification*printAspect).toSize());
-                painter.end();
-                delete svg;
-
-            }
 
 
 
 
-
-            QClipboard *clipboard = QApplication::clipboard();
-            //qDebug()<<"clipboard before adding content:\n"<<clipboard->mimeData()->formats();
-            //clipboard->setImage(png);
-            clipboard->clear();
-            clipboard->setPixmap(QPixmap::fromImage(png));
-            QMimeData* mime=new QMimeData();
-            mime->setImageData(QPixmap::fromImage(png));
-            QBuffer pngbuf;
-            png.save(&pngbuf, "png");
-            mime->setData("image/x-png", pngbuf.data());
-            png.save(&pngbuf, "bmp");
-            mime->setData("image/bmp", pngbuf.data());
-            mime->setData("image/svg+xml", svgdata);
-            clipboard->setMimeData(mime);
-            //qDebug()<<"clipboard after adding content:\n"<<clipboard->mimeData()->formats();
-
+        QClipboard *clipboard = QApplication::clipboard();
+        //qDebug()<<"clipboard before adding content:\n"<<clipboard->mimeData()->formats();
+        //clipboard->setImage(png);
+        clipboard->clear();
+        clipboard->setPixmap(QPixmap::fromImage(png));
+        QMimeData* mime=new QMimeData();
+        mime->setImageData(QPixmap::fromImage(png));
+        QBuffer pngbuf;
+        png.save(&pngbuf, "png");
+        mime->setData("image/x-png", pngbuf.data());
+        png.save(&pngbuf, "bmp");
+        mime->setData("image/bmp", pngbuf.data());
+        mime->setData("image/svg+xml", svgdata);
+        clipboard->setMimeData(mime);
+        //qDebug()<<"clipboard after adding content:\n"<<clipboard->mimeData()->formats();
 
 
 
-            QApplication::restoreOverrideCursor();
 
-        //}
+        QApplication::restoreOverrideCursor();
     }
 
 
@@ -3985,6 +4018,7 @@ void JKQTBasePlotter::saveAsSVG(const QString& filename, bool displayPreview) {
             QFile::copy(fn, tempFM);
         }
 
+        emit beforeExporting();; auto __finalpaint=JKQTPFinally([&]() { emit afterExporting();});
         gridPrintingCalc();
         QSvgGenerator* svg=new QSvgGenerator;
         svg->setResolution(96);
@@ -4230,7 +4264,7 @@ void JKQTBasePlotter::drawKeyContents(JKQTPEnhancedPainter& painter, double x, d
                 g->drawKeyMarker(painter, markerRect);
                 mathText.setFontColor(plotterStyle.keyStyle.textColor);
                 mathText.setFontSize(plotterStyle.keyStyle.fontSize*fontSizeMultiplier);
-                mathText.setFontRomanOrSpecial(plotterStyle.defaultFontName);
+                mathText.setFontSpecial(plotterStyle.defaultFontName);
 
                 mathText.parse(g->getTitle());
                 QRectF txtRect(x+(plotterStyle.keyStyle.sampleLineLength+plotterStyle.keyStyle.xSeparation)*Xwid,y, key_text_width, itheight);
@@ -4268,7 +4302,7 @@ void JKQTBasePlotter::drawKeyContents(JKQTPEnhancedPainter& painter, double x, d
                 g->drawKeyMarker(painter, markerRect);
                 mathText.setFontColor(plotterStyle.keyStyle.textColor);
                 mathText.setFontSize(plotterStyle.keyStyle.fontSize*fontSizeMultiplier);
-                mathText.setFontRomanOrSpecial(plotterStyle.defaultFontName);
+                mathText.setFontSpecial(plotterStyle.defaultFontName);
 
                 mathText.parse(g->getTitle());
                 QRectF txtRect(x+(plotterStyle.keyStyle.sampleLineLength+plotterStyle.keyStyle.xSeparation)*Xwid,y, fs.width(), itheight);
@@ -4316,7 +4350,7 @@ void JKQTBasePlotter::drawKeyContents(JKQTPEnhancedPainter& painter, double x, d
                 g->drawKeyMarker(painter, markerRect);
                 mathText.setFontColor(plotterStyle.keyStyle.textColor);
                 mathText.setFontSize(plotterStyle.keyStyle.fontSize*fontSizeMultiplier);
-                mathText.setFontRomanOrSpecial(plotterStyle.defaultFontName);
+                mathText.setFontSpecial(plotterStyle.defaultFontName);
                 mathText.parse(g->getTitle());
                 //QSizeF fs=mt.getSize(painter);
                 QRectF txtRect(xx+(plotterStyle.keyStyle.sampleLineLength+plotterStyle.keyStyle.xSeparation)*Xwid,yy, key_text_width, key_text_height);
@@ -5103,11 +5137,6 @@ JKQTBasePlotter::textSizeData::textSizeData():
 
 
 
-
-bool JKQTPPaintDeviceAdapter::useLatexParser() const
-{
-    return true;
-}
 
 QPaintDevice *JKQTPPaintDeviceAdapter::createPaintdeviceMM(const QString &filename, double widthMM, double heightMM) const
 {

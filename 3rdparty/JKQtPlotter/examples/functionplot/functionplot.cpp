@@ -4,6 +4,7 @@
  * \ref JKQTPlotterFunctionPlots
  */
 
+#include "jkqtpexampleapplication.h"
 #include <QApplication>
 #include <QCheckBox>
 #include <QVector>
@@ -129,22 +130,18 @@ void drawExample(QApplication& app, const QString& name) {
 
     // show window and make it a decent size
     mainWin->show();
-    mainWin->resize(800,800);
+    mainWin->resize(500,500);
 }
 
 int main(int argc, char* argv[])
 {
         
-#if QT_VERSION >= QT_VERSION_CHECK(5,6,0) &&  QT_VERSION < QT_VERSION_CHECK(6,0,0)
-
-    QApplication::setAttribute(Qt::AA_EnableHighDpiScaling); // DPI support
-    QCoreApplication::setAttribute(Qt::AA_UseHighDpiPixmaps); //HiDPI pixmaps
-#endif
-    QApplication app(argc, argv);
+    JKQTPAppSettingController highDPIController(argc, argv);
+    JKQTPExampleApplication app(argc, argv);
 
 
-    drawExample<JKQTPXFunctionLineGraph>(app, "functionplot: JKQTPXFunctionLineGraph");
-    drawExample<JKQTPYFunctionLineGraph>(app, "functionplot: JKQTPYFunctionLineGraph");
+    drawExample<JKQTPXFunctionLineGraph>(app, "1: functionplot: JKQTPXFunctionLineGraph");
+    drawExample<JKQTPYFunctionLineGraph>(app, "2: functionplot: JKQTPYFunctionLineGraph");
 
 
     return app.exec();

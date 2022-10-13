@@ -277,11 +277,12 @@ void JKQTPStylePlainTextEdit::contextMenuEvent(QContextMenuEvent *event)
            act=new QAction(jkqtp_makeQColorIcon(jkqtp_String2QColor(colName)), colName);
            connect(act, &QAction::triggered, std::bind(std::mem_fn(&JKQTPStylePlainTextEdit::changeCurrentLineValueTo), this, act->text()));
            menuPal->addAction(act);
+#if (QT_VERSION>=QT_VERSION_CHECK(5, 12, 0))
            colName="placeholdertext";
            act=new QAction(jkqtp_makeQColorIcon(jkqtp_String2QColor(colName)), colName);
            connect(act, &QAction::triggered, std::bind(std::mem_fn(&JKQTPStylePlainTextEdit::changeCurrentLineValueTo), this, act->text()));
            menuPal->addAction(act);
-
+#endif
            int trans;
            trans=100;          colName=QString::number(trans)+"%";
            act=new QAction(jkqtp_makeQColorIcon(QColor(0,0,255,(100-trans)*255/100)), colName);
@@ -346,9 +347,18 @@ void JKQTPStylePlainTextEdit::contextMenuEvent(QContextMenuEvent *event)
            act->setFont(QFont(JKQTMathTextFontSpecifier::transformFontName(fontName)));
            connect(act, &QAction::triggered, std::bind(std::mem_fn(&JKQTPStylePlainTextEdit::changeCurrentLineValueTo), this, act->text()));
            menuDefaultFonts->addAction(act);
+           act=new QAction(fontName+"+FIRA");
+           act->setFont(QFont(JKQTMathTextFontSpecifier::transformFontName(fontName)));
+           connect(act, &QAction::triggered, std::bind(std::mem_fn(&JKQTPStylePlainTextEdit::changeCurrentLineValueTo), this, act->text()));
+           menuDefaultFonts->addAction(act);
            fontName="XITS";
            act=new QAction(fontName);
            act->setFont(QFont(JKQTMathTextFontSpecifier::getXITSFamilies().fontName()));
+           connect(act, &QAction::triggered, std::bind(std::mem_fn(&JKQTPStylePlainTextEdit::changeCurrentLineValueTo), this, act->text()));
+           menuDefaultFonts->addAction(act);
+           fontName="FIRA";
+           act=new QAction(fontName);
+           act->setFont(QFont(JKQTMathTextFontSpecifier::getFIRAFamilies().fontName()));
            connect(act, &QAction::triggered, std::bind(std::mem_fn(&JKQTPStylePlainTextEdit::changeCurrentLineValueTo), this, act->text()));
            menuDefaultFonts->addAction(act);
            menuDefaultFonts->addSeparator();
@@ -361,6 +371,10 @@ void JKQTPStylePlainTextEdit::contextMenuEvent(QContextMenuEvent *event)
            act->setFont(QFont(fontName));
            connect(act, &QAction::triggered, std::bind(std::mem_fn(&JKQTPStylePlainTextEdit::changeCurrentLineValueTo), this, act->text()));
            menuDefaultFonts->addAction(act);
+           act=new QAction(fontName+"+FIRA");
+           act->setFont(QFont(fontName));
+           connect(act, &QAction::triggered, std::bind(std::mem_fn(&JKQTPStylePlainTextEdit::changeCurrentLineValueTo), this, act->text()));
+           menuDefaultFonts->addAction(act);
 
            fontName="application";
            act=new QAction(fontName);
@@ -368,6 +382,10 @@ void JKQTPStylePlainTextEdit::contextMenuEvent(QContextMenuEvent *event)
            connect(act, &QAction::triggered, std::bind(std::mem_fn(&JKQTPStylePlainTextEdit::changeCurrentLineValueTo), this, act->text()));
            menuSystemFonts->addAction(act);
            act=new QAction(fontName+"+XITS");
+           act->setFont(QFont(JKQTMathTextFontSpecifier::transformFontName(fontName)));
+           connect(act, &QAction::triggered, std::bind(std::mem_fn(&JKQTPStylePlainTextEdit::changeCurrentLineValueTo), this, act->text()));
+           menuSystemFonts->addAction(act);
+           act=new QAction(fontName+"+FIRA");
            act->setFont(QFont(JKQTMathTextFontSpecifier::transformFontName(fontName)));
            connect(act, &QAction::triggered, std::bind(std::mem_fn(&JKQTPStylePlainTextEdit::changeCurrentLineValueTo), this, act->text()));
            menuSystemFonts->addAction(act);
@@ -402,12 +420,20 @@ void JKQTPStylePlainTextEdit::contextMenuEvent(QContextMenuEvent *event)
            act->setFont(QFont(JKQTMathTextFontSpecifier::transformFontName(fontName)));
            connect(act, &QAction::triggered, std::bind(std::mem_fn(&JKQTPStylePlainTextEdit::changeCurrentLineValueTo), this, act->text()));
            menuSystemFonts->addAction(act);
+           act=new QAction(fontName+"+FIRA");
+           act->setFont(QFont(JKQTMathTextFontSpecifier::transformFontName(fontName)));
+           connect(act, &QAction::triggered, std::bind(std::mem_fn(&JKQTPStylePlainTextEdit::changeCurrentLineValueTo), this, act->text()));
+           menuSystemFonts->addAction(act);
            fontName="sans-serif";
            act=new QAction(fontName);
            act->setFont(QFont(JKQTMathTextFontSpecifier::transformFontName(fontName)));
            connect(act, &QAction::triggered, std::bind(std::mem_fn(&JKQTPStylePlainTextEdit::changeCurrentLineValueTo), this, act->text()));
            menuSystemFonts->addAction(act);
            act=new QAction(fontName+"+XITS");
+           act->setFont(QFont(JKQTMathTextFontSpecifier::transformFontName(fontName)));
+           connect(act, &QAction::triggered, std::bind(std::mem_fn(&JKQTPStylePlainTextEdit::changeCurrentLineValueTo), this, act->text()));
+           menuSystemFonts->addAction(act);
+           act=new QAction(fontName+"+FIRA");
            act->setFont(QFont(JKQTMathTextFontSpecifier::transformFontName(fontName)));
            connect(act, &QAction::triggered, std::bind(std::mem_fn(&JKQTPStylePlainTextEdit::changeCurrentLineValueTo), this, act->text()));
            menuSystemFonts->addAction(act);
@@ -450,12 +476,15 @@ void JKQTPStylePlainTextEdit::contextMenuEvent(QContextMenuEvent *event)
            act=new QAction(fontName);
            connect(act, &QAction::triggered, std::bind(std::mem_fn(&JKQTPStylePlainTextEdit::addMathFontSpecifier), this, act->text()));
            menuMathFont->addAction(act);
+           fontName="FIRA";
+           act=new QAction(fontName);
+           connect(act, &QAction::triggered, std::bind(std::mem_fn(&JKQTPStylePlainTextEdit::addMathFontSpecifier), this, act->text()));
+           menuMathFont->addAction(act);
         } else  if (currentLinePartsLower[0].endsWith("\\draw_mode1") || currentLinePartsLower[0].endsWith("\\draw_mode2")) {
            submenu->setEnabled(true);
            QAction* act;
            JKQTPCADrawMode st;
-           for (int i=0; i<=static_cast<int>(JKQTPCADMmax); i++) {
-               st=static_cast<JKQTPCADrawMode>(i);
+           for (const JKQTPCADrawMode st : {JKQTPCADMnone,JKQTPCADMcomplete,JKQTPCADMcompleteMaxArrow,JKQTPCADMcompleteMinMaxArrow,JKQTPCADMLine,JKQTPCADMTicks,JKQTPCADMTickLabels,JKQTPCADMAxisLabel,JKQTPCADMLineTicksTickLabels,JKQTPCADMLineTicks,JKQTPCADMTicksTickLabelsAxisLabel,JKQTPCADMTicksTickLabels,JKQTPCADMTickLabelsAxisLabel}) {
                act=new QAction(JKQTPCADrawMode2String(st));
                connect(act, &QAction::triggered, std::bind(std::mem_fn(&JKQTPStylePlainTextEdit::changeCurrentLineValueTo), this, act->text()));
                submenu->addAction(act);

@@ -87,7 +87,6 @@ class JKQTPLOTTER_LIB_EXPORT JKQTPPaintDeviceAdapter {
         virtual double getPrintSizeXInMM() const =0;
         virtual double getPrintSizeYInMM() const =0;
         virtual bool isPrinter() const=0;
-        virtual bool useLatexParser() const;
         /** \brief create a paint device with a given size in pt */
         virtual QPaintDevice* createPaintdevice(const QString& filename, int widthPix, int heightPix) const=0;
         /** \brief create a paint device with a given size in millimeters ... the default implementation call createPaintdevice(), assuming the standard logical resolution of the desktop!!!) */
@@ -130,7 +129,6 @@ class JKQTPLOTTER_LIB_EXPORT JKQTPPaintDeviceAdapter {
  *  - useInternalDatastore(): \copybrief JKQTBasePlotter::useInternalDatastore()
  *  - forceInternalDatastore(): \copybrief JKQTBasePlotter::forceInternalDatastore()
  *.
- *
  *
  *
  * \section jkqtplotter_base_systems_baseplotter Coordinate Systems and Transformations
@@ -241,7 +239,7 @@ class JKQTPLOTTER_LIB_EXPORT JKQTPPaintDeviceAdapter {
  *
  * Often a single plot is not sufficient, but several plots need to be aligned with respect to each other:
  *
- * \image html test_multiplot.png
+ * \image html multiplot.png
  *
  * This can be achieved by putting several JKQTPlotter instances into a
  * <a href="http://doc.qt.io/qt-5/layout.html">Qt Layout</a>. Then you can fill each plot differently and
@@ -254,7 +252,7 @@ class JKQTPLOTTER_LIB_EXPORT JKQTPPaintDeviceAdapter {
  *     \image html jkqtbaseplotter_synchronization_withgridprint.png "Printing with grid-printing-mode activated"
  *   - when you zoom/pan in one of the plots (e.g. using the mouse), the other plots will not adapt their
  *     axes to match the new area, but especially in cases as in the image above it would be beneficial,
- *     that tha x-axis of the plot at the bottom follows the x-axis of the plot above etc.<br>
+ *     that the x-axis of the plot at the bottom follows the x-axis of the plot above etc.<br>
  *     \image html jkqtbaseplotter_synchronization_nonsyncedxrange.png
  * .
  *
@@ -322,13 +320,24 @@ class JKQTPLOTTER_LIB_EXPORT JKQTPPaintDeviceAdapter {
  *
  * \see See \ref JKQTPlotterMultiPlotLayout for an extensive example of the functionality.
  *
-
  *
  * \section jkqtplotter_base_userprops User Properties
  * There is a subset of options that describe how the user interacted with the plotter (export/print scaling factors etc, save directories,
  * other export settings, ...). These are not stored/loaded using saveSettings() and loadSettings(), but using saveUserSettings() and loadUserSettings().
  * These methods MAY (strictly optional and turned off by default) be called by saveSettings() and loadSettings(), if the property userSettigsFilename ( \copybrief userSettigsFilename )is
  * set (not-empty). In this case the suer settings are stored/loaded also everytime they are changed by the user or programmatically.
+ *
+ * \section jkqtplotter_usage_baseplotter JKQTBasePlotter Usage
+ *
+ * \subsection jkqtplotter_usage_baseplotter_in_widget JKQTBasePlotter as Basis for JKQTPlotter
+ *
+ * Most commonly this invisible plotter class is used as basis for the widget JKQTPlotter.
+ * \see JKQTPlotter
+ *
+ * \subsection jkqtplotter_usage_baseplotter_standalone JKQTBasePlotter Standalone Usage
+ *
+ * \copydetails jkqtplotter_general_usage_jkqtplotter
+ *
  */
 class JKQTPLOTTER_LIB_EXPORT JKQTBasePlotter: public QObject {
         Q_OBJECT
@@ -363,7 +372,7 @@ class JKQTPLOTTER_LIB_EXPORT JKQTBasePlotter: public QObject {
         /** \brief class constructor
          *
          * if \a datastore_internal is \c true then the constructor will create an internal datastore object. The datastore
-         * will be managed (freed) by this class. If \a datastore_internal is \c false the class will use tha datastore provided
+         * will be managed (freed) by this class. If \a datastore_internal is \c false the class will use the datastore provided
          * in \a datast as an external datastore. You can modify this later by using useInternalDatastore() and useExternalDatastore().
          */
         explicit JKQTBasePlotter(bool datastore_internal, QObject* parent=nullptr, JKQTPDatastore* datast=nullptr);
@@ -540,7 +549,7 @@ class JKQTPLOTTER_LIB_EXPORT JKQTBasePlotter: public QObject {
         /** \brief clear all additional plotters for grid printing mode */
         void clearGridPrintingPlotters();
 
-        /** \brief return x-pixel coordinate from time coordinate */
+        /** \brief return x-pixel coordinate from x coordinate */
         inline double x2p(double x) const {
             return xAxis->x2p(x);
         }
@@ -550,12 +559,12 @@ class JKQTPLOTTER_LIB_EXPORT JKQTBasePlotter: public QObject {
             return yAxis->x2p(y);
         }
 
-        /** \brief return time coordinate coordinate from x-pixel */
+        /** \brief return x coordinate from x-pixel */
         inline double p2x(double x) const {
             return xAxis->p2x(x);
         }
 
-        /** \brief return y coordinate coordinate from y-pixel */
+        /** \brief return y coordinate from y-pixel */
         inline double p2y(double y) const {
             return yAxis->p2x(y);
         }
@@ -1113,6 +1122,38 @@ class JKQTPLOTTER_LIB_EXPORT JKQTBasePlotter: public QObject {
         /** \brief emitted before the plot scaling has been recalculated */
         void beforePlotScalingRecalculate();
 
+        /** \brief emitted just before exporting the current plot as image, or just before the export preview dialog is shown
+         *
+         *  This signal can be used to e.g. modify the plotter settings before an export.
+         *
+         *  \see afterExporting(), beforePrinting(), afterPrinting()
+         */
+        void beforeExporting();
+
+        /** \brief emitted just before exporting the current plot as image, or just before the export preview dialog is shown
+         *
+         *  This signal can be used to e.g. modify the plotter settings after an export.
+         *
+         *  \see beforeExporting(), beforePrinting(), afterPrinting()
+         */
+        void afterExporting();
+
+        /** \brief emitted just before Printing the current plot as image, or just before the print preview dialog is shown
+         *
+         *  This signal can be used to e.g. modify the plotter settings before a print.
+         *
+         *  \see afterPrinting(), beforeExporting(), afterExporting()
+         */
+        void beforePrinting();
+
+        /** \brief emitted just before Printing the current plot as image, or just before the print preview dialog is shown
+         *
+         *  This signal can be used to e.g. modify the plotter settings after a print.
+         *
+         *  \see beforePrinting(), beforeExporting(), afterExporting()
+         */
+        void afterPrinting();
+
 
     public slots:
 
@@ -1315,8 +1356,10 @@ class JKQTPLOTTER_LIB_EXPORT JKQTBasePlotter: public QObject {
         /** \brief save the current plot as a pixel image image (PNG ...), if filename is empty a file selection dialog is displayed */
         void saveAsPixelImage(const QString& filename=QString(""), bool displayPreview=true, const QByteArray &outputFormat=QByteArray());
 
-        /** \brief copy the current plot as a pixel image to the clipboard */
-        void copyPixelImage();
+        /** \brief save the current plot as a pixel image into a QImage with the given size */
+        QImage grabPixelImage(QSize size=QSize(), bool showPreview=false);
+        /** \brief copy the current plot as a pixel+svg image to the clipboard */
+        void copyPixelImage(bool showPreview=true);
 
 #ifndef JKQTPLOTTER_COMPILE_WITHOUT_PRINTSUPPORT
         /** \brief save the current plot as a SVG file, with the current widget aspect ratio, if filename is empty a file selection dialog is displayed

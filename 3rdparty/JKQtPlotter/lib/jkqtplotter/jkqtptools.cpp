@@ -39,36 +39,42 @@
 
 
 QString JKQTPCADrawMode2String(JKQTPCADrawMode pos) {
-    switch(pos) {
-        case JKQTPCADMcomplete: return "all";
-        case JKQTPCADMTicksTickLabelsAxisLabel: return "ticks+labels+axislabel";
-        case JKQTPCADMTicksTickLabels: return "ticks+labels";
-        case JKQTPCADMTicks: return "ticks";
-        case JKQTPCADMLineTicksTickLabels: return "line+ticks+labels";
-        case JKQTPCADMTickLabelsAxisLabel: return "labels+axislabel";
-        case JKQTPCADMTickLabels: return "labels";
-        case JKQTPCADMLineTicks: return "line+ticks";
-        case JKQTPCADMLine: return "line";
-        case JKQTPCADMnone: return "none";
-    }
-    return "";
+    if (pos==JKQTPCADMnone) return "none";
+    if (pos==JKQTPCADMcomplete) return "complete";
+    if (pos==JKQTPCADMcompleteMaxArrow) return "complete+max_filled_arrow";
+    if (pos==JKQTPCADMcompleteMinMaxArrow) return "complete+max_filled_arrow+min_filled_arrow";
+
+    QString s="";
+    if (pos.testFlag(JKQTPCADMLine)) JKQTPExtendString(s, "+", "line");
+    if (pos.testFlag(JKQTPCADMMaxArrow)) JKQTPExtendString(s, "+", "max_arrow");
+    if (pos.testFlag(JKQTPCADMMaxFilledArrow)) JKQTPExtendString(s, "+", "max_filled_arrow");
+    if (pos.testFlag(JKQTPCADMMinArrow)) JKQTPExtendString(s, "+", "min_arrow");
+    if (pos.testFlag(JKQTPCADMMinFilledArrow)) JKQTPExtendString(s, "+", "min_filled_arrow");
+    if (pos.testFlag(JKQTPCADMTicks)) JKQTPExtendString(s, "+", "ticks");
+    if (pos.testFlag(JKQTPCADMTickLabels)) JKQTPExtendString(s, "+", "labels");
+    if (pos.testFlag(JKQTPCADMAxisLabel)) JKQTPExtendString(s, "+", "axislabel");
+
+    return s;
 }
 
 
 
 JKQTPCADrawMode String2JKQTPCADrawMode(const QString& pos) {
-    QString s=pos.trimmed().toLower();
-    if (s=="all" || s=="complete" || s=="line+ticks+labels+axislabel") return JKQTPCADMcomplete;
-    if (s=="ticks+labels+axislabel") return JKQTPCADMTicksTickLabelsAxisLabel;
-    if (s=="labels+axislabel") return JKQTPCADMTickLabelsAxisLabel;
-    if (s=="ticks+labels") return JKQTPCADMTicksTickLabels;
-    if (s=="line+ticks+labels") return JKQTPCADMLineTicksTickLabels;
-    if (s=="labels") return JKQTPCADMTickLabels;
-    if (s=="line+ticks") return JKQTPCADMLineTicks;
-    if (s=="ticks") return JKQTPCADMTicks;
-    if (s=="line") return JKQTPCADMLine;
-    if (s=="none") return JKQTPCADMnone;
-    return JKQTPCADMnone;
+    QStringList slist=pos.trimmed().toLower().split('+');
+
+    JKQTPCADrawMode res=JKQTPCADMnone;
+    for (const QString& s: slist) {
+        if (s=="all" || s=="complete") res |= JKQTPCADMcomplete;
+        if (s=="labels" || s=="ticklabels") res |= JKQTPCADMTickLabels;
+        if (s=="axislabel") res |= JKQTPCADMAxisLabel;
+        if (s=="ticks") res |= JKQTPCADMTicks;
+        if (s=="line") res |= JKQTPCADMLine;
+        if (s=="max_arrow"||s=="maxarrow") res |= JKQTPCADMMaxArrow;
+        if (s=="max_filled_arrow"||s=="maxfilledarrow") res |= JKQTPCADMMaxFilledArrow;
+        if (s=="min_arrow"||s=="minarrow") res |= JKQTPCADMMinArrow;
+        if (s=="min_filled_arrow"||s=="minfilledarrow") res |= JKQTPCADMMinFilledArrow;
+    }
+    return res;
 }
 
 
@@ -101,18 +107,35 @@ QString JKQTPCALabelType2String(JKQTPCALabelType pos) {
         case JKQTPCALTtime: return "time";
         case JKQTPCALTdate: return "date";
         case JKQTPCALTdatetime: return "datetime";
+        case JKQTPCALTscientific: return "scientific";
+        case JKQTPCALTintfrac: return "intfrac";
+        case JKQTPCALTintsfrac: return "intsfrac";
+        case JKQTPCALTintslashfrac: return "intslashfrac";
+        case JKQTPCALTfrac: return "frac";
+        case JKQTPCALTsfrac: return "sfrac";
+        case JKQTPCALTslashfrac: return "slashfrac";
+        case JKQTPCALTprintf: return "printf";
+        case JKQTPCALTcount: return "";
     }
     return "";
 }
 
 JKQTPCALabelType String2JKQTPCALabelType(const QString& pos) {
     QString s=pos.trimmed().toLower();
-    if (s=="default") return JKQTPCALTdefault;
+    if (s=="default" || s=="f") return JKQTPCALTdefault;
+    if (s=="scientifc" || s=="g") return JKQTPCALTscientific;
     if (s=="exponent_character") return JKQTPCALTexponentCharacter;
     if (s=="exponent") return JKQTPCALTexponent;
     if (s=="time") return JKQTPCALTtime;
     if (s=="date") return JKQTPCALTdate;
     if (s=="datetime") return JKQTPCALTdatetime;
+    if (s=="frac") return JKQTPCALTfrac;
+    if (s=="sfrac") return JKQTPCALTsfrac;
+    if (s=="slashfrac") return JKQTPCALTslashfrac;
+    if (s=="intfrac") return JKQTPCALTintfrac;
+    if (s=="intsfrac") return JKQTPCALTintsfrac;
+    if (s=="intslashfrac") return JKQTPCALTintslashfrac;
+    if (s=="printf" || s=="sprintf") return JKQTPCALTprintf;
     return JKQTPCALTdefault;
 }
 
@@ -192,20 +215,28 @@ JKQTPKeyLayout String2JKQTPKeyLayout(const QString& pos) {
 
 
 QString JKQTPErrorPlotstyle2String(JKQTPErrorPlotstyle pos) {
-    switch(pos) {
-        case JKQTPErrorBoxes: return "error_box";
-        case JKQTPErrorEllipses: return "error_ell";
-        case JKQTPErrorLines: return "error_lines";
-        case JKQTPErrorBars: return "error_bars";
-        case JKQTPErrorSimpleBars: return "error_simplebars";
-        case JKQTPErrorPolygons: return "error_polygons";
-        case JKQTPErrorBarsLines: return "error_bars_lines";
-        case JKQTPErrorBarsPolygons: return "error_bars_polygons";
-        case JKQTPErrorSimpleBarsLines: return "error_simplebars_lines";
-        case JKQTPErrorSimpleBarsPolygons: return "error_simplebars_polygons";
-        case JKQTPNoError: return "error_none";
-    }
-    return "";
+    QString s="";
+    if (pos==JKQTPNoError) return "error_none";
+    if (pos.testFlag(JKQTPErrorSimpleBars)&&pos.testFlag(JKQTPErrorIndicatorBar)) JKQTPExtendString(s, "+", "error_bars");
+    else if (pos.testFlag(JKQTPErrorSimpleBars)&&pos.testFlag(JKQTPErrorIndicatorArrows)) JKQTPExtendString(s, "+", "error_arrows");
+    else if (pos.testFlag(JKQTPErrorSimpleBars)&&pos.testFlag(JKQTPErrorIndicatorInwardArrows)) JKQTPExtendString(s, "+", "error_inwardarrows");
+    else if (pos.testFlag(JKQTPErrorSimpleBars)) JKQTPExtendString(s, "+", "error_simplebars");
+
+    if (pos.testFlag(JKQTPErrorLines)) JKQTPExtendString(s, "+", "error_lines");
+    if (pos.testFlag(JKQTPErrorPolygons)) JKQTPExtendString(s, "+", "error_polygons");
+    if (pos.testFlag(JKQTPErrorEllipses)) JKQTPExtendString(s, "+", "error_ell");
+    if (pos.testFlag(JKQTPErrorBoxes)) JKQTPExtendString(s, "+", "error_box");
+
+    if (pos.testFlag(JKQTPErrorDirectionOutwards)) JKQTPExtendString(s, "+", "outwards");
+    if (pos.testFlag(JKQTPErrorDirectionInwards)) JKQTPExtendString(s, "+", "inwards");
+    if (pos.testFlag(JKQTPErrorDirectionAbove)) JKQTPExtendString(s, "+", "above");
+    if (pos.testFlag(JKQTPErrorDirectionBelow)) JKQTPExtendString(s, "+", "below");
+
+    if (!pos.testFlag(JKQTPErrorSimpleBars)&&pos.testFlag(JKQTPErrorIndicatorBar)) JKQTPExtendString(s, "+", "bars");
+    if (!pos.testFlag(JKQTPErrorSimpleBars)&&pos.testFlag(JKQTPErrorIndicatorArrows)) JKQTPExtendString(s, "+", "arrows");
+    if (!pos.testFlag(JKQTPErrorSimpleBars)&&pos.testFlag(JKQTPErrorIndicatorInwardArrows)) JKQTPExtendString(s, "+", "inwardarrows");
+
+    return s;
 }
 
 JKQTPErrorPlotstyle String2JKQTPErrorPlotstyle(const QString& pos) {
@@ -220,7 +251,31 @@ JKQTPErrorPlotstyle String2JKQTPErrorPlotstyle(const QString& pos) {
     if (s=="error_bars_polygons") return JKQTPErrorBarsPolygons;
     if (s=="error_simplebars_lines") return JKQTPErrorSimpleBarsLines;
     if (s=="error_simplebars_polygons") return JKQTPErrorSimpleBarsPolygons;
-    return JKQTPNoError;
+    if (s=="error_bars_half_above") return JKQTPErrorHalfBarsAbove;
+    if (s=="error_bars_half_below") return JKQTPErrorHalfBarsBelow;
+    if (s=="error_bars_half_inwards") return JKQTPErrorHalfBarsInwards;
+    if (s=="error_bars_half_outwards") return JKQTPErrorHalfBarsOutwards;
+    const QStringList sl=s.split("+");
+    JKQTPErrorPlotstyle es=JKQTPNoError;
+    for (const QString& s: sl) {
+        if (s=="error_arrows") es|=JKQTPErrorArrows;
+        if (s=="error_inwardarrows") es|=JKQTPErrorInwardArrows;
+        if (s=="error_bars") es|=JKQTPErrorBars;
+        if (s=="error_simplebars") es|=JKQTPErrorSimpleBars;
+        if (s=="error_lines") es|=JKQTPErrorLines;
+        if (s=="error_polygons") es|=JKQTPErrorPolygons;
+        if (s=="error_ell" || s=="error_ellipses") es|=JKQTPErrorEllipses;
+        if (s=="error_box" || s=="error_boxes") es|=JKQTPErrorBoxes;
+        if (s=="outwards") es|=JKQTPErrorDirectionOutwards;
+        if (s=="inwards") es|=JKQTPErrorDirectionInwards;
+        if (s=="above") es|=JKQTPErrorDirectionAbove;
+        if (s=="below") es|=JKQTPErrorDirectionBelow;
+        if (s=="bars"||s=="bar") es|=JKQTPErrorIndicatorBar;
+        if (s=="arrow" || s=="arrows") es|=JKQTPErrorIndicatorArrows;
+        if (  s=="inwardarrows" || s=="inwardsarrows" || s=="inwardarrow" || s=="inwardsarrow"
+            ||s=="inward_arrows" || s=="inwards_arrows" || s=="inward_arrow" || s=="inwards_arrow") es|=JKQTPErrorIndicatorInwardArrows;
+    }
+    return es;
 }
 
 
@@ -344,26 +399,6 @@ QString JKQTPMouseDragActions2String(JKQTPMouseDragActions act)
     return "unknown";
 }
 
-
-bool JKQTPCADrawModeHasLine(JKQTPCADrawMode pos)
-{
-    return (pos==JKQTPCADMcomplete) || (pos==JKQTPCADMLineTicksTickLabels) || (pos==JKQTPCADMLineTicks) || (pos==JKQTPCADMLine);
-}
-
-bool JKQTPCADrawModeHasTicks(JKQTPCADrawMode pos)
-{
-    return (pos==JKQTPCADMcomplete) || (pos==JKQTPCADMTicksTickLabelsAxisLabel) || (pos==JKQTPCADMLineTicks) || (pos==JKQTPCADMLineTicksTickLabels) || (pos==JKQTPCADMTicksTickLabels)|| (pos==JKQTPCADMTicks);
-}
-
-bool JKQTPCADrawModeHasTickLabels(JKQTPCADrawMode pos)
-{
-    return (pos==JKQTPCADMcomplete) || (pos==JKQTPCADMTicksTickLabelsAxisLabel) || (pos==JKQTPCADMLineTicksTickLabels) || (pos==JKQTPCADMTicksTickLabels) || (pos==JKQTPCADMTickLabels) || (pos==JKQTPCADMTickLabelsAxisLabel);
-}
-
-bool JKQTPCADrawModeHasAxisLabel(JKQTPCADrawMode pos)
-{
-    return (pos==JKQTPCADMcomplete) || (pos==JKQTPCADMTicksTickLabelsAxisLabel) || (pos==JKQTPCADMTickLabelsAxisLabel);
-}
 
 
 JKQTPColorDerivationMode::JKQTPColorDerivationMode(PredefinedModes mode):

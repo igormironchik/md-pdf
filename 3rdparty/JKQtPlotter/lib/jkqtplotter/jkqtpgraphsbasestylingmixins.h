@@ -47,7 +47,9 @@ class JKQTPlotter; // forward
     .
  */
 class JKQTPLOTTER_LIB_EXPORT JKQTPGraphLineStyleMixin {
-        Q_GADGET
+#ifndef JKQTPLOTTER_WORKAROUND_QGADGET_BUG
+      Q_GADGET
+#endif
     public:
         /** \brief class constructor */
         JKQTPGraphLineStyleMixin();
@@ -58,6 +60,8 @@ class JKQTPLOTTER_LIB_EXPORT JKQTPGraphLineStyleMixin {
 
         /** \brief set the color of the graph line */
         void setLineColor(const QColor & __value);
+        /** \brief set the color of the graph line */
+        void setLineColor(const QColor & __value, double alpha);
         /** \brief get the color of the graph line */
         QColor getLineColor() const;
 
@@ -115,6 +119,8 @@ class JKQTPLOTTER_LIB_EXPORT JKQTPGraphLineStyleMixin {
 
         /** \brief set the color of the graph line when highlighted */
         void setHighlightingLineColor(const QColor & __value);
+        /** \brief set the color of the graph line when highlighted */
+        void setHighlightingLineColor(const QColor & __value, double alpha);
         /** \brief get the color of the graph line when highlighted */
         QColor getHighlightingLineColor() const;
 
@@ -133,6 +139,9 @@ class JKQTPLOTTER_LIB_EXPORT JKQTPGraphLineStyleMixin {
         /** \brief line pen for the highlighted look */
         QColor m_highlightingLineColor;
     protected:
+        /** \brief returns the linewidth for drawing lines in a key entry with \a keyRect for the symbol, using \a painter and \a parent  . */
+        double getKeyLineWidthPx(JKQTPEnhancedPainter &painter, const QRectF &keyRect, const JKQTBasePlotter *parent) const;
+
         /** \brief constructs a QPen from the line styling properties */
         QPen getLinePen(JKQTPEnhancedPainter &painter, JKQTBasePlotter* parent) const;
         /** \brief constructs a QPen from the line styling properties, suitable for drawing rectangles with sharp edges */
@@ -141,9 +150,81 @@ class JKQTPLOTTER_LIB_EXPORT JKQTPGraphLineStyleMixin {
         QPen getHighlightingLinePen(JKQTPEnhancedPainter &painter, JKQTBasePlotter* parent) const;
         /** \brief constructs a QPen from the line styling properties, suitable for drawing rectangle with sharp corners */
         QPen getHighlightingLinePenForRects(JKQTPEnhancedPainter &painter, JKQTBasePlotter* parent) const;
+        /** \brief constructs a QPen from the line styling properties, but uses getKeyLineWidthPx() for the width, i.e. constructs a pen for drawing lines in key-symbols */
+        QPen getKeyLinePen(JKQTPEnhancedPainter &painter, const QRectF &rect, JKQTBasePlotter *parent) const;
 };
 
 
+
+/*! \brief This Mix-In class provides setter/getter methods, storage and other facilities for a line-graph compression algorithm
+    \ingroup jkqtplotter_basegraphs_stylemixins
+
+    supported properties:
+      - activate compression (improves plotting speed, but decreases detail level)
+      - level of retained details
+    .
+
+    \image html JKQTPSimplifyPolyLines_agressive.png
+ */
+class JKQTPLOTTER_LIB_EXPORT JKQTPGraphLinesCompressionMixin {
+#ifndef JKQTPLOTTER_WORKAROUND_QGADGET_BUG
+      Q_GADGET
+#endif
+    public:
+        /** \brief class constructor */
+        JKQTPGraphLinesCompressionMixin();
+
+        virtual ~JKQTPGraphLinesCompressionMixin();
+
+
+        /** \copydoc useNonvisibleLineCompression */
+        void setUseNonvisibleLineCompression(bool _useNonvisibleLineCompression);
+        /** \copydoc useNonvisibleLineCompression */
+        bool getUseNonvisibleLineCompression() const;
+        /** \copydoc useNonvisibleLineCompression */
+        void setNonvisibleLineCompressionAgressiveness(double Agressiveness);
+        /** \copydoc useNonvisibleLineCompression */
+        double getNonvisibleLineCompressionAgressiveness() const;
+
+
+#ifndef JKQTPLOTTER_WORKAROUND_QGADGET_BUG
+        Q_PROPERTY(bool useNonvisibleLineCompression MEMBER useNonvisibleLineCompression READ getUseNonvisibleLineCompression WRITE setUseNonvisibleLineCompression)
+        Q_PROPERTY(double nonvisibleLineCompressionAgressiveness MEMBER nonvisibleLineCompressionAgressiveness READ getNonvisibleLineCompressionAgressiveness WRITE setNonvisibleLineCompressionAgressiveness)
+#endif
+    private:
+        /** \brief use an optimization algorithm that tries to reduce the number of lines that
+         *         overlap each other (i.e. for noisy data or a low zoom) and thus improves
+         *         drawing speed
+         *
+         *  When the property useNonvisibleLineCompression is activated (\c true ), the graph class
+         *  uses the algorithm implemented in JKQTPSimplifyPolyLines() to simplify the task of plotting.
+         *
+         *  \image html JKQTPSimplifyPolyLines.png
+         *
+         *  \note This option is designed to not alter the plot representation significantly,
+         *        but of course it may ...
+         *
+         *  \see JKQTPSimplifyPolyLines() setUseNonvisibleLineCompression(), getUseNonvisibleLineCompression()
+         */
+        bool m_useNonvisibleLineCompression;
+
+        /** \brief this sets the agressiveness of the option useNonvisibleLineCompression
+         *
+         *  Basically the compressed groups will have a size of nonvisibleLineCompressionAgressiveness*pen.linewidth
+         *
+         *  The default setting is \c 1.0 , larger settings will lead to better compression  (and faster plotting), but less detailed
+         *  plots, whereas smaller settings will increase the detail-level, but also increase plotting time.
+         *
+         *  \image html JKQTPSimplifyPolyLines_agressive.png
+         *
+         *  \note This option is designed to not alter the plot representation significantly,
+         *        but of course it may ...
+         *
+         *  \see JKQTPSimplifyPolyLines() setUseNonvisibleLineCompression(), getUseNonvisibleLineCompression()
+         */
+        double m_nonvisibleLineCompressionAgressiveness;
+protected:
+};
 
 
 
@@ -286,6 +367,7 @@ private:
       - symbol (outline) color
       - symbol fill color (not required for all symbols)
       - symbol (line) width
+      - symbol font name (family) for character symbols \c JKQTPCharacterSymbol+QChar('').unicode()
     .
  */
 class JKQTPLOTTER_LIB_EXPORT JKQTPGraphSymbolStyleMixin {
@@ -313,17 +395,29 @@ class JKQTPLOTTER_LIB_EXPORT JKQTPGraphSymbolStyleMixin {
         /** \brief set the color of the graph symbols */
         void setSymbolColor(const QColor & __value);
         /** \brief set the color of the graph symbols */
+        void setSymbolColor(const QColor & __value, double alpha);
+        /** \brief set the color of the graph symbols */
         QColor getSymbolColor() const;
 
         /** \brief set the color of filling of the graph symbols */
         void setSymbolFillColor(const QColor & __value);
         /** \brief set the color of filling of the graph symbols */
+        void setSymbolFillColor(const QColor & __value, double alpha);
+        /** \brief set the color of filling of the graph symbols */
         QColor getSymbolFillColor() const;
+
+        /** \brief set alpha-value of symbol outline and filling */
+        void setSymbolAlpha(double alpha);
 
         /** \brief set the line width of the graph symbol outline (in pt) */
         void setSymbolLineWidth(double __value);
         /** \brief get the line width of the graph symbol outline (in pt) */
         double getSymbolLineWidth() const;
+
+        /** \brief set the font to be used for character symbols \c JKQTPCharacterSymbol+QChar('').unicode() */
+        void setSymbolFontName(const QString& __value);
+        /** \brief get the font to be used for character symbols \c JKQTPCharacterSymbol+QChar('').unicode() */
+        QString getSymbolFontName() const;
 
 
 
@@ -333,6 +427,7 @@ class JKQTPLOTTER_LIB_EXPORT JKQTPGraphSymbolStyleMixin {
         Q_PROPERTY(QColor symbolFillColor MEMBER m_symbolFillColor READ getSymbolFillColor WRITE setSymbolFillColor)
         Q_PROPERTY(double symbolSize MEMBER m_symbolSize READ getSymbolSize WRITE setSymbolSize)
         Q_PROPERTY(double symbolLineWidth MEMBER m_symbolLineWidth READ getSymbolLineWidth WRITE setSymbolLineWidth)
+        Q_PROPERTY(QString symbolFontName MEMBER m_symbolFontName READ getSymbolFontName WRITE setSymbolFontName)
 #endif
     private:
         /** \brief which symbol to use for the datapoints */
@@ -345,11 +440,15 @@ class JKQTPLOTTER_LIB_EXPORT JKQTPGraphSymbolStyleMixin {
         QColor m_symbolFillColor;
         /** \brief width (in pt) of the lines used to plot the symbol for the data points, given in pt */
         double m_symbolLineWidth;
+        /** \brief font to be used for character symbols \c JKQTPCharacterSymbol+QChar('').unicode() */
+        QString m_symbolFontName;
     protected:
         /** \brief constructs a QPen from the line styling properties */
         QPen getSymbolPen(JKQTPEnhancedPainter &painter, JKQTBasePlotter* parent) const;
         /** \brief constructs a QPen from the line styling properties */
         QBrush getSymbolBrush(JKQTPEnhancedPainter &painter, JKQTBasePlotter* parent) const;
+        /** \brief generate a QFont for darwing symbols */
+        QFont getSymbolFont() const;
         /*! \brief plot a symbol at location x,y (in painter coordinates), using the current style
 
             \param parent parent JKQTBasePlotter of the graph that uses this mix-in (used e.g. for line-width transformation)
@@ -357,7 +456,10 @@ class JKQTPLOTTER_LIB_EXPORT JKQTPGraphSymbolStyleMixin {
             \param x x-coordinate of the symbol center
             \param y y-coordinate of the symbol center
          */
-        void plotStyledSymbol(JKQTBasePlotter* parent, JKQTPEnhancedPainter& painter, double x, double y) const;
+        inline void plotStyledSymbol(JKQTBasePlotter* parent, JKQTPEnhancedPainter& painter, double x, double y) const
+        {
+            JKQTPPlotSymbol(painter, x, y,m_symbolType, parent->pt2px(painter, m_symbolSize), parent->pt2px(painter, m_symbolLineWidth*parent->getLineWidthMultiplier()), m_symbolColor, m_symbolFillColor, getSymbolFont());
+        }
         /*! \brief plot a symbol at location x,y (in painter coordinates), using the current style
 
             \param parent parent JKQTBasePlotter of the graph that uses this mix-in (used e.g. for line-width transformation)
@@ -366,7 +468,10 @@ class JKQTPLOTTER_LIB_EXPORT JKQTPGraphSymbolStyleMixin {
             \param y y-coordinate of the symbol center
             \param symbolSize size of the symbol
          */
-        void plotStyledSymbol(JKQTBasePlotter* parent, JKQTPEnhancedPainter& painter, double x, double y, double symbolSize) const;
+        inline void plotStyledSymbol(JKQTBasePlotter* parent, JKQTPEnhancedPainter& painter, double x, double y, double symbolSize) const
+        {
+            JKQTPPlotSymbol(painter, x, y,m_symbolType, symbolSize, parent->pt2px(painter, m_symbolLineWidth*parent->getLineWidthMultiplier()), m_symbolColor, m_symbolFillColor, getSymbolFont());
+        }
         /*! \brief plot a symbol at location x,y (in painter coordinates), using the current style
 
             \param parent parent JKQTBasePlotter of the graph that uses this mix-in (used e.g. for line-width transformation)
@@ -375,7 +480,10 @@ class JKQTPLOTTER_LIB_EXPORT JKQTPGraphSymbolStyleMixin {
             \param y y-coordinate of the symbol center
             \param type type of the symbol
          */
-        void plotStyledSymbol(JKQTBasePlotter* parent, JKQTPEnhancedPainter& painter, double x, double y, JKQTPGraphSymbols type) const;
+        inline void plotStyledSymbol(JKQTBasePlotter* parent, JKQTPEnhancedPainter& painter, double x, double y, JKQTPGraphSymbols type) const
+        {
+            JKQTPPlotSymbol(painter, x, y,type, parent->pt2px(painter, m_symbolSize), parent->pt2px(painter, m_symbolLineWidth*parent->getLineWidthMultiplier()), m_symbolColor, m_symbolFillColor, getSymbolFont());
+        }
         /*! \brief plot a symbol at location x,y (in painter coordinates), using the current style
 
             \param parent parent JKQTBasePlotter of the graph that uses this mix-in (used e.g. for line-width transformation)
@@ -385,9 +493,14 @@ class JKQTPLOTTER_LIB_EXPORT JKQTPGraphSymbolStyleMixin {
             \param color color of the symbol
             \param fillColor fill color of the symbol
          */
-        void plotStyledSymbol(JKQTBasePlotter* parent, JKQTPEnhancedPainter& painter, double x, double y, QColor color, QColor fillColor) const;
-
-
+        inline void plotStyledSymbol(JKQTBasePlotter* parent, JKQTPEnhancedPainter& painter, double x, double y, QColor color, QColor fillColor) const
+        {
+            JKQTPPlotSymbol(painter, x, y,m_symbolType, parent->pt2px(painter, m_symbolSize), parent->pt2px(painter, m_symbolLineWidth*parent->getLineWidthMultiplier()), color, fillColor, getSymbolFont());
+        }
+        /** \brief returns the symbol linewidth for drawing symbols in a key entry with \a keyRect for the symbol, using \a painter and \a parent  . \a maxSymbolSizeFracton specifies the maximum fraction of \a keyRect to be used for the symbol. */
+        double getKeySymbolLineWidthPx(JKQTPEnhancedPainter &painter, const QRectF &keyRect, const JKQTBasePlotter *parent, double maxSymbolSizeFracton=0.9) const;
+        /** \brief returns the symbol size for drawing symbols in a key entry with \a keyRect for the symbol, using \a painter and \a parent . \a maxSymbolSizeFracton specifies the maximum fraction of \a keyRect to be used for the symbol. */
+        double getKeySymbolSizePx(JKQTPEnhancedPainter &painter, const QRectF &keyRect, const JKQTBasePlotter *parent, double maxSymbolSizeFracton=0.9) const;
 };
 
 
@@ -429,6 +542,8 @@ class JKQTPLOTTER_LIB_EXPORT JKQTPGraphFillStyleMixin {
 
         /** \brief set the color of the graph filling */
         void setFillColor(const QColor & __value);
+        /** \brief set the color of the graph filling */
+        void setFillColor(const QColor & __value, double alpha);
         /** \brief set the color of the graph filling */
         QColor getFillColor() const;
 
@@ -541,6 +656,8 @@ class JKQTPLOTTER_LIB_EXPORT JKQTPGraphTextStyleMixin {
 
         /** \brief set the color of the text */
         void setTextColor(const QColor & __value);
+        /** \brief set the color of the text */
+        void setTextColor(const QColor & __value, double alpha);
         /** \brief set the color of the text */
         QColor getTextColor() const;
 

@@ -275,15 +275,15 @@ void JKQTPGraph::drawErrorsAfter(JKQTPEnhancedPainter &)
 
 }
 
-QVector<QPointF> JKQTPPlotElement::transform(const QVector<QPointF> &x) const {
-    QVector<QPointF> res;
+QPolygonF JKQTPPlotElement::transform(const QPolygonF &x) const {
+    QPolygonF res;
     for (int i=0; i<x.size(); i++) {
         res.append(transform(x[i]));
     }
     return res;
 }
 
-QPainterPath JKQTPPlotElement::transformToLinePath(const QVector<QPointF> &x) const {
+QPainterPath JKQTPPlotElement::transformToLinePath(const QPolygonF &x) const {
     QPainterPath res;
     if (x.size()>0) {
         res.moveTo(transform(x[0]));
@@ -390,6 +390,16 @@ void JKQTPXYGraph::setYColumn(size_t __value) {
     this->yColumn = static_cast<int>(__value);
 }
 
+void JKQTPXYGraph::setKeyColumn(int __value)
+{
+    setXColumn(__value);
+}
+
+void JKQTPXYGraph::setValueColumn(int __value)
+{
+    setYColumn(__value);
+}
+
 void JKQTPXYGraph::setDataSortOrder(JKQTPXYGraph::DataSortOrder __value)
 {
     this->sortData = __value;
@@ -398,6 +408,16 @@ void JKQTPXYGraph::setDataSortOrder(JKQTPXYGraph::DataSortOrder __value)
 JKQTPXYGraph::DataSortOrder JKQTPXYGraph::getDataSortOrder() const
 {
     return this->sortData;
+}
+
+int JKQTPXYGraph::getKeyColumn() const
+{
+    return getXColumn();
+}
+
+int JKQTPXYGraph::getValueColumn() const
+{
+    return getYColumn();
 }
 
 void JKQTPXYGraph::setDataSortOrder(int __value) {
@@ -616,6 +636,7 @@ void JKQTPXYGraph::intSortData()
 
 
     if (parent==nullptr)  return ;
+    if (sortData==JKQTPXYLineGraph::Unsorted) return ;
 
     JKQTPDatastore* datastore=parent->getDatastore();
     int imin=0;
@@ -821,6 +842,16 @@ void JKQTPXYYGraph::setYColumn2(size_t __value)
     yColumn2=static_cast<int>(__value);
 }
 
+int JKQTPXYYGraph::getValue2Column() const
+{
+    return getYColumn2();
+}
+
+void JKQTPXYYGraph::setValue2Column(int __value)
+{
+    setYColumn2(__value);
+}
+
 bool JKQTPXYYGraph::getIndexRange(int &imin, int &imax) const
 {
     bool ok=JKQTPXYGraph::getIndexRange(imin, imax);
@@ -892,6 +923,16 @@ bool JKQTPXXYGraph::usesColumn(int column) const
 int JKQTPXXYGraph::getXColumn2() const
 {
     return xColumn2;
+}
+
+int JKQTPXXYGraph::getKey2Column() const
+{
+    return getXColumn2();
+}
+
+void JKQTPXXYGraph::setKey2Column(int __value)
+{
+    setXColumn2(__value);
 }
 
 double JKQTPXXYGraph::hitTest(const QPointF &posSystem, QPointF *closestSpotSystem, QString *label, JKQTPPlotElement::HitTestMode mode) const

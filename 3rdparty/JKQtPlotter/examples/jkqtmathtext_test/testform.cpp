@@ -3,6 +3,8 @@
 #include <QDebug>
 #include <sstream>
 #include "jkqtcommon/jkqtpstringtools.h"
+#include "jkqtmathtext/jkqtmathtext.h"
+#include "jkqtmathtext/nodes/jkqtmathtextnodetools.h"
 #include "jkqtmathtext/nodes/jkqtmathtexttextnode.h"
 #include "jkqtmathtext/nodes/jkqtmathtextbracenode.h"
 #include "jkqtmathtext/nodes/jkqtmathtextdecoratednode.h"
@@ -14,7 +16,12 @@
 #include "jkqtmathtext/nodes/jkqtmathtextsubsupernode.h"
 #include "jkqtmathtext/nodes/jkqtmathtextsymbolnode.h"
 #include "jkqtmathtext/nodes/jkqtmathtextwhitespacenode.h"
-
+#include "jkqtmathtext/nodes/jkqtmathtextboxinstructionnode.h"
+#include "jkqtmathtext/nodes/jkqtmathtexthorizontallistnode.h"
+#include "jkqtmathtext/nodes/jkqtmathtextmodifyenvironmentnode.h"
+#include "jkqtmathtext/nodes/jkqtmathtextnoopnode.h"
+#include "jkqtmathtext/nodes/jkqtmathtextverbatimnode.h"
+#include "jkqtmathtext/nodes/jkqtmathtextverticallistnode.h"
 
 TestForm::TestForm(QWidget *parent) :
     QWidget(parent),
@@ -26,7 +33,7 @@ TestForm::TestForm(QWidget *parent) :
     const QString testTextUmla="\\\"Aq{\\\"u}\\\"{a}t{\\oe}r00, 123-45+6.0\\%\\S";
     const QString umla_math="\\ddot{A}\\ddot{a}\\grave{A}\\grave{a}\\acute{A}\\acute{a}\\hat{A}\\hat{a}\\tilde{A}\\tilde{a}\\r{A}\\r{a}\\u{A}\\u{a}\\bar{A}\\bar{a}\\AA\\aa{\\AE}{\\ae}\\check{C}\\check{c}\\ddot{E}\\ddot{e}\\dot{e}\\L\\l\\ddot{O}\\ddot{o}\\grave{O}\\grave{o}\\acute{O}\\acute{o}\\hat{O}\\hat{o}\\tilde{O}\\tilde{o}\\O\\o{\\OE}{\\ae}\\check{S}\\check{s}\\ss\\ddot{U}\\ddot{u}\\grave{U}\\grave{u}\\acute{U}\\acute{u}\\hat{U}\\hat{u}\\tilde{U}\\tilde{u}";
     const QString testTextUmla_math="\\ddot{A}q{\\ddot{u}}\\ddot{{}a}t{\\oe}r00, 123-45+6.0\\%\\S";
-    ui->cmbTestset->addItem("text: fonts", "rm: \\textrm{"+testText+"}, sf: \\textsf{"+testText+"}, tt: \\texttt{"+testText+"}, cal: \\textcal{"+testText+"}, scr: \\textscr{"+testText+"}, bb: \\textbb{"+testText+"}, frak: \\textfrak{"+testText+"}, ");
+    ui->cmbTestset->addItem("text: fonts", "rm: \\textrm{"+testText+"},\\\\sf: \\textsf{"+testText+"},\\\\tt: \\texttt{"+testText+"},\\\\cal: \\textcal{"+testText+"},\\\\scr: \\textscr{"+testText+"},\\\\bb: \\textbb{"+testText+"},\\\\frak: \\textfrak{"+testText+"}");
     ui->cmbTestset->addItem("text/math: font comparison",
                             "\\begin{matrix}\n"
                             "  text: & abc123+d/e\\\\\n"
@@ -40,11 +47,30 @@ TestForm::TestForm(QWidget *parent) :
                             "\\end{matrix}");
     ui->cmbTestset->addItem("text: umlaute", umla);
     ui->cmbTestset->addItem("text: umlaute and fonts", "rm: \\textrm{"+testTextUmla+"}, sf: \\textsf{"+testTextUmla+"}, tt: \\texttt{"+testTextUmla+"}, cal: \\textcal{"+testTextUmla+"}, scr: \\textscr{"+testTextUmla+"}, bb: \\textbb{"+testTextUmla+"}, frak: \\textfrak{"+testTextUmla+"}, ");
+    ui->cmbTestset->addItem("text: font sizes", "\\begin{array}{|lll|llc|}\\hline"
+                                                "\\textbf{Commmand} &\\ \\ \\ &\\ \\ \\ & \\textbf{Output}\\\\"
+                                                "\\hline"
+                                                "{\\backslash}tiny: &&& {\\tiny sample text} \\\\"
+                                                "{\\backslash}ssmall: &&& {\\ssmall sample text} \\\\"
+                                                "{\\backslash}scriptsize: &&& {\\scriptsize sample text} \\\\"
+                                                "{\\backslash}footnotesize: &&& {\\footnotesize sample text} \\\\"
+                                                "{\\backslash}small: &&& {\\small sample text} \\\\"
+                                                "{\\backslash}normalsize: &&& {\\normalsize sample text} \\\\"
+                                                "{\\backslash}large: &&& {\\large sample text} \\\\"
+                                                "{\\backslash}Large: &&& {\\Large sample text} \\\\"
+                                                "{\\backslash}LARGE: &&& {\\LARGE sample text} \\\\"
+                                                "{\\backslash}huge: &&& {\\huge sample text} \\\\"
+                                                "{\\backslash}Huge: &&& {\\Huge sample text} \\\\"
+                                                "\\hline"
+                                                "\\end{array}");
+
+    ui->cmbTestset->addItem("text: multi-line", "line 1\\\\\\bf line 2 in bold \\\\line 3 still bold \\it now also italic");
     ui->cmbTestset->addItem("text: dashes", "hyphen: - endash: -- emdash: --- \\ \\ \\ endash--within text\\ \\ \\ emdash---within text\\ \\ \\ enemdash-----within text\\ \\ \\ ememdash------within text");
     ui->cmbTestset->addItem("math: fonts", "base: $"+testText+"$, rm: $\\mathrm{"+testText+"}$, sf: $\\mathsf{"+testText+"}$, tt: $\\mathtt{"+testText+"}$, cal: $\\mathcal{"+testText+"}$, scr: $\\mathscr{"+testText+"}$, bb: $\\mathbb{"+testText+"}$, frak: $\\mathfrak{"+testText+"}$, ");
     ui->cmbTestset->addItem("math: umlaute", "$"+umla_math+"$");
     ui->cmbTestset->addItem("math: umlaute and \\text{...}", "\\${\\backslash}text\\{...\\}\\$: $\\text{"+umla+"}\\ \\ \\ \\$...\\$: "+umla+"$");
     ui->cmbTestset->addItem("math: umlaute and fonts", "base: $"+testTextUmla_math+"$, rm: $\\mathrm{"+testTextUmla_math+"}$, sf: $\\mathsf{"+testTextUmla_math+"}$, tt: $\\mathtt{"+testTextUmla_math+"}$, cal: $\\mathcal{"+testTextUmla_math+"}$, scr: $\\mathscr{"+testTextUmla_math+"}$, bb: $\\mathbb{"+testTextUmla_math+"}$, frak: $\\mathfrak{"+testTextUmla_math+"}$, ");
+    ui->cmbTestset->addItem("math: sin", "$f(\\omega)=\\sin\\left(\\pi\\cdot\\omega\\right)\\neq\\cos\\bigl(\\pi\\cdot\\omega\\bigr)+2$");
     ui->cmbTestset->addItem("math: simple relations", "$a{\\leq}b$, $a{\\geq}b$, $a{\\equiv}b$, $a=b$, $a{\\neq}b$, $a<b$, $a>b$");
     const auto wsExample=[](const QStringList& spaces, const QString before, const QString& after)->QString {
         QString s;
@@ -74,6 +100,7 @@ TestForm::TestForm(QWidget *parent) :
     ui->cmbTestset->addItem("math: std dev", "$\\sigma_x=\\sqrt{\\langle (x-\\langle x\\rangle)^2\\rangle}=\\sqrt{\\frac{1}{N-1}\\cdot\\left( \\sum_{i=1}^N{x_i}^2-\\frac{1}{N}\\cdot\\left(\\sum_{i=1}^Nx_i\\right)^2\\right)}$");
     ui->cmbTestset->addItem("math: std dev 2", "$\\sigma_x=\\sqrt{\\langle (x-\\langle x\\rangle)^2\\rangle}=\\sqrt{\\frac{1}{N-1}\\cdot\\left( \\sum_{i=1}^Nx_i^2-\\frac{1}{N}\\cdot\\left(\\sum_{i=1}^Nx_i\\right)^2\\right)}$");
     ui->cmbTestset->addItem("math: rotation matrix", "$\\mathrm{\\mathbf{M}}(\\alpha) = \\left(\\begin{matrix}\\cos(\\alpha)+n_x^2\\cdot (1-\\cos(\\alpha))  &  n_x\\cdot n_y\\cdot (1-\\cos(\\alpha))-n_z\\cdot \\sin(\\alpha) &  n_x\\cdot n_z\\cdot (1-\\cos(\\alpha))+n_y\\cdot \\sin(\\alpha)\\\\n_x\\cdot n_y\\cdot (1-\\cos(\\alpha))+n_z\\cdot \\sin(\\alpha) & \\cos(\\alpha)+n_y^2\\cdot (1-\\cos(\\alpha))  &   n_y\\cdot n_z\\cdot (1-\\cos(\\alpha))-n_x\\cdot \\sin(\\alpha)\\\\n_z\\cdot n_x\\cdot (1-\\cos(\\alpha))-n_y\\cdot \\sin(\\alpha) & n_z\\cdot n_y\\cdot (1-\\cos(\\alpha))+n_x\\cdot \\sin(\\alpha)  & \\cos(\\alpha)+n_z^2\\cdot (1-\\cos(\\alpha))\\end{matrix}\\right)$");
+    ui->cmbTestset->addItem("math: rotation matrix, \\tiny", "$\\mathrm{\\mathbf{M}}(\\alpha) = \\left(\\begin{matrix}\\tiny\\cos(\\alpha)+n_x^2\\cdot (1-\\cos(\\alpha))  &  n_x\\cdot n_y\\cdot (1-\\cos(\\alpha))-n_z\\cdot \\sin(\\alpha) &  n_x\\cdot n_z\\cdot (1-\\cos(\\alpha))+n_y\\cdot \\sin(\\alpha)\\\\n_x\\cdot n_y\\cdot (1-\\cos(\\alpha))+n_z\\cdot \\sin(\\alpha) & \\cos(\\alpha)+n_y^2\\cdot (1-\\cos(\\alpha))  &   n_y\\cdot n_z\\cdot (1-\\cos(\\alpha))-n_x\\cdot \\sin(\\alpha)\\\\n_z\\cdot n_x\\cdot (1-\\cos(\\alpha))-n_y\\cdot \\sin(\\alpha) & n_z\\cdot n_y\\cdot (1-\\cos(\\alpha))+n_x\\cdot \\sin(\\alpha)  & \\cos(\\alpha)+n_z^2\\cdot (1-\\cos(\\alpha))\\end{matrix}\\right)$");
     ui->cmbTestset->addItem("math: like in label at bottom", "$\\left(\\left[\\sqrt{2\\pi\\cdot\\int_{-\\infty}^\\infty f(x)\\;\\mathrm{d}x}\\right]\\right)$");
     ui->cmbTestset->addItem("text: like in label at bottom)", "\\left(\\left[\\sqrt{2\\pi\\cdot\\int_{-\\infty}^\\infty f(x)\\;\\mathrm{d}x}\\right]\\right)");
     ui->cmbTestset->addItem("text 0", "text");
@@ -92,11 +119,14 @@ TestForm::TestForm(QWidget *parent) :
     ui->cmbTestset->addItem("text: \\begin{verbatim*}", "outside\\begin{verbatim*}\ninside \\LaTeX verbatim\n  2nd verbaimline\n\t3rd line\n\\end{verbatim*}");
     ui->cmbTestset->addItem("text: \\begin{lstlistings}", "outside\\begin{lstlisting}\nint main() {\n  printf(\"Hello World\\n\");\n}\n\\end{lstlisting}");
     ui->cmbTestset->addItem("text: flushleft", "\\begin{flushleft}text\\\\\\textbf{2^{nd} line of text}\\\\last \\textit{line!} $\\frac{1}{2}$\\end{flushleft}");
+    ui->cmbTestset->addItem("text: flushleft, tiny", "\\begin{flushleft}\\tiny text\\\\\\textbf{2^{nd} line of text}\\\\\\color{red}last \\textit{line!} $\\frac{1}{2}$\\end{flushleft}");
     ui->cmbTestset->addItem("text: flushright", "\\begin{flushright}text\\\\\\textbf{2^{nd} line of text}\\\\last \\textit{line!} $\\frac{1}{2}$\\end{flushright}");
     ui->cmbTestset->addItem("text: center", "\\begin{center}text\\\\\\textbf{2^{nd} line of text}\\\\last \\textit{line!} $\\frac{1}{2}$\\end{center}");
     ui->cmbTestset->addItem("text: framed", "\\begin{framed}text\\\\\\textbf{2^{nd} line of text}\\\\last \\textit{line!} $\\frac{1}{2}$\\end{framed}");
     ui->cmbTestset->addItem("text: shaded", "\\begin{shaded}text\\\\\\textbf{2^{nd} line of text}\\\\last \\textit{line!} $\\frac{1}{2}$\\end{shaded}");
     ui->cmbTestset->addItem("text: snugshade", "\\begin{snugshade}text\\\\\\textbf{2^{nd} line of text}\\\\last \\textit{line!} $\\frac{1}{2}$\\end{snugshade}");
+    ui->cmbTestset->addItem("text: tabular", "\\begin{tabular}{:l|cr||}\\hdashline a1--- & b1-- & c1---\\\\ a2-- & b2\\_ & c2\\_\\\\\\hline a3 & b3 & c3\\\\\\hline\\hline a4 & b4 & c4\\\\\\bottomrule\\end{tabular}");
+    ui->cmbTestset->addItem("math: array", "$\\mat{M}=\\left(\\begin{array}{l:ll} \\alpha & a & \\ldots \\\\ \\hdashline \\beta & b & \\ldots \\\\ \\vdots & \\vdots & \\ddots \\\\ \\end{array}\\right)$");
     ui->cmbTestset->addItem("mathtest", "This is normal text: $this is math:\\langle r^2(\\tau)\\rangle=\\left\\langle (\\vec{r}(t)-\\vec{r}(t+\\tau) )^2\\right\\rangle\\ \\ \\ g(\\tau)=\\frac{1}{N}\\cdot\\left(1+\\frac{2}{3}\\frac{\\langle r^2(\\tau)\\rangle}{w_{xy}^2}\\right)^{-1}  \\lfloor\\rfloor\\lceil\\rceil\\langle\\rangle\\left\\{\\vec{a}\\left|\\|\\vec{a}\\|_2\\geq2\\right.\\right\\} \\vec{r}\\vec{R}\\frac{\\sqrt{\\sqrt{\\sqrt{\\sum_{i=0}^\\infty \\hat{i}^2}+y^\\alpha}+1}}{\\dot{v}\\equiv\\ddot{r}}\\argmin_{\\vec{k}}\\sum_{\\sqrt{i}=0}^{N}\\int_{x_0}^{x_1}\\left(\\left(\\left(x\\right)\\right)\\right)\\underbrace{\\left[\\left\\{\\frac{\\partial f}{\\partial x}\\right\\}\\cdot\\frac{1}{2}\\right]}{\\text{underbraced text \\hbar}}\\cdots\\frac{\\sqrt{\\sum_{i=0}^2 \\hat{i}^2}+y^\\alpha}{\\dot{v}\\equiv\\ddot{r}}, \\hat{t}\\hat{T} \\overbrace{\\left|\\sqrt{x\\cdot Y}\\right|}{\\propto\\bbN\\circ\\bbZ}   \\left<\\arrow{x(\\tau)}\\cdot\\vec{R}(t+\\bar{\\tau})\\right>   \\alpha\\beta\\gamma\\delta\\epsilon\\Gamma\\Delta\\Theta\\Omega  \\left\\_\\left~\\cbrt{\\hbar\\omega}\\right~\\right\\_$");
     ui->cmbTestset->addItem("math: upper/lower parantheses test:", "$\\text{bblabla} \\frac{1}{2}\\cdot\\left(\\frac{1}{\\mathrm{e}^x+\\mathrm{e}^{-x}}\\right)\\cdot\\left(\\frac{1}{\\frac{1+2}{5+x}}\\right)\\cdot\\left(\\frac{1}{\\exp\\left[-\\frac{y^2}{\\sqrt{x}}\\right]\\cdot\\exp\\left[-\\frac{1}{\\frac{1}{2}}\\right]}\\right) $");
     ui->cmbTestset->addItem("math: ACF test", "$g_{rg}^{ab}(\\tau)=\\frac{1}{N}\\cdot\\left(1+\\frac{2}{3}\\frac{\\langle r^2(\\tau)\\rangle}{w_{xy}^2}\\right)^{-1}\\cdot\\left(1+\\frac{2}{3}\\frac{\\langle r^2(\\tau)\\rangle}{w_{xy}^2}\\right)^{-\\frac{1}{2}}$");
@@ -283,7 +313,7 @@ TestForm::TestForm(QWidget *parent) :
     ui->cmbEncodingBlackboard->setCurrentIndex(static_cast<int>(mt.getFontEncodingBlackboard()));
     ui->cmbUnicodeSymbol->setCurrentFont(QFont(mt.getFallbackFontSymbols()));
     ui->cmbEncodingSymbol->setCurrentIndex(static_cast<int>(mt.getFontEncodingFallbackFontSymbols()));
-    ui->chkSimulateBlackboard->setChecked(mt.isFontBlackboardSimulated());
+    ui->cmdBlackboradMode->setCurrentText(JKQTMathTextBlackboradDrawingMode2String(mt.getFontBlackboradMode()));
 
 
 
@@ -297,7 +327,7 @@ TestForm::TestForm(QWidget *parent) :
     connect(ui->chkBigBox, SIGNAL(toggled(bool)), this, SLOT(updateMath()));
     connect(ui->chkAntiAlias, SIGNAL(toggled(bool)), this, SLOT(updateMath()));
     connect(ui->chkAntiAliasText, SIGNAL(toggled(bool)), this, SLOT(updateMath()));
-    connect(ui->chkSimulateBlackboard, SIGNAL(toggled(bool)), this, SLOT(updateMath()));
+    connect(ui->cmdBlackboradMode, SIGNAL(currentIndexChanged(int)), this, SLOT(updateMath()));
     connect(ui->cmbLastAlign, SIGNAL(currentIndexChanged(int)), this, SLOT(updateMath()));
     connect(ui->cmbFont, SIGNAL(currentIndexChanged(int)), this, SLOT(updateMath()));
     connect(ui->cmbScript, SIGNAL(currentIndexChanged(int)), this, SLOT(updateMath()));
@@ -446,7 +476,7 @@ QString TestForm::getFonts(const JKQTMathText& mt) const
     str<<"Script: "<<mt.getFontScript().toStdString()<<", "<<JKQTMathTextFontEncoding2String(mt.getFontEncodingScript()).toStdString()<<"\n";
     str<<"Typewriter: "<<mt.getFontTypewriter().toStdString()<<", "<<JKQTMathTextFontEncoding2String(mt.getFontEncodingTypewriter()).toStdString()<<"\n";
     str<<"Caligraphic: "<<mt.getFontCaligraphic().toStdString()<<", "<<JKQTMathTextFontEncoding2String(mt.getFontEncodingCaligraphic()).toStdString()<<"\n";
-    str<<"Blackboard: "<<mt.getFontBlackboard().toStdString()<<", "<<JKQTMathTextFontEncoding2String(mt.getFontEncodingBlackboard()).toStdString()<<", isSimulated="<<mt.isFontBlackboardSimulated();
+    str<<"Blackboard: "<<mt.getFontBlackboard().toStdString()<<", "<<JKQTMathTextFontEncoding2String(mt.getFontEncodingBlackboard()).toStdString()<<", mode="<<JKQTMathTextBlackboradDrawingMode2String(mt.getFontBlackboradMode()).toStdString()<<"\n";
     return str.str().c_str();
 }
 
@@ -470,6 +500,9 @@ QTreeWidgetItem *TestForm::createTree(JKQTMathTextNode *node, QTreeWidgetItem* p
     JKQTMathTextDecoratedNode* decoN=dynamic_cast<JKQTMathTextDecoratedNode*>(node);
     JKQTMathTextEmptyBoxNode* emptyN=dynamic_cast<JKQTMathTextEmptyBoxNode*>(node);
     JKQTMathTextVerbatimNode* verbN=dynamic_cast<JKQTMathTextVerbatimNode*>(node);
+    JKQTMathTextPhantomNode* phanN=dynamic_cast<JKQTMathTextPhantomNode*>(node);
+    JKQTMathTextNoopNode* noopN=dynamic_cast<JKQTMathTextNoopNode*>(node);
+    JKQTMathTextModifiedEnvironmentInstructionNode* modenvN=dynamic_cast<JKQTMathTextModifiedEnvironmentInstructionNode*>(node);
 
     QTreeWidgetItem* ti=nullptr;
     if (parent) ti=new QTreeWidgetItem(parent);
@@ -482,7 +515,7 @@ QTreeWidgetItem *TestForm::createTree(JKQTMathTextNode *node, QTreeWidgetItem* p
         int l=matrixN->getLines();
         int c=matrixN->getColumns();
         name=QString("MatrixNode: l*c=%1*%2").arg(l).arg(c);
-        QVector<QVector<JKQTMathTextNode*> > children=matrixN->getChildren();
+        QVector<QVector<JKQTMathTextNode*> > children=matrixN->getChildrenMatrix();
         for (int y=0; y<l; y++) {
             for (int x=0; x<c; x++) {
                 if (children[y].at(x)!=nullptr) {
@@ -500,6 +533,9 @@ QTreeWidgetItem *TestForm::createTree(JKQTMathTextNode *node, QTreeWidgetItem* p
         name=QString("SqrtNode");
         if (sqrtN->getChildDegree()) ti->addChild(createTree(sqrtN->getChildDegree(), ti));
         if (sqrtN->getChild()) ti->addChild(createTree(sqrtN->getChild(), ti));
+    } else if (phanN)  {
+        name=QString("PhantomNode: mode=%1").arg(phanN->getInstructionName());
+        if (sqrtN->getChild()) ti->addChild(createTree(sqrtN->getChild(), ti));
     } else if (braceN)  {
         name=QString("BraceNode: l='%1', r='%2'").arg(JKQTMathTextBraceType2String(braceN->getOpenbrace())).arg(JKQTMathTextBraceType2String(braceN->getClosebrace()));
         if (braceN->getChild()) ti->addChild(createTree(braceN->getChild(), ti));
@@ -510,12 +546,14 @@ QTreeWidgetItem *TestForm::createTree(JKQTMathTextNode *node, QTreeWidgetItem* p
         name=QString("SubscriptNode");
         if (subN->getChild()) ti->addChild(createTree(subN->getChild(), ti));
     } else if (instS)  {
-        name=QString("SimpleInstructionNode: \'%1\' (subsuper=%2, params=%3)").arg(instS->getInstructionName()).arg(instS->isSubSuperscriptAboveBelowNode()).arg(instS->getParameters().join("/"));
+        name=QString("SimpleInstructionNode: \'%1\' (params=%2)").arg(instS->getInstructionName()).arg(instS->getParameters().join("/"));
+    } else if (modenvN)  {
+        name=QString("ModifiedEnvironmentInstructionNode: \'%1\' (params=%2)").arg(modenvN->getInstructionName()).arg(modenvN->getParameters().join("/"));
     } else if (inst1N)  {
-        name=QString("ModifiedTextPropsInstructionNode: \'%1\' (subsuper=%2, params=%3)").arg(inst1N->getInstructionName()).arg(inst1N->isSubSuperscriptAboveBelowNode()).arg(inst1N->getParameters().join("/"));
+        name=QString("ModifiedTextPropsInstructionNode: \'%1\' (params=%2)").arg(inst1N->getInstructionName()).arg(inst1N->getParameters().join("/"));
         if (inst1N->getChild()) ti->addChild(createTree(inst1N->getChild(), ti));
     } else if (inst1B)  {
-        name=QString("BoxInstructionNode: \'%1\' (subsuper=%2, params=%3)").arg(inst1B->getInstructionName()).arg(inst1B->isSubSuperscriptAboveBelowNode()).arg(inst1B->getParameters().join("/"));
+        name=QString("BoxInstructionNode: \'%1\' (params=%2)").arg(inst1B->getInstructionName()).arg(inst1B->getParameters().join("/"));
         if (inst1B->getChild()) ti->addChild(createTree(inst1B->getChild(), ti));
     } else if (lstN)  {
         name=QString("HorizontalListNode");
@@ -524,7 +562,7 @@ QTreeWidgetItem *TestForm::createTree(JKQTMathTextNode *node, QTreeWidgetItem* p
             ti->addChild(createTree(list[i], ti));
         }
     } else if (lstNV)  {
-        name=QString("VerticalListNode (align=%1, spacingFactor=%2x, spacingMode=%3, verticalOrientation=%4)").arg(JKQTMathTextHorizontalAlignment2String(lstNV->getAlignment())).arg(lstNV->getLineSpacingFactor()).arg(lstNV->SpacingMode2String(lstNV->getSpacingMode())).arg(JKQTMathTextVerticalOrientation2String(lstNV->getVerticalOrientation()));
+        name=QString("VerticalListNode (align=%1, spacingFactor=%2x, spacingMode=%3, verticalOrientation=%4)").arg(JKQTMathTextHorizontalAlignment2String(lstNV->getAlignment())).arg(lstNV->getLineSpacingFactor()).arg(JKQTMathTextLineSpacingMode2String(lstNV->getSpacingMode())).arg(JKQTMathTextVerticalOrientation2String(lstNV->getVerticalOrientation()));
         QList<JKQTMathTextNode*> list=lstNV->getChildren();
         for (int i=0; i<list.size(); i++) {
             ti->addChild(createTree(list[i], ti));
@@ -532,29 +570,21 @@ QTreeWidgetItem *TestForm::createTree(JKQTMathTextNode *node, QTreeWidgetItem* p
     } else if (verbN)  {
         name=QString("VerbatimTextNode (align=%1, spacingFactor=%2x, verticalOrientation=%3, text='%4')").arg(JKQTMathTextHorizontalAlignment2String(verbN->getAlignment())).arg(verbN->getLineSpacingFactor()).arg(JKQTMathTextVerticalOrientation2String(verbN->getVerticalOrientation())).arg(jkqtp_backslashEscape(verbN->getText()));
     } else if (symN)  {
-        name=QString("SymbolNode: \'%1\' (subsuper=%3)").arg(symN->getSymbolName()).arg(symN->isSubSuperscriptAboveBelowNode());
+        name=QString("SymbolNode: \'%1\'").arg(symN->getSymbolName());
     } else if (spN)  {
         name=QString("WhitespaceNode :type=%1, count=%2").arg(spN->Type2String(spN->getWhitespaceType())).arg(spN->getWhitespaceCount());
     } else if (txtN)  {
         name=QString("TextNode: \'%1\'").arg(txtN->getText());
     } else if (emptyN)  {
         name=QString("EmptyBoxNode %1%2 x %3%4").arg(emptyN->getWidth()).arg(JKQTMathTextEmptyBoxNode::Units2String(emptyN->getWidthUnit())).arg(emptyN->getHeight()).arg(JKQTMathTextEmptyBoxNode::Units2String(emptyN->getHeightUnit()));
+    } else if  (noopN) {
+        name="NoopNode";
     } else {
-        name=QString("unknown");
+        name=node->getTypeName();
     }
 
     ti->setText(0,name);
 
-    /*
-    QString space="";
-    QTreeWidgetItem* p=ti->parent();
-    while (p) {
-        space+="  ";
-        p=p->parent();
-    }
-
-    qDebug()<<space<<"createTree()";
-    */
 
     return ti;
 }
@@ -602,7 +632,7 @@ void TestForm::updateMath()
 
 
     mt.setFallbackFontSymbols(ui->cmbUnicodeSymbol->currentFont().family(), static_cast<JKQTMathTextFontEncoding>(ui->cmbEncodingSymbol->currentIndex()));
-    if (ui->cmbFont->currentIndex()<=3) {
+    if (ui->cmbFont->currentIndex()<=4) {
         mt.setFontRoman(ui->cmbUnicodeSerif->currentFont().family(), static_cast<JKQTMathTextFontEncoding>(ui->cmbEncodingSerif->currentIndex()));
         mt.setFontSans(ui->cmbUnicodeSans->currentFont().family(), static_cast<JKQTMathTextFontEncoding>(ui->cmbEncodingSans->currentIndex()));
         mt.setFontMathRoman(ui->cmbUnicodeSerifMath->currentFont().family(), static_cast<JKQTMathTextFontEncoding>(ui->cmbEncodingSerifMath->currentIndex()));
@@ -613,49 +643,34 @@ void TestForm::updateMath()
         mt.setFontFraktur(ui->cmbUnicodeFraktur->currentFont().family(), static_cast<JKQTMathTextFontEncoding>(ui->cmbEncodingFraktur->currentIndex()));
         mt.setFontBlackboard(ui->cmbUnicodeBlackboard->currentFont().family(), static_cast<JKQTMathTextFontEncoding>(ui->cmbEncodingBlackboard->currentIndex()));
         mt.setFallbackFontSymbols(ui->cmbUnicodeSymbol->currentFont().family(), static_cast<JKQTMathTextFontEncoding>(ui->cmbEncodingSymbol->currentIndex()));
-    } else if (ui->cmbFont->currentIndex()==5 || ui->cmbFont->currentIndex()==6) {
-        mt.setFontRoman(QGuiApplication::font().family());
-        mt.setFontMathRoman(QGuiApplication::font().family());
-    } else if (ui->cmbFont->currentIndex()==7) {
+    } else if (ui->cmbFont->currentIndex()==5) {
         mt.useXITS();
         mt.useAnyUnicode("Times New Roman", "Times New Roman");
-    } else if (ui->cmbFont->currentIndex()==8) {
+    } else if (ui->cmbFont->currentIndex()==6) {
         mt.useXITS();
         mt.useAnyUnicode("Arial", "Arial");
-    } else if (ui->cmbFont->currentIndex()==9) {
+    } else if (ui->cmbFont->currentIndex()==7) {
         mt.useXITS();
         mt.useAnyUnicode("Courier New", "Courier New");
-    } else if (ui->cmbFont->currentIndex()==10) {
+    } else if (ui->cmbFont->currentIndex()==8) {
         mt.useXITS();
         mt.useAnyUnicode("Comic Sans MS", "Comic Sans MS");
-    } else if (ui->cmbFont->currentIndex()==11) {
-        mt.useAnyUnicodeForTextOnly("Times New Roman", "Times New Roman");
-        mt.useXITS();
-    } else if (ui->cmbFont->currentIndex()==12) {
-        mt.useAnyUnicodeForTextOnly("Arial", "Arial");
-        mt.useXITS();
-    } else if (ui->cmbFont->currentIndex()==13) {
-        mt.useAnyUnicodeForTextOnly("Courier New", "Courier New");
-        mt.useXITS();
-    } else if (ui->cmbFont->currentIndex()==14) {
-        mt.useAnyUnicodeForTextOnly("Comic Sans MS", "Comic Sans MS");
-        mt.useXITS();
-    } else if (ui->cmbFont->currentIndex()==15) {
-        mt.useXITS(false);
+    } else if (ui->cmbFont->currentIndex()==9) {
+        mt.useGuiFonts();
     }
 
-    mt.setFontBlackboardSimulated(ui->chkSimulateBlackboard->isChecked());
+    mt.setFontBlackboradMode(String2JKQTMathTextBlackboradDrawingMode(ui->cmdBlackboradMode->currentText()));
 
     if (ui->cmbFont->currentIndex()==1) qDebug()<<"useXITS: "<<mt.useXITS();
     else if (ui->cmbFont->currentIndex()==2) qDebug()<<"useSTIX: "<<mt.useSTIX();
     else if (ui->cmbFont->currentIndex()==3) qDebug()<<"useASANA: "<<mt.useASANA();
-    else if (ui->cmbFont->currentIndex()==6) qDebug()<<"useXITS: "<<mt.useXITS();
+    else if (ui->cmbFont->currentIndex()==4) qDebug()<<"useFiraMath: "<<mt.useFiraMath();
     ui->tree->clear();
     ht.start();
     double durationParse=0;
     if (mt.parse(mathTest)) {
         durationParse=ht.getTime()/1000.0;
-        ui->tree->addTopLevelItem(createTree(mt.getParsedNode()));
+        ui->tree->addTopLevelItem(createTree(mt.getNodeTree()));
     } else {
         durationParse=ht.getTime()/1000.0;
     }

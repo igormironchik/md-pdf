@@ -41,6 +41,7 @@
 #include <QLabel>
 #include <QHash>
 #include <QPainterPath>
+#include <QtMath>
 
 class JKQTMathText; // forward
 
@@ -55,9 +56,19 @@ JKQTMATHTEXT_LIB_EXPORT void initJKQTMathTextResources();
 /*! \brief represents a font specifier for JKQTMathText. The font consists of two parts: the actual font and the font used for math output (which may be empty)
     \ingroup jkqtmathtext_tools
 
-    \section JKQTMathTextFontSpecifier_specialNames Special FOnt Names
+    \section JKQTMathTextFontSpecifier_specialSyntax Font Definition Syntax
+    JKQTMathTextFontSpecifier::fromFontSpec() defines a special syntax that when parsed allows to seth the font,
+    a math-mode alternative:
+      - \c FONTNAME : set the text-mode font only
+      - \c FONTNAME+MATH_FONTNAME : set the text- and math-mode fonts
+
+
+
+
+    \section JKQTMathTextFontSpecifier_specialNames Special Font Names
     This object also implements replacing special font names with actual fonts. Supported special font names are:
       - \c default / \c app / \c application - the applications default font
+      - \c application-sf - a font for "sans", based on the application font
       - \c times / \c serif - a general serif font
       - \c sans-serif - a general sans-serif font
       - \c typewriter - a general typewrter/monospaced font
@@ -74,14 +85,20 @@ JKQTMATHTEXT_LIB_EXPORT void initJKQTMathTextResources();
       - \c title
       - \c general
     .
+
+    Also some sepcial fonts are defined:
+      - xits XITS fonts
+      - stix STIX fonts
+      - asana ASANA fonts
+      - fira Fira fonts
 */
 struct JKQTMATHTEXT_LIB_EXPORT JKQTMathTextFontSpecifier {
     JKQTMathTextFontSpecifier();
     JKQTMathTextFontSpecifier(const QString& fontName, const QString& mathFontName);
-    /** \brief construct a JKQTMathTextFontSpecifier, by parsing a \a fontSpec string with the form \c "FONT_NAME[+MATH_FONT_NAME]". */
+    /** \brief construct a JKQTMathTextFontSpecifier, by parsing a \a fontSpec string as defined in the struct description, see \ref JKQTMathTextFontSpecifier_specialNames . */
     static JKQTMathTextFontSpecifier fromFontSpec(const QString& fontSpec);
 
-    /** \brief initialises the object with values from parsing a \a fontSpec string with the form \c "FONT_NAME[+MATH_FONT_NAME]". */
+    /** \brief initialises the object with values from parsing a \a fontSpec string as defined in the struct description, see \ref JKQTMathTextFontSpecifier_specialNames . */
     void setFontSpec(const QString& fontSpec);
 
     /** \brief returns the object's constents as a fontSpec string with the form \c "FONT_NAME[+MATH_FONT_NAME]". */
@@ -90,19 +107,25 @@ struct JKQTMATHTEXT_LIB_EXPORT JKQTMathTextFontSpecifier {
     QString fontName() const;
     /** \copydoc m_mathFontName */
     QString mathFontName() const;
+    /** \copydoc m_fallbackSymbolFont */
+    QString fallbackSymbolsFontName() const;
 
     /** \copydoc m_fontName */
     void setFontName(const QString& name);
     /** \copydoc m_mathFontName */
     void setmathFontName(const QString& name);
+    /** \copydoc fallbackSymbolsFontName */
+    void setFallbackSymbolsFontName(const QString& name);
     /** \brief finds actual fonts for some predefined special font names, as listed in \ref JKQTMathTextFontSpecifier_specialNames */
-    static QString transformFontName(const QString& fontName);
+    static QString transformFontName(const QString& fontName, bool mathmode=false);
     /** \brief same as transformFontName(), but also finds the actual name for XITS, STIX, ASANA,... */
-    static QString transformFontNameAndDecodeSpecialFonts(const QString& fontName);
+    static QString transformFontNameAndDecodeSpecialFonts(const QString& fontName, bool mathmode=false);
     /** \brief leiefert \c true, wenn ein fontName() verfügbar ist */
     bool hasFontName() const;
     /** \brief leiefert \c true, wenn ein mathFontName() verfügbar ist */
     bool hasMathFontName() const;
+    /** \brief leiefert \c true, wenn ein fallbcakSymbolsFontName() verfügbar ist */
+    bool hasFallbackSymbolFontName() const;
 
     /** \brief initialize with the font-families from the XITS package for text and math */
     static JKQTMathTextFontSpecifier getXITSFamilies();
@@ -112,11 +135,34 @@ struct JKQTMATHTEXT_LIB_EXPORT JKQTMathTextFontSpecifier {
 
     /** \brief initialize with the font-families from the STIX package for text and math */
     static JKQTMathTextFontSpecifier getSTIXFamilies();
+
+    /** \brief initialize with the font-families from the Fira (Math) package for text and math */
+    static JKQTMathTextFontSpecifier getFIRAFamilies();
+
+    /** \brief initialize with the default app font-families for "roman" text and math and tries to find a matching fallback-font. This may be used to initialize serif-fonts
+     *
+     *  This method encodes some pre-coded knowledge of suitable combinations of fonts for different systems.
+     *  e.g. on newer windows systems, the font "Segoe UI" is used for the GUI... a suitable math
+     *  font with symbols is "Segoe UI Symbol" ...
+     */
+    static JKQTMathTextFontSpecifier getAppFontFamilies();
+    /** \brief initialize with the default app font-families for "serif" text and math and tries to find a matching fallback-font. This may be used to initialize sans-serif-fonts
+     *
+     *  This method encodes some pre-coded knowledge of suitable combinations of fonts for different systems.
+     *
+     *  This function e.g. checks whether the  default app font is sans-serif and then looks for a serif
+     *  font for the "sans" font class (so the two can be distinguished) and vice-versa.
+     */
+    static JKQTMathTextFontSpecifier getAppFontSFFamilies();
 private:
     /** \brief specifies the main font name */
     QString m_fontName;
     /** \brief specifies the math font to use in addition to fontName */
     QString m_mathFontName;
+    /** \brief specifies a font to be used for fallbackSymbols */
+    QString m_fallbackSymbolFont;
+    /** \brief if set \c true the fonts are transformed when fontname() or mathFontName() is called by calling transformFontNameAndDecodeSpecialFonts() */
+    bool m_transformOnOutput;
 
 
 };
@@ -138,6 +184,31 @@ enum JKQTMathTextFontEncoding {
 JKQTMATHTEXT_LIB_EXPORT JKQTMathTextFontEncoding estimateJKQTMathTextFontEncoding(QFont font);
 
 
+/** \brief used to specify how blackboard-fonts are drawn
+ *  \ingroup jkqtmathtext_tools
+ *
+ *  \see JKQTMathTextBlackboradDrawingMode2String(), String2JKQTMathTextBlackboradDrawingMode()
+*/
+enum JKQTMathTextBlackboradDrawingMode {
+    MTBBDMfontDirectly=0,      /*!< \brief draw using the font specified by JKQTMathText::setFontBlackboard() \image html jkqtmathtext/jkqtmathtext_bb_font_directly.png */
+    MTBBDMsimulate,      /*!< \brief simulate a blackboard font (i.e. draw the characters' outline only), based on the font specified by JKQTMathText::setFontBlackboard() (e.g. Arial or another sans-serif font is a good choice) \image html jkqtmathtext/jkqtmathtext_bb_simulate.png */
+    MTBBDMunicodeCharactersOrFontDirectly,  /*!< \brief use the currently set font and look for special unicode-characters in it, uses the fallbackSymbolFont as fallback, use MTBBDMfontDirectly for characters that are not available \image html jkqtmathtext/jkqtmathtext_bb_unicode_or_font_directly.png */
+    MTBBDMunicodeCharactersOrSimulate,  /*!< \brief use the currently set font and look for special unicode-characters in it, uses the fallbackSymbolFont as fallback, use MTBBDMsimulate for characters that are not available \image html jkqtmathtext/jkqtmathtext_bb_unicode_or_simulate.png  */
+    MTBBDMdefault=MTBBDMunicodeCharactersOrFontDirectly /*!< \brief default drawing mode, same as MTBBDMunicodeCharactersOrFontDirectly */
+};
+
+/** \brief this converts a JKQTMathTextBlackboradDrawingMode into a string
+ *  \ingroup jkqtmathtext_tools
+ *  \see String2JKQTMathTextBlackboradDrawingMode(), JKQTMathTextBlackboradDrawingMode
+*/
+JKQTMATHTEXT_LIB_EXPORT QString JKQTMathTextBlackboradDrawingMode2String(JKQTMathTextBlackboradDrawingMode mode);
+/** \brief this converts a QString into a JKQTMathTextBlackboradDrawingMode
+ *  \ingroup jkqtmathtext_tools
+ *  \see JKQTMathTextBlackboradDrawingMode2String(), JKQTMathTextBlackboradDrawingMode
+*/
+JKQTMATHTEXT_LIB_EXPORT JKQTMathTextBlackboradDrawingMode String2JKQTMathTextBlackboradDrawingMode(QString mode);
+
+
 
 /** \brief convert MTfontEncoding to a string
  *  \ingroup jkqtmathtext_tools
@@ -156,8 +227,8 @@ enum JKQTMathTextBraceType {
     MTBTFloorBracket,  /*!< \brief floor brackets \image html jkqtmathtext/jkqtmathtext_brace_floor.png */
     MTBTDoubleLine,  /*!< \brief double-line brackets (norm ||...||) \image html jkqtmathtext/jkqtmathtext_brace_dblline.png */
     MTBTSingleLine,  /*!< \brief single-line brackets (abs |...|) \image html jkqtmathtext/jkqtmathtext_brace_oneline.png */
-    MTBTTopCorner,  /*!< \brief top-corner brackets  \image html jkqtmathtext/jkqtmathtext_brace_topcorner.png */
-    MTBTBottomCorner,  /*!< \brief bottom-corner brackets  \image html jkqtmathtext/jkqtmathtext_brace_bottomcorner.png */
+    MTBTTopCorner,  /*!< \brief top-corner brackets  \image html jkqtmathtext/jkqtmathtext_brace_ucorner.png */
+    MTBTBottomCorner,  /*!< \brief bottom-corner brackets  \image html jkqtmathtext/jkqtmathtext_brace_lcorner.png */
     MTBTNone,  /*!< \brief no bracket */
     MTBTAny,  /*!< \brief any bracket, used by JKQTMathText::parseLatexString() */
     MTBTUnknown  /*!< \brief an unknown tokenName presented to TokenName2JKQTMathTextBraceType() */
@@ -257,7 +328,7 @@ struct JKQTMATHTEXT_LIB_EXPORT JKQTMathTextEnvironment {
     /** \brief is the text currently italic? */
     bool italic;
     /** \brief is the text currently in small caps? */
-    bool smallCaps;
+    QFont::Capitalization capitalization;
     /** \brief is the text currently underlined? */
     bool underlined;
     /** \brief is the text currently overlined? */
@@ -268,25 +339,48 @@ struct JKQTMATHTEXT_LIB_EXPORT JKQTMathTextEnvironment {
     bool insideMath;
     /** \brief if \a insideMath \c ==true and this is \c  true (the default), then digits are forced to be typeset in upright, otherwise they are typeset as defined by the other properties */
     bool insideMathForceDigitsUpright;
-    /** \brief sets  insideMath \c =true and insideMathForceDigitsUpright \c =true */
-    void beginMathMode();
-    /** \brief sets  insideMath \c =false and insideMathForceDigitsUpright \c =true */
+    /** \brief if \c true the commands like \c \\frac{}{} are executes as \c \\tfrac{}{} . This implements \c \\textstyle or if \c false \c \\displaystyle
+     *
+     *  \image html jkqtmathtext/jkqtmathtext_mathstyle.png
+     */
+    bool insideMathUseTextStyle;
+    /** \brief sets  insideMath \c =true and insideMathForceDigitsUpright \c =true and \c insideMathUseTextStyle=!displaystyle*/
+    void beginMathMode(bool displaystyle=true);
+    /** \brief sets  insideMath \c =false  */
     void endMathMode();
+    /** \brief determines whether to use displaystyle or textstyle for math-instructions like \c \\frace{}{} or \c \\int_x
+     *
+     *  \image html jkqtmathtext/jkqtmathtext_mathstyle.png
+     */
+    bool isMathDisplayStyle() const;
+    /** \brief determines whether to use displaystyle or textstyle for math-instructions like \c \\frace{}{} or \c \\int_x
+     *
+     *  \image html jkqtmathtext/jkqtmathtext_mathstyle.png
+     */
+    bool isMathTextStyle() const;
 
 
     /** \brief build a <a href="https://doc.qt.io/qt-5/qfont.html">QFont</a> object from the settings in this object */
-    QFont getFont(JKQTMathText* parent) const;
+    QFont getFont(const JKQTMathText *parent) const;
+    /** \brief return a copy of this object with the font exchanged for \a font */
+    JKQTMathTextEnvironment exchangedFontFor(JKQTMathTextEnvironmentFont font) const;
+    /** \brief return a copy of this object with the font exchanged for the matching roman font */
+    JKQTMathTextEnvironment exchangedFontForRoman() const;
     /** \brief return the encoding of the given Font */
     JKQTMathTextFontEncoding getFontEncoding(JKQTMathText *parent) const;
     /** \brief generate a HTML prefix that formats the text after it according to the settings in this object
      *
      * \param defaultEv environment before applying the current object (to detect changes)
+     * \param parentMathText the JKQTMathText object currently in use (used to e.g. look up font names)
+     *
      * \see toHtmlAfter()
      */
     QString toHtmlStart(JKQTMathTextEnvironment defaultEv, JKQTMathText *parentMathText) const;
     /** \brief generate a HTML postfix that formats the text in front of it according to the settings in this object
      *
      * \param defaultEv environment before applying the current object (to detect changes)
+     * \param parentMathText the JKQTMathText object currently in use (used to e.g. look up font names)
+     *
      * \see toHtmlAfter()
      */
     QString toHtmlAfter(JKQTMathTextEnvironment defaultEv, JKQTMathText *parentMathText) const;
@@ -305,6 +399,21 @@ struct JKQTMATHTEXT_LIB_EXPORT JKQTMathTextNodeSize {
     double overallHeight;
     /** \brief strikeoutPos of whole block */
     double strikeoutPos;
+    /** \brief x-correction (<0 = move to the left) for subscripts, i.e. approximately at the height of the baseline
+     *
+     *  \image html jkqtmathtext/jkqtmathtext_doc_subsuper_italiccorrection.png
+     *
+     *  \image html jkqtmathtext/jkqtmathtext_doc_subsuper_italiccorrection_boxes.png
+     */
+    double baselineXCorrection;
+    /** \brief x-correction (>0 = move to the right) for superscripts, i.e. approximately at the top  of the box */
+    double topXCorrection;
+    /** \brief calculate the descent */
+    inline double getDescent() const { return overallHeight-baselineHeight; }
+    /** \brief calculate the overall size in floating-point precision */
+    inline QSizeF getSize() const { return QSizeF(width, overallHeight); }
+    /** \brief calculate the overall size in floating-point precision */
+    inline QSize getIntSize() const { return QSize(qCeil(width+1.0), qCeil(overallHeight+1.0)); }
 };
 
 /** \brief summarizes all information available on a font for a specific MTenvironmentFont
@@ -335,7 +444,7 @@ struct JKQTMATHTEXT_LIB_EXPORT JKQTMathTextFontDefinition {
  *  \param lineWidthShrinkFactor the width of the tips is lineWidth reduced by this factor
  *  \param lineWidthGrowFactor the width of the horizontal bars is increased by this factor from lineWidth
  */
-JKQTMATHTEXT_LIB_EXPORT QPainterPath JKQTMathTextMakeHBracePath(double x, double ybrace, double width, double bw, double lineWidth, double cubicshrink=0.5, double cubiccontrolfac=0.3, double lineWidthShrinkFactor=0.3, double lineWidthGrowFactor=0.9);
+JKQTMATHTEXT_LIB_EXPORT QPainterPath JKQTMathTextMakeHBracePath(double x, double ybrace, double width, double bw, double lineWidth, double cubicshrink=0.5, double cubiccontrolfac=0.3, double lineWidthShrinkFactor=0.6, double lineWidthGrowFactor=0.9);
 
 
 /** \brief create a QPainterPath for drawing horizontal arrows
@@ -353,6 +462,14 @@ JKQTMATHTEXT_LIB_EXPORT QPainterPath JKQTMathTextMakeArrow(double x, double y, d
  */
 JKQTMATHTEXT_LIB_EXPORT QPainterPath JKQTMathTextMakeDArrow(double x, double y, double width, double arrowW, bool left=false, bool right=true);
 
+/** \brief draw a given \a txt in the font \a f using additional informaion (but not currentEv::getFont() ) from \a currentEv at (\a x , \a y ) using the given \a painter
+ *
+ *  This function implements drawing of synthesized fonts, e.g. MTEblackboard when JKQTMathText::isFontBlackboardSimulated() is \c true .
+ *
+ *  example output:
+ *    \image html jkqtmathtext/jkqtmathtext_bb_unicode_or_simulate.png
+ */
+JKQTMATHTEXT_LIB_EXPORT void JKQTMathTextDrawStringSimBlackboard(QPainter& painter, const QFont& f, const QColor &color, double x, double y, const QString& txt);
 
 struct JKQTMATHTEXT_LIB_EXPORT JKQTMathTextTBRData {
     explicit JKQTMathTextTBRData(const QFont& f, const QString& text, QPaintDevice *pd);
@@ -421,7 +538,7 @@ JKQTMATHTEXT_LIB_EXPORT JKQTMathTextHorizontalAlignment String2JKQTMathTextHoriz
  *
  *  \image html jkqtmathtext_verticalorientation.png
  *
- *  \see JKQTMathTextVerticalOrientation2String(), String2JKQTMathTextVerticalOrientation(), JKQTMathTextVerticalListNode
+ *  \see JKQTMathTextVerticalOrientation2String(), String2JKQTMathTextVerticalOrientation(), JKQTMathTextVerticalListNode, JKQTMathTextVerbatimNode
  */
 enum JKQTMathTextVerticalOrientation {
     MTVOTop,  /*!< \brief baseline of the whole block is at the top of the first */
@@ -433,13 +550,42 @@ enum JKQTMathTextVerticalOrientation {
 
 /** \brief convert a JKQTMathTextVerticalOrientation into a QString
  *  \ingroup jkqtmathtext_tools
+ *
+ *  \see JKQTMathTextVerticalOrientation2String(), String2JKQTMathTextVerticalOrientation(), JKQTMathTextVerticalListNode, JKQTMathTextVerbatimNode
  */
 JKQTMATHTEXT_LIB_EXPORT QString JKQTMathTextVerticalOrientation2String(JKQTMathTextVerticalOrientation mode);
 
 /** \brief returns the JKQTMathTextVerticalOrientation corresponding to \a instructionName
  *  \ingroup jkqtmathtext_tools
+ *
+ *  \see JKQTMathTextVerticalOrientation2String(), String2JKQTMathTextVerticalOrientation(), JKQTMathTextVerticalListNode, JKQTMathTextVerbatimNode
  */
 JKQTMATHTEXT_LIB_EXPORT JKQTMathTextVerticalOrientation String2JKQTMathTextVerticalOrientation(QString mode);
+
+
+/** \brief defines, how lines are beeing spaced by the node
+ *  \ingroup jkqtmathtext_tool
+ *
+ *  \image html jkqtmathtext_verticallist.png
+ *
+ *  \see JKQTMathTextLineSpacingMode2String(), String2JKQTMathTextLineSpacingMode(), JKQTMathTextVerticalListNode
+ */
+enum JKQTMathTextLineSpacingMode {
+    MTSMDefaultSpacing, /*!< space the lines with equilibrated spacing, i.e. the baselines are at least \c QFontMetricsF::lineSpacing()*JKQTMathTextVerticalListNode::lineSpacingFactor apart, but even more, if the height of the text bloxk is larger than the the font's ascent+descent */
+    MTSMMinimalSpacing /*!< space the lines as tight as possible, i.e. each line is separated by \c QFontMetricsF::leading()*JKQTMathTextVerticalListNode::lineSpacingFactor from the next line. This is a s compact as possible */
+};
+/** \brief convert a SpacingMode to a String
+ *  \ingroup jkqtmathtext_tools
+ *
+ *  \see JKQTMathTextLineSpacingMode2String(), String2JKQTMathTextLineSpacingMode(), JKQTMathTextVerticalListNode
+ */
+JKQTMATHTEXT_LIB_EXPORT QString JKQTMathTextLineSpacingMode2String(JKQTMathTextLineSpacingMode mode);
+/** \brief convert a String to a SpacingMode
+ *  \ingroup jkqtmathtext_tools
+ *
+ *  \see JKQTMathTextLineSpacingMode2String(), String2JKQTMathTextLineSpacingMode(), JKQTMathTextVerticalListNode
+ */
+JKQTMATHTEXT_LIB_EXPORT JKQTMathTextLineSpacingMode String2JKQTMathTextLineSpacingMode(QString mode);
 
 #endif // JKQTMATHTEXTTOOLS_H
 

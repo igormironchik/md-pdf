@@ -25,8 +25,6 @@
 #include <QDebug>
 #include <iostream>
 #include "jkqtplotter/jkqtptools.h"
-#include "jkqtplotter/graphs/jkqtpimage.h"
-#include "jkqtplotter/jkqtpbaseelements.h"
 #include "jkqtplotter/jkqtplotter.h"
 
 #define SmallestGreaterZeroCompare_xvsgz() if ((xvsgz>10.0*DBL_MIN)&&((smallestGreaterZero<10.0*DBL_MIN) || (xvsgz<smallestGreaterZero))) smallestGreaterZero=xvsgz;
@@ -37,10 +35,13 @@
 
 
 JKQTPBarGraphBase::JKQTPBarGraphBase(JKQTBasePlotter* parent):
-    JKQTPXYBaselineGraph(parent), width(0.9), shift(0)
+    JKQTPXYBaselineGraph(parent), width(0.9), shift(0), m_fillMode(FillMode::SingleFilling),rectRadiusAtBaseline(0),rectRadiusAtValue(0)
 {
     initFillStyle(parent, parentPlotStyle, JKQTPPlotStyleType::Barchart);
     initLineStyle(parent, parentPlotStyle, JKQTPPlotStyleType::Barchart);
+    m_fillStyleBelow.initFillStyleInvertedColor(this);
+    rectRadiusAtBaseline= parent->getCurrentPlotterStyle().graphsStyle.barchartStyle.defaultRectRadiusAtBaseline;
+    rectRadiusAtValue= parent->getCurrentPlotterStyle().graphsStyle.barchartStyle.defaultRectRadiusAtValue;
 }
 
 
@@ -112,6 +113,7 @@ void JKQTPBarGraphBase::setColor(QColor c)
     setFillColor(JKQTPGetDerivedColor(parent->getCurrentPlotterStyle().graphsStyle.barchartStyle.fillColorDerivationMode, c));
     c.setAlphaF(0.5);
     setHighlightingLineColor(c);
+    m_fillStyleBelow.initFillStyleInvertedColor(this);
 }
 
 void JKQTPBarGraphBase::setShift(double __value)
@@ -138,6 +140,36 @@ void JKQTPBarGraphBase::setFillColor_and_darkenedColor(QColor fill, int colorDar
 {
     setFillColor(fill);
     setLineColor(fill.darker(colorDarker));
+}
+
+JKQTPGraphFillStyleMixin &JKQTPBarGraphBase::fillStyleBelow()
+{
+    return m_fillStyleBelow;
+}
+
+const JKQTPGraphFillStyleMixin &JKQTPBarGraphBase::fillStyleBelow() const
+{
+    return m_fillStyleBelow;
+}
+
+JKQTPBarGraphBase::FillMode JKQTPBarGraphBase::getFillMode() const
+{
+    return m_fillMode;
+}
+
+double JKQTPBarGraphBase::getRectRadiusAtValue() const
+{
+    return rectRadiusAtValue;
+}
+
+double JKQTPBarGraphBase::getRectRadiusAtBaseline() const
+{
+    return rectRadiusAtBaseline;
+}
+
+void JKQTPBarGraphBase::setFillMode(FillMode mode)
+{
+    m_fillMode=mode;
 }
 
 double JKQTPBarGraphBase::getParentStackedMax(int /*index*/) const
@@ -249,3 +281,25 @@ bool JKQTPBarGraphBase::getPositionsMinMax(double &mmin, double &mmax, double &s
     return false;
 }
 
+
+void JKQTPBarGraphBase::setRectRadiusAtValue(double __value)
+{
+    rectRadiusAtValue=__value;
+}
+
+void JKQTPBarGraphBase::setRectRadiusAtBaseline(double __value)
+{
+    rectRadiusAtBaseline=__value;
+}
+
+void JKQTPBarGraphBase::setRectRadius(double all)
+{
+    setRectRadiusAtValue(all);
+    setRectRadiusAtBaseline(all);
+}
+
+void JKQTPBarGraphBase::setRectRadius(double atValue, double atBaseline)
+{
+    setRectRadiusAtValue(atValue);
+    setRectRadiusAtBaseline(atBaseline);
+}

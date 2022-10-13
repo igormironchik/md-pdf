@@ -72,6 +72,7 @@ void JKQTPXYFunctionLineGraphBase::drawKeyMarker(JKQTPEnhancedPainter& painter, 
     QPen p=getLinePen(painter, parent);
     p.setJoinStyle(Qt::RoundJoin);
     p.setCapStyle(Qt::RoundCap);
+    p.setWidthF(getKeyLineWidthPx(painter, rect, parent));
     QPen np(Qt::NoPen);
     const double y=rect.top()+rect.height()/2.0;
     painter.setPen(np);
@@ -107,7 +108,7 @@ void JKQTPXYFunctionLineGraphBase::draw(JKQTPEnhancedPainter& painter) {
         {
             painter.save(); auto __finalpaintline=JKQTPFinally([&painter]() {painter.restore();});
             painter.setPen(p);
-            painter.drawPolyline(data);
+            painter.drawPolylineFast(data);
         }
 
 

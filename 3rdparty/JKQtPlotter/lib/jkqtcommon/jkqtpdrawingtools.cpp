@@ -91,6 +91,24 @@ QString JKQTPGraphSymbols2String(JKQTPGraphSymbols pos) {
         case JKQTPMale: return "symbol_male";
         case JKQTPCirclePeace: return "symbol_circle_peace";
         case JKQTPSymbolCount: JKQTPGraphSymbols2String(JKQTPMaxSymbolID);
+        case JKQTPCharacterSymbol:
+        case JKQTPFilledCharacterSymbol:
+        case JKQTPFirstCustomSymbol:
+            break;
+    }
+    if (pos>=JKQTPCharacterSymbol && pos<=JKQTPCharacterSymbol+0xFFFF) {
+        QString s=QString::number(pos-JKQTPCharacterSymbol,16);
+        while (s.size()<4) s="0"+s;
+        return "symbol_char"+s;
+    }
+    if (pos>=JKQTPFilledCharacterSymbol && pos<=JKQTPFilledCharacterSymbol+0xFFFF) {
+        QString s=QString::number(pos-JKQTPFilledCharacterSymbol,16);
+        while (s.size()<4) s="0"+s;
+        return "symbol_filled_char"+s;
+    }
+    if (pos>=JKQTPFirstCustomSymbol) {
+        QString s=QString::number(pos-JKQTPFirstCustomSymbol);
+        return "symbol_custom"+s;
     }
     return "";
 }
@@ -162,11 +180,25 @@ QString JKQTPGraphSymbols2NameString(JKQTPGraphSymbols pos) {
         case JKQTPMale: return QObject::tr("male");
         case JKQTPCirclePeace: return QObject::tr("circled peace");
         case JKQTPSymbolCount: JKQTPGraphSymbols2NameString(JKQTPMaxSymbolID);
+        case JKQTPCharacterSymbol:
+        case JKQTPFilledCharacterSymbol:
+        case JKQTPFirstCustomSymbol:
+            break;
+    }
+    if (pos>=JKQTPCharacterSymbol && pos<=JKQTPCharacterSymbol+0xFFFF) {
+        return QObject::tr("character")+" '"+QChar(static_cast<uint16_t>(pos-JKQTPCharacterSymbol))+"'";
+    }
+    if (pos>=JKQTPFilledCharacterSymbol && pos<=JKQTPFilledCharacterSymbol+0xFFFF) {
+        return QObject::tr("filled character")+" '"+QChar(static_cast<uint16_t>(pos-JKQTPFilledCharacterSymbol))+"'";
+    }
+    if (pos>=JKQTPFirstCustomSymbol) {
+        return QObject::tr("custom symbol %1").arg(static_cast<uint64_t>(pos-JKQTPFirstCustomSymbol));
     }
     return "";
 }
 JKQTPGraphSymbols String2JKQTPGraphSymbols(const QString& pos)  {
-    QString s=pos.trimmed().toLower();
+    const QString posT=pos.trimmed();
+    const QString s=posT.toLower();
     if (s=="symbol_dot"||s=="dot"||s==".") return JKQTPDot;
     if (s=="symbol_cross"||s=="cross"||s=="x") return JKQTPCross;
     if (s=="symbol_plus"||s=="plus"||s=="+") return JKQTPPlus;
@@ -230,7 +262,35 @@ JKQTPGraphSymbols String2JKQTPGraphSymbols(const QString& pos)  {
     if (s=="symbol_circle_peace" || s=="circle_peace") return JKQTPCirclePeace;
     if (s=="symbol_female" || s=="female") return JKQTPFemale;
     if (s=="symbol_male" || s=="male") return JKQTPMale;
-
+    if (posT.startsWith("symbol_charsym") && posT.size()>14) {
+        //qDebug()<<posT<<" --> "<<posT[14]<<" "<<posT[14].unicode();
+        return JKQTPCharacterSymbol+posT[14].unicode();
+    }
+    if (posT.startsWith("charsym") && posT.size()>7) {
+        //qDebug()<<posT<<" --> "<<posT[7]<<" "<<posT[7].unicode();
+        return JKQTPCharacterSymbol+posT[7].unicode();
+    }
+    if (posT.startsWith("char")) {
+        return JKQTPCharacterSymbol+posT.mid(4).toUInt(nullptr,16);
+    }
+    if (posT.startsWith("symbol_char")) {
+        return JKQTPCharacterSymbol+posT.mid(11).toUInt(nullptr,16);
+    }
+    if (posT.startsWith("symbol_fillcharsym") && posT.size()>18) {
+        return JKQTPFilledCharacterSymbol+posT[18].unicode();
+    }
+    if (posT.startsWith("fillcharsym") && posT.size()>11) {
+        return JKQTPFilledCharacterSymbol+posT[11].unicode();
+    }
+    if (posT.startsWith("filled_char")) {
+        return JKQTPFilledCharacterSymbol+posT.mid(11).toUInt(nullptr,16);
+    }
+    if (posT.startsWith("symbol_filled_char")) {
+        return JKQTPFilledCharacterSymbol+posT.mid(18).toUInt(nullptr,16);
+    }
+    if (posT.startsWith("symbol_custom")) {
+        return JKQTPFirstCustomSymbol+posT.mid(13).toUInt();
+    }
     return JKQTPNoSymbol;
 }
 
@@ -238,9 +298,9 @@ JKQTPGraphSymbols String2JKQTPGraphSymbols(const QString& pos)  {
 
 
 
-void JKQTPPlotSymbol(QPaintDevice &paintDevice, double x, double y, JKQTPGraphSymbols symbol, double size, double symbolLineWidth, QColor color, QColor fillColor) {
+void JKQTPPlotSymbol(QPaintDevice &paintDevice, double x, double y, JKQTPGraphSymbols symbol, double size, double symbolLineWidth, QColor color, QColor fillColor, const  QFont& symbolFont) {
     JKQTPEnhancedPainter p(&paintDevice);
-    JKQTPPlotSymbol(p, x, y, symbol, size, symbolLineWidth, color, fillColor);
+    JKQTPPlotSymbol(p, x, y, symbol, size, symbolLineWidth, color, fillColor, symbolFont);
 }
 
 QString JKQTPLineDecoratorStyle2String(JKQTPLineDecoratorStyle pos)
@@ -347,3 +407,161 @@ double JKQTPLineDecoratorStyleCalcDecoratorSize(double line_width, double decora
     return decoratorSizeFactor*pow(line_width, 0.7);
 }
 
+
+QPolygonF JKQTPSimplifyPolyLines(const QPolygonF &lines_in, double maxDeltaXY)
+{
+    if (lines_in.size()<=1) return QPolygonF();
+    if (lines_in.size()<=10) return lines_in;
+    QPolygonF l;
+    l.reserve(lines_in.size());
+
+    int groupStart=0;
+    int groupCount=0;
+    QRectF groupSize(lines_in[0], QSizeF(0,0));
+
+    auto writeGroup=[](QPolygonF& l, const int& groupStart, const int& groupCount, const QRectF& groupSize, const QPolygonF& lines_in, double maxDeltaXY) {
+        // group ends
+        if (groupCount>4) {
+            // we can optimize the group away
+            // we take the first and the last point and in between one at the top and one at the bottom of the group
+            // unless we have a group that is smaller than maxDeltaXY in both directions, the the first and last point suffice
+            const QPointF& x0=lines_in[groupStart];
+            l<<x0; // first point
+            if (groupSize.width()<=maxDeltaXY && groupSize.height()>maxDeltaXY) {
+                // x-group, i.e. small on x-axis
+                l<<QPointF(x0.x()+groupSize.width()/3.0, groupSize.bottom());
+                l<<QPointF(x0.x()+groupSize.width()*2.0/3.0, groupSize.top());
+            } else  if (groupSize.width()>maxDeltaXY && groupSize.height()<=maxDeltaXY) {
+                // y-group, i.e. small on y-axis
+                l<<QPointF(groupSize.left(), x0.y()+groupSize.height()/3.0);
+                l<<QPointF(groupSize.right(), x0.y()+groupSize.height()*2.0/3.0);
+            }
+            l<<lines_in[groupStart+groupCount-1]; // last point
+        } else {
+            // small groups cannot be optimized away
+            // so we simply copy it to the output
+            for (int j=groupStart; j<groupStart+groupCount; j++) l<<lines_in[j];
+        }
+
+    };
+
+    for (int i=0; i<lines_in.size(); i++) {
+        const QPointF& x=lines_in[i];
+        QRectF newGroupSize=groupSize;
+        newGroupSize.setLeft(qMin(newGroupSize.left(), x.x()));
+        newGroupSize.setRight(qMax(newGroupSize.right(), x.x()));
+        newGroupSize.setTop(qMin(newGroupSize.top(), x.y()));
+        newGroupSize.setBottom(qMax(newGroupSize.bottom(), x.y()));
+
+        if (newGroupSize.width()<=maxDeltaXY || newGroupSize.height()<=maxDeltaXY) {
+            // points still in group, so extend the group
+            groupCount++;
+            groupSize=newGroupSize;
+        } else {
+            // group ends, because adding a new point would increase it's size too much
+            writeGroup(l, groupStart, groupCount, groupSize, lines_in, maxDeltaXY);
+            // start new group with current point
+            groupStart=i;
+            groupCount=1;
+            groupSize=QRectF(x, QSizeF(0,0));
+        }
+    }
+    writeGroup(l, groupStart, groupCount, groupSize, lines_in, maxDeltaXY);
+    //qDebug()<<"JKQTPSimplifyPolyLines("<<lines_in.size()<<", maxDeltaXY="<<maxDeltaXY<<") -> "<<l.size();
+    return l;
+}
+
+QList<QPolygonF > JKQTPClipPolyLine(const QPolygonF &polyline_in, const QRectF &clipRect)
+{
+    QList<QPolygonF> l;
+    l<<polyline_in;
+    return JKQTPClipPolyLines(l, clipRect);
+}
+
+QList<QPolygonF > JKQTPClipPolyLines(const QList<QPolygonF > &polylines_in, const QRectF &clipRect)
+{
+    const double xmin=qMin(clipRect.left(), clipRect.right());
+    const double xmax=qMax(clipRect.left(), clipRect.right());
+    const double ymin=qMin(clipRect.top(), clipRect.bottom());
+    const double ymax=qMax(clipRect.top(), clipRect.bottom());
+    QList<QPolygonF> out;
+    for (const QPolygonF& pl: polylines_in) {
+        if (pl.size()>1) {
+            if (out.size()==0 || out.last().size()>0) {
+                out<<QPolygonF();
+            }
+            for (int i=1; i<pl.size(); i++) {
+                const QLineF l(pl[i-1], pl[i]);
+                const QLineF lclipped=JKQTPClipLine(l, xmin, xmax, ymin, ymax);
+                //qDebug()<<"  "<<l<<"  -->  "<<lclipped<<"  clip: x="<<xmin<<".."<<xmax<<", y="<<ymin<<".."<<ymax;
+                // 0-length: line remove ==> dont's add anything, start new segment if necessary
+                // l=lclipped: no point was clipped: add second point, or if list empty both points (first line segment)
+                // only p1 clipped, i.e. second point clipped: add second point, end segmnt (i.e. start a new one)
+                // only p2 clipped, i.e. first point clipped: start new segment, add first point to it
+                // p1 and p2 clipped, i.e. segment clipped on both ends: add clipped line as separate segment
+                if (lclipped.length()==0) {
+                    if (out.last().size()>0) {
+                        out<<QPolygonF();
+                    }
+                } else if (l==lclipped) {
+                    if (out.last().size()==0) {
+                        out.last()<<lclipped.p1();
+                    } else if (out.last().last()!=lclipped.p1()) {
+                        out<<QPolygonF();
+                        out.last()<<lclipped.p1();
+                    }
+                    out.last()<<lclipped.p2();
+                } else if (l.p1()==lclipped.p1() && l.p2()!=lclipped.p2()) {
+                    if (out.last().size()==0) {
+                        out.last()<<lclipped.p1();
+                    } else if (out.last().last()!=lclipped.p1()) {
+                        out<<QPolygonF();
+                        out.last()<<lclipped.p1();
+                    }
+                    out.last()<<lclipped.p2();
+                    out<<QPolygonF();
+                } else if (l.p1()!=lclipped.p1() && l.p2()==lclipped.p2()) {
+                    if (out.last().size()==0) {
+                        out.last()<<lclipped.p1();
+                    } else if (out.last().last()!=lclipped.p1()) {
+                        out<<QPolygonF();
+                        out.last()<<lclipped.p1();
+                    }
+                    out.last()<<lclipped.p2();
+                } else if (l.p1()!=lclipped.p1() && l.p2()!=lclipped.p2()) {
+                    if (out.last().size()>0) {
+                        out<<QPolygonF();
+                    }
+                    out.last()<<lclipped.p1();
+                    out.last()<<lclipped.p2();
+                    out<<QPolygonF();
+                }
+            }
+        }
+    }
+    return out;
+}
+
+QList<QPolygonF> JKQTPSimplifyPolyLines(const QList<QPolygonF> &lines_in, double maxDeltaXY)
+{
+    QList<QPolygonF> l;
+    for (const QPolygonF& p: lines_in) {
+        l<<JKQTPSimplifyPolyLines(p, maxDeltaXY);
+    }
+    return l;
+}
+
+
+QVector<JKQTPCustomGraphSymbolFunctor> JKQTPlotterDrawingTools::JKQTPCustomGraphSymbolStore=QVector<JKQTPCustomGraphSymbolFunctor>();
+
+JKQTPGraphSymbols JKQTPRegisterCustomGraphSymbol(JKQTPCustomGraphSymbolFunctor&& f)
+{
+    JKQTPlotterDrawingTools::JKQTPCustomGraphSymbolStore.push_back(std::move(f));
+    return static_cast<JKQTPGraphSymbols>(static_cast<uint64_t>(JKQTPFirstCustomSymbol)+static_cast<uint64_t>(JKQTPlotterDrawingTools::JKQTPCustomGraphSymbolStore.size()-1));
+}
+
+JKQTPGraphSymbols JKQTPRegisterCustomGraphSymbol(const JKQTPCustomGraphSymbolFunctor& f)
+{
+    JKQTPlotterDrawingTools::JKQTPCustomGraphSymbolStore.push_back(f);
+    return static_cast<JKQTPGraphSymbols>(static_cast<uint64_t>(JKQTPFirstCustomSymbol)+static_cast<uint64_t>(JKQTPlotterDrawingTools::JKQTPCustomGraphSymbolStore.size()-1));
+}

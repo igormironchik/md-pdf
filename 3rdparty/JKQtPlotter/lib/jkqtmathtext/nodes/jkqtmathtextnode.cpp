@@ -50,33 +50,26 @@ JKQTMathTextNode::JKQTMathTextNode(JKQTMathText *_parent):
 JKQTMathTextNode::~JKQTMathTextNode()
 = default;
 
-void JKQTMathTextNode::getSize(QPainter &painter, JKQTMathTextEnvironment currentEv, double &width, double &baselineHeight, double &overallHeight, double &strikeoutPos, const JKQTMathTextNodeSize* prevNodeSize)
+JKQTMathTextNodeSize JKQTMathTextNode::getSize(QPainter &painter, JKQTMathTextEnvironment currentEv) const
 {
-    double w=width, b=baselineHeight, o=overallHeight, s=strikeoutPos;
-    getSizeInternal(painter, currentEv, w, b, o, s, prevNodeSize);
-
-    if (w<1e5) width=w;
-    if (b<1e5) baselineHeight=b;
-    if (o<1e5) overallHeight=o;
-    if (s<1e5) strikeoutPos=s;
+    return getSizeInternal(painter, currentEv);
 }
 
 
-double JKQTMathTextNode::getNonItalicXCorretion(QPainter &painter, double width_potentiallyitalic, const JKQTMathTextEnvironment &ev_potentiallyitalic, JKQTMathTextNode* child) const
+double JKQTMathTextNode::getNonItalicXCorretion(QPainter &painter, double width_potentiallyitalic, const JKQTMathTextEnvironment &ev_potentiallyitalic, const JKQTMathTextNode* child)
 {
     double italic_xcorrection=0.0;
     if (ev_potentiallyitalic.italic) {
         JKQTMathTextEnvironment ev_nonitalic=ev_potentiallyitalic;
         ev_nonitalic.italic=false;
-        double width_nonitalic=0, baselineHeight_nonitalic=0, overallHeight_nonitalic=0, strikeoutPos_nonitalic=0;
-        child->getSize(painter, ev_nonitalic, width_nonitalic, baselineHeight_nonitalic, overallHeight_nonitalic, strikeoutPos_nonitalic);
-        italic_xcorrection=width_potentiallyitalic-width_nonitalic;
+        JKQTMathTextNodeSize s_nonitalic=child->getSize(painter, ev_nonitalic);
+        italic_xcorrection=width_potentiallyitalic-s_nonitalic.width;
     }
     return italic_xcorrection;
 }
 
 
-bool JKQTMathTextNode::toHtml(QString &/*html*/, JKQTMathTextEnvironment /*currentEv*/, JKQTMathTextEnvironment /*defaultEv*/) {
+bool JKQTMathTextNode::toHtml(QString &/*html*/, JKQTMathTextEnvironment /*currentEv*/, JKQTMathTextEnvironment /*defaultEv*/) const {
     return false;
 }
 
@@ -85,24 +78,23 @@ bool JKQTMathTextNode::getDrawBoxes() const {
 }
 
 
-void JKQTMathTextNode::doDrawBoxes(QPainter& painter, double x, double y, JKQTMathTextEnvironment currentEv) {
+void JKQTMathTextNode::doDrawBoxes(QPainter &painter, double x, double y, const JKQTMathTextNodeSize &size) const
+{
     if (drawBoxes) {
         painter.save(); auto __finalpaint=JKQTPFinally([&painter]() {painter.restore();});
-        double w, oh, bh, sp;
-        getSize(painter, currentEv, w, bh, oh, sp);
         QPen p=painter.pen();
         p.setColor("lightcoral");
         p.setWidthF(0.5);
         painter.setPen(p);
-        QRectF r(x, y-bh, w, oh);
+        QRectF r(x, y-size.baselineHeight, size.width, size.overallHeight );
         painter.drawRect(r);
         p.setColor("lightblue");
         painter.setPen(p);
-        if (w>0) painter.drawLine(QLineF(x, y, x+w, y));
+        if (size.width>0) painter.drawLine(QLineF(x, y, x+size.width, y));
         p.setColor("pink");
         p.setStyle(Qt::DashLine);
         painter.setPen(p);
-        if (w>0) painter.drawLine(QLineF(x, y-sp, x+w, y-sp));
+        if (size.width>0) painter.drawLine(QLineF(x, y-size.strikeoutPos, x+size.width, y-size.strikeoutPos));
         p.setColor("green");
         p.setStyle(Qt::SolidLine);
         painter.setPen(p);
@@ -113,6 +105,18 @@ void JKQTMathTextNode::doDrawBoxes(QPainter& painter, double x, double y, JKQTMa
         painter.drawLine(QLineF(x, y-2, x, y+2.0));
 
     }
+
+}
+
+void JKQTMathTextNode::doDrawBoxes(QPainter& painter, double x, double y, JKQTMathTextEnvironment currentEv) const {
+    if (drawBoxes) {
+        doDrawBoxes(painter, x, y, getSize(painter, currentEv));
+    }
+}
+
+void JKQTMathTextNode::addToErrorList(const QString &error)
+{
+    parentMathText->addToErrorList(error);
 }
 
 void JKQTMathTextNode::setDrawBoxes(bool draw)
@@ -150,6 +154,7 @@ void JKQTMathTextNode::setSubSuperscriptAboveBelowNode(bool __value)
 {
     subSuperscriptAboveBelowNode=__value;
 }
+
 
 JKQTMathTextSingleChildNode::JKQTMathTextSingleChildNode(JKQTMathTextNode *_child, JKQTMathText *parentMathText):
     JKQTMathTextNode(parentMathText),
@@ -285,6 +290,18 @@ void JKQTMathTextDualChildNode::clearChildren(bool deleteChildren)
     if (deleteChildren&&c2) delete c2;
 }
 
+void JKQTMathTextDualChildNode::deleteChild(int i)
+{
+    if (child1&&i==0) {
+        delete child1;
+        child1=nullptr;
+    }
+    if (child2&&i==1) {
+        delete child2;
+        child2=nullptr;
+    }
+}
+
 JKQTMathTextMultiChildNode::JKQTMathTextMultiChildNode(JKQTMathText *parentMathText):
     JKQTMathTextNode(parentMathText)
 {
@@ -360,4 +377,37 @@ void JKQTMathTextMultiChildNode::setDrawBoxes(bool draw)
         if (c) c->setDrawBoxes(draw);
     }
 
+}
+
+
+
+
+
+
+
+
+JKQTMathTextNonDrawingBaseNode::JKQTMathTextNonDrawingBaseNode(JKQTMathText *parent):
+    JKQTMathTextNode(parent)
+{
+
+}
+
+JKQTMathTextNonDrawingBaseNode::~JKQTMathTextNonDrawingBaseNode()
+{
+
+}
+
+double JKQTMathTextNonDrawingBaseNode::draw(QPainter &/*painter*/, double x, double /*y*/, JKQTMathTextEnvironment /*currentEv*/) const
+{
+    return x;
+}
+
+bool JKQTMathTextNonDrawingBaseNode::toHtml(QString &/*html*/, JKQTMathTextEnvironment /*currentEv*/, JKQTMathTextEnvironment /*defaultEv*/) const
+{
+    return true;
+}
+
+JKQTMathTextNodeSize JKQTMathTextNonDrawingBaseNode::getSizeInternal(QPainter &/*painter*/, JKQTMathTextEnvironment /*currentEv*/) const
+{
+    return JKQTMathTextNodeSize();
 }

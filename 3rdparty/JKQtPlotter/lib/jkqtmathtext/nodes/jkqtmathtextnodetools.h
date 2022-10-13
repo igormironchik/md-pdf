@@ -37,6 +37,51 @@ class JKQTMathTextNode; // forward
  */
 JKQTMATHTEXT_LIB_EXPORT JKQTMathTextNode* simplifyJKQTMathTextNode(JKQTMathTextNode* node);
 
+/** \brief calls simplifyJKQTMathTextNode(). In addition it tries to clear whitespace at the start and end of the tree
+ *  \ingroup jkqtmathtext_items
+ *
+ *  \see simplifyJKQTMathTextNode()
+ */
+JKQTMATHTEXT_LIB_EXPORT JKQTMathTextNode* simplifyAndTrimJKQTMathTextNode(JKQTMathTextNode* node);
+
+/*! \brief converts a node-tree with the given \a root into a string, representing the node-tree
+   \ingroup jkqtmathtext_items
+
+   \see This method uses JKQTMathText::getTypeName()
+
+   Here is an example output for
+   \code
+     $x_{1/2}=\frac{-b\pm\sqrt{b^2-4ac}}{2a}$
+   \endcode
+
+   The output looks like this:
+   \verbatim
+JKQTMathTextModifiedTextPropsInstructionNode(equation)
++--MTHorizontalListNode
+|  +--JKQTMathTextTextNode(x)
+|  +--MTsubscriptNode
+|  |  +--MTHorizontalListNode
+|  |  |  +--JKQTMathTextTextNode(1)
+|  |  |  +--JKQTMathTextTextNode(/)
+|  |  |  +--JKQTMathTextTextNode(2)
+|  +--JKQTMathTextSymbolNode(=)
+|  +--MTfracNode
+|  |  +--MTHorizontalListNode
+|  |  |  +--JKQTMathTextSymbolNode(-)
+|  |  |  +--JKQTMathTextTextNode(b)
+|  |  |  +--JKQTMathTextSymbolNode(pm)
+|  |  |  +--MTsqrtNode
+|  |  |  |  +--MTHorizontalListNode
+|  |  |  |  |  +--JKQTMathTextTextNode(b)
+|  |  |  |  |  +--MTsuperscriptNode
+|  |  |  |  |  |  +--JKQTMathTextTextNode(2)
+|  |  |  |  |  +--JKQTMathTextSymbolNode(-)
+|  |  |  |  |  +--JKQTMathTextTextNode(4ac)
+|  |  +--JKQTMathTextTextNode(2a)
+   \endverbatim
+ */
+JKQTMATHTEXT_LIB_EXPORT QString JKQTMathTextNodeTree2String(JKQTMathTextNode* root);
+
 #endif // JKQTMATHTEXTNODETOOLS_H
 
 

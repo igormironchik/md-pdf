@@ -62,34 +62,45 @@ class JKQTMATHTEXT_LIB_EXPORT JKQTMathTextSymbolNode: public JKQTMathTextNode {
         /** \copydoc JKQTMathTextNode::getTypeName() */
         virtual QString getTypeName() const override;
         /** \copydoc JKQTMathTextNode::draw() */
-        virtual double draw(QPainter& painter, double x, double y, JKQTMathTextEnvironment currentEv, const JKQTMathTextNodeSize* prevNodeSize=nullptr) override;
+        virtual double draw(QPainter& painter, double x, double y, JKQTMathTextEnvironment currentEv) const override;
         /** \copydoc JKQTMathTextNode::toHtml() */
-        virtual bool toHtml(QString& html, JKQTMathTextEnvironment currentEv, JKQTMathTextEnvironment defaultEv) override;
+        virtual bool toHtml(QString& html, JKQTMathTextEnvironment currentEv, JKQTMathTextEnvironment defaultEv) const override;
+
         /** \copydoc symbolName */ 
         QString getSymbolName() const;
+        /** \brief return type for getSymbolSize(), extends JKQTMathTextNodeSize with information about x-correction for sub- and superscript */
+        struct NodeSize : JKQTMathTextNodeSize {
+            NodeSize();
+            /** \brief x-correction as described for JKQTMathParser::intsubsuper_xcorrection_factor for placing sub-/superscript below/above the symbol, e.g. for integral signs, where the subscript is slightly shifted to the left (from center) and the superscript slightly to the right */
+            double subSuperAboveBelowXCorrection;
+
+            NodeSize& operator=(const JKQTMathTextNodeSize& other);
+            NodeSize& operator=(const NodeSize& other);
+            NodeSize(const JKQTMathTextNodeSize& other);
+            NodeSize(const NodeSize& other);
+        };
+
         /** \brief determine the size of the node, calls getSizeInternal() implementation of the actual type \see getSizeInternal()
          *
          * \param painter painter to use for determining the size
          * \param currentEv current environment object
-         * \param[out] width width of the block/node
-         * \param[out] baselineHeight distance from the bottom of the block/node-box to the baseline
-         * \param[out] overallHeight overall height (bottom to top) of the node, the ascent is \c overallHeight-baselineHeight
-         * \param[out] strikeoutPos position of the strikeout-line
-         * \param[out] subSuperXCorrection x-correction as described for JKQTMathParser::intsubsuper_xcorrection_factor for placing sub-/superscript below/above the symbol
-         * \param[out] subBesidesXCorrection x-correction as described for JKQTMathParser::intsubbesides_xcorrection_xfactor for placing sub-/superscript below/above the symbol
-         * \param[in] prevNodeSize optional parameter, describing the size of the previous node (on the left). This may be used for layout of some nodes (e.g. sub/super to move correctly next to large parantheses ...)
          *
+         * \return all important size properties, packed into a NodeSize struct
          */
-        void getSymbolSize(QPainter& painter, JKQTMathTextEnvironment currentEv, double& width, double& baselineHeight, double& overallHeight, double& strikeoutPos, double& subSuperXCorrection, double& subBesidesXCorrection, const JKQTMathTextNodeSize* prevNodeSize=nullptr);
+        NodeSize getSymbolSize(QPainter& painter, JKQTMathTextEnvironment currentEv) const;
         /** \brief checks whether the given symbol name can be prepresented by this type of node */
         static bool hasSymbol(const QString& symbolName);
-        /** \brief checks whether the given symbol name can be prepresented by this type of node */
+        /** \brief return a list of all defined symbols */
+        static QStringList getSymbols();
+        /** \brief checks whether the given symbol name codes for an instruction that has SymbolFullProps::SubSuperscriptBelowAboveSymbol , does not neccessarily return the same value as JKQTMathTextNode::isSubSuperscriptAboveBelowNode() */
         static bool isSubSuperscriptBelowAboveSymbol(const QString& symbolName);
+        /** \brief checks whether the given symbol has global flags SymbolFullProps::ExtendWidthInMathmode or SymbolFullProps::SmallExtendWidthInMathmode defined */
+        static bool isExtendedWidthSymbol(const QString& symbolName);
+        /** \brief returns the length of the symbol string for the given symbol */
+        static int getSymbolLength(const QString& symbolName);
     protected:
         /** \copydoc JKQTMathTextNode::getSizeInternal() */
-        virtual void getSizeInternal(QPainter& painter, JKQTMathTextEnvironment currentEv, double& width, double& baselineHeight, double& overallHeight, double& strikeoutPos, const JKQTMathTextNodeSize* prevNodeSize=nullptr) override;
-        /** \copydoc JKQTMathTextSymbolNode::getSymbolSize() */
-        virtual void getSymbolSizeInternal(QPainter& painter, JKQTMathTextEnvironment currentEv, double& width, double& baselineHeight, double& overallHeight, double& strikeoutPos, double& subSuperXCorrection, double& subBesidesXCorrection, const JKQTMathTextNodeSize* prevNodeSize=nullptr) ;
+        virtual JKQTMathTextNodeSize getSizeInternal(QPainter& painter, JKQTMathTextEnvironment currentEv) const override;
 
 
         /** \brief this string will be sent to the drawText method with properly set fonts */
@@ -132,6 +143,7 @@ class JKQTMATHTEXT_LIB_EXPORT JKQTMathTextSymbolNode: public JKQTMathTextNode {
             MakeWhitespaceHalf= 1 << 2,    /*!< \brief symbol uses whitespaces in its text (SymbolProps::symbol). These should be typeset as half-spaces */
             IntLikeSymbolCorrection= 1 << 3, /*!< \brief symbols, like \c \\int,\\iint,... require a correction in x-direction for subsequent sub-/superscripts ... this flag marks such symbols */
             SubSuperscriptBelowAboveSymbol= 1 << 4, /*!< \brief symbols, like \c \\int,\\iint,... if appearing in math-mode cause typesetting following sub-/superscripts below/above the symbol, not besides it. */
+            SubscriptCorrection= 1 << 5, /*!< \brief symbols, like \c \\nabla,... require a subscript correction in x-direction for subsequent subscripts ... this flag marks such symbols */
         };
 
         friend inline GlobalSymbolFlags operator~ (GlobalSymbolFlags a) { return (GlobalSymbolFlags)~static_cast<uint64_t>(a); }
@@ -255,10 +267,12 @@ class JKQTMATHTEXT_LIB_EXPORT JKQTMathTextSymbolNode: public JKQTMathTextNode {
         static SymbolFullProps MathOperatorText(const QString& op);
         /** \brief constructs a SymbolProps with explicit HTML for a math-operator like \c \\sin ..., i.e. ItalicOff, BoldOff, HeightIsAscent, ExtendWidthInMathmode */
         static SymbolFullProps MathOperatorText(const QString& op, const QString& ophtml);
-        /** \brief constructs a SymbolProps for a greek letter with the symbol in unicode-encoding \a letterUnicode and in WinSymbol-encoding letterWinWsymbol */
-        static SymbolFullProps GreekLetter_WinSymbol_Unicode_Html(const QString& letterWinSymbol, const QString& letterUnicode, const QString& html);
+        /** \brief constructs a SymbolProps for an italic greek letter with the symbol in unicode-encoding \a letterUnicode and in WinSymbol-encoding letterWinWsymbol */
+        static SymbolFullProps MathGreekLetter_WinSymbol_Unicode_Html(const QString& letterWinSymbol, const QString& letterUnicode, const QString& html);
         /** \brief constructs a SymbolProps for an upright greek letter with the symbol in unicode-encoding \a letterUnicode and in WinSymbol-encoding letterWinWsymbol */
         static SymbolFullProps UprightGreekLetter_WinSymbol_Unicode_Html(const QString& letterWinSymbol, const QString& letterUnicode, const QString& html);
+        /** \brief constructs a SymbolProps for a greek letter with the format from outside with the symbol in unicode-encoding \a letterUnicode and in WinSymbol-encoding letterWinWsymbol */
+        static SymbolFullProps AsOutsiudeGreekLetter_WinSymbol_Unicode_Html(const QString& letterWinSymbol, const QString& letterUnicode, const QString& html);
         /** \brief insert GreekLetter_WinSymbol_Unicode_Html() as \a baseInstructionName and UprightGreekLetter_WinSymbol_Unicode_Html and "up"+\a letterWinSymbol into symbols */
         static void addGreekLetterVariants_WinSymbol_Unicode_Html(const QString& baseInstructionName, const QString& letterWinSymbol, const QString& letterUnicode, const QString& html);
         /** \brief constructs a SymbolProps for a symbol with encoding in Standard-fonts a */
@@ -270,9 +284,13 @@ class JKQTMATHTEXT_LIB_EXPORT JKQTMathTextSymbolNode: public JKQTMathTextNode {
         /** \brief constructs a SymbolProps for a symbol with encoding in UnicodeFull-fonts a */
         static SymbolFullProps UnicodeSymbol(const QString& symbol, SymbolFlags _flags=AsOutside, double _fontScalingFactor=1.0, double _yShiftFactor=0.0);
         /** \brief constructs a SymbolProps for a symbol with encoding in Standard-fonts a */
-        static SymbolFullProps UprightSymbolStd(const QString& symbol, const QString& html=QString());
+        static SymbolFullProps UprightSymbolStd(const QString& symbol);
         /** \brief constructs a SymbolProps for a symbol with encoding in UnicodeFull-fonts a */
-        static SymbolFullProps UprightSymbolUnicode(const QString& symbol, const QString& html=QString());
+        static SymbolFullProps UprightSymbolUnicode(const QString& symbol);
+        /** \brief constructs a SymbolProps for a symbol with encoding in Standard-fonts a */
+        static SymbolFullProps UprightSymbolStd(const QString& symbol, const QString& html);
+        /** \brief constructs a SymbolProps for a symbol with encoding in UnicodeFull-fonts a */
+        static SymbolFullProps UprightSymbolUnicode(const QString& symbol, const QString& html);
         /** \brief constructs a SymbolProps for a math-operator symbol like \c \\pm ... in unicode-full-encoding, i.e. ItalicOff, BoldOff, ExtendWidthInMathmode */
         static SymbolFullProps MathOperatorSymbolUnicode(const QString& unicode);
         /** \brief constructs a SymbolProps for a narrow math-operator symbol like \c \\pm ... in unicode-full-encoding, i.e. ItalicOff, BoldOff, SmallExtendWidthInMathmode */
@@ -281,6 +299,10 @@ class JKQTMATHTEXT_LIB_EXPORT JKQTMathTextSymbolNode: public JKQTMathTextNode {
         static SymbolFullProps NarrowMathOperatorSymbolStd(const QString& symbol);
         /** \brief constructs a SymbolProps for a narrow math-operator symbol like \c \\pm ... in unicode-full-encoding, i.e. ItalicOff, BoldOff, SmallExtendWidthInMathmode */
         static SymbolFullProps NarrowMathOperatorSymbolStd(const QString& symbol, const QString& symbolHTML);
+        /** \brief constructs a SymbolProps for a narrow math-operator like \c \\sin ..., i.e. ItalicOff, BoldOff, HeightIsAscent, ExtendWidthInMathmode */
+        static SymbolFullProps NarrowMathOperatorText(const QString& op);
+        /** \brief constructs a SymbolProps with explicit HTML for a narrow math-operator like \c \\sin ..., i.e. ItalicOff, BoldOff, HeightIsAscent, ExtendWidthInMathmode */
+        static SymbolFullProps NarrowMathOperatorText(const QString& op, const QString& ophtml);
 
 
         /** \brief symbols that can be generated in any standard-font */

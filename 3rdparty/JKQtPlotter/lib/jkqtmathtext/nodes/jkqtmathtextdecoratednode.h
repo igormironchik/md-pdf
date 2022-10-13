@@ -57,7 +57,9 @@ class JKQTMATHTEXT_LIB_EXPORT JKQTMathTextDecoratedNode: public JKQTMathTextSing
             MTDoverline,  /*!< \brief overline over block \image html jkqtmathtext/MTDoverline.png */
             MTDdoubleoverline,  /*!< \brief double overline over block \image html jkqtmathtext/MTDdoubleoverline.png */
             MTDunderline,  /*!< \brief underline under block \image html jkqtmathtext/MTDunderline.png */
-            MTDdoubleunderline,  /*!< \brief double underline under block \image html jkqtmathtext/MTDdoubleunderline.png */
+            MTDunderlineDashed,  /*!< \brief dashed line under block \image html jkqtmathtext/MTDunderlineDashed.png */
+            MTDunderlineDotted,  /*!< \brief dotted line under block \image html jkqtmathtext/MTDunderlineDotted.png */
+            MTDdoubleunderline,  /*!< \brief double line under block \image html jkqtmathtext/MTDdoubleunderline.png */
             MTDtilde,  /*!< \brief small tilde over block \image html jkqtmathtext/MTDtilde.png */
             MTDwidetilde,  /*!< \brief full width tilde over block \image html jkqtmathtext/MTDwidetilde.png */
             MTDacute,  /*!< \brief small acute accent over block \image html jkqtmathtext/MTDacute.png */
@@ -65,7 +67,13 @@ class JKQTMATHTEXT_LIB_EXPORT JKQTMathTextDecoratedNode: public JKQTMathTextSing
             MTDcancel,  /*!< \brief cancel text with sloped line \image html jkqtmathtext/MTDcancel.png */
             MTDbcancel,  /*!< \brief cancel text with backward sloped line \image html jkqtmathtext/MTDbcancel.png */
             MTDxcancel,  /*!< \brief cancel text with X \image html jkqtmathtext/MTDxcancel.png */
-            MTDstrike  /*!< \brief strikethrough text \image html jkqtmathtext/MTDstrike.png */
+            MTDstrike,  /*!< \brief strikethrough text \image html jkqtmathtext/MTDstrike.png */
+            MTDoverleftarrow,  /*!< \brief left-pointing arrow over everything text \image html jkqtmathtext/MTDoverleftarrow.png */
+            MTDoverrightarrow,  /*!< \brief right-pointing arrow over everything text \image html jkqtmathtext/MTDoverrightarrow.png */
+            MTDoverleftrightarrow,  /*!< \brief left/right-pointing arrow over everything text \image html jkqtmathtext/MTDoverleftrightarrow.png */
+            MTDunderleftarrow,  /*!< \brief left-pointing arrow under everything text \image html jkqtmathtext/MTDunderleftarrow.png */
+            MTDunderrightarrow,  /*!< \brief right-pointing arrow under everything text \image html jkqtmathtext/MTDunderrightarrow.png */
+            MTDunderleftrightarrow,  /*!< \brief left/right-pointing arrow under everything text \image html jkqtmathtext/MTDunderleftrightarrow.png */
         };
         /** \brief convert a DecorationType into a string
          */
@@ -83,16 +91,16 @@ class JKQTMATHTEXT_LIB_EXPORT JKQTMathTextDecoratedNode: public JKQTMathTextSing
         JKQTMathTextDecoratedNode(JKQTMathText* parent, DecorationType decoration, JKQTMathTextNode* child);
         virtual ~JKQTMathTextDecoratedNode() override;
         /** \copydoc JKQTMathTextNode::draw() */
-        virtual double draw(QPainter& painter, double x, double y, JKQTMathTextEnvironment currentEv, const JKQTMathTextNodeSize* prevNodeSize=nullptr) override;
+        virtual double draw(QPainter& painter, double x, double y, JKQTMathTextEnvironment currentEv) const override;
         /** \copydoc JKQTMathTextNode::toHtml() */
-        virtual bool toHtml(QString& html, JKQTMathTextEnvironment currentEv, JKQTMathTextEnvironment defaultEv) override;
+        virtual bool toHtml(QString& html, JKQTMathTextEnvironment currentEv, JKQTMathTextEnvironment defaultEv) const override;
         /** \copydoc JKQTMathTextNode::getTypeName() */
         virtual QString getTypeName() const override ;
         /** \copydoc decoration */ 
         DecorationType getDecoration() const;
     protected:
         /** \copydoc JKQTMathTextNode::getSizeInternal() */
-        virtual void getSizeInternal(QPainter& painter, JKQTMathTextEnvironment currentEv, double& width, double& baselineHeight, double& overallHeight, double& strikeoutPos, const JKQTMathTextNodeSize* prevNodeSize=nullptr) override;
+        virtual JKQTMathTextNodeSize getSizeInternal(QPainter& painter, JKQTMathTextEnvironment currentEv) const override;
         /** \brief type of decoration that is added to the child node */
         DecorationType decoration;
         /** \brief lists all supported instructions */

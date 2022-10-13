@@ -4,6 +4,7 @@
  * \ref JKQTPlotterLogAxes
  */
 
+#include "jkqtpexampleapplication.h"
 #include <QApplication>
 #include "jkqtplotter/jkqtplotter.h"
 #include "jkqtplotter/graphs/jkqtpscatter.h"
@@ -15,12 +16,8 @@
 int main(int argc, char* argv[])
 {
         
-#if QT_VERSION >= QT_VERSION_CHECK(5,6,0) &&  QT_VERSION < QT_VERSION_CHECK(6,0,0)
-
-    QApplication::setAttribute(Qt::AA_EnableHighDpiScaling); // DPI support
-    QCoreApplication::setAttribute(Qt::AA_UseHighDpiPixmaps); //HiDPI pixmaps
-#endif
-    QApplication app(argc, argv);
+    JKQTPAppSettingController highDPIController(argc, argv);
+    JKQTPExampleApplication app(argc, argv);
 
 
     // 1. create a plotter window and get a pointer to the internal datastore (for convenience)
@@ -89,7 +86,7 @@ int main(int argc, char* argv[])
     plot.getYAxis()->setDrawMinorGrid(true);
     //    usually axis ticks are shown as numbers 0.01, 0.1, 1, 10, ... You can also force the scientific
     //    power-of-10 notation, using:
-    plot.getYAxis()->setLabelType(JKQTPCALTexponent);
+    plot.getYAxis()->setTickLabelType(JKQTPCALTexponent);
     //    the number of digits in JKQTPCALTexponent determines which labels are drawn in standard-notation,
     //    as compared to power-notation (e.g. if set to 1, the labels 0.1=10^{-1}, 1, 10 are shown in
     //    standard notation, the rest in power-notation. This tweak improves readability)
@@ -113,7 +110,7 @@ int main(int argc, char* argv[])
 
     // 7. show plotter and make it a decent size
     plot.show();
-    plot.resize(700,500);
+    plot.resize(700/plot.devicePixelRatioF(),500/plot.devicePixelRatioF());
 
     return app.exec();
 }

@@ -4,6 +4,7 @@
  * \ref JKQTPlotterDateTimeAxes
  */
 
+#include "jkqtpexampleapplication.h"
 #include <QApplication>
 #include <QDateTime>
 #include <QTime>
@@ -82,7 +83,7 @@ void drawWithDateAxis(JKQTPlotter& plot) {
     // set the title above the plot, use LaTeX instructions to make text bold
     plot.getPlotter()->setPlotLabel("\\textbf{Weather in Gelsenkirchen, 2017-2018}");
     // set x-axis date-time-axis
-    plot.getXAxis()->setLabelType(JKQTPCALTdatetime);
+    plot.getXAxis()->setTickLabelType(JKQTPCALTdatetime);
     plot.getXAxis()->setAxisLabel("Date");
     // set format string for date axis (e.g. Jan '18), see Documentation of QDateTime::toString()
     plot.getXAxis()->setTickDateTimeFormat("MMM ''yy");
@@ -149,7 +150,7 @@ void drawWithTimeAxis(JKQTPlotter& plot) {
     // set the title above the plot, use LaTeX instructions to make text bold
     plot.getPlotter()->setPlotLabel("\\textbf{Weather in Heidelberg, 14^{th} Oct 2018}");
     // set x-axis date-time-axis
-    plot.getXAxis()->setLabelType(JKQTPCALTtime);
+    plot.getXAxis()->setTickLabelType(JKQTPCALTtime);
     plot.getXAxis()->setAxisLabel("Time of Day");
     // set format string for time axis with 24-hour and minute only,
     // see QDateTime::toString() documentation for details on format strings
@@ -162,26 +163,25 @@ void drawWithTimeAxis(JKQTPlotter& plot) {
 
     // 9. show plotter and make it a decent size
     plot.show();
-    plot.resize(600,400);
+    plot.resize(400,300);
     plot.setWindowTitle("Time Axis");
 }
 
 int main(int argc, char* argv[])
 {
         
-#if QT_VERSION >= QT_VERSION_CHECK(5,6,0) &&  QT_VERSION < QT_VERSION_CHECK(6,0,0)
-
-    QApplication::setAttribute(Qt::AA_EnableHighDpiScaling); // DPI support
-    QCoreApplication::setAttribute(Qt::AA_UseHighDpiPixmaps); //HiDPI pixmaps
-#endif
-    QApplication app(argc, argv);
+    JKQTPAppSettingController highDPIController(argc, argv);
+    JKQTPExampleApplication app(argc, argv);
 
     JKQTPlotter plotDate;
     drawWithDateAxis(plotDate);
-    plotDate.move(100,100);
+    plotDate.setWindowTitle("1: "+plotDate.windowTitle());
+    //plotDate.move(100,100);
+
     JKQTPlotter plotTime;
     drawWithTimeAxis(plotTime);
-    plotTime.move(100,550);
+    plotTime.setWindowTitle("2: "+plotTime.windowTitle());
+    //plotTime.move(100,550);
 
     return app.exec();
 }

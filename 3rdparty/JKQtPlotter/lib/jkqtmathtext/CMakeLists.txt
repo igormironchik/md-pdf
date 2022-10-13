@@ -25,21 +25,6 @@ set(SOURCES
   ${CMAKE_CURRENT_LIST_DIR}/jkqtmathtexttools.cpp
   ${CMAKE_CURRENT_LIST_DIR}/jkqtmathtextlabel.cpp
 )
-set(SOURCES_NODES
-  ${CMAKE_CURRENT_LIST_DIR}/nodes/jkqtmathtextnode.cpp
-  ${CMAKE_CURRENT_LIST_DIR}/nodes/jkqtmathtexttextnode.cpp
-  ${CMAKE_CURRENT_LIST_DIR}/nodes/jkqtmathtextbracenode.cpp
-  ${CMAKE_CURRENT_LIST_DIR}/nodes/jkqtmathtextdecoratednode.cpp
-  ${CMAKE_CURRENT_LIST_DIR}/nodes/jkqtmathtextfracnode.cpp
-  ${CMAKE_CURRENT_LIST_DIR}/nodes/jkqtmathtextinstructionnode.cpp
-  ${CMAKE_CURRENT_LIST_DIR}/nodes/jkqtmathtextlistnode.cpp
-  ${CMAKE_CURRENT_LIST_DIR}/nodes/jkqtmathtextmatrixnode.cpp
-  ${CMAKE_CURRENT_LIST_DIR}/nodes/jkqtmathtextsqrtnode.cpp
-  ${CMAKE_CURRENT_LIST_DIR}/nodes/jkqtmathtextsubsupernode.cpp
-  ${CMAKE_CURRENT_LIST_DIR}/nodes/jkqtmathtextsymbolnode.cpp
-  ${CMAKE_CURRENT_LIST_DIR}/nodes/jkqtmathtextnodetools.cpp
-  ${CMAKE_CURRENT_LIST_DIR}/nodes/jkqtmathtextwhitespacenode.cpp
-)
 
 set(HEADERS
   $<BUILD_INTERFACE:${CMAKE_CURRENT_LIST_DIR}/jkqtmathtext.h>
@@ -51,11 +36,37 @@ set(HEADERS
   $<BUILD_INTERFACE:${CMAKE_CURRENT_LIST_DIR}/jkqtmathtext_imexport.h>
   $<INSTALL_INTERFACE:jkqtmathtext_imexport.h>
 )
+
+set(SOURCES_NODES
+  ${CMAKE_CURRENT_LIST_DIR}/nodes/jkqtmathtextnode.cpp
+  ${CMAKE_CURRENT_LIST_DIR}/nodes/jkqtmathtexttextnode.cpp
+  ${CMAKE_CURRENT_LIST_DIR}/nodes/jkqtmathtextbracenode.cpp
+  ${CMAKE_CURRENT_LIST_DIR}/nodes/jkqtmathtextdecoratednode.cpp
+  ${CMAKE_CURRENT_LIST_DIR}/nodes/jkqtmathtextfracnode.cpp
+  ${CMAKE_CURRENT_LIST_DIR}/nodes/jkqtmathtextinstructionnode.cpp
+  ${CMAKE_CURRENT_LIST_DIR}/nodes/jkqtmathtextboxinstructionnode.cpp
+  ${CMAKE_CURRENT_LIST_DIR}/nodes/jkqtmathtextmodifyenvironmentnode.cpp
+  ${CMAKE_CURRENT_LIST_DIR}/nodes/jkqtmathtextverticallistnode.cpp
+  ${CMAKE_CURRENT_LIST_DIR}/nodes/jkqtmathtexthorizontallistnode.cpp
+  ${CMAKE_CURRENT_LIST_DIR}/nodes/jkqtmathtextmatrixnode.cpp
+  ${CMAKE_CURRENT_LIST_DIR}/nodes/jkqtmathtextsqrtnode.cpp
+  ${CMAKE_CURRENT_LIST_DIR}/nodes/jkqtmathtextsubsupernode.cpp
+  ${CMAKE_CURRENT_LIST_DIR}/nodes/jkqtmathtextsymbolnode.cpp
+  ${CMAKE_CURRENT_LIST_DIR}/nodes/jkqtmathtextnodetools.cpp
+  ${CMAKE_CURRENT_LIST_DIR}/nodes/jkqtmathtextwhitespacenode.cpp
+  ${CMAKE_CURRENT_LIST_DIR}/nodes/jkqtmathtextnoopnode.cpp
+  ${CMAKE_CURRENT_LIST_DIR}/nodes/jkqtmathtextverbatimnode.cpp
+)
+
 set(HEADERS_NODES
   $<BUILD_INTERFACE:${CMAKE_CURRENT_LIST_DIR}/nodes/jkqtmathtextnode.h>
   $<INSTALL_INTERFACE:nodes/jkqtmathtextnode.h>
   $<BUILD_INTERFACE:${CMAKE_CURRENT_LIST_DIR}/nodes/jkqtmathtexttextnode.h>
   $<INSTALL_INTERFACE:nodes/jkqtmathtexttextnode.h>
+  $<BUILD_INTERFACE:${CMAKE_CURRENT_LIST_DIR}/nodes/jkqtmathtextboxinstructionnode.h>
+  $<INSTALL_INTERFACE:nodes/jkqtmathtextboxinstructionnode.h>
+  $<BUILD_INTERFACE:${CMAKE_CURRENT_LIST_DIR}/nodes/jkqtmathtextmodifyenvironmentnode.h>
+  $<INSTALL_INTERFACE:nodes/jkqtmathtextmodifyenvironmentnode.h>
   $<BUILD_INTERFACE:${CMAKE_CURRENT_LIST_DIR}/nodes/jkqtmathtextbracenode.h>
   $<INSTALL_INTERFACE:nodes/jkqtmathtextbracenode.h>
   $<BUILD_INTERFACE:${CMAKE_CURRENT_LIST_DIR}/nodes/jkqtmathtextdecoratednode.h>
@@ -66,6 +77,10 @@ set(HEADERS_NODES
   $<INSTALL_INTERFACE:nodes/jkqtmathtextinstructionnode.h>
   $<BUILD_INTERFACE:${CMAKE_CURRENT_LIST_DIR}/nodes/jkqtmathtextlistnode.h>
   $<INSTALL_INTERFACE:nodes/jkqtmathtextlistnode.h>
+  $<BUILD_INTERFACE:${CMAKE_CURRENT_LIST_DIR}/nodes/jkqtmathtextverticallistnode.h>
+  $<INSTALL_INTERFACE:nodes/jkqtmathtextverticallistnode.h>
+  $<BUILD_INTERFACE:${CMAKE_CURRENT_LIST_DIR}/nodes/jkqtmathtexthorizontallistnode.h>
+  $<INSTALL_INTERFACE:nodes/jkqtmathtexthorizontallistnode.h>
   $<BUILD_INTERFACE:${CMAKE_CURRENT_LIST_DIR}/nodes/jkqtmathtextmatrixnode.h>
   $<INSTALL_INTERFACE:nodes/jkqtmathtextmatrixnode.h>
   $<BUILD_INTERFACE:${CMAKE_CURRENT_LIST_DIR}/nodes/jkqtmathtextsqrtnode.h>
@@ -78,13 +93,33 @@ set(HEADERS_NODES
   $<INSTALL_INTERFACE:nodes/jkqtmathtextnodetools.h>
   $<BUILD_INTERFACE:${CMAKE_CURRENT_LIST_DIR}/nodes/jkqtmathtextwhitespacenode.h>
   $<INSTALL_INTERFACE:nodes/jkqtmathtextwhitespacenode.h>
+  $<BUILD_INTERFACE:${CMAKE_CURRENT_LIST_DIR}/nodes/jkqtmathtextnoopnode.h>
+  $<INSTALL_INTERFACE:nodes/jkqtmathtextnoopnode.h>
+  $<BUILD_INTERFACE:${CMAKE_CURRENT_LIST_DIR}/nodes/jkqtmathtextverbatimnode.h>
+  $<INSTALL_INTERFACE:nodes/jkqtmathtextverbatimnode.h>
 )
 
+
+set(SOURCES_PARSERS
+  ${CMAKE_CURRENT_LIST_DIR}/parsers/jkqtmathtextparser.cpp
+  ${CMAKE_CURRENT_LIST_DIR}/parsers/jkqtmathtextlatexparser.cpp
+)
+
+set(HEADERS_PARSERS
+  $<BUILD_INTERFACE:${CMAKE_CURRENT_LIST_DIR}/parsers/jkqtmathtextparser.h>
+  $<INSTALL_INTERFACE:parsers/jkqtmathtextparser.h>
+  $<BUILD_INTERFACE:${CMAKE_CURRENT_LIST_DIR}/parsers/jkqtmathtextlatexparser.h>
+  $<INSTALL_INTERFACE:parsers/jkqtmathtextlatexparser.h>
+)
+
+set(RESOURCES "")
 if(JKQtPlotter_BUILD_INCLUDE_XITS_FONTS)
-    set(RESOURCES
-      ${CMAKE_CURRENT_LIST_DIR}/resources/xits.qrc
-    )
+    list(APPEND RESOURCES ${CMAKE_CURRENT_LIST_DIR}/resources/xits.qrc )
 endif(JKQtPlotter_BUILD_INCLUDE_XITS_FONTS)
+
+if(JKQtPlotter_BUILD_INCLUDE_FIRAMATH_FONTS)
+    list(APPEND RESOURCES ${CMAKE_CURRENT_LIST_DIR}/resources/firamath.qrc )
+endif(JKQtPlotter_BUILD_INCLUDE_FIRAMATH_FONTS)
 
 
 include(CMakePackageConfigHelpers)
@@ -110,6 +145,9 @@ function(JKQtMathText_setDefaultLibOptions TARGETNAME)
     if(JKQtPlotter_BUILD_INCLUDE_XITS_FONTS)
         target_compile_definitions(${TARGETNAME} PRIVATE JKQTMATHTEXT_COMPILED_WITH_XITS)
     endif(JKQtPlotter_BUILD_INCLUDE_XITS_FONTS)
+    if(JKQtPlotter_BUILD_INCLUDE_FIRAMATH_FONTS)
+        target_compile_definitions(${TARGETNAME} PRIVATE JKQTMATHTEXT_COMPILED_WITH_FIRAMATH)
+    endif(JKQtPlotter_BUILD_INCLUDE_FIRAMATH_FONTS)
 
     # precomiled headers to speed up compilation
     if (JKQtPlotter_BUILD_WITH_PRECOMPILED_HEADERS)
@@ -119,7 +157,7 @@ function(JKQtMathText_setDefaultLibOptions TARGETNAME)
 endfunction()
 
 if(JKQtPlotter_BUILD_SHARED_LIBS)
-    add_library(${libsh_name} SHARED  ${SOURCES} ${RESOURCES} ${HEADERS} ${SOURCES_NODES} ${HEADERS_NODES} )
+    add_library(${libsh_name} SHARED  ${SOURCES} ${RESOURCES} ${HEADERS} ${SOURCES_NODES} ${HEADERS_NODES} ${SOURCES_PARSERS} ${HEADERS_PARSERS})
     JKQtMathText_setDefaultLibOptions(${libsh_name})
     set_property(TARGET ${libsh_name} PROPERTY OUTPUT_NAME  "${libsh_name_decorated}")
     target_link_libraries(${libsh_name} PUBLIC JKQTCommonSharedLib)
@@ -132,7 +170,7 @@ if(JKQtPlotter_BUILD_SHARED_LIBS)
 endif()
 
 if(JKQtPlotter_BUILD_STATIC_LIBS)
-    add_library(${lib_name} STATIC ${SOURCES} ${RESOURCES} ${HEADERS} ${SOURCES_NODES} ${HEADERS_NODES})
+    add_library(${lib_name} STATIC ${SOURCES} ${RESOURCES} ${HEADERS} ${SOURCES_NODES} ${HEADERS_NODES} ${SOURCES_PARSERS} ${HEADERS_PARSERS})
     JKQtMathText_setDefaultLibOptions(${lib_name})
     set_property(TARGET ${lib_name} PROPERTY OUTPUT_NAME  "${lib_name_decorated}")
 
@@ -146,45 +184,11 @@ endif()
 
 # Installation
 if(JKQtPlotter_BUILD_SHARED_LIBS)
-    install(TARGETS ${libsh_name} EXPORT ${libsh_name}_TARGETS
-            RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
-            ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}
-            LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
-            INCLUDES DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/${libIncludeSubdir}
-    )
-    set(JKQTP_CURRENT_TARGET_FILENAME "${libsh_name}Targets.cmake")
-    set(JKQTP_CURRENT_TARGET_SHAREDPART "Shared")
-    configure_file(LibTarget.cmake.in "${CMAKE_CURRENT_BINARY_DIR}/${libsh_name}Config.cmake" @ONLY)
-    install(EXPORT ${libsh_name}_TARGETS
-        FILE "${JKQTP_CURRENT_TARGET_FILENAME}"
-        DESTINATION lib/cmake
-    )
-
-    install(FILES "${CMAKE_CURRENT_BINARY_DIR}/${libsh_name}Version.cmake"
-                    DESTINATION lib/cmake  )
-    install(FILES "${CMAKE_CURRENT_BINARY_DIR}/${libsh_name}Config.cmake"
-                                DESTINATION lib/cmake  )
+    jkqtplotter_installlibrary(${libsh_name} ${libIncludeSubdir} "Shared")
 endif(JKQtPlotter_BUILD_SHARED_LIBS)
 
 if(JKQtPlotter_BUILD_STATIC_LIBS)
-    install(TARGETS ${lib_name} EXPORT ${lib_name}_TARGETS
-            RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
-            ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}
-            LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
-            INCLUDES DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/${libIncludeSubdir}
-    )
-    set(JKQTP_CURRENT_TARGET_FILENAME "${lib_name}Targets.cmake")
-    set(JKQTP_CURRENT_TARGET_SHAREDPART "")
-    configure_file(LibTarget.cmake.in "${CMAKE_CURRENT_BINARY_DIR}/${lib_name}Config.cmake" @ONLY)
-    install(EXPORT ${lib_name}_TARGETS
-        FILE "${JKQTP_CURRENT_TARGET_FILENAME}"
-        DESTINATION lib/cmake
-    )
-
-    install(FILES "${CMAKE_CURRENT_BINARY_DIR}/${lib_name}Version.cmake"
-                    DESTINATION lib/cmake  )
-    install(FILES "${CMAKE_CURRENT_BINARY_DIR}/${lib_name}Config.cmake"
-                                DESTINATION lib/cmake  )
+    jkqtplotter_installlibrary(${lib_name} ${libIncludeSubdir} "")
 endif(JKQtPlotter_BUILD_STATIC_LIBS)
 
 install(FILES ${HEADERS}
@@ -193,10 +197,15 @@ install(FILES ${HEADERS}
 install(FILES ${HEADERS_NODES}
                 DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/${libIncludeSubdir}/nodes
                 COMPONENT Headers)
+install(FILES ${SOURCES_PARSERS}
+                DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/${libIncludeSubdir}/parsers
+                COMPONENT Headers)
 
-configure_file(${PROJECT_SOURCE_DIR}/readme.txt.in ${CMAKE_CURRENT_BINARY_DIR}/${lib_name}_Readme.txt @ONLY)
-install(FILES "${CMAKE_CURRENT_BINARY_DIR}/${lib_name}_Readme.txt" DESTINATION doc/JKQtPlotter )
-install(FILES "${PROJECT_SOURCE_DIR}/LICENSE" DESTINATION doc/JKQtPlotter RENAME "${lib_name}_LICENSE.txt" )
-install(FILES "${PROJECT_SOURCE_DIR}/lib/jkqtmathtext/resources/xits/OFL.txt" DESTINATION doc/JKQtPlotter RENAME "${lib_name}_XITS_LICENSE.txt" )
-install(FILES "${PROJECT_SOURCE_DIR}/lib/jkqtmathtext/resources/xits/README.md" DESTINATION doc/JKQtPlotter RENAME "${lib_name}_XITS_README.md" )
+configure_file(${PROJECT_SOURCE_DIR}/readme.txt.in ${CMAKE_CURRENT_BINARY_DIR}/${libBasename}_Readme.txt @ONLY)
+install(FILES "${CMAKE_CURRENT_BINARY_DIR}/${libBasename}_Readme.txt" DESTINATION doc/JKQtPlotter )
+install(FILES "${PROJECT_SOURCE_DIR}/LICENSE" DESTINATION doc/JKQtPlotter RENAME "${libBasename}_LICENSE.txt" )
+install(FILES "${PROJECT_SOURCE_DIR}/lib/jkqtmathtext/resources/xits/OFL.txt" DESTINATION doc/JKQtPlotter RENAME "${libBasename}_XITS_LICENSE.txt" )
+install(FILES "${PROJECT_SOURCE_DIR}/lib/jkqtmathtext/resources/xits/README.md" DESTINATION doc/JKQtPlotter RENAME "${libBasename}_XITS_README.md" )
+install(FILES "${PROJECT_SOURCE_DIR}/lib/jkqtmathtext/resources/firaMath/LICENSE" DESTINATION doc/JKQtPlotter RENAME "${libBasename}_FIRAMATH_LICENSE" )
+install(FILES "${PROJECT_SOURCE_DIR}/lib/jkqtmathtext/resources/firaMath/README.md" DESTINATION doc/JKQtPlotter RENAME "${libBasename}_FIRAMATH_README.md" )
 

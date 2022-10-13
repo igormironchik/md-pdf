@@ -4,6 +4,7 @@
  * \ref JKQTPlotterParamScatterImage
  */
 
+#include "jkqtpexampleapplication.h"
 #include <QApplication>
 #include "jkqtplotter/jkqtplotter.h"
 #include "jkqtplotter/graphs/jkqtpscatter.h"
@@ -13,12 +14,8 @@
 int main(int argc, char* argv[])
 {
         
-#if QT_VERSION >= QT_VERSION_CHECK(5,6,0) &&  QT_VERSION < QT_VERSION_CHECK(6,0,0)
-
-    QApplication::setAttribute(Qt::AA_EnableHighDpiScaling); // DPI support
-    QCoreApplication::setAttribute(Qt::AA_UseHighDpiPixmaps); //HiDPI pixmaps
-#endif
-    QApplication app(argc, argv);
+    JKQTPAppSettingController highDPIController(argc, argv);
+    JKQTPExampleApplication app(argc, argv);
 
 
     // 1. create a plotter window and get a pointer to the internal datastore (for convenience)
@@ -82,18 +79,18 @@ int main(int argc, char* argv[])
     plot.getYAxis()->setAxisLabel("y-axis");
     plot.getXAxis()->setDrawGrid(false);
     plot.getYAxis()->setDrawGrid(false);
-    // max. size is the size of the image
-    plot.setXY(0,image.width()-1,0,image.height()-1);
-    plot.setAbsoluteXY(0,image.width()-1,0,image.height()-1);
     // ensure that axis aspect ratio and coordinate system aspect ratio are maintained
     plot.getPlotter()->setMaintainAspectRatio(true);
     plot.getPlotter()->setAspectRatio(1);
     plot.getPlotter()->setMaintainAxisAspectRatio(true);
     plot.getPlotter()->setAxisAspectRatio(1);
+    // max. size is the size of the image
+    plot.setAbsoluteXY(0,image.width()-1,0,image.height()-1);
+    plot.setXY(0,image.width()-1,0,image.height()-1);
 
     // 5. show plotter and make it a decent size
     plot.show();
-    plot.resize(800,800);
+    plot.resize(800/plot.devicePixelRatioF(),850/plot.devicePixelRatioF());
 
     return app.exec();
 }

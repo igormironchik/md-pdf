@@ -4,6 +4,7 @@
  * \ref JKQTPlotterMultiPlotLayout
  */
 
+#include "jkqtpexampleapplication.h"
 #include <QApplication>
 #include "jkqtplotter/jkqtplotter.h"
 #include "jkqtplotter/graphs/jkqtpscatter.h"
@@ -16,17 +17,13 @@
 int main(int argc, char* argv[])
 {
         
-#if QT_VERSION >= QT_VERSION_CHECK(5,6,0) &&  QT_VERSION < QT_VERSION_CHECK(6,0,0)
-
-    QApplication::setAttribute(Qt::AA_EnableHighDpiScaling); // DPI support
-    QCoreApplication::setAttribute(Qt::AA_UseHighDpiPixmaps); //HiDPI pixmaps
-#endif
-    QApplication app(argc, argv);
+    JKQTPAppSettingController highDPIController(argc, argv);
+    JKQTPExampleApplication app(argc, argv);
 
 
     // 1. create a widget
     QWidget mainWidget;
-    mainWidget.setWindowTitle("JKQTPlotter(s) in a QGridLayout");
+    mainWidget.setWindowTitle("1: JKQTPlotter(s) in a QGridLayout");
 
     // 2. Create a QGridLayout for the plots and add it to the widget.
     QGridLayout* layout=new QGridLayout();
@@ -70,6 +67,7 @@ int main(int argc, char* argv[])
     //     - in plotResidHist we will show a histogram of the residuals (calculated in histogram)
     std::random_device rd;
     std::mt19937 gen(rd());
+    gen.seed(12345);
     std::normal_distribution<> d(0,0.5);
 
     std::vector<double> dataX, dataY, dataRY;
@@ -157,12 +155,12 @@ int main(int argc, char* argv[])
     plotResidHist->setAbsoluteX(0, 20);
     plotResid->zoomToFit();
     plotResidHist->zoomToFit();
-    plotMain->zoomToFit();
+    plotMain->setXY(-1,9.5,-1,5.5);
 
     // 8. show plotter and make it a decent size
     mainWidget.show();
     mainWidget.move(32,32);
-    mainWidget.resize(800,600);
+    mainWidget.resize(800/mainWidget.devicePixelRatioF(),600/mainWidget.devicePixelRatioF());
 
     // 9. create a second window, which controls the synchronization and layout between the plots
     TestMultiplotUI controlWindow(plotMain, plotResid, plotResidHist, layout);

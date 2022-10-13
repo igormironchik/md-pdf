@@ -1,18 +1,19 @@
 cmake_minimum_required(VERSION 3.16)
 
-set(EXAMPLE_NAME test_multiplot)
+set(EXAMPLE_NAME multiplot)
 set(EXENAME jkqtptest_${EXAMPLE_NAME})
 
 message( STATUS "..   Building Example ${EXAMPLE_NAME}" )
 
 
 # Set up source files
-set(SOURCES ${EXAMPLE_NAME}.cpp test_multiplot_ui.cpp)
+set(SOURCES test_multiplot.cpp test_multiplot_ui.cpp)
 set(HEADERS test_multiplot_ui.h)
 set(RESOURCES test_multiplot.qrc )
 set(UIS test_multiplot_ui.ui )
 
 add_executable(${EXENAME} WIN32 ${SOURCES} ${HEADERS} ${RESOURCES} ${UIS})
+target_link_libraries(${EXENAME} JKQTPExampleToolsLib)
 target_include_directories(${EXENAME} PRIVATE ../../lib)
 if(JKQtPlotter_BUILD_STATIC_LIBS)
     target_link_libraries(${EXENAME} JKQTPlotterLib)

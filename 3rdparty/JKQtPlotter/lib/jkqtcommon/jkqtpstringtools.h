@@ -26,6 +26,7 @@
 #include <QLocale>
 #include <string>
 #include <QtGlobal>
+#include <limits>
 
 /** \brief converts a QT::PenStyle into a string
  * \ingroup jkqtptools_string
@@ -55,6 +56,11 @@ JKQTCOMMON_LIB_EXPORT Qt::BrushStyle jkqtp_String2QBrushStyle(const QString& sty
  */
 JKQTCOMMON_LIB_EXPORT std::string jkqtp_UnicodeToUTF8(uint32_t codepoint);
 
+/** \copydoc jkqtp_UnicodeToUTF8() */
+inline QString jkqtp_UnicodeToUTF8Q(uint32_t codepoint) {
+    return QString::fromStdString(jkqtp_UnicodeToUTF8(codepoint));
+}
+
 /** \brief convert a double to a string, using the loacle "C"
  * \ingroup jkqtptools_string
  */
@@ -78,6 +84,14 @@ inline QString JKQTPDoubleToQString(double value, int prec = 10, char f = 'g', Q
 }
 
 
+/** \brief convert a double to a string
+ * \ingroup jkqtptools_string
+ */
+inline QString& JKQTPExtendString(QString& s, const QString& separator, const QString& extension) {
+    if (s.size()>0) s+=separator;
+    s+=extension;
+    return s;
+}
 
 /** \brief convert a string to lower-case characters
  * \ingroup jkqtptools_string
@@ -205,6 +219,8 @@ JKQTCOMMON_LIB_EXPORT QColor jkqtp_lookupQColorName(const QString& color);
  * This function allows to add the alpha-value as \c "<color_name>,<alpha>" as integer betwee 0 and 255
  * or as \c "<color_name>,<transparency_percent>%" in the range of 0..100 % (i.e. (1-transparency_percent/100)*255).
  * Also \c "<color_name>,a<alpha_percent>%" in the range of 0..100 % (i.e. alpha_percent/100*255).
+ *
+ * Finally the default Qt color definitions are supported, i.e. \c #RGB , \c #RRGGBB , \c #AARRGGBB , \c #RRRGGGBBB , \c #RRRRGGGGBBBB
  */
 JKQTCOMMON_LIB_EXPORT QColor jkqtp_String2QColor(const QString& color);
 
@@ -216,11 +232,15 @@ JKQTCOMMON_LIB_EXPORT std::string jkqtp_to_valid_variable_name(const std::string
 /** \brief convert a double to a string, encoding powers of ten as characters, e.g. \c jkqtp_floattounitstr(1000) will result in "1k"
  * \ingroup jkqtptools_string
  */
-JKQTCOMMON_LIB_EXPORT std::string jkqtp_floattounitstr(double data, int past_comma=5, bool remove_trail0=false);
+JKQTCOMMON_LIB_EXPORT std::string jkqtp_floattounitstr(double data, int past_comma=5, bool remove_trail0=false, double belowIsZero=std::numeric_limits<double>::min()*4);
+/** \brief convert a double to a LaTeX-encoded string, encoding powers of ten as characters, e.g. \c jkqtp_floattounitstr(1000) will result in "1k"
+ * \ingroup jkqtptools_string
+ */
+JKQTCOMMON_LIB_EXPORT std::string jkqtp_floattolatexunitstr(double data, int past_comma=5, bool remove_trail0=false, double belowIsZero=std::numeric_limits<double>::min()*4);
 /** \brief convert a double to a string, encoding powers of ten as exponent in LaTeX notation (e.g. <code>-1.23\\cdot 10^{-5}</code>)
  * \ingroup jkqtptools_string
  */
-JKQTCOMMON_LIB_EXPORT std::string jkqtp_floattolatexstr(double data, int past_comma=5, bool remove_trail0=false, double belowIsZero=1e-16, double minNoExponent=1e-3, double maxNoExponent=1e4, bool ensurePlusMinus=false);
+JKQTCOMMON_LIB_EXPORT std::string jkqtp_floattolatexstr(double data, int past_comma=5, bool remove_trail0=false, double belowIsZero=1e-16, double minNoExponent=1e-3, double maxNoExponent=1e4, bool ensurePlusMinus=false, const std::string& multOperator="\\times");
 /** \brief convert a double to a string, encoding powers of ten as exponent with HTML tags
  * \ingroup jkqtptools_string
  */

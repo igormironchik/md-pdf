@@ -4,11 +4,13 @@
  * \ref JKQTPlotterwiggleplots
  */
 
+#include "jkqtpexampleapplication.h"
 #include <QApplication>
 #include "jkqtplotter/jkqtplotter.h"
 #include "jkqtplotter/graphs/jkqtpfilledcurve.h"
 #include "jkqtcommon/jkqtpmathtools.h"
 #include <random>
+#include "jkqtpexampleapplication.h"
 
 void drawRandomWalkX(JKQTPlotter& plot) {
 
@@ -27,6 +29,7 @@ void drawRandomWalkX(JKQTPlotter& plot) {
     const double stepsize=1;
     std::random_device rd; // random number generators:
     std::mt19937 gen{rd()};
+    gen.seed(12351);
     std::uniform_int_distribution<int> dist(0,1);
 
     for (size_t t=0; t<NSteps; t++) {
@@ -69,8 +72,9 @@ void drawRandomWalkX(JKQTPlotter& plot) {
     plot.zoomToFit();
 
     // 11. show plotter and make it a decent size
+    plot.setWindowTitle("1: JKQTPFilledCurveXGraph wiggle plot");
     plot.show();
-    plot.resize(600,400);
+    plot.resize(500,350);
 }
 
 void drawWavepacketsY(JKQTPlotter& plot) {
@@ -109,7 +113,7 @@ void drawWavepacketsY(JKQTPlotter& plot) {
         graph->setYColumn(columnT); graph->setXColumn(columnPacket);
 
         // enable wiggle-plot filling
-        graph->setFillMode(JKQTPFilledCurveXGraph::TwoColorFilling);
+        graph->setFillMode(JKQTPFilledCurveYGraph::TwoColorFilling);
         // draw the data also as a black, thin line
         graph->setLineColor(QColor("black"));
         graph->setLineWidth(1);
@@ -134,22 +138,20 @@ void drawWavepacketsY(JKQTPlotter& plot) {
     plot.zoomToFit();
 
     // 5. show plotter and make it a decent size
+    plot.setWindowTitle("1: JKQTPFilledCurveYGraph wiggle plot");
     plot.show();
-    plot.resize(600,600);
+    plot.resize(500,500);
 }
 
 int main(int argc, char* argv[])
 {
         
-#if QT_VERSION >= QT_VERSION_CHECK(5,6,0) &&  QT_VERSION < QT_VERSION_CHECK(6,0,0)
+    JKQTPAppSettingController highDPIController(argc,argv);
+    JKQTPExampleApplication app(argc, argv);
 
-    QApplication::setAttribute(Qt::AA_EnableHighDpiScaling); // DPI support
-    QCoreApplication::setAttribute(Qt::AA_UseHighDpiPixmaps); //HiDPI pixmaps
-#endif
-    QApplication app(argc, argv);
-
-    JKQTPlotter plotWalk, plotWavepackets;
+    JKQTPlotter plotWalk;
     drawRandomWalkX(plotWalk);
+    JKQTPlotter plotWavepackets;
     drawWavepacketsY(plotWavepackets);
 
     return app.exec();

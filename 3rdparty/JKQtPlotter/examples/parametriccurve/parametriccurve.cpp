@@ -4,6 +4,7 @@
  * \ref JKQTPlotterParametricCurves
  */
 
+#include "jkqtpexampleapplication.h"
 #include <QApplication>
 #include "jkqtplotter/jkqtplotter.h"
 #include "jkqtplotter/graphs/jkqtpscatter.h"
@@ -12,12 +13,8 @@
 int main(int argc, char* argv[])
 {
         
-#if QT_VERSION >= QT_VERSION_CHECK(5,6,0) &&  QT_VERSION < QT_VERSION_CHECK(6,0,0)
-
-    QApplication::setAttribute(Qt::AA_EnableHighDpiScaling); // DPI support
-    QCoreApplication::setAttribute(Qt::AA_UseHighDpiPixmaps); //HiDPI pixmaps
-#endif
-    QApplication app(argc, argv);
+    JKQTPAppSettingController highDPIController(argc, argv);
+    JKQTPExampleApplication app(argc, argv);
 
 
     // 1. create two plotter windows that share the same internal datastore (for convenience)
@@ -54,6 +51,7 @@ int main(int argc, char* argv[])
     graph1->setYColumn(columnY);
     graph1->setDrawLine(true);
     graph1->setSymbolType(JKQTPNoSymbol);
+    graph1->setUseNonvisibleLineCompression(false); // necessary, because this is enabled by default and leads a distrubed plot
     graph1->setTitle("one-colored spiral");
     plot.addGraph(graph1);
 
@@ -92,9 +90,11 @@ int main(int argc, char* argv[])
 
     // 5. show plotters and make them a decent size
     plot.show();
-    plot.resize(600,600);
+    plot.resize(400,400);
+    plot.setWindowTitle("1: JKQTPXYLineGraph");
     plot2.show();
-    plot2.resize(600,600);
+    plot2.setWindowTitle("2: JKQTPXYParametrizedScatterGraph");
+    plot2.resize(400,400);
 
     return app.exec();
 }

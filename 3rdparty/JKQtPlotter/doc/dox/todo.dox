@@ -9,13 +9,11 @@ This page lists several todos and wishes for future version of JKQTPlotter
     <li>graph: matrix plots with boxes, labels, ...</li>
     <li>graph: text labels at positions/for graphs</li>
     <li>plot: secondary axes: independent and dependent (i.e. with transformation function from primary axis)</li>
-    <li>graphs: rounded rectangles for barcharts (also controllable by styles)</li>
     <li>graphs: matrix plots with symbols: symbol-type, color, size should be parametric, cf. scatter plots</li>
     <li>styling: color gradients as fill-styles in style-INIs</li>
     <li>styling: style.ini with glowing colors in dark background ("techno" or "cyberpunk")</li>
     <li>plot: axis labels above/below/centered around tick</li>
     <li>plot: elongated grid to left of tick labels</li>
-    <li>graphs: different styles above/below baseline for barcharts ...</li>
     <li>graphs: vector field graph (arrows), variant (x,y,dx,dy), (x,y,alpha,length), (x1,y1,x2,y2) ... different head/tail styles</li>
     <li>graphs: gant-chart as simplufier vector field with (x,y1,y2) or (x1,x2,y), or (x,y,dx), (x,y,dy) ... different head/tail style</li>
     <li>graphs: barchart/ranges chart with (x,y1,y2) or (x1,x2,y)</li>
@@ -29,21 +27,14 @@ This page lists several todos and wishes for future version of JKQTPlotter
     <li>graphic elements: make coordinate systems selectable for all: x/y-axis, 0..1/0..1, topleft/topright... </li>
     <li>plot: reqork layouting of legends: there are some inconsistencies/too large gaps ...</li>
     <li>plot: legend positioning as combination of 3 values: inside|outside + left|center|right + top|vcenter|bottom</li>
-    <li>styling/plot: make axes more customizable, e.g. color for each element, font for each element ...</li>
     <li>plot: axes with symlog (see http://dx.doi.org/10.1088/0957-0233/24/2/027001) and logit (https://de.m.wikipedia.org/wiki/Logit) scaling? </li>
     <li>graphs: add candlestick charts (financial, see https://en.m.wikipedia.org/wiki/Candlestick_chart)</li>
     <li>graphs: add OHLC charts (financial, see https://en.m.wikipedia.org/wiki/Open-high-low-close_chart)</li>
-    <li>graphs: explore/demonstrate/improve plotting speed for large dataset (e.g. only draw visible elements, use algorithm to draw fewer lines if they overlay ...)</li>
     <li>plot: refactor print preview/export preview code </li>
-    <li></li>
+    <li>graphs: add color palettes from Green's HELIX method, see <a href="https://articles.adsabs.harvard.edu/pdf/2011BASI...39..289G">https://articles.adsabs.harvard.edu/pdf/2011BASI...39..289G</a>, also see <a href="https://jiffyclub.github.io/palettable/cubehelix/">https://jiffyclub.github.io/palettable/cubehelix/</a></li>
     <li></li>
   </ul></li>
   <li>JKQTMathText:<ul>
-    <li>check sub/superscript with italic text in math mode, possibly a correction is necessary</li>
-    <li>explore options to make font-environment-modifying commands avails, like "{blacktext\\color{red}redtext}", today only commands like "\\textcolor{red}{redtext}" work</li>
-    <li>maybe: add support for text with linebreaks by adding a JKQTMathTextVerticalListNode in addition to JKQTMathTextListNode</li>
-    <li>maybe: add tool programs to auto-generate some example images</li>
-    <li>improve support for array-environment with limited support for formatting string like l|r|c and maybe add support for \\hline command, possibly also \\cellcolor etz.</li>
     <li></li>
   </ul></li>
 </ul>

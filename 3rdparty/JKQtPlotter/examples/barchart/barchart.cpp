@@ -4,16 +4,18 @@
  * \ref JKQTPlotterBarcharts
  */
  
+#include "jkqtpexampleapplication.h"
 #include <QApplication>
 #include "jkqtplotter/jkqtplotter.h"
 #include "jkqtplotter/graphs/jkqtpscatter.h"
 #include "jkqtplotter/graphs/jkqtpbarchart.h"
+#include "jkqtpexampleapplication.h"
 
 #define Ndata 5
 
 
 template <class TCHART>
-void doExample()
+void doExample(const QString& title)
 {
     // 1. create a plotter window and get a pointer to the internal datastore (for convenience)
     JKQTPlotter* plot=new JKQTPlotter();
@@ -96,23 +98,20 @@ void doExample()
     plot->zoomToFit();
 
     // show plotter and make it a decent size
+    plot->setWindowTitle(title);
     plot->show();
-    plot->resize(600,400);
+    plot->resize(600/plot->devicePixelRatioF(),550/plot->devicePixelRatioF());
 }
 
 int main(int argc, char* argv[])
 {
         
-#if QT_VERSION >= QT_VERSION_CHECK(5,6,0) &&  QT_VERSION < QT_VERSION_CHECK(6,0,0)
-
-    QApplication::setAttribute(Qt::AA_EnableHighDpiScaling); // DPI support
-    QCoreApplication::setAttribute(Qt::AA_UseHighDpiPixmaps); //HiDPI pixmaps
-#endif
-    QApplication app(argc, argv);
+    JKQTPAppSettingController highDPIController(argc,argv);
+    JKQTPExampleApplication app(argc, argv);
 
 
-    doExample<JKQTPBarVerticalGraph>();
-    doExample<JKQTPBarHorizontalGraph>();
+    doExample<JKQTPBarVerticalGraph>("1: JKQTPBarVerticalGraph");
+    doExample<JKQTPBarHorizontalGraph>("2: JKQTPBarHorizontalGraph");
 
     return app.exec();
 }

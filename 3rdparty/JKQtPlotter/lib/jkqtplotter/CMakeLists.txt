@@ -66,6 +66,7 @@ set(SOURCES_GRAPHS
     ${CMAKE_CURRENT_LIST_DIR}/graphs/jkqtpviolinplotstylingmixins.cpp
     ${CMAKE_CURRENT_LIST_DIR}/graphs/jkqtpstatisticsadaptors.cpp 
     ${CMAKE_CURRENT_LIST_DIR}/graphs/jkqtpevaluatedparametriccurve.cpp 
+    ${CMAKE_CURRENT_LIST_DIR}/graphs/jkqtplines.cpp 
     )
 set(SOURCES_GUI
     ${CMAKE_CURRENT_LIST_DIR}/gui/jkqtpcomboboxes.cpp
@@ -169,6 +170,8 @@ set(HEADERS_GRAPHS
     $<INSTALL_INTERFACE:graphs/jkqtpbarchart.h>
     $<BUILD_INTERFACE:${CMAKE_CURRENT_LIST_DIR}/graphs/jkqtpevaluatedparametriccurve.h>
     $<INSTALL_INTERFACE:graphs/jkqtpevaluatedparametriccurve.h>
+    $<BUILD_INTERFACE:${CMAKE_CURRENT_LIST_DIR}/graphs/jkqtplines.h>
+    $<INSTALL_INTERFACE:graphs/jkqtplines.h>
 )
 set(HEADERS_GUI
     $<BUILD_INTERFACE:${CMAKE_CURRENT_LIST_DIR}/gui/jkqtpcomboboxes.h>
@@ -260,45 +263,11 @@ endif()
 
 # Installation
 if(JKQtPlotter_BUILD_SHARED_LIBS)
-    install(TARGETS ${libsh_name} EXPORT ${libsh_name}_TARGETS
-            RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
-            ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}
-            LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
-            INCLUDES DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}
-    )
-    set(JKQTP_CURRENT_TARGET_FILENAME "${libsh_name}Targets.cmake")
-    set(JKQTP_CURRENT_TARGET_SHAREDPART "Shared")
-    configure_file(LibTarget.cmake.in "${CMAKE_CURRENT_BINARY_DIR}/${libsh_name}Config.cmake" @ONLY)
-    install(EXPORT ${libsh_name}_TARGETS
-        FILE "${JKQTP_CURRENT_TARGET_FILENAME}"
-        DESTINATION lib/cmake
-    )
-
-    install(FILES "${CMAKE_CURRENT_BINARY_DIR}/${libsh_name}Version.cmake"
-                    DESTINATION lib/cmake  )
-    install(FILES "${CMAKE_CURRENT_BINARY_DIR}/${libsh_name}Config.cmake"
-                                DESTINATION lib/cmake  )
+    jkqtplotter_installlibrary(${libsh_name} ${libIncludeSubdir} "Shared")
 endif(JKQtPlotter_BUILD_SHARED_LIBS)
 
 if(JKQtPlotter_BUILD_STATIC_LIBS)
-    install(TARGETS ${lib_name} EXPORT ${lib_name}_TARGETS
-            RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
-            ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}
-            LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
-            INCLUDES DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}
-    )
-    set(JKQTP_CURRENT_TARGET_FILENAME "${lib_name}Targets.cmake")
-    set(JKQTP_CURRENT_TARGET_SHAREDPART "")
-    configure_file(LibTarget.cmake.in "${CMAKE_CURRENT_BINARY_DIR}/${lib_name}Config.cmake" @ONLY)
-    install(EXPORT ${lib_name}_TARGETS
-        FILE "${JKQTP_CURRENT_TARGET_FILENAME}"
-        DESTINATION lib/cmake
-    )
-
-    install(FILES "${CMAKE_CURRENT_BINARY_DIR}/${lib_name}Version.cmake"
-                    DESTINATION lib/cmake  )
-    install(FILES "${CMAKE_CURRENT_BINARY_DIR}/${lib_name}Config.cmake"
-                                DESTINATION lib/cmake  )
+    jkqtplotter_installlibrary(${lib_name} ${libIncludeSubdir} "")
 endif(JKQtPlotter_BUILD_STATIC_LIBS)
 
 install(FILES ${HEADERS_BASE}
@@ -313,9 +282,9 @@ install(FILES ${HEADERS_GUI}
 		DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/${libIncludeSubdir}/gui
 		COMPONENT Headers)
 
-configure_file(${PROJECT_SOURCE_DIR}/readme.txt.in ${CMAKE_CURRENT_BINARY_DIR}/${lib_name}_Readme.txt @ONLY)
-install(FILES "${CMAKE_CURRENT_BINARY_DIR}/${lib_name}_Readme.txt" DESTINATION doc/JKQtPlotter )
-install(FILES "${PROJECT_SOURCE_DIR}/LICENSE" DESTINATION doc/JKQtPlotter RENAME "${lib_name}_LICENSE.txt" )
+configure_file(${PROJECT_SOURCE_DIR}/readme.txt.in ${CMAKE_CURRENT_BINARY_DIR}/${libBasename}_Readme.txt @ONLY)
+install(FILES "${CMAKE_CURRENT_BINARY_DIR}/${libBasename}_Readme.txt" DESTINATION doc/JKQtPlotter )
+install(FILES "${PROJECT_SOURCE_DIR}/LICENSE" DESTINATION doc/JKQtPlotter RENAME "${libBasename}_LICENSE.txt" )
 
 
 #get_target_property(printsupp_inc Qt${QT_VERSION_MAJOR}::PrintSupport INTERFACE_INCLUDE_DIRECTORIES)

@@ -26,6 +26,7 @@
 #include "jkqtmathtext/jkqtmathtext_imexport.h"
 #include "jkqtmathtext/jkqtmathtexttools.h"
 #include "jkqtmathtext/nodes/jkqtmathtextnode.h"
+#include "jkqtmathtext/nodes/jkqtmathtextinstructionnode.h"
 #include <QPainter>
 
 class JKQTMathText; // forward
@@ -75,19 +76,21 @@ class JKQTMATHTEXT_LIB_EXPORT JKQTMathTextWhitespaceNode: public JKQTMathTextNod
         /** \copydoc JKQTMathTextNode::getTypeName() */
         virtual QString getTypeName() const override;
         /** \copydoc JKQTMathTextNode::toHtml() */
-        virtual bool toHtml(QString& html, JKQTMathTextEnvironment currentEv, JKQTMathTextEnvironment defaultEv) override;
+        virtual bool toHtml(QString& html, JKQTMathTextEnvironment currentEv, JKQTMathTextEnvironment defaultEv) const override;
         /** \copydoc WhitespaceProps::type */
         Types getWhitespaceType() const;
         /** \copydoc WhitespaceProps::count */
         size_t getWhitespaceCount() const;
         /** \copydoc JKQTMathTextNode::draw() */
-        virtual double draw(QPainter& painter, double x, double y, JKQTMathTextEnvironment currentEv, const JKQTMathTextNodeSize* prevNodeSize=nullptr) override;
+        virtual double draw(QPainter& painter, double x, double y, JKQTMathTextEnvironment currentEv) const override;
     protected:
         /** \copydoc JKQTMathTextNode::getSizeInternal() */
-        virtual void getSizeInternal(QPainter& painter, JKQTMathTextEnvironment currentEv, double& width, double& baselineHeight, double& overallHeight, double& strikeoutPos, const JKQTMathTextNodeSize* prevNodeSize=nullptr) override;
+        virtual JKQTMathTextNodeSize getSizeInternal(QPainter& painter, JKQTMathTextEnvironment currentEv) const override;
         /** \brief describes a whitespace */
         struct WhitespaceProps {
             WhitespaceProps(Types type=WSTNormal, size_t count=1);
+            WhitespaceProps(const WhitespaceProps& other);
+            WhitespaceProps& operator=(const WhitespaceProps& other);
             /** \brief type of the whitespace represented by this node */
             Types type;
             /** \brief number of whitespaces of the given type, represented by this node (default: 1) */
@@ -126,7 +129,7 @@ class JKQTMATHTEXT_LIB_EXPORT JKQTMathTextEmptyBoxNode: public JKQTMathTextNode 
         /** \copydoc JKQTMathTextNode::getTypeName() */
         virtual QString getTypeName() const override;
         /** \copydoc JKQTMathTextNode::toHtml() */
-        virtual bool toHtml(QString& html, JKQTMathTextEnvironment currentEv, JKQTMathTextEnvironment defaultEv) override;
+        virtual bool toHtml(QString& html, JKQTMathTextEnvironment currentEv, JKQTMathTextEnvironment defaultEv) const override;
         /** \copydoc widthUnit */
         Units getWidthUnit() const;
         /** \copydoc width */
@@ -136,20 +139,62 @@ class JKQTMATHTEXT_LIB_EXPORT JKQTMathTextEmptyBoxNode: public JKQTMathTextNode 
         /** \copydoc height */
         double getHeight() const;
         /** \copydoc JKQTMathTextNode::draw() */
-        virtual double draw(QPainter& painter, double x, double y, JKQTMathTextEnvironment currentEv, const JKQTMathTextNodeSize* prevNodeSize=nullptr) override;
+        virtual double draw(QPainter& painter, double x, double y, JKQTMathTextEnvironment currentEv) const override;
     protected:
         /** \copydoc JKQTMathTextNode::getSizeInternal() */
-        virtual void getSizeInternal(QPainter& painter, JKQTMathTextEnvironment currentEv, double& width, double& baselineHeight, double& overallHeight, double& strikeoutPos, const JKQTMathTextNodeSize* prevNodeSize=nullptr) override;
+        virtual JKQTMathTextNodeSize getSizeInternal(QPainter& painter, JKQTMathTextEnvironment currentEv) const override;
         /** \brief width of the (empty) box, units of this value defined in widthUnit */
         double width;
-        /** \biref units to interpret width */
+        /** \brief units to interpret width */
         Units widthUnit;
         /** \brief height of the (empty) box, units of this value defined in heightUnit */
         double height;
-        /** \biref units to interpret height */
+        /** \brief units to interpret height */
         Units heightUnit;
 };
 
+
+
+
+/** \brief generates whitespace with the size of the contained node
+ *  \ingroup jkqtmathtext_items
+ */
+class JKQTMATHTEXT_LIB_EXPORT JKQTMathTextPhantomNode: public JKQTMathTextInstruction1Node {
+    public:
+        /** \brief type of the phantom instrcution */
+        enum Mode {
+            FMwidthAndHeight, /*!< \brief implementes \c \\phantom{CHILD} which is whitespace in the width and height of \c CHILD */
+            FMwidth, /*!< \brief implementes \c \\hphantom{CHILD} which is whitespace in the width of \c CHILD and height 0. */
+            FMheight /*!< \brief implementes \c \\vphantom{CHILD} which is whitespace in the height of \c CHILD and width  0. */
+        };
+        /** \brief convert a Mode into a LaTeX instruction name */
+        static QString Mode2Instruction(Mode mode);
+        explicit JKQTMathTextPhantomNode(JKQTMathText* parent, const QString& mode, JKQTMathTextNode* child);
+        explicit JKQTMathTextPhantomNode(JKQTMathText* parent, Mode mode, JKQTMathTextNode* child);
+        virtual ~JKQTMathTextPhantomNode() override;
+        /** \copydoc JKQTMathTextNode::getTypeName() */
+        virtual QString getTypeName() const override;
+        /** \copydoc JKQTMathTextNode::draw() */
+        virtual double draw(QPainter& painter, double x, double y, JKQTMathTextEnvironment currentEv) const override;
+        /** \copydoc JKQTMathTextNode::toHtml() */
+        virtual bool toHtml(QString& html, JKQTMathTextEnvironment currentEv, JKQTMathTextEnvironment defaultEv) const override;
+
+        /** \brief returns true, if the given \a instructionName can be represented by this node
+         *  \see instructions
+         */
+        static bool supportsInstructionName(const QString& instructionName);
+
+    protected:
+        /** \copydoc JKQTMathTextNode::getSizeInternal() */
+        virtual JKQTMathTextNodeSize getSizeInternal(QPainter& painter, JKQTMathTextEnvironment currentEv) const override;
+        /** \brief fills instructions
+         *
+         *  \note this is the customization point for new instructions!
+         */
+        static void fillInstructions();
+        /** \brief defines all implemented instructions in this node */
+        static QHash<QString, Mode> instructions;
+};
 #endif // JKQTMATHTEXTWHITESPACENODE_H
 
 

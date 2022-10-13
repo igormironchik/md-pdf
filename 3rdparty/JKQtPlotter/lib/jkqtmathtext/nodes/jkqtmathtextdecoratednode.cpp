@@ -86,6 +86,22 @@ QString JKQTMathTextDecoratedNode::DecorationType2String(JKQTMathTextDecoratedNo
             return "xcancel";
         case MTDstrike:
             return "strike";
+        case MTDoverleftarrow:
+            return "overleftarrow";
+        case MTDoverrightarrow:
+            return "overrightarrow";
+        case MTDoverleftrightarrow:
+            return "overleftrightarrow";
+        case MTDunderleftarrow:
+            return "underleftarrow";
+        case MTDunderrightarrow:
+            return "underrightarrow";
+        case MTDunderleftrightarrow:
+            return "underleftrightarrow";
+        case MTDunderlineDashed:
+            return "underlineDashed";
+        case MTDunderlineDotted:
+            return "MTDunderlineDotted";
     }
     return "unknown";
 }
@@ -113,39 +129,43 @@ JKQTMathTextDecoratedNode::JKQTMathTextDecoratedNode(JKQTMathText* _parent, Deco
 JKQTMathTextDecoratedNode::~JKQTMathTextDecoratedNode() {
 }
 
-void JKQTMathTextDecoratedNode::getSizeInternal(QPainter& painter, JKQTMathTextEnvironment currentEv, double& width, double& baselineHeight, double& overallHeight, double& strikeoutPos, const JKQTMathTextNodeSize* /*prevNodeSize*/) {
+JKQTMathTextNodeSize JKQTMathTextDecoratedNode::getSizeInternal(QPainter& painter, JKQTMathTextEnvironment currentEv) const {
+	JKQTMathTextNodeSize s;
     JKQTMathTextEnvironment ev=currentEv;
-    double cwidth=0, cbaselineHeight=0, coverallHeight=0, cstrikeoutPos=0;
-    getChild()->getSize(painter, ev, cwidth, cbaselineHeight, coverallHeight, cstrikeoutPos);
-    const double cDescent=coverallHeight-cbaselineHeight;
+    JKQTMathTextNodeSize cs=getChild()->getSize(painter, ev);
+    const double cDescent=cs.getDescent();
     const QFont font=ev.getFont(parentMathText);
     const QFontMetricsF fm(font, painter.device());
     const double decoSeparation=parentMathText->getDecorationSeparationFactor()*fm.ascent();
     const double deco_height=parentMathText->getDecorationHeightFactor()*fm.ascent();
-    const double deco_ypos=cbaselineHeight+decoSeparation;
+    const double deco_ypos=cs.baselineHeight+decoSeparation;
     const double decoAboveAscent_ypos=fm.ascent()+decoSeparation;
     const double decobelow_ypos=cDescent+decoSeparation;
-    const double italic_xcorrection=getNonItalicXCorretion(painter, cwidth, ev, getChild());
+    const double italic_xcorrection=getNonItalicXCorretion(painter, cs.width, ev, getChild());
     const double deco_miniwidth=((decoration==MTDtilde||decoration==MTDbreve)?fm.boundingRect("~").width():fm.boundingRect("^").width())-italic_xcorrection;
     const double linewidth=qMax(parentMathText->ABS_MIN_LINEWIDTH, fm.lineWidth());
 
 
 
-    double descent=coverallHeight-cbaselineHeight;
-    double ascent=cbaselineHeight;
+    double descent=cs.getDescent();
+    double ascent=cs.baselineHeight;
     if (decoration==MTDbar) {
-        ascent=std::max<double>(baselineHeight+decoSeparation, decoAboveAscent_ypos)+linewidth/2.0;
-    } else if (decoration==MTDunderline) {
+        ascent=std::max<double>(cs.baselineHeight+decoSeparation, decoAboveAscent_ypos)+linewidth/2.0;
+    } else if (decoration==MTDunderline || decoration==MTDunderlineDashed || decoration==MTDunderlineDotted) {
         descent=std::max<double>(decobelow_ypos, cDescent)+linewidth/2.0;
     } else if (decoration==MTDdoubleunderline) {
-        descent=std::max<double>(decobelow_ypos, cDescent)+2.5*linewidth;
+        descent=std::max<double>(decobelow_ypos, cDescent)+3.5*linewidth;
+    } else if (decoration==MTDunderleftarrow || decoration==MTDunderrightarrow || decoration==MTDunderleftrightarrow) {
+        descent=std::max<double>(decobelow_ypos, cDescent)+0.5*linewidth+deco_height;
     } else {
         ascent=deco_ypos+deco_height;
     }
-    overallHeight=ascent+descent;
-    baselineHeight=ascent;
-    strikeoutPos=cstrikeoutPos;
-    width=std::max<double>(deco_miniwidth,cwidth);
+    s.overallHeight=ascent+descent;
+    s.baselineHeight=ascent;
+    s.strikeoutPos=cs.strikeoutPos;
+    s.width=std::max<double>(deco_miniwidth,cs.width);
+    s.baselineXCorrection=cs.baselineXCorrection;
+    return s;
 }
 
 QHash<QString, JKQTMathTextDecoratedNode::DecorationType> JKQTMathTextDecoratedNode::instructions;
@@ -161,6 +181,8 @@ void JKQTMathTextDecoratedNode::fillInstructions()
     instructions["underline"]=MTDunderline;
     instructions["uline"]=MTDunderline;
     instructions["ul"]=MTDunderline;
+    instructions["dashuline"]=MTDunderlineDashed;
+    instructions["dotuline"]=MTDunderlineDotted;
     instructions["uuline"]=MTDdoubleunderline;
     instructions["uul"]=MTDdoubleunderline;
     instructions["ooline"]=MTDdoubleoverline;
@@ -195,14 +217,20 @@ void JKQTMathTextDecoratedNode::fillInstructions()
     instructions["strike"]=MTDstrike;
     instructions["st"]=MTDstrike;
     instructions["sout"]=MTDstrike;
+    instructions["overleftarrow"]=MTDoverleftarrow;
+    instructions["overrightarrow"]=MTDoverrightarrow;
+    instructions["overleftrightarrow"]=MTDoverleftrightarrow;
+    instructions["underleftarrow"]=MTDunderleftarrow;
+    instructions["underrightarrow"]=MTDunderrightarrow;
+    instructions["underleftrightarrow"]=MTDunderleftrightarrow;
+
 }
 
-double JKQTMathTextDecoratedNode::draw(QPainter& painter, double x, double y, JKQTMathTextEnvironment currentEv, const JKQTMathTextNodeSize* /*prevNodeSize*/) {
+double JKQTMathTextDecoratedNode::draw(QPainter& painter, double x, double y, JKQTMathTextEnvironment currentEv) const {
     doDrawBoxes(painter, x, y, currentEv);
     JKQTMathTextEnvironment ev=currentEv;
-    double cwidth=0, cbaselineHeight=0, coverallHeight=0, cstrikeoutPos=0;
-    getChild()->getSize(painter, ev, cwidth, cbaselineHeight, coverallHeight, cstrikeoutPos);
-    const double cDescent=coverallHeight-cbaselineHeight;
+    auto cs=getChild()->getSize(painter, ev);
+    const double cDescent=cs.overallHeight-cs.baselineHeight;
     const QFont font=ev.getFont(parentMathText);
     const QFontMetricsF fm(font, painter.device());
     const double width_X=fm.boundingRect("X").width();
@@ -210,35 +238,42 @@ double JKQTMathTextDecoratedNode::draw(QPainter& painter, double x, double y, JK
     const double width_dot=fm.boundingRect(".").width()/2.0;
     const double decoSeparation=parentMathText->getDecorationSeparationFactor()*fm.ascent();
     const double linewidth=qMax(parentMathText->ABS_MIN_LINEWIDTH, fm.lineWidth());
+    const double linewidthArrow=linewidth*0.65;
     const double deco_height=parentMathText->getDecorationHeightFactor()*fm.ascent();
     const double decoAboveAscent_ypos=y-fm.ascent()-decoSeparation;
-    const double strike_ypos=y-cbaselineHeight/2.0;
+    const double strike_ypos=y-cs.baselineHeight/2.0;
     const double decobelow_ypos=y+cDescent+decoSeparation;
-    const double italic_xcorrection=getNonItalicXCorretion(painter, cwidth, ev, getChild());
+    const double italic_xcorrection=getNonItalicXCorretion(painter, cs.width, ev, getChild());
     const double deco_xoffset=parentMathText->getDecorationWidthReductionXFactor()*width_X/2.0;
-    const double deco_width=std::max<double>(width_x*0.5,cwidth-2.0*deco_xoffset-italic_xcorrection);
-    const double deco_vecwidth=width_x*0.33;
-    const double deco_vecheight=deco_height*0.33;
+    const double deco_width=std::max<double>(width_x*0.5,cs.width-2.0*deco_xoffset-italic_xcorrection);
+    const double deco_vecwidth=width_x*0.25;
+    const double deco_vecheight=deco_height*0.5;
     const double deco_accentwidth=deco_height/4.0;
     const double deco_miniwidth=((decoration==MTDtilde||decoration==MTDbreve)?fm.boundingRect("j").width():fm.boundingRect("^").width())-italic_xcorrection;
-    const double decotop_xcenter=x+italic_xcorrection+(cwidth-italic_xcorrection)/2.0;
+    const double decotop_xcenter=x+italic_xcorrection+(cs.width-italic_xcorrection)/2.0;
     const double decotop_xstart=decotop_xcenter-deco_width/2.0+linewidth/2.0;
     const double decotop_xend=decotop_xcenter+deco_width/2.0-linewidth/2.0;
     const double decobot_xstart=x+linewidth/2.0;
-    const double decobot_xend=x+cwidth-italic_xcorrection-linewidth/2.0;
+    const double decobot_xend=x+cs.width-italic_xcorrection-linewidth/2.0;
     //const double decobot_xcenter=(decobot_xstart+decobot_xend)/2.0;
-    const double deco_ytopbot=y-cbaselineHeight-decoSeparation-linewidth/2.0;
-    const double deco_ytoptop=y-cbaselineHeight-decoSeparation-deco_height+linewidth/2.0;
-    const double deco_ytopcenter=y-cbaselineHeight-decoSeparation-deco_height/2.0;
+    const double deco_ytopbot=y-cs.baselineHeight-decoSeparation-linewidth/2.0;
+    const double deco_ytoptop=y-cs.baselineHeight-decoSeparation-deco_height+linewidth/2.0;
+    const double deco_ytopcenter=y-cs.baselineHeight-decoSeparation-deco_height/2.0;
 
 
 
     QPen pold=painter.pen();
     QPen p=pold;
     p.setColor(ev.color);
-    p.setWidthF(linewidth);//ceil(currentEv.fontSize/16.0));
-    p.setCapStyle(Qt::RoundCap);
+    p.setWidthF(linewidthArrow);
+    p.setCapStyle(Qt::SquareCap);
     p.setJoinStyle(Qt::RoundJoin);
+
+    QPen pul=p;
+    pul.setWidthF(linewidth);
+    pul.setCapStyle(Qt::SquareCap);
+
+
 
     double xnew=getChild()->draw(painter, x, y, ev);
 
@@ -246,7 +281,7 @@ double JKQTMathTextDecoratedNode::draw(QPainter& painter, double x, double y, JK
         if (!aDirect.isNull() && fm.inFont(aDirect)) {
             painter.save(); auto __finalpaint=JKQTPFinally([&painter]() {painter.restore();});
             const QRectF tbra=fm.tightBoundingRect(aDirect);
-            painter.translate(decotop_xcenter-tbra.width()/2.0, (deco_ytopcenter+deco_ytopbot)/2.0);
+            painter.translate(decotop_xcenter-tbra.width()/2.0, (deco_ytopcenter+deco_ytoptop)/2.0);
             //painter.setPen("red");
             //painter.drawEllipse(0-2,0-2,4,4);
             painter.translate(-tbra.x(), -tbra.y());
@@ -264,7 +299,7 @@ double JKQTMathTextDecoratedNode::draw(QPainter& painter, double x, double y, JK
         if (!aFallback.isNull() && fm.inFont(aFallback)) {
             painter.save(); auto __finalpaint=JKQTPFinally([&painter]() {painter.restore();});
             const QRectF tbra=fm.tightBoundingRect(aFallback);
-            painter.translate(decotop_xcenter-tbra.width()/2.0, deco_ytopcenter);
+            painter.translate(decotop_xcenter-tbra.width()/2.0, (deco_ytopcenter+deco_ytoptop)/2.0);
             //painter.setPen("yellow");
             //painter.drawEllipse(0-2,0-2,4,4);
             painter.translate(-tbra.x(), -tbra.y());
@@ -289,32 +324,34 @@ double JKQTMathTextDecoratedNode::draw(QPainter& painter, double x, double y, JK
         painter.drawPolyline(poly);
         painter.setPen(pold);
     } else if (decoration==MTDoverline) {
-        painter.setPen(p);
+        painter.setPen(pul);
         const QLineF l(decotop_xstart, deco_ytopbot, decotop_xend, deco_ytopbot);
         if (l.length()>0) painter.drawLine(l);
         painter.setPen(pold);
     } else if (decoration==MTDbar) {
-        painter.setPen(p);
+        painter.setPen(pul);
         const QLineF l(decotop_xstart, decoAboveAscent_ypos, decotop_xend, decoAboveAscent_ypos);
         if (l.length()>0) painter.drawLine(l);
         painter.setPen(pold);
     } else if (decoration==MTDdoubleoverline) {
-        painter.setPen(p);
+        painter.setPen(pul);
         const QLineF l(decotop_xstart, deco_ytopbot, decotop_xend, deco_ytopbot);
         if (l.length()>0) painter.drawLine(l);
-        const QLineF l2(decotop_xstart, deco_ytopbot-2.0*p.widthF(), decotop_xend, deco_ytopbot-2.0*p.widthF());
+        const QLineF l2(decotop_xstart, deco_ytopbot-2.5*pul.widthF(), decotop_xend, deco_ytopbot-2.5*pul.widthF());
         if (l2.length()>0) painter.drawLine(l2);
         painter.setPen(pold);
-    } else if (decoration==MTDunderline) {
-        painter.setPen(p);
+    } else if (decoration==MTDunderline || decoration==MTDunderlineDashed || decoration==MTDunderlineDotted) {
+        if (decoration==MTDunderlineDashed) pul.setStyle(Qt::DashLine);
+        if (decoration==MTDunderlineDotted) pul.setStyle(Qt::DotLine);
+        painter.setPen(pul);
         const QLineF l(decobot_xstart, decobelow_ypos, decobot_xend, decobelow_ypos);
         if (l.length()>0) painter.drawLine(l);
         painter.setPen(pold);
     } else if (decoration==MTDdoubleunderline) {
-        painter.setPen(p);
+        painter.setPen(pul);
         const QLineF l(decobot_xstart, decobelow_ypos, decobot_xend, decobelow_ypos);
         if (l.length()>0) painter.drawLine(l);
-        QLineF l2(decobot_xstart, decobelow_ypos+2.0*p.widthF(), decobot_xend, decobelow_ypos+2.0*p.widthF());
+        QLineF l2(decobot_xstart, decobelow_ypos+2.5*pul.widthF(), decobot_xend, decobelow_ypos+2.5*pul.widthF());
         if (l2.length()>0) painter.drawLine(l2);
         painter.setPen(pold);
     } else if (decoration==MTDarrow) {
@@ -324,6 +361,36 @@ double JKQTMathTextDecoratedNode::draw(QPainter& painter, double x, double y, JK
         QPolygonF poly;
         poly<<QPointF(decotop_xend-deco_vecwidth, deco_ytopbot)<<QPointF(decotop_xend, deco_ytopcenter)<<QPointF(decotop_xend-deco_vecwidth, deco_ytoptop);
         painter.drawPolyline(poly);
+        painter.setPen(pold);
+    } else if (decoration==MTDoverrightarrow) {
+        painter.setPen(p);
+        const QPainterPath path=JKQTMathTextMakeArrow(decotop_xstart, deco_ytopcenter, deco_width, deco_height, false, true);
+        painter.drawPath(path);
+        painter.setPen(pold);
+    } else if (decoration==MTDoverleftarrow) {
+        painter.setPen(p);
+        const QPainterPath path=JKQTMathTextMakeArrow(decotop_xstart, deco_ytopcenter, deco_width, deco_height, true, false);
+        painter.drawPath(path);
+        painter.setPen(pold);
+    } else if (decoration==MTDoverleftrightarrow) {
+        painter.setPen(p);
+        const QPainterPath path=JKQTMathTextMakeArrow(decotop_xstart, deco_ytopcenter, deco_width, deco_height, true, true);
+        painter.drawPath(path);
+        painter.setPen(pold);
+    } else if (decoration==MTDunderrightarrow) {
+        painter.setPen(p);
+        const QPainterPath path=JKQTMathTextMakeArrow(decobot_xstart, decobelow_ypos+deco_height/2.0, decobot_xend-decobot_xstart, deco_height, false, true);
+        painter.drawPath(path);
+        painter.setPen(pold);
+    } else if (decoration==MTDunderleftarrow) {
+        painter.setPen(p);
+        const QPainterPath path=JKQTMathTextMakeArrow(decobot_xstart, decobelow_ypos+deco_height/2.0, decobot_xend-decobot_xstart, deco_height, true, false);
+        painter.drawPath(path);
+        painter.setPen(pold);
+    } else if (decoration==MTDunderleftrightarrow) {
+        painter.setPen(p);
+        const QPainterPath path=JKQTMathTextMakeArrow(decobot_xstart, decobelow_ypos+deco_height/2.0, decobot_xend-decobot_xstart, deco_height, true, true);
+        painter.drawPath(path);
         painter.setPen(pold);
     } else if (decoration==MTDhat) {
         if (!fDrawFontAccent(QChar(0x302), QChar(0x2c6))) {
@@ -378,13 +445,13 @@ double JKQTMathTextDecoratedNode::draw(QPainter& painter, double x, double y, JK
         }
     } else if (decoration==MTDacute) {
         if (!fDrawFontAccent(QChar(0x301), QChar(0x2CA))) {
-            painter.setPen(p);
+            painter.setPen(pul);
             painter.drawLine(QLineF(decotop_xcenter, deco_ytopbot, decotop_xcenter-deco_accentwidth, deco_ytopcenter));
             painter.setPen(pold);
         }
     } else if (decoration==MTDgrave) {
         if (!fDrawFontAccent(QChar(0x300), QChar(0x2CB))) {
-            painter.setPen(p);
+            painter.setPen(pul);
             painter.drawLine(QLineF(decotop_xcenter, deco_ytopbot, decotop_xcenter+deco_accentwidth, deco_ytopcenter));
             painter.setPen(pold);
         }
@@ -438,22 +505,22 @@ double JKQTMathTextDecoratedNode::draw(QPainter& painter, double x, double y, JK
             painter.setBrush(bold);
         }
     } else if (decoration==MTDstrike) {
-        painter.setPen(p);
+        painter.setPen(pul);
         const QLineF l((decotop_xstart+decobot_xstart)/2.0, strike_ypos, (decotop_xend+decobot_xend)/2.0, strike_ypos);
         if (l.length()>0) painter.drawLine(l);
         painter.setPen(pold);
     } else if (decoration==MTDcancel) {
-        painter.setPen(p);
+        painter.setPen(pul);
         const QLineF l(decobot_xstart, decobelow_ypos, decotop_xend, deco_ytopbot);
         if (l.length()>0) painter.drawLine(l);
         painter.setPen(pold);
     } else if (decoration==MTDbcancel) {
-        painter.setPen(p);
+        painter.setPen(pul);
         const QLineF l(decobot_xstart, deco_ytopbot, decotop_xend, decobelow_ypos);
         if (l.length()>0) painter.drawLine(l);
         painter.setPen(pold);
     } else if (decoration==MTDxcancel) {
-        painter.setPen(p);
+        painter.setPen(pul);
         const QLineF l(decobot_xstart, deco_ytopbot, decotop_xend, decobelow_ypos);
         if (l.length()>0) painter.drawLine(l);
         const QLineF l1(decobot_xstart, decobelow_ypos, decotop_xend, deco_ytopbot);
@@ -463,7 +530,7 @@ double JKQTMathTextDecoratedNode::draw(QPainter& painter, double x, double y, JK
     return xnew;
 }
 
-bool JKQTMathTextDecoratedNode::toHtml(QString &/*html*/, JKQTMathTextEnvironment /*currentEv*/, JKQTMathTextEnvironment /*defaultEv*/) {
+bool JKQTMathTextDecoratedNode::toHtml(QString &/*html*/, JKQTMathTextEnvironment /*currentEv*/, JKQTMathTextEnvironment /*defaultEv*/) const {
     //QString f;
     //JKQTMathTextEnvironment ev=currentEv;
 

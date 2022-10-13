@@ -126,7 +126,7 @@ bool JKQTPGeoText::getYMinMax(double& miny, double& maxy, double& smallestGreate
 void JKQTPGeoText::draw(JKQTPEnhancedPainter& painter) {
     clearHitTestData();
     painter.save(); auto __finalpaint=JKQTPFinally([&painter]() {painter.restore();});
-    parent->getMathText()->setFontRomanOrSpecial(getTextFontName());
+    parent->getMathText()->setFontSpecial(getTextFontName());
     parent->getMathText()->setFontSize(getTextFontSize()*parent->getFontSizeMultiplier());
     parent->getMathText()->setFontColor(getTextColor());
     parent->getMathText()->parse("\\;"+text);
@@ -283,15 +283,8 @@ void JKQTPGeoSymbol::draw(JKQTPEnhancedPainter &painter)
 
 void JKQTPGeoSymbol::drawKeyMarker(JKQTPEnhancedPainter &painter, QRectF &rect)
 {
-    const double minSize=qMin(rect.width(), rect.height());
-    double symbolSize=parent->pt2px(painter, this->getSymbolSize());
-    if (symbolSize>minSize*0.9) symbolSize=minSize*0.9;
-    double symbolWidth=parent->pt2px(painter, this->getSymbolLineWidth()*parent->getLineWidthMultiplier());
-    if (symbolWidth>0.3*symbolSize) symbolWidth=0.3*symbolSize;
-
     painter.save(); auto __finalpaint=JKQTPFinally([&painter]() {painter.restore();});
-    JKQTPPlotSymbol(painter, rect.left()+rect.width()/2.0, rect.top()+rect.height()/2.0, getSymbolType(), symbolSize, symbolWidth, getSymbolColor(), getSymbolFillColor());
-
+    JKQTPPlotSymbol(painter, rect.left()+rect.width()/2.0, rect.top()+rect.height()/2.0, getSymbolType(), getKeySymbolSizePx(painter, rect, parent), getKeySymbolLineWidthPx(painter, rect, parent), getKeyLabelColor(), getSymbolFillColor(),getSymbolFont());
 }
 
 QColor JKQTPGeoSymbol::getKeyLabelColor() const

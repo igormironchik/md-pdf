@@ -35,6 +35,7 @@
  *
  *  \image html filledgraphs.png
  *
+ *
  *  \see JKQTPFilledCurveXGraph, JKQTPFilledCurveYGraph
  */
 class JKQTPLOTTER_LIB_EXPORT JKQTPFilledCurveGraphBase: public JKQTPXYBaselineGraph, public JKQTPGraphLineAndFillStyleMixin {
@@ -63,11 +64,12 @@ public:
     const JKQTPGraphFillStyleMixin& fillStyleBelow() const;
     /** \copydoc m_fillMode */
     FillMode getFillMode() const;
+
 public slots:
     /** \brief set line-color, fill color and symbol color */
     void setColor(QColor c);
     /** \copydoc m_fillMode */
-    void setFillMode(FillMode mode);
+    void setFillMode(JKQTPFilledCurveGraphBase::FillMode mode);
 protected:
     /** \brief specifies how the area of the graph is filles */
     FillMode m_fillMode;
@@ -81,7 +83,7 @@ protected:
 /*! \brief This implements filled curve plots where the area is filled between the plot line and the x-Axis.
     \ingroup jkqtplotter_filledgraphs
 
-    \image html filledgraphs.png
+    \image html JKQTPFilledCurveXGraph.png
 
     \see \ref JKQTPlotterFilledGraphs
 
@@ -89,7 +91,7 @@ protected:
     Such plots are sometimes called "Wiggle Plots" and are often used (in their black/white-variety for seismographic
     data plotting.
 
-    \image html wiggleplot_x.png
+ *  \image html JKQTPFilledCurveXGraph_wiggle.png
 
     To generate such a plot, used \c JKQTPFilledCurveXGraph::setFillMode(JKQTPFilledCurveXGraph::FillMode::TwoColorFilling)
     and then use \c JKQTPFilledCurveXGraph::fillStyleBelow() to access the fill style for the area below the baseline
@@ -106,7 +108,14 @@ class JKQTPLOTTER_LIB_EXPORT JKQTPFilledCurveXGraph: public JKQTPFilledCurveGrap
         /** \brief class constructor */
         JKQTPFilledCurveXGraph(JKQTPlotter* parent);
         /** \brief plots the graph to the plotter object specified as parent */
-        void draw(JKQTPEnhancedPainter &painter);
+        void draw(JKQTPEnhancedPainter &painter) override;
+
+        /** \brief get the maximum and minimum y-value of the graph
+         *
+         * The result is given in the two parameters which are call-by-reference parameters!
+         */
+        virtual bool getYMinMax(double& miny, double& maxy, double& smallestGreaterZero) override;
+
 };
 
 
@@ -114,7 +123,7 @@ class JKQTPLOTTER_LIB_EXPORT JKQTPFilledCurveXGraph: public JKQTPFilledCurveGrap
 /*! \brief This implements filled curve plots with y errors where the area is filled between the plot line and the x-Axis.
     \ingroup jkqtplotter_filledgraphs
 
-    \image html plot_filledcurvexerrorplots.png
+    \image html JKQTPFilledCurveXErrorGraph.png
 
 
     \see \ref JKQTPlotterFilledGraphs, jkqtpstatAddXErrorFilledCurveGraph()
@@ -128,7 +137,45 @@ class JKQTPLOTTER_LIB_EXPORT JKQTPFilledCurveXErrorGraph: public JKQTPFilledCurv
         JKQTPFilledCurveXErrorGraph(JKQTPlotter* parent);
         /** \copydoc JKQTPGraph::usesColumn() */
         virtual bool usesColumn(int c) const override;
+        /** \brief get the maximum and minimum y-value of the graph
+         *
+         * The result is given in the two parameters which are call-by-reference parameters!
+         */
+        virtual bool getYMinMax(double& miny, double& maxy, double& smallestGreaterZero) override;
 
+
+        /** \copydoc JKQTPYGraphErrorData::yErrorSymmetric */
+        inline void setValueErrorSymmetric(bool __value) {
+            setYErrorSymmetric(__value);
+        }
+        /** \copydoc JKQTPYGraphErrorData::yErrorSymmetric */
+        inline bool getValueErrorSymmetric() const {
+            return getYErrorSymmetric();
+        }
+        /** \copydoc JKQTPYGraphErrorData::yErrorColumnLower */
+        inline int getValueErrorColumnLower() const {
+            return getYErrorColumnLower();
+        }
+        /** \copydoc JKQTPYGraphErrorData::yErrorColumn */
+        inline int getValueErrorColumn() const {
+            return getYErrorColumn();
+        }
+        /** \copydoc JKQTPYGraphErrorData::yErrorStyle */
+        inline void setValueErrorStyle(JKQTPErrorPlotstyle  __value) {
+            setYErrorStyle(__value);
+        }
+        /** \copydoc JKQTPYGraphErrorData::yErrorStyle */
+        inline JKQTPErrorPlotstyle getValueErrorStyle() const {
+            return getYErrorStyle();
+        }
+        /** \copydoc JKQTPYGraphErrorData::yErrorColumn */
+        inline void setValueErrorColumn(int __value) {
+            setYErrorColumn(__value);
+        }
+        /** \copydoc JKQTPYGraphErrorData::yErrorColumnLower */
+        inline void setValueErrorColumnLower(int __value) {
+            setYErrorColumnLower(__value);
+        }
     protected:
         /** \brief this function is used to plot error inidcators before plotting the graphs. */
         virtual void drawErrorsAfter(JKQTPEnhancedPainter& painter) override;
@@ -143,7 +190,7 @@ class JKQTPLOTTER_LIB_EXPORT JKQTPFilledCurveXErrorGraph: public JKQTPFilledCurv
 /*! \brief This implements filled curve plots where the area is filled between the plot line and y-Axis
     \ingroup jkqtplotter_filledgraphs
 
-    \image html filledgraphs_yaxis.png
+    \image html JKQTPFilledCurveYGraph.png
 
     \see \ref JKQTPlotterFilledGraphs
 
@@ -151,7 +198,7 @@ class JKQTPLOTTER_LIB_EXPORT JKQTPFilledCurveXErrorGraph: public JKQTPFilledCurv
     Such plots are sometimes called "Wiggle Plots" and are often used (in their black/white-variety for seismographic
     data plotting.
 
-    \image html wiggleplot_y.png
+ *  \image html JKQTPFilledCurveYGraph_wiggle.png
 
     To generate such a plot, used \c JKQTPFilledCurveXGraph::setFillMode(JKQTPFilledCurveXGraph::FillMode::TwoColorFilling)
     and then use \c JKQTPFilledCurveXGraph::fillStyleBelow() to access the fill style for the area below the baseline
@@ -168,8 +215,23 @@ class JKQTPLOTTER_LIB_EXPORT JKQTPFilledCurveYGraph: public JKQTPFilledCurveGrap
         /** \brief class constructor */
         JKQTPFilledCurveYGraph(JKQTPlotter* parent);
 
+        /** \brief get the maximum and minimum x-value of the graph
+         *
+         * The result is given in the two parameters which are call-by-reference parameters!
+         */
+        virtual bool getXMinMax(double& minx, double& maxx, double& smallestGreaterZero) override;
+
         /** \brief plots the graph to the plotter object specified as parent */
-        void draw(JKQTPEnhancedPainter &painter);
+        void draw(JKQTPEnhancedPainter &painter) override;
+        /** \brief returns the column used as "key" for the current graph (typically this call getXColumn(), but for horizontal graphs like filled curves or barcharts it may call getYColumn() ) */
+        virtual int getKeyColumn() const override;
+        /** \brief returns the column used as "value" for the current graph (typically this call getXColumn(), but for horizontal graphs like filled curves or barcharts it may call getYColumn() ) */
+        virtual int getValueColumn() const override;
+    public slots:
+        /** \brief sets the column used as "key" for the current graph (typically this call setXColumn(), but for horizontal graphs like filled curves or barcharts it may call setYColumn() ) */
+        virtual void setKeyColumn(int __value) override;
+        /** \brief sets the column used as "value" for the current graph (typically this call setXColumn(), but for horizontal graphs like filled curves or barcharts it may call setYColumn() ) */
+        virtual void setValueColumn(int __value) override;
 
 };
 
@@ -178,7 +240,7 @@ class JKQTPLOTTER_LIB_EXPORT JKQTPFilledCurveYGraph: public JKQTPFilledCurveGrap
 /*! \brief This implements filled curve plots with y errors where the area is filled between the plot line and the x-Axis.
     \ingroup jkqtplotter_filledgraphs
 
-    \image html plot_filledcurveyerrorplots.png
+    \image html JKQTPFilledCurveYErrorGraph.png
 
     \see \ref JKQTPlotterFilledGraphs, jkqtpstatAddYErrorFilledCurveGraph()
  */
@@ -191,6 +253,45 @@ class JKQTPLOTTER_LIB_EXPORT JKQTPFilledCurveYErrorGraph: public JKQTPFilledCurv
         /** \copydoc JKQTPGraph::usesColumn() */
         virtual bool usesColumn(int c) const override;
 
+        /** \brief get the maximum and minimum x-value of the graph
+         *
+         * The result is given in the two parameters which are call-by-reference parameters!
+         */
+        virtual bool getXMinMax(double& minx, double& maxx, double& smallestGreaterZero) override;
+
+
+        /** \copydoc JKQTPXGraphErrorData::xErrorSymmetric */
+        inline void setValueErrorSymmetric(bool __value) {
+            setXErrorSymmetric(__value);
+        }
+        /** \copydoc JKQTPXGraphErrorData::xErrorSymmetric */
+        inline bool getValueErrorSymmetric() const {
+            return getXErrorSymmetric();
+        }
+        /** \copydoc JKQTPXGraphErrorData::xErrorColumnLower */
+        inline int getValueErrorColumnLower() const {
+            return getXErrorColumnLower();
+        }
+        /** \copydoc JKQTPXGraphErrorData::xErrorColumn */
+        inline int getValueErrorColumn() const {
+            return getXErrorColumn();
+        }
+        /** \copydoc JKQTPXGraphErrorData::xErrorStyle */
+        inline void setValueErrorStyle(JKQTPErrorPlotstyle  __value) {
+            setXErrorStyle(__value);
+        }
+        /** \copydoc JKQTPXGraphErrorData::xErrorStyle */
+        inline JKQTPErrorPlotstyle getValueErrorStyle() const {
+            return getXErrorStyle();
+        }
+        /** \copydoc JKQTPXGraphErrorData::xErrorColumn */
+        inline void setValueErrorColumn(int __value) {
+            setXErrorColumn(__value);
+        }
+        /** \copydoc JKQTPXGraphErrorData::xErrorColumnLower */
+        inline void setValueErrorColumnLower(int __value) {
+            setXErrorColumnLower(__value);
+        }
     protected:
         /** \brief this function is used to plot error inidcators before plotting the graphs. */
         virtual void drawErrorsAfter(JKQTPEnhancedPainter& painter) override;
