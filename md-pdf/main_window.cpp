@@ -56,6 +56,8 @@ MainWidget::MainWidget( QWidget * parent )
 	:	QWidget( parent )
 	,	m_ui( new Ui::MainWindow() )
 	,	m_thread( new QThread( this ) )
+	,	m_textFontOk( false )
+	,	m_codeFontOk( false )
 {
 	m_ui->setupUi( this );
 
@@ -97,6 +99,32 @@ MainWidget::MainWidget( QWidget * parent )
 	adjustSize();
 
 	m_thread->start();
+
+	if( !PdfRenderer::isFontCreatable( m_ui->m_textFont->currentText() ) )
+	{
+		for( int i = 0; i < m_ui->m_textFont->count(); ++i )
+		{
+			if( PdfRenderer::isFontCreatable( m_ui->m_textFont->itemText( i ) ) )
+			{
+				m_ui->m_textFont->setCurrentIndex( i );
+
+				break;
+			}
+		}
+	}
+
+	if( !PdfRenderer::isFontCreatable( m_ui->m_codeFont->currentText() ) )
+	{
+		for( int i = 0; i < m_ui->m_codeFont->count(); ++i )
+		{
+			if( PdfRenderer::isFontCreatable( m_ui->m_codeFont->itemText( i ) ) )
+			{
+				m_ui->m_codeFont->setCurrentIndex( i );
+
+				break;
+			}
+		}
+	}
 
 	textFontChanged( m_ui->m_textFont->currentFont() );
 	codeFontChanged( m_ui->m_codeFont->currentFont() );
@@ -172,7 +200,11 @@ MainWidget::selectMarkdown()
 	if( !fileName.isEmpty() )
 	{
 		m_ui->m_fileName->setText( fileName );
-		m_ui->m_startBtn->setEnabled( true );
+
+		if( m_textFontOk && m_codeFontOk )
+			m_ui->m_startBtn->setEnabled( true );
+		else
+			m_ui->m_startBtn->setEnabled( false );
 	}
 }
 
@@ -295,10 +327,23 @@ MainWidget::textFontChanged( const QFont & f )
 	static const QString defaultColor = m_ui->m_textFont->palette().color( QPalette::Text ).name();
 
 	if( !PdfRenderer::isFontCreatable( f.family() ) )
+	{
 		m_ui->m_textFont->setStyleSheet( QStringLiteral( "QFontComboBox { color: red }" ) );
+		m_textFontOk = false;
+
+		m_ui->m_startBtn->setEnabled( false );
+	}
 	else
+	{
 		m_ui->m_textFont->setStyleSheet( QStringLiteral( "QFontComboBox { color: %1 }" )
 			.arg( defaultColor ) );
+		m_textFontOk = true;
+
+		if( !m_ui->m_fileName->text().isEmpty() && m_codeFontOk )
+			m_ui->m_startBtn->setEnabled( true );
+		else
+			m_ui->m_startBtn->setEnabled( false );
+	}
 }
 
 void
@@ -307,10 +352,23 @@ MainWidget::codeFontChanged( const QFont & f )
 	static const QString defaultColor = m_ui->m_codeFont->palette().color( QPalette::Text ).name();
 
 	if( !PdfRenderer::isFontCreatable( f.family() ) )
+	{
 		m_ui->m_codeFont->setStyleSheet( QStringLiteral( "QFontComboBox { color: red }" ) );
+		m_codeFontOk = false;
+
+		m_ui->m_startBtn->setEnabled( false );
+	}
 	else
+	{
 		m_ui->m_codeFont->setStyleSheet( QStringLiteral( "QFontComboBox { color: %1 }" )
 			.arg( defaultColor ) );
+		m_codeFontOk = true;
+
+		if( !m_ui->m_fileName->text().isEmpty() && m_textFontOk )
+			m_ui->m_startBtn->setEnabled( true );
+		else
+			m_ui->m_startBtn->setEnabled( false );
+	}
 }
 
 

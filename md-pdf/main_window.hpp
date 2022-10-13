@@ -66,6 +66,8 @@ private slots:
 private:
 	QScopedPointer< Ui::MainWindow > m_ui;
 	QThread * m_thread;
+	bool m_textFontOk;
+	bool m_codeFontOk;
 
 	Q_DISABLE_COPY( MainWidget )
 }; // class MainWindow
