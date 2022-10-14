@@ -2571,7 +2571,9 @@ PdfRenderer::loadImage( MD::Image * item )
 					.arg( item->url() ) );
 
 	if( img.isNull() )
-		throw PdfRendererError( tr( "Got empty image from \"%1\"." ).arg( item->url() ) );
+		throw PdfRendererError( tr( "Unable to load image: %1.\n\n"
+			"If this image is in Web, please be sure you are connected to the Internet. I'm "
+			"sorry for the inconvenience." ).arg( item->url() ) );
 
 	QByteArray data;
 	QBuffer buf( &data );
