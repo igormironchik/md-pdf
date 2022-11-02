@@ -95,7 +95,7 @@ public:
 // JavaSyntax
 //
 
-//! Syntax for C++.
+//! Syntax for Java.
 class JavaSyntax final
 	:	public Syntax
 {
@@ -108,5 +108,24 @@ public:
 	//! \return Vector of colored text auxiliary structs.
 	Colors prepare( const QStringList & lines ) const override;
 }; // class JavaSyntax
+
+
+//
+// QMLSyntax
+//
+
+//! Syntax for QML.
+class QMLSyntax final
+	:	public Syntax
+{
+protected:
+	friend class Syntax;
+
+	QMLSyntax() = default;
+
+public:
+	//! \return Vector of colored text auxiliary structs.
+	Colors prepare( const QStringList & lines ) const override;
+}; // class QMLSyntax
 
 #endif // MD_PDF_SYNTAX_HPP_INCLUDED

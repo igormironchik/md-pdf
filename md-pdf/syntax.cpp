@@ -55,6 +55,8 @@ Syntax::createSyntaxHighlighter( const QString & language )
 		return QSharedPointer< Syntax > ( new CppSyntax );
 	else if( language.toLower().simplified() == QStringLiteral( "java" ) )
 		return QSharedPointer< Syntax > ( new JavaSyntax );
+	else if( language.toLower().simplified() == QStringLiteral( "qml" ) )
+		return QSharedPointer< Syntax > ( new QMLSyntax );
 	else
 		return QSharedPointer< Syntax > ( new Syntax );
 }
@@ -263,6 +265,71 @@ static const QStringList c_javaKeyWords = {
 	QStringLiteral( "while" )
 };
 
+//! QML keywords.
+static const QStringList c_qmlKeyWords = {
+	QStringLiteral( "and" ),
+	QStringLiteral( "alert" ),
+	QStringLiteral( "alias" ),
+	QStringLiteral( "array" ),
+	QStringLiteral( "as" ),
+	QStringLiteral( "assert" ),
+	QStringLiteral( "async" ),
+	QStringLiteral( "await" ),
+	QStringLiteral( "bool" ),
+	QStringLiteral( "break" ),
+	QStringLiteral( "case" ),
+	QStringLiteral( "class" ),
+	QStringLiteral( "component" ),
+	QStringLiteral( "continue" ),
+	QStringLiteral( "const" ),
+	QStringLiteral( "default" ),
+	QStringLiteral( "double" ),
+	QStringLiteral( "else" ),
+	QStringLiteral( "except" ),
+	QStringLiteral( "false" ),
+	QStringLiteral( "finally" ),
+	QStringLiteral( "for" ),
+	QStringLiteral( "from" ),
+	QStringLiteral( "function" ),
+	QStringLiteral( "global" ),
+	QStringLiteral( "id" ),
+	QStringLiteral( "if" ),
+	QStringLiteral( "import" ),
+	QStringLiteral( "in" ),
+	QStringLiteral( "int" ),
+	QStringLiteral( "is" ),
+	QStringLiteral( "lambda" ),
+	QStringLiteral( "let" ),
+	QStringLiteral( "nan" ),
+	QStringLiteral( "not" ),
+	QStringLiteral( "null" ),
+	QStringLiteral( "object" ),
+	QStringLiteral( "of" ),
+	QStringLiteral( "or" ),
+	QStringLiteral( "parent" ),
+	QStringLiteral( "promise" ),
+	QStringLiteral( "property" ),
+	QStringLiteral( "raise" ),
+	QStringLiteral( "readonly" ),
+	QStringLiteral( "real" ),
+	QStringLiteral( "required" ),
+	QStringLiteral( "return" ),
+	QStringLiteral( "root" ),
+	QStringLiteral( "signal" ),
+	QStringLiteral( "string" ),
+	QStringLiteral( "switch" ),
+	QStringLiteral( "then" ),
+	QStringLiteral( "this" ),
+	QStringLiteral( "true" ),
+	QStringLiteral( "try" ),
+	QStringLiteral( "type" ),
+	QStringLiteral( "undefined" ),
+	QStringLiteral( "until" ),
+	QStringLiteral( "var" ),
+	QStringLiteral( "while" ),
+	QStringLiteral( "yield" )
+};
+
 //! \return Prepared colors.
 Syntax::Colors
 prepareColors( const QStringList & lines, const QString & startMultiComment,
@@ -424,7 +491,7 @@ Syntax::Colors
 CppSyntax::prepare( const QStringList & lines ) const
 {
 	return prepareColors( lines, QStringLiteral( "/*" ), QStringLiteral( "*/" ),
-		QStringLiteral( "//" ), QStringLiteral( ":,.-/*-+=<>!&()~%^|?[]{};" ),
+		QStringLiteral( "//" ), QStringLiteral( ":,.-/*+=<>!&()~%^|?[]{};" ),
 		c_cppKeyWords );
 }
 
@@ -437,6 +504,19 @@ Syntax::Colors
 JavaSyntax::prepare( const QStringList & lines ) const
 {
 	return prepareColors( lines, QStringLiteral( "/*" ), QStringLiteral( "*/" ),
-		QStringLiteral( "//" ), QStringLiteral( ":,.-/*-+=<>!&()~%^|?[]{};" ),
+		QStringLiteral( "//" ), QStringLiteral( ":,./*-+=<>!&()~%^|?[]{};" ),
 		c_javaKeyWords );
+}
+
+
+//
+// QMLSyntax
+//
+
+Syntax::Colors
+QMLSyntax::prepare( const QStringList & lines ) const
+{
+	return prepareColors( lines, QStringLiteral( "/*" ), QStringLiteral( "*/" ),
+		QStringLiteral( "//" ), QStringLiteral( ":,./*-+=<>!&()~%^|?[]{};" ),
+		c_qmlKeyWords );
 }
