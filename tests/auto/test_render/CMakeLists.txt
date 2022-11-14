@@ -30,7 +30,7 @@ include_directories( ${CMAKE_CURRENT_SOURCE_DIR}
 	${CMAKE_CURRENT_SOURCE_DIR}/../../../3rdparty/podofo-trunk/src
 	${CMAKE_CURRENT_BINARY_DIR}/../../../3rdparty/podofo-trunk
 	${CMAKE_CURRENT_SOURCE_DIR}/../../../3rdparty/JKQtPlotter/lib
-	${CMAKE_CURRENT_SOURCE_DIR}/../../../3rdparty/md4qt/src
+	${md4qt_INCLUDE_DIRECTORIES}
 	${CMAKE_CURRENT_BINARY_DIR}
 	${ImageMagick_INCLUDE_DIRS} )
 
@@ -50,7 +50,7 @@ link_directories( ${CMAKE_CURRENT_SOURCE_DIR}/../../../lib )
 
 add_executable( test.render ${SRC} )
 
-target_link_libraries( test.render syntax md4qt ${PODOFO_LIB} ${ImageMagick_LIBRARIES}
+target_link_libraries( test.render syntax ${PODOFO_LIB} ${ImageMagick_LIBRARIES}
 	JKQTMathTextSharedLib JKQTCommonSharedLib
 	Qt6::Widgets Qt6::Gui Qt6::Network Qt6::Test Qt6::Core )
 

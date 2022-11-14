@@ -23,8 +23,8 @@
 #include <md-pdf/renderer.hpp>
 
 // md4qt include.
-#include <md_parser.hpp>
-#include <md_doc.hpp>
+#define MD4QT_QT_SUPPORT
+#include <md4qt/parser.hpp>
 
 #include <test_const.hpp>
 
@@ -113,7 +113,7 @@ struct TestRendering {
 	testRendering( const QString & fileName, const QString & suffix,
 		const QVector< DrawPrimitive > & data, double textFontSize, double codeFontSize )
 	{
-		MD::Parser parser;
+		MD::Parser< MD::QStringTrait > parser;
 
 		auto doc = parser.parse( c_folder + QStringLiteral( "/../../manual/" ) + fileName, true );
 

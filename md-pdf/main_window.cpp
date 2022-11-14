@@ -21,7 +21,8 @@
 */
 
 // md4qt include.
-#include <md_parser.hpp>
+#define MD4QT_QT_SUPPORT
+#include <md4qt/parser.hpp>
 
 // md-pdf include.
 #include "main_window.hpp"
@@ -220,7 +221,7 @@ MainWidget::process()
 		if( !fileName.endsWith( QLatin1String( ".pdf" ), Qt::CaseInsensitive ) )
 			fileName.append( QLatin1String( ".pdf" ) );
 
-		MD::Parser parser;
+		MD::Parser< MD::QStringTrait > parser;
 
 		auto doc = parser.parse( m_ui->m_fileName->text(), m_ui->m_recursive->isChecked() );
 
