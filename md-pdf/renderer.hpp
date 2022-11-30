@@ -390,13 +390,15 @@ private:
 	//! \return Height of the footnote.
 	QVector< WhereDrawn > drawFootnote( PdfAuxData & pdfData, const RenderOpts & renderOpts,
 		std::shared_ptr< MD::Document< MD::QStringTrait > > doc, MD::Footnote< MD::QStringTrait > * note,
-		CalcHeightOpt heightCalcOpt );
+		CalcHeightOpt heightCalcOpt, double * lineHeight = nullptr );
 	//! \return Height of the footnote.
 	QVector< WhereDrawn > footnoteHeight( PdfAuxData & pdfData, const RenderOpts & renderOpts,
-		std::shared_ptr< MD::Document< MD::QStringTrait > > doc, MD::Footnote< MD::QStringTrait > * note );
+		std::shared_ptr< MD::Document< MD::QStringTrait > > doc,
+		MD::Footnote< MD::QStringTrait > * note, double * lineHeight );
 	//! Reserve space for footnote.
 	void reserveSpaceForFootnote( PdfAuxData & pdfData, const RenderOpts & renderOpts,
-		const QVector< WhereDrawn > & h, const double & currentY, int currentPage );
+		const QVector< WhereDrawn > & h, const double & currentY, int currentPage,
+		double lineHeight, bool addExtraLine = false );
 	//! Add footnote.
 	void addFootnote( std::shared_ptr< MD::Footnote< MD::QStringTrait > > f, PdfAuxData & pdfData,
 		const RenderOpts & renderOpts, std::shared_ptr< MD::Document< MD::QStringTrait > > doc );
