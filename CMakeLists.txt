@@ -39,6 +39,7 @@ add_subdirectory( 3rdparty/podofo-trunk )
 set( BUILD_EXAMPLES OFF CACHE INTERNAL "" FORCE )
 add_subdirectory( 3rdparty/widgets )
 
+set( BUILD_MD4QT_TESTS OFF CACHE INTERNAL "" FORCE )
 add_subdirectory( 3rdparty/md4qt )
 
 find_package( JPEG REQUIRED )
