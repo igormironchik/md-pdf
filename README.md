@@ -48,6 +48,22 @@ using Conan as dependencies manager define `MDPDF_USE_CONAN` to CMake. Good luck
 
 And one more thing - don't use `jom`.
 
+## Building with QtCreator and Conan
+
+ * Enable `Conan` plugin in `QtCreator`
+ * Open `CMakeLists.txt` with `QtCreator`
+ * Go on `Project` page and on build page move up `Conan` build step to the very top position
+ * There disable `CMake` step
+ * Rub build with `QtCreator`, this will install dependencies with `Conan`
+ * Enable `CMake` step on the build page
+ * Re-run `CMake`
+ * And voila, run build and everything should go without any problem.
+ 
+In this stack you can have problems only with `ImageMagick`, that I don't install with
+`Conan`, as there is no build possible on Windows platform with `Conan`. So be sure you installed
+`ImageMagick 6` and installation is available through the `PATH` environment, this should
+be enough to detect `ImageMagick`. Good luck.
+
 # Example
 
 Good example of work of this application is
