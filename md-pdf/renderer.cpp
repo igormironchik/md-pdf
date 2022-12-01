@@ -1744,10 +1744,17 @@ PdfRenderer::drawParagraph( PdfAuxData & pdfData, const RenderOpts & renderOpts,
 				break;
 
 			case MD::ItemType::Link :
-				rects.append( drawLink( pdfData, renderOpts, static_cast< MD::Link< MD::QStringTrait >* > ( it->get() ),
+			{
+				auto link = static_cast< MD::Link< MD::QStringTrait >* > ( it->get() );
+
+				if( !link->img()->isEmpty() && extraOnFirstLine )
+					pdfData.coords.y += cw.height();
+
+				rects.append( drawLink( pdfData, renderOpts, link,
 					doc, newLine, nullptr, 1.0, nullptr, m_footnoteNum,
 					offset, ( it == item->items().begin() || lineBreak ), &cw, scale, inFootnote ) );
 				lineBreak = false;
+			}
 				break;
 
 			case MD::ItemType::Image :
