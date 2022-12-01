@@ -333,7 +333,7 @@ private:
 
 	//! Draw empty line.
 	void moveToNewLine( PdfAuxData & pdfData, double xOffset, double yOffset,
-		double yOffsetMultiplier );
+		double yOffsetMultiplier, double yOffsetOnNewPage );
 	//! Load image.
 	QByteArray loadImage( MD::Image< MD::QStringTrait > * item );
 	//! Make all links clickable.

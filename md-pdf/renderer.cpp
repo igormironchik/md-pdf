@@ -1247,7 +1247,7 @@ PdfRenderer::drawString( PdfAuxData & pdfData, const RenderOpts & renderOpts,
 			if( cw )
 				cw->moveToNextLine();
 
-			moveToNewLine( pdfData, offset, cw->height(), 1.0 );
+			moveToNewLine( pdfData, offset, cw->height(), 1.0, cw->height() );
 
 			h = cw->height();
 			descent = cw->descent();
@@ -1476,7 +1476,7 @@ PdfRenderer::drawInlinedCode( PdfAuxData & pdfData, const RenderOpts & renderOpt
 
 void
 PdfRenderer::moveToNewLine( PdfAuxData & pdfData, double xOffset, double yOffset,
-	double yOffsetMultiplier )
+	double yOffsetMultiplier, double yOffsetOnNewPage )
 {
 	pdfData.coords.x = pdfData.coords.margins.left + xOffset;
 	pdfData.coords.y -= yOffset * yOffsetMultiplier;
@@ -1487,7 +1487,7 @@ PdfRenderer::moveToNewLine( PdfAuxData & pdfData, double xOffset, double yOffset
 		createPage( pdfData );
 
 		pdfData.coords.x = pdfData.coords.margins.left + xOffset;
-		pdfData.coords.y -= yOffset;
+		pdfData.coords.y -= yOffsetOnNewPage;
 	}
 }
 
@@ -1690,9 +1690,10 @@ PdfRenderer::drawParagraph( PdfAuxData & pdfData, const RenderOpts & renderOpts,
 
 	if( ( withNewLine && !pdfData.firstOnPage && heightCalcOpt == CalcHeightOpt::Unknown ) ||
 		( withNewLine && pdfData.drawFootnotes && heightCalcOpt == CalcHeightOpt::Unknown ) )
-			moveToNewLine( pdfData, offset, lineHeight + cw.height(), 1.0 );
+			moveToNewLine( pdfData, offset, lineHeight + cw.height(), 1.0,
+				( pdfData.drawFootnotes ? lineHeight + cw.height() : cw.height() ) );
 	else
-		moveToNewLine( pdfData, offset, cw.height(), 1.0 );
+		moveToNewLine( pdfData, offset, cw.height(), 1.0, cw.height() );
 
 	pdfData.coords.x = pdfData.coords.margins.left + offset;
 
@@ -1778,7 +1779,7 @@ PdfRenderer::drawParagraph( PdfAuxData & pdfData, const RenderOpts & renderOpts,
 
 			case MD::ItemType::LineBreak :
 				lineBreak = true;
-				moveToNewLine( pdfData, offset, lineHeight, 1.0 );
+				moveToNewLine( pdfData, offset, lineHeight, 1.0, lineHeight );
 				break;
 
 			case MD::ItemType::FootnoteRef :
@@ -1890,7 +1891,7 @@ PdfRenderer::drawMathExpr( PdfAuxData & pdfData, const RenderOpts & renderOpts,
 
 			if( !firstInParagraph )
 			{
-				moveToNewLine( pdfData, offset, 0.0, 1.0 );
+				moveToNewLine( pdfData, offset, 0.0, 1.0, 0.0 );
 
 				if( cw )
 				{
@@ -1948,7 +1949,7 @@ PdfRenderer::drawMathExpr( PdfAuxData & pdfData, const RenderOpts & renderOpts,
 
 			if( hasNext )
 			{
-				moveToNewLine( pdfData, offset, lineHeight, 1.0 );
+				moveToNewLine( pdfData, offset, lineHeight, 1.0, lineHeight );
 
 				if( cw )
 					cw->moveToNextLine();
@@ -1981,7 +1982,7 @@ PdfRenderer::drawMathExpr( PdfAuxData & pdfData, const RenderOpts & renderOpts,
 					h = cw->height();
 				}
 
-				moveToNewLine( pdfData, offset, h, 1.0 );
+				moveToNewLine( pdfData, offset, h, 1.0, h );
 			}
 
 			double imgScale = 1.0;
@@ -2309,7 +2310,7 @@ PdfRenderer::drawImage( PdfAuxData & pdfData, const RenderOpts & renderOpts,
 			const auto lineHeight = font->GetFontMetrics()->GetLineSpacing();
 
 			if( !firstInParagraph )
-				moveToNewLine( pdfData, offset, lineHeight, 1.0 );
+				moveToNewLine( pdfData, offset, lineHeight, 1.0, lineHeight );
 			else
 				pdfData.coords.x += offset;
 
@@ -2356,7 +2357,7 @@ PdfRenderer::drawImage( PdfAuxData & pdfData, const RenderOpts & renderOpts,
 			QRectF r( pdfData.coords.x + x, pdfData.coords.y,
 				pdfImg.GetWidth() * imgScale, pdfImg.GetHeight() * imgScale );
 
-			moveToNewLine( pdfData, offset, lineHeight, 1.0 );
+			moveToNewLine( pdfData, offset, lineHeight, 1.0, lineHeight );
 
 			return qMakePair( r, pdfData.currentPageIndex() );
 		}
@@ -3186,7 +3187,7 @@ PdfRenderer::drawListItem( PdfAuxData & pdfData, const RenderOpts & renderOpts,
 		ret.append( { pdfData.currentPageIndex(), pdfData.coords.y, lineHeight } );
 
 		if( heightCalcOpt != CalcHeightOpt::Full )
-			moveToNewLine( pdfData, offset, lineHeight, 1.0 );
+			moveToNewLine( pdfData, offset, lineHeight, 1.0, lineHeight );
 	}
 
 	if( heightCalcOpt == CalcHeightOpt::Unknown )
@@ -3582,7 +3583,7 @@ PdfRenderer::drawTable( PdfAuxData & pdfData, const RenderOpts & renderOpts,
 		pdfData.freeSpaceOn( pdfData.currentPageIndex() );
 	}
 
-	moveToNewLine( pdfData, offset, lineHeight, 1.0 );
+	moveToNewLine( pdfData, offset, lineHeight, 1.0, lineHeight );
 
 	QVector< std::shared_ptr< MD::Footnote< MD::QStringTrait > > > footnotes;
 	bool first = true;
