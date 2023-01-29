@@ -26,25 +26,26 @@ git submodule update --init --recursive
 
 # Building
 
-To build this application first of all install dependencies of PoDoFo
+To build this application first of all install dependencies of `PoDoFo`
 
-* freetype
-* libjpeg
-* libpng
-* zlib
+ * `openssl` 1.1
+ * `freetype`
+ * `libjpeg`
+ * `libpng`
+ * `zlib`
+ * `libtiff` - optional
+ * `libxml2`
+ * `fontconfig`
 
-On UNIX you also need
+Also `ImageMagick 6` is required.
 
-* fontconfig
+With these dependencies installed just open `CMakeLists.txt` in `QtCreator`
+(or use `CMake` from command line) and run build.
 
-Also ImageMagick6 is required.
-
-With these dependencies installed just open CMakeLists.txt in QtCreator and run build.
-
-You can use Conan to install dependencies, only ImageMagick should be installed by hands, as in
-Conan ImageMagick available version is 7 only, and not all platforms are supported. And
-Fontconfig should be installed in system, as using Fontconfig from Conan leads to ugly UI. In case
-using Conan as dependencies manager define `MDPDF_USE_CONAN` to CMake. Good luck!
+You can use `Conan` to install dependencies, only `ImageMagick` should be installed by hands, as in
+`Conan` `ImageMagick` available version is 7 only, and not all platforms are supported. And
+`Fontconfig` should be installed in system, as using `Fontconfig` from `Conan` leads to ugly UI.
+Good luck!
 
 And one more thing - don't use `jom`.
 
@@ -53,7 +54,6 @@ And one more thing - don't use `jom`.
  * Be sure you enabled `Conan` plugin in `QtCreator`
  * Be sure you opt in `Preferences->CMake->General->Package manager auto setup` checkbox
  * Open `CMakeLists.txt` with `QtCreator`
- * Be sure `Conan` build step is before a build one
  * And voila, run build and everything should go without any problem.
  
 In this stack you can have problems only with `ImageMagick`, that I don't install with
