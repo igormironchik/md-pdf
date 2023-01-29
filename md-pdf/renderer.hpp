@@ -35,6 +35,7 @@
 #include <QImage>
 #include <QNetworkReply>
 #include <QStack>
+#include <QByteArray>
 
 #ifdef MD_PDF_TESTING
 #include <QFile>
@@ -46,6 +47,7 @@
 
 // C++ include.
 #include <memory>
+#include <string_view>
 
 using namespace PoDoFo;
 
@@ -198,7 +200,7 @@ struct PdfAuxData {
 	//! Coordinates and margins.
 	CoordsPageAttribs coords;
 	//! Reserved spaces on the pages for footnotes.
-	QMap< int, double > reserved;
+	QMap< unsigned int, double > reserved;
 	//! Drawing footnotes or the document?
 	bool drawFootnotes = false;
 	//! Current page index for drawing footnotes.
@@ -242,10 +244,8 @@ struct PdfAuxData {
 	void freeSpaceOn( int page );
 
 	//! Draw text
-	void drawText( double x, double y, const PdfString & text );
-	//! Draw multiline text.
-	void drawMultiLineText( double x, double y, double width, double height,
-		const PdfString & text );
+	void drawText( double x, double y, const char * text, PdfFont * font, double size,
+		double scale, bool strikeout );
 	//! Draw image.
 	void drawImage( double x, double y, PdfImage * img, double xScale, double yScale );
 	//! Draw line.
@@ -270,6 +270,13 @@ struct WhereDrawn {
 	double height = 0.0;
 }; // struct WhereDrawn
 
+struct Utf8String {
+	QByteArray data;
+
+	operator const char * () const { return data.data(); };
+	operator std::string_view () const { return data.data(); };
+}; // struct Utf8String
+
 
 //
 // PdfRenderer
@@ -292,10 +299,10 @@ public:
 	//! \return Is font can be created?
 	static bool isFontCreatable( const QString & font );
 
-	//! Convert QString to PdfString.
-	static PdfString createPdfString( const QString & text );
-	//! Convert PdfString to QString.
-	static QString createQString( const PdfString & str );
+	//! Convert QString to UTF-8.
+	static Utf8String createPdfString( const QString & text );
+	//! Convert UTF-8 to QString.
+	static QString createQString( const char * str );
 
 #ifdef MD_PDF_TESTING
 	bool isError() const;
@@ -477,32 +484,42 @@ private:
 	}; // struct CustomWidth
 
 	//! Draw text.
-	QVector< QPair< QRectF, int > > drawText( PdfAuxData & pdfData, const RenderOpts & renderOpts,
-		MD::Text< MD::QStringTrait > * item, std::shared_ptr< MD::Document< MD::QStringTrait > > doc, bool & newLine, PdfFont * footnoteFont,
-		float footnoteFontScale, MD::Item< MD::QStringTrait > * nextItem, int footnoteNum, double offset,
+	QVector< QPair< QRectF, unsigned int > > drawText( PdfAuxData & pdfData,
+		const RenderOpts & renderOpts, MD::Text< MD::QStringTrait > * item,
+		std::shared_ptr< MD::Document< MD::QStringTrait > > doc, bool & newLine,
+		PdfFont * footnoteFont, float footnoteFontSize, float footnoteFontScale,
+		MD::Item< MD::QStringTrait > * nextItem, int footnoteNum, double offset,
 		bool firstInParagraph, CustomWidth * cw, float scale, bool inFootnote );
 	//! Draw inlined code.
-	QVector< QPair< QRectF, int > > drawInlinedCode( PdfAuxData & pdfData, const RenderOpts & renderOpts,
-		MD::Code< MD::QStringTrait > * item, std::shared_ptr< MD::Document< MD::QStringTrait > > doc, bool & newLine, double offset,
+	QVector< QPair< QRectF, unsigned int > > drawInlinedCode( PdfAuxData & pdfData,
+		const RenderOpts & renderOpts, MD::Code< MD::QStringTrait > * item,
+		std::shared_ptr< MD::Document< MD::QStringTrait > > doc, bool & newLine, double offset,
 		bool firstInParagraph, CustomWidth * cw, float scale, bool inFootnote );
 	//! Draw string.
-	QVector< QPair< QRectF, int > > drawString( PdfAuxData & pdfData, const RenderOpts & renderOpts,
-		const QString & str, PdfFont * spaceFont, PdfFont * font, double lineHeight,
-		std::shared_ptr< MD::Document< MD::QStringTrait > > doc, bool & newLine, PdfFont * footnoteFont,
-		float footnoteFontScale, MD::Item< MD::QStringTrait > * nextItem, int footnoteNum, double offset,
+	QVector< QPair< QRectF, unsigned int > > drawString( PdfAuxData & pdfData,
+		const RenderOpts & renderOpts, const QString & str,
+		PdfFont * spaceFont, float spaceFontSize, float spaceFontScale,
+		PdfFont * font, float fontSize, float fontScale,
+		double lineHeight,
+		std::shared_ptr< MD::Document< MD::QStringTrait > > doc, bool & newLine,
+		PdfFont * footnoteFont, float footnoteFontSize, float footnoteFontScale,
+		MD::Item< MD::QStringTrait > * nextItem,
+		int footnoteNum, double offset,
 		bool firstInParagraph, CustomWidth * cw, const QColor & background,
-		bool inFootnote );
+		bool inFootnote, bool strikeout );
 	//! Draw link.
-	QVector< QPair< QRectF, int > > drawLink( PdfAuxData & pdfData, const RenderOpts & renderOpts,
-		MD::Link< MD::QStringTrait > * item, std::shared_ptr< MD::Document< MD::QStringTrait > > doc, bool & newLine, PdfFont * footnoteFont,
-		float footnoteFontScale, MD::Item< MD::QStringTrait > * nextItem, int footnoteNum, double offset,
+	QVector< QPair< QRectF, unsigned int > > drawLink( PdfAuxData & pdfData,
+		const RenderOpts & renderOpts, MD::Link< MD::QStringTrait > * item,
+		std::shared_ptr< MD::Document< MD::QStringTrait > > doc, bool & newLine,
+		PdfFont * footnoteFont, float footnoteFontSize, float footnoteFontScale,
+		MD::Item< MD::QStringTrait > * nextItem, int footnoteNum, double offset,
 		bool firstInParagraph, CustomWidth * cw, float scale, bool inFootnote );
 	//! Draw image.
-	QPair< QRectF, int > drawImage( PdfAuxData & pdfData, const RenderOpts & renderOpts,
+	QPair< QRectF, unsigned int > drawImage( PdfAuxData & pdfData, const RenderOpts & renderOpts,
 		MD::Image< MD::QStringTrait > * item, std::shared_ptr< MD::Document< MD::QStringTrait > > doc, bool & newLine, double offset,
 		bool firstInParagraph, CustomWidth * cw, float scale );
 	//! Draw math expression.
-	QPair< QRectF, int > drawMathExpr( PdfAuxData & pdfData, const RenderOpts & renderOpts,
+	QPair< QRectF, unsigned int > drawMathExpr( PdfAuxData & pdfData, const RenderOpts & renderOpts,
 		MD::Math< MD::QStringTrait > * item, std::shared_ptr< MD::Document< MD::QStringTrait > > doc,
 		bool & newLine, double offset, bool hasNext,
 		bool firstInParagraph, CustomWidth * cw, float scale );
@@ -582,7 +599,7 @@ private:
 
 	//! Draw text line in the cell.
 	void drawTextLineInTable( double x, double & y, TextToDraw & text, double lineHeight,
-		PdfAuxData & pdfData, QMap< QString, QVector< QPair< QRectF, int > > > & links,
+		PdfAuxData & pdfData, QMap< QString, QVector< QPair< QRectF, unsigned int > > > & links,
 		PdfFont * font, int & currentPage, int & endPage, double & endY,
 		QVector< std::shared_ptr< MD::Footnote< MD::QStringTrait > > > & footnotes, bool inFootnote,
 		float scale );
@@ -591,11 +608,14 @@ private:
 		double & endY );
 	//! Make links in table clickable.
 	void processLinksInTable( PdfAuxData & pdfData,
-		const QMap< QString, QVector< QPair< QRectF, int > > > & links,
+		const QMap< QString, QVector< QPair< QRectF, unsigned int > > > & links,
 		std::shared_ptr< MD::Document< MD::QStringTrait > > doc );
 
 	//! Draw horizontal line.
 	void drawHorizontalLine( PdfAuxData & pdfData, const RenderOpts & renderOpts );
+
+	//! Handle rendering exception.
+	void handleException( PdfAuxData & pdfData, const QString & msg );
 
 private:
 	//! Name of the output file.
@@ -609,9 +629,9 @@ private:
 	//! Termination flag.
 	bool m_terminate;
 	//! All destinations in the document.
-	QMap< QString, PdfDestination > m_dests;
+	QMap< QString, std::shared_ptr< PdfDestination > > m_dests;
 	//! Links that not yet clickable.
-	QMultiMap< QString, QVector< QPair< QRectF, int > > > m_unresolvedLinks;
+	QMultiMap< QString, QVector< QPair< QRectF, unsigned int > > > m_unresolvedLinks;
 	//! Cache of images.
 	QMap< QString, QByteArray > m_imageCache;
 	//! Footnote counter.

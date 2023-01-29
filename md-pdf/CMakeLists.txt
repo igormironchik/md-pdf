@@ -12,6 +12,8 @@ find_package( ImageMagick 6 EXACT REQUIRED COMPONENTS Magick++ MagickCore )
 
 add_definitions( -DMAGICKCORE_QUANTUM_DEPTH=16 )
 add_definitions( -DMAGICKCORE_HDRI_ENABLE=0 )
+add_definitions( -DPODOFO_SHARED )
+add_definitions( -Dpodofo_shared_EXPORTS )
 
 if( ENABLE_COVERAGE )
 	set( CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -g -O0 -fprofile-arcs -ftest-coverage" )
@@ -41,15 +43,15 @@ set( LIB_SYNTAX_SRC syntax.cpp
 	syntax.hpp )
 
 include_directories( ${CMAKE_CURRENT_SOURCE_DIR}
-	${CMAKE_CURRENT_SOURCE_DIR}/../3rdparty/podofo-trunk/src
+	${CMAKE_CURRENT_SOURCE_DIR}/../3rdparty/podofo/src
 	${CMAKE_CURRENT_SOURCE_DIR}/../3rdparty/widgets/include
-	${CMAKE_CURRENT_BINARY_DIR}/../3rdparty/podofo-trunk
+	${CMAKE_CURRENT_BINARY_DIR}/../3rdparty/podofo/src/podofo
 	${ImageMagick_INCLUDE_DIRS}
 	${CMAKE_CURRENT_SOURCE_DIR}/../3rdparty/JKQtPlotter/lib
 	${md4qt_INCLUDE_DIRECTORIES} )
 
-link_directories( ${CMAKE_CURRENT_BINARY_DIR}/../3rdparty/podofo-trunk/src/podofo
-	${CMAKE_CURRENT_BINARY_DIR}/../3rdparty/podofo-trunk/src )
+link_directories( ${CMAKE_CURRENT_BINARY_DIR}/../3rdparty/podofo/src/podofo
+	${CMAKE_CURRENT_BINARY_DIR}/../3rdparty/podofo/src )
 
 add_library( syntax STATIC ${LIB_SYNTAX_SRC} )
 
@@ -58,4 +60,5 @@ target_link_libraries( syntax Qt6::Core )
 add_executable( md-pdf-gui WIN32 ${GUI_SRC} )
 
 target_link_libraries( md-pdf-gui syntax widgets ${ImageMagick_LIBRARIES}
-	JKQTMathTextSharedLib JKQTCommonSharedLib Qt6::Widgets Qt6::Network Qt6::Core ${PODOFO_LIB} )
+	JKQTMathTextSharedLib JKQTCommonSharedLib Qt6::Widgets Qt6::Network Qt6::Core
+	podofo_shared )

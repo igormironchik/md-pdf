@@ -10,6 +10,8 @@ find_package( ImageMagick 6 EXACT REQUIRED COMPONENTS Magick++ MagickCore )
 
 add_definitions( -DMAGICKCORE_QUANTUM_DEPTH=16 )
 add_definitions( -DMAGICKCORE_HDRI_ENABLE=0 )
+add_definitions( -DPODOFO_SHARED )
+add_definitions( -Dpodofo_shared_EXPORTS )
 
 set( CMAKE_AUTOMOC ON )
 
@@ -27,15 +29,15 @@ add_definitions( -DMD_PDF_TESTING )
 include_directories( ${CMAKE_CURRENT_SOURCE_DIR}
 	${CMAKE_CURRENT_SOURCE_DIR}/../../..
 	${CMAKE_CURRENT_SOURCE_DIR}/../../../3rdparty
-	${CMAKE_CURRENT_SOURCE_DIR}/../../../3rdparty/podofo-trunk/src
-	${CMAKE_CURRENT_BINARY_DIR}/../../../3rdparty/podofo-trunk
+	${CMAKE_CURRENT_SOURCE_DIR}/../../../3rdparty/podofo/src
+	${CMAKE_CURRENT_BINARY_DIR}/../../../3rdparty/podofo/src/podofo
 	${CMAKE_CURRENT_SOURCE_DIR}/../../../3rdparty/JKQtPlotter/lib
 	${md4qt_INCLUDE_DIRECTORIES}
 	${CMAKE_CURRENT_BINARY_DIR}
 	${ImageMagick_INCLUDE_DIRS} )
 
-link_directories( ${CMAKE_CURRENT_BINARY_DIR}/../../../3rdparty/podofo-trunk/src/podofo )
-link_directories( ${CMAKE_CURRENT_BINARY_DIR}/../../../3rdparty/podofo-trunk/src )
+link_directories( ${CMAKE_CURRENT_BINARY_DIR}/../../../3rdparty/podofo/src/podofo )
+link_directories( ${CMAKE_CURRENT_BINARY_DIR}/../../../3rdparty/podofo/src )
 
 set( NORMAL_FONT ${CMAKE_CURRENT_SOURCE_DIR}/../../fonts/droid_serif.ttf )
 set( ITALIC_FONT ${CMAKE_CURRENT_SOURCE_DIR}/../../fonts/droid_serif_italic.ttf )
@@ -50,7 +52,8 @@ link_directories( ${CMAKE_CURRENT_SOURCE_DIR}/../../../lib )
 
 add_executable( test.render ${SRC} )
 
-target_link_libraries( test.render syntax ${PODOFO_LIB} ${ImageMagick_LIBRARIES}
+target_link_libraries( test.render syntax podofo_shared
+	${ImageMagick_LIBRARIES}
 	JKQTMathTextSharedLib JKQTCommonSharedLib
 	Qt6::Widgets Qt6::Gui Qt6::Network Qt6::Test Qt6::Core )
 

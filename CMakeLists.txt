@@ -3,10 +3,8 @@ cmake_minimum_required( VERSION 3.1 )
 
 project( md-pdf )
 
-include( ExternalProject )
-
-set( CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} ${CMAKE_CURRENT_BINARY_DIR}
-	${CMAKE_CURRENT_SOURCE_DIR}/cmake )
+set( CMAKE_MODULE_PATH ${CMAKE_CURRENT_BINARY_DIR}
+	${CMAKE_CURRENT_SOURCE_DIR}/cmake ${CMAKE_MODULE_PATH})
 
 set( CMAKE_ARCHIVE_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/lib )
 set( CMAKE_LIBRARY_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/lib )
@@ -22,43 +20,25 @@ if( NOT CMAKE_BUILD_TYPE )
 		FORCE)
 endif( NOT CMAKE_BUILD_TYPE )
 
-set( CMAKE_CXX_STANDARD 14 )
+set( CMAKE_CXX_STANDARD 17 )
 
 set( CMAKE_CXX_STANDARD_REQUIRED ON )
 
-if( MDPDF_USE_CONAN )
-	include( ${CMAKE_CURRENT_BINARY_DIR}/conanbuildinfo.cmake )
-	conan_basic_setup()
-endif()
+set( PODOFO_BUILD_LIB_ONLY ON CACHE INTERNAL "" FORCE )
+set( PODOFO_SHARED ON CACHE INTERNAL "" FORCE )
+add_subdirectory( 3rdparty/podofo )
 
-set( PODOFO_BUILD_LIB_ONLY ON )
-
-set( PODOFO_BUILD_SHARED ON CACHE INTERNAL "" FORCE )
-add_subdirectory( 3rdparty/podofo-trunk )
-
-set( BUILD_EXAMPLES OFF CACHE INTERNAL "" FORCE )
+set( BUILD_WIDGETS_EXAMPLES OFF CACHE INTERNAL "" FORCE )
 add_subdirectory( 3rdparty/widgets )
 
 set( BUILD_MD4QT_TESTS OFF CACHE INTERNAL "" FORCE )
 add_subdirectory( 3rdparty/md4qt )
-
-find_package( JPEG REQUIRED )
-find_package( PNG REQUIRED )
-find_package( BZip2 )
-find_package( Brotli )
-find_package( EXPAT )
-find_package( Freetype )
 
 set( JKQtPlotter_BUILD_EXAMPLES OFF CACHE INTERNAL "" FORCE )
 set( JKQtPlotter_BUILD_TOOLS OFF CACHE INTERNAL "" FORCE )
 add_subdirectory( 3rdparty/JKQtPlotter )
 
 add_subdirectory( md-pdf )
-
-if( MDPDF_USE_CONAN )
-	configure_file( ${CMAKE_CURRENT_SOURCE_DIR}/path.ps1.in ${CMAKE_CURRENT_SOURCE_DIR}/path.ps1 )
-	configure_file( ${CMAKE_CURRENT_SOURCE_DIR}/path.txt.in ${CMAKE_CURRENT_SOURCE_DIR}/path.txt )
-endif()
 
 enable_testing()
 

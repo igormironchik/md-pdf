@@ -25,11 +25,7 @@ jobs:
     - name: Checkout repository
       uses: actions/checkout@v3
       with:
-        # We must fetch at least the immediate parents so that if this is
-        # a pull request then we can checkout the head.
-        fetch-depth: 2
-      
-    - run: git submodule update --init --recursive
+        submodules: true
 
     # Initializes the CodeQL tools for scanning.
     - name: Initialize CodeQL
@@ -46,7 +42,7 @@ jobs:
       with:
         version: '6.2.0'
         
-    - run: sudo apt install libfreetype6-dev libjpeg-dev libpng-dev zlibc zlib1g-dev libfontconfig1-dev fontconfig libmagick++-dev
+    - run: sudo apt install libfreetype6-dev libjpeg-dev libpng-dev zlib1g-dev libfontconfig1-dev fontconfig libmagick++-dev libxml2-dev libtiff-dev
 
     - run: |
        cmake .

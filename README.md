@@ -50,13 +50,10 @@ And one more thing - don't use `jom`.
 
 ## Building with QtCreator and Conan
 
- * Enable `Conan` plugin in `QtCreator`
+ * Be sure you enabled `Conan` plugin in `QtCreator`
+ * Be sure you opt in `Preferences->CMake->General->Package manager auto setup` checkbox
  * Open `CMakeLists.txt` with `QtCreator`
- * Go on `Project` page and on build page move up `Conan` build step to the very top position
- * There disable `CMake` step
- * Rub build with `QtCreator`, this will install dependencies with `Conan`
- * Enable `CMake` step on the build page
- * Re-run `CMake`
+ * Be sure `Conan` build step is before a build one
  * And voila, run build and everything should go without any problem.
  
 In this stack you can have problems only with `ImageMagick`, that I don't install with
