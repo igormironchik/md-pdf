@@ -49,7 +49,7 @@ Good luck!
 
 And one more thing - don't use `jom`.
 
-## Building with QtCreator and Conan
+## Building with `QtCreator` and `Conan`
 
  * Be sure you enabled `Conan` plugin in `QtCreator`
  * Be sure you opt in `Preferences->CMake->General->Package manager auto setup` checkbox
@@ -60,6 +60,16 @@ In this stack you can have problems only with `ImageMagick`, that I don't instal
 `Conan`, as there is no build possible on Windows platform with `Conan`. So be sure you installed
 `ImageMagick 6` and installation is available through the `PATH` environment, this should
 be enough to detect `ImageMagick`. Good luck.
+
+## On what platforms better use `Conan` to build `md-pdf`
+
+I don't suggest to use `Conan` on MacOS, there will be conflicts with `brew` and system libraries,
+as I suggest to use `Fontconfig` from system. There will be problems. Just use `brew` on MacOS to
+install dependencies.
+
+On Windows `Conan` is a fresh wind to build this project.
+
+On Linux you can use what you want, that is why this is my favorite OS.
 
 # Example
 
