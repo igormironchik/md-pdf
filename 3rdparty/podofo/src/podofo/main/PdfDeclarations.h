@@ -302,8 +302,8 @@ enum class PdfFontCreateFlags
 enum class PdfFontMatchBehaviorFlags
 {
     None,
-    MatchExactName = 1,           ///< Match exact font name
-    MatchPostScriptName = 2       ///< Match postscript font name. The default is match family name. This search may be more specific
+    NormalizePattern = 1,     ///< Normalize search pattern, removing subset prefixes like "ABCDEF+" and extract flags from it (like ",Bold", "-Italic")
+    MatchPostScriptName = 2,  ///< Match postscript font name. The default is match family name. This search may be more specific
 };
 
 /**
@@ -332,8 +332,10 @@ enum class PdfPixelFormat
     Grayscale,
     RGB24,
     BGR24,
-    RGBA,
-    BGRA,
+    RGBA,           ///< This is known to be working in Apple CGImage created with rgb colorspace and kCGBitmapByteOrder32Big | kCGImageAlphaLast bitmapInfo
+    BGRA,           ///< This is known to be used in Windows GDI Bitmap
+    ARGB,
+    ABGR,           ///< This is known to be used in JDK BufferedImage.TYPE_4BYTE_ABGR
 };
 
 /**

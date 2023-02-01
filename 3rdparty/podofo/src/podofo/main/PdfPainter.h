@@ -7,13 +7,11 @@
 #ifndef PDF_PAINTER_H
 #define PDF_PAINTER_H
 
-#include "PdfDeclarations.h"
-
 #include "PdfRect.h"
 #include "PdfCanvas.h"
 #include "PdfTextState.h"
 #include "PdfGraphicsState.h"
-#include "PdfStringStream.h"
+#include "PdfPainterContexts.h"
 #include <podofo/common/StateStack.h>
 
 #include <podofo/staging/PdfShadingPattern.h>
@@ -56,10 +54,13 @@ class PdfPainter;
 
 struct PODOFO_API PdfPainterState final
 {
-    Matrix CTM;
+    Vector2 CurrentPoint;
     PdfGraphicsState GraphicsState;
-    PdfTextState TextState;
-    unsigned TextObjectCount = 0;
+    PdfTextState TextState;         ///< The current sematical text state
+private:
+    friend class PdfPainter;
+private:
+    PdfTextState EmittedTextState;  ///< The actually emitted text state
 };
 
 using PdfPainterStateStack = StateStack<PdfPainterState>;
@@ -180,6 +181,8 @@ class PODOFO_API PdfPainter final
 {
     friend class PdfGraphicsStateWrapper;
     friend class PdfTextStateWrapper;
+    friend class PdfPainterPathContext;
+    friend class PdfPainterTextContext;
 
 public:
     /** Create a new PdfPainter object.
@@ -212,21 +215,21 @@ public:
     /** Set the shading pattern for all following stroking operations.
      *  This operation uses the 'SCN' PDF operator.
      *
-     *  \param rPattern a shading pattern
+     *  \param pattern a shading pattern
      */
     void SetStrokingShadingPattern(const PdfShadingPattern& pattern);
 
     /** Set the shading pattern for all following non-stroking operations.
      *  This operation uses the 'scn' PDF operator.
      *
-     *  \param rPattern a shading pattern
+     *  \param pattern a shading pattern
      */
     void SetShadingPattern(const PdfShadingPattern& pattern);
 
     /** Set the tiling pattern for all following stroking operations.
      *  This operation uses the 'SCN' PDF operator.
      *
-     *  \param rPattern a tiling pattern
+     *  \param pattern a tiling pattern
      */
     void SetStrokingTilingPattern(const PdfTilingPattern& pattern);
 
@@ -234,14 +237,14 @@ public:
      *  Use when it's already in resources.
      *  This operation uses the 'SCN' PDF operator.
      *
-     *  \param rPatternName a tiling pattern name
+     *  \param patternName a tiling pattern name
      */
     void SetStrokingTilingPattern(const std::string_view& patternName);
 
     /** Set the tiling pattern for all following non-stroking operations.
      *  This operation uses the 'scn' PDF operator.
      *
-     *  \param rPattern a tiling pattern
+     *  \param pattern a tiling pattern
      */
     void SetTilingPattern(const PdfTilingPattern& pattern);
 
@@ -249,7 +252,7 @@ public:
       *  Use when it's already in resources.
      *  This operation uses the 'scn' PDF operator.
      *
-     *  \param rPattern a tiling pattern
+     *  \param pattern a tiling pattern
      */
     void SetTilingPattern(const std::string_view& patternName);
 
@@ -292,15 +295,52 @@ public:
      */
     void SetClipRect(const PdfRect& rect);
 
-    /** Draw a line with the current color and line settings.
-     *  \param startX x coordinate of the starting point
-     *  \param startY y coordinate of the starting point
-     *  \param endX x coordinate of the ending point
-     *  \param endY y coordinate of the ending point
+    /** Stroke a line with current color and line settings.
+     *  \param x1 x coordinate of the starting point
+     *  \param y1 y coordinate of the starting point
+     *  \param x2 x coordinate of the ending point
+     *  \param y2 y coordinate of the ending point
      */
-    void DrawLine(double startX, double startY, double endX, double endY);
+    void DrawLine(double x1, double y1, double x2, double y2);
 
-    /** Add a rectangle into the current path
+    /** Stroke a cubic bezier with current color and line settings.
+     *  \param x1 x coordinate of the starting point
+     *  \param y1 y coordinate of the starting point
+     *  \param x2 x coordinate of the first control point
+     *  \param y2 y coordinate of the first control point
+     *  \param x3 x coordinate of the second control point
+     *  \param y3 y coordinate of the second control point
+     *  \param x4 x coordinate of the end point, which is the new current point
+     *  \param y5 y coordinate of the end point, which is the new current point
+     */
+    void DrawCubicBezier(double x1, double y1, double x2, double y2, double x3, double y3, double x4, double y4);
+
+    /** Stroke an arc to the given coordinate, with angles and radius
+     *  \param x x coordinate of the center of the arc (left coordinate)
+     *  \param y y coordinate of the center of the arc (top coordinate)
+     *	\param radius radius
+     *	\param angle1 angle1 in radians
+     *	\param angle2 angle2 in radians
+     */
+    void DrawArc(double x, double y, double radius, double angle1, double angle2, bool counterclockwise = false);
+
+    /** Draw a circle
+     *  \param x x center coordinate of the circle
+     *  \param y y coordinate of the circle
+     *  \param radius radius of the circle
+     */
+    void DrawCircle(double x, double y, double radius, PdfPathDrawMode mode = PdfPathDrawMode::Stroke);
+
+    /** Draw an ellipse to the given coordinates
+     *  \param x x coordinate of the ellipse (left coordinate)
+     *  \param y y coordinate of the ellipse (top coordinate)
+     *  \param width width of the ellipse
+     *  \param height absolute height of the ellipse
+     */
+    void DrawEllipse(double x, double y, double width, double height,
+        PdfPathDrawMode mode = PdfPathDrawMode::Stroke);
+
+    /** Draw a rectangle to the given coordinates
      *  \param x x coordinate of the rectangle (left coordinate)
      *  \param y y coordinate of the rectangle (bottom coordinate)
      *  \param width width of the rectangle
@@ -308,41 +348,16 @@ public:
      *  \param roundX rounding factor, x direction
      *  \param roundY rounding factor, y direction
      */
-    void Rectangle(double x, double y, double width, double height,
-        double roundX = 0.0, double roundY = 0.0);
+    void DrawRectangle(double x, double y, double width, double height,
+        PdfPathDrawMode mode = PdfPathDrawMode::Stroke, double roundX = 0.0, double roundY = 0.0);
 
-    /** Add a rectangle into the current path
-     *
+    /** Draw a rectangle into the current path to the given coordinates
      *  \param rect the rectangle area
      *  \param roundX rounding factor, x direction
      *  \param roundY rounding factor, y direction
-     *
-     *  \see DrawRect
      */
-    void Rectangle(const PdfRect& rect, double roundX = 0.0, double roundY = 0.0);
-
-    /** Add an ellipse into the current path
-     *  \param x x coordinate of the ellipse (left coordinate)
-     *  \param y y coordinate of the ellipse (top coordinate)
-     *  \param width width of the ellipse
-     *  \param height absolute height of the ellipse
-     */
-    void Ellipse(double x, double y, double width, double height);
-
-    /** Add an arc into the current path
-     *  \param x x coordinate of the ellipse (left coordinate)
-     *  \param y y coordinate of the ellipse (top coord
-     *	\angle1 in radians
-     *	\angle2 in radians
-     */
-    void Arc(double x, double y, double radius, double angle1, double angle2);
-
-    /** Add a circle into the current path
-     *  \param x x center coordinate of the circle
-     *  \param y y coordinate of the circle
-     *  \param dRadius radius of the circle
-     */
-    void Circle(double x, double y, double radius);
+    void DrawRectangle(const PdfRect& rect, PdfPathDrawMode mode = PdfPathDrawMode::Stroke,
+        double roundX = 0.0, double roundY = 0.0);
 
     /** Draw a single-line text string on a page using a given font object.
      *  You have to call SetFont before calling this function.
@@ -392,67 +407,6 @@ public:
         double width, PdfHorizontalAlignment hAlignment,
         PdfDrawTextStyle style = PdfDrawTextStyle::Regular);
 
-    /** Begin drawing multiple text strings on a page using a given font object.
-     *  You have to call SetFont before calling this function.
-     *
-     *  If you want more simpler text output and do not need
-     *  the advanced text position features of MoveTextPos
-     *  use DrawText which is easier.
-     *
-     *  \param x the x coordinate
-     *  \param y the y coordinate
-     *
-     *  \see SetFont()
-     *  \see AddText()
-     *  \see MoveTextPos()
-     *  \see EndText()
-     */
-    void BeginText(double x, double y);
-
-    /** Draw a string on a page.
-     *  You have to call BeginText before the first call of this function
-     *  and EndText after the last call.
-     *
-     *  If you want more simpler text output and do not need
-     *  the advanced text position features of MoveTextPos
-     *  use DrawText which is easier.
-     *
-     *  \param sText the text string which should be printed
-     *
-     *  \see SetFont()
-     *  \see MoveTextPos()
-     *  \see EndText()
-     */
-    void AddText(const std::string_view& str);
-
-    /** Move position for text drawing on a page.
-     *  You have to call BeginText before calling this function
-     *
-     *  If you want more simpler text output and do not need
-     *  the advanced text position features of MoveTextPos
-     *  use DrawText which is easier.
-     *
-     *  \param x the x offset relative to pos of BeginText or last MoveTextPos
-     *  \param y the y offset relative to pos of BeginText or last MoveTextPos
-     *
-     *  \see BeginText()
-     *  \see AddText()
-     *  \see EndText()
-     */
-    void MoveTextPos(double x, double y);
-
-    /** End drawing multiple text strings on a page
-     *
-     *  If you want more simpler text output and do not need
-     *  the advanced text position features of MoveTextPos
-     *  use DrawText which is easier.
-     *
-     *  \see BeginText()
-     *  \see AddText()
-     *  \see MoveTextPos()
-     */
-    void EndText();
-
     /** Draw an image on the current page.
      *  \param x the x coordinate (left position of the image)
      *  \param y the y coordinate (bottom position of the image)
@@ -474,81 +428,15 @@ public:
      */
     void DrawXObject(const PdfXObject& obj, double x, double y, double scaleX = 1.0, double scaleY = 1.0);
 
-    /** Closes the current path by drawing a line from the current point
-     *  to the starting point of the path. Matches the PDF 'h' operator.
-     *  This function is useful to construct an own path
-     *  for drawing or clipping.
+    /**
+     * Begin a marked-content sequence (operator BMC) 
      */
-    void ClosePath();
+    void BeginMarkedContent(const std::string_view& tag);
 
-    /** Append a line segment to the current path. Matches the PDF 'l' operator.
-     *  This function is useful to construct an own path
-     *  for drawing or clipping.
-     *  \param x x position
-     *  \param y y position
-     */
-    void LineTo(double x, double y);
-
-    /** Begin a new path. Matches the PDF 'm' operator.
-     *  This function is useful to construct an own path
-     *  for drawing or clipping.
-     *  \param x x position
-     *  \param y y position
-     */
-    void MoveTo(double x, double y);
-
-    /** Append a cubic bezier curve to the current path
-     *  Matches the PDF 'c' operator.
-     *
-     *  \param x1 x coordinate of the first control point
-     *  \param y1 y coordinate of the first control point
-     *  \param x2 x coordinate of the second control point
-     *  \param y2 y coordinate of the second control point
-     *  \param x3 x coordinate of the end point, which is the new current point
-     *  \param y3 y coordinate of the end point, which is the new current point
-     */
-    void CubicBezierTo(double x1, double y1, double x2, double y2, double x3, double y3);
-
-    /** Close the current path. Matches the PDF 'h' operator.
-     */
-    void Close();
-
-    /** Stroke the current path. Matches the PDF 'S' operator.
-     *  This function is useful to construct an own path
-     *  for drawing or clipping.
-     */
-    void Stroke();
-
-    /** Fill the current path. Matches the PDF 'f' operator.
-     *  This function is useful to construct an own path
-     *  for drawing or clipping.
-      *
-     *  \param useEvenOddRule select even-odd rule instead of nonzero winding number rule
-     */
-    void Fill(bool useEvenOddRule = false);
-
-    /** Fill then stroke the current path. Matches the PDF 'B' operator.
-     *
-    *  \param useEvenOddRule select even-odd rule instead of nonzero winding number rule
-    */
-    void FillAndStroke(bool useEvenOddRule = false);
-
-    /** Clip the current path. Matches the PDF 'W' operator.
-     *  This function is useful to construct an own path
-     *  for drawing or clipping.
-     *
-     *  \param useEvenOddRule select even-odd rule instead of nonzero winding number rule
-     */
-    void Clip(bool useEvenOddRule = false);
-
-    /** End current pathm without filling or stroking it.
-     *  Matches the PDF 'n' operator.
-     */
-    void EndPath();
-
-    void BeginMarkedContext(const std::string_view& tag);
-
-    void EndMarkedContext();
+    /**
+     * End a marked-content sequence begun by a BMC or BDC operator
+     */ 
+    void EndMarkedContent();
 
     /** Save the current graphics settings onto the graphics
      *  stack. Operator 'q' in PDF.
@@ -587,12 +475,6 @@ public:
 public:
     inline const PdfPainterStateStack& GetStateStack() const { return m_StateStack; }
 
-    inline const PdfTextStateWrapper& GetTextState() const { return m_TextState; }
-    inline PdfTextStateWrapper& GetTextState() { return m_TextState; }
-
-    inline const PdfGraphicsStateWrapper& GetGraphicsState() const { return m_GraphicsState; }
-    inline PdfGraphicsStateWrapper& GetGraphicsState() { return m_GraphicsState; }
-
     /** Set the tab width for the DrawText operation.
      *  Every tab '\\t' is replaced with tabWidth
      *  spaces before drawing text. Default is a value of 4
@@ -622,7 +504,29 @@ public:
      *
      *  \returns the current page canvas stream of the painter or nullptr if none is set
      */
-    inline PdfObjectStream* GetStream() const { return m_stream; }
+    inline PdfObjectStream* GetStream() const { return m_objStream; }
+
+private:
+    // To be called by PdfPainterTextContext
+    void BeginText();
+    void TextMoveTo(double x, double y);
+    void AddText(const std::string_view& str);
+    void EndText();
+
+    // To be called by PdfPainterPathContext
+    void BeginPath(double x, double y);
+    void EndPath();
+    void DrawPath(PdfPathDrawMode mode);
+    void PathMoveTo(double x, double y);
+    void AddLineTo(double x, double y);
+    void AddCubicBezierTo(double x1, double y1, double x2, double y2, double x3, double y3);
+    void AddArcTo(double x1, double y1, double x2, double y2, double radius);
+    void AddArc(double x, double y, double radius, double startAngle, double endAngle, double counterclockwise);
+    void AddCircle(double x, double y, double radius);
+    void AddEllipse(double x, double y, double width, double height);
+    void AddRectangle(double x, double y, double width, double height, double roundX, double roundY);
+    void Clip(bool useEvenOddRule);
+    void ClosePath();
 
 private:
     // To be called by state wrappers
@@ -650,20 +554,30 @@ private:
     void save();
     void restore();
     void reset();
+    void pathMoveTo(double x, double y);
+    void endPath();
+    void addLineTo(double x, double y);
+    void addCubicBezierTo(double x1, double y1, double x2, double y2, double x3, double y3);
+    void addArcTo(double x1, double y1, double x2, double y2, double radius);
+    void addArc(double x, double y, double radius, double startAngle, double endAngle, double counterclockwise);
+    void addCircle(double x, double y, double radius);
+    void addEllipse(double x, double y, double width, double height);
+    void addRectangle(double x, double y, double width, double height, double roundX, double roundY);
+    void closePath();
+    void drawPath(PdfPathDrawMode mode);
+    void stroke();
+    void fill(bool useEvenOddRule);
+    void strokeAndFill(bool useEvenOddRule);
 
 private:
     enum PainterStatus
     {
-        Default = 1,
-        TextObject = 2,
+        StatusDefault = 1,
+        StatusText = 2,
+        StatusPath = 4,
     };
 
 private:
-    void moveTo(double x, double y);
-    void lineTo(double x, double y);
-    void cubicBezierTo(double x1, double y1, double x2, double y2, double x3, double y3);
-    void close();
-
     /** Gets the text divided into individual lines, using the current font and clipping rectangle.
      *
      *  \param str the text which should be drawn
@@ -671,23 +585,6 @@ private:
      *  \param skipSpaces whether the trailing whitespaces should be skipped, so that next line doesn't start with whitespace
      */
     std::vector<std::string> getMultiLineTextAsLines(const std::string_view& str, double width, bool skipSpaces);
-
-    /** Coverts a rectangle to an array of points which can be used
-     *  to draw an ellipse using 4 bezier curves.
-     *
-     *  The arrays plPointX and plPointY need space for at least 12 longs
-     *  to be stored.
-     *
-     *  \param x x position of the bounding rectangle
-     *  \param y y position of the bounding rectangle
-     *  \param width width of the bounding rectangle
-     *  \param height height of the bounding rectangle
-     *  \param pointsX pointer to an array were the x coordinates
-     *                  of the resulting points will be stored
-     *  \param pointsY pointer to an array were the y coordinates
-     *                  of the resulting points will be stored
-     */
-    void convertRectToBezier(double x, double y, double width, double height, double pointsX[], double pointsY[]);
 
     /** Register an object in the resource dictionary of this page
      *  so that it can be used for any following drawing operations.
@@ -724,28 +621,30 @@ private:
     void finishDrawing();
     void checkStatus(int expectedStatus);
 
-    void openTextObject();
-    void closeTextObject();
-
 private:
     PdfPainterFlags m_flags;
     PainterStatus m_painterStatus;
+    PdfPainterStateStack m_StateStack;
+    unsigned m_textStackCount;
+    std::vector<Vector2> m_subPaths;
 
+public:
+    PdfGraphicsStateWrapper GraphicsState;
+    PdfTextStateWrapper TextState;
+    PdfPainterPathContext Path;
+    PdfPainterTextContext Text;
+
+private:
     /** All drawing operations work on this stream.
      *  This object may not be nullptr. If it is nullptr any function accessing it should
      *  return ERROR_PDF_INVALID_HANDLE
      */
-    PdfObjectStream* m_stream;
+    PdfObjectStream* m_objStream;
 
     /** The page object is needed so that fonts etc. can be added
      *  to the page resource dictionary as appropriate.
      */
     PdfCanvas* m_canvas;
-
-    PdfPainterStateStack m_StateStack;
-
-    PdfGraphicsStateWrapper m_GraphicsState;
-    PdfTextStateWrapper m_TextState;
 
     /** Every tab '\\t' is replaced with m_TabWidth
      *  spaces before drawing text. Default is a value of 4
@@ -754,7 +653,7 @@ private:
 
     /** temporary stream buffer
      */
-    PdfStringStream  m_tmpStream;
+    PdfStringStream m_stream;
 };
 
 }

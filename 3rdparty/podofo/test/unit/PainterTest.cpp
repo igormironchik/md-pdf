@@ -11,9 +11,219 @@
 using namespace std;
 using namespace PoDoFo;
 
-static void CompareStreamContent(PdfObjectStream& stream, const string_view& expected);
+namespace
+{
+    class FakeCanvas : public PdfCanvas
+    {
+    public:
+        FakeCanvas() { }
 
-TEST_CASE("testAppend")
+    public:
+        PdfObjectStream& GetStreamForAppending(PdfStreamAppendFlags flags)
+        {
+            (void)flags;
+            return m_resourceObj.GetOrCreateStream();
+        }
+
+        PdfResources& GetOrCreateResources() override
+        {
+            PODOFO_RAISE_ERROR(PdfErrorCode::InternalLogic);
+        }
+
+        /** Get the current canvas size in PDF Units
+         *  \returns a PdfRect containing the page size available for drawing
+         */
+        PdfRect GetRect() const override
+        {
+            PODOFO_RAISE_ERROR(PdfErrorCode::InternalLogic);
+        }
+
+        bool HasRotation(double& teta) const override
+        {
+            teta = 0;
+            return false;
+        }
+
+        charbuff GetCopy() const
+        {
+            return m_resourceObj.MustGetStream().GetCopy();
+        }
+
+    protected:
+        PdfObject* getContentsObject() override
+        {
+            PODOFO_RAISE_ERROR(PdfErrorCode::InternalLogic);
+        }
+        PdfResources* getResources() override
+        {
+            PODOFO_RAISE_ERROR(PdfErrorCode::InternalLogic);
+        }
+        PdfElement& getElement() override
+        {
+            PODOFO_RAISE_ERROR(PdfErrorCode::InternalLogic);
+        }
+
+    private:
+        PdfObject m_resourceObj;
+    };
+}
+
+static string getContents(const PdfPage& page);
+static void compareStreamContent(PdfObjectStream& stream, const string_view& expected);
+static void drawSample(PdfPainter& painter);
+static void drawSquareWithCross(PdfPainter& painter, double x, double y);
+
+auto s_expected = R"(q
+120 500 m
+120 511.045695 111.045695 520 100 520 c
+88.954305 520 80 511.045695 80 500 c
+80 488.954305 88.954305 480 100 480 c
+111.045695 480 120 488.954305 120 500 c
+h
+f
+Q
+)"sv;
+
+TEST_CASE("TestPainter1")
+{
+    FakeCanvas canvas;
+    PdfPainter painter;
+    painter.SetCanvas(canvas);
+    drawSample(painter);
+    painter.FinishDrawing();
+    auto copy = canvas.GetCopy();
+    REQUIRE(copy == s_expected);
+}
+
+TEST_CASE("TestPainter2")
+{
+    PdfMemDocument doc;
+    auto& page = doc.GetPages().CreatePage(PdfPage::CreateStandardPageSize(PdfPageSize::A4));
+    PdfPainter painter;
+    painter.SetCanvas(page);
+    drawSample(painter);
+    painter.FinishDrawing();
+    doc.Save(TestUtils::GetTestOutputFilePath("TestPainter2.pdf"));
+
+    auto out = getContents(page);
+    REQUIRE(out == s_expected);
+}
+
+TEST_CASE("TestPainter3")
+{
+    PdfMemDocument doc;
+    auto& page = doc.GetPages().CreatePage(PdfPage::CreateStandardPageSize(PdfPageSize::A4));
+    PdfPainter painter;
+    painter.SetCanvas(page);
+    painter.TextState.SetFont(doc.GetFonts().GetStandard14Font(PdfStandard14FontType::TimesRoman), 15);
+    painter.DrawText("Hello world", 100, 500, PdfDrawTextStyle::StrikeOut | PdfDrawTextStyle::Underline);
+    painter.FinishDrawing();
+    doc.Save(TestUtils::GetTestOutputFilePath("TestPainter3.pdf"));
+
+    auto expected = R"(q
+BT
+/Ft5 15 Tf
+100 500 Td q
+0.75 w
+100 498.5 m
+172.075 498.5 l
+S
+0.75 w
+100 503.93 m
+172.075 503.93 l
+S
+Q
+<0001020203040503060207> Tj
+ET
+Q
+)"sv;
+
+    auto out = getContents(page);
+    REQUIRE(out == expected);
+}
+
+TEST_CASE("TestPainter4")
+{
+    PdfMemDocument doc;
+    auto& page = doc.GetPages().CreatePage(PdfPage::CreateStandardPageSize(PdfPageSize::A4));
+
+    PdfFontCreateParams params;
+    params.Encoding = PdfEncodingMapFactory::WinAnsiEncodingInstance();
+    auto& font = doc.GetFonts().GetStandard14Font(PdfStandard14FontType::Helvetica, params);
+
+    PdfPainter painter;
+    painter.SetCanvas(page);
+    painter.TextState.SetFont(font, 15);
+    painter.Text.Begin();
+    painter.Text.MoveTo(100, 500);
+    painter.Text.AddText("Test");
+    painter.Text.End();
+    painter.Path.Begin(20, 20);
+    painter.Path.AddArcTo(150, 20, 150, 70, 50);
+    painter.Path.AddLineTo(150, 120);
+    painter.Path.Draw(PdfPathDrawMode::Stroke);
+    
+    drawSquareWithCross(painter, 100, 20);
+    drawSquareWithCross(painter, 100, 70);
+    drawSquareWithCross(painter, 150, 70);
+
+    painter.FinishDrawing();
+    doc.Save(TestUtils::GetTestOutputFilePath("TestPainter4.pdf"));
+
+    auto expected = R"(q
+BT
+/Ft5 15 Tf
+100 500 Td
+(Test) Tj
+ET
+20 20 m
+100 20 l
+127.614237 20 150 42.385763 150 70 c
+150 120 l
+S
+q
+0.6 w
+97 17 6 6 re
+S
+0 w
+100 17 m
+100 23 l
+S
+97 20 m
+103 20 l
+S
+Q
+q
+0.6 w
+97 67 6 6 re
+S
+0 w
+100 67 m
+100 73 l
+S
+97 70 m
+103 70 l
+S
+Q
+q
+0.6 w
+147 67 6 6 re
+S
+0 w
+150 67 m
+150 73 l
+S
+147 70 m
+153 70 l
+S
+Q
+Q
+)";
+    auto out = getContents(page);
+    REQUIRE(out == expected);
+}
+
+TEST_CASE("TestAppend")
 {
     string_view example = "BT (Hello) Tj ET";
 
@@ -24,24 +234,47 @@ TEST_CASE("testAppend")
     auto& stream = contents.GetStreamForAppending();
     stream.SetData(example);
 
-    CompareStreamContent(stream, example);
+    compareStreamContent(stream, example);
 
     PdfPainter painter;
     painter.SetCanvas(page);
-    painter.GetGraphicsState().SetFillColor(PdfColor(1.0, 1.0, 1.0));
+    painter.GraphicsState.SetFillColor(PdfColor(1.0, 1.0, 1.0));
     painter.FinishDrawing();
 
-    PdfCanvasInputDevice input(doc.GetPages().GetPageAt(0));
-    string out;
-    StringStreamDevice output(out);
-    input.CopyTo(output);
-
+    auto out = getContents(page);
     REQUIRE(out == "q\nBT (Hello) Tj ET\nQ\nq\n1 1 1 rg\nQ\n");
 }
 
-void CompareStreamContent(PdfObjectStream& stream, const string_view& expected)
+static void drawSample(PdfPainter& painter)
+{
+    painter.DrawCircle(100, 500, 20, PdfPathDrawMode::Fill);
+}
+
+void compareStreamContent(PdfObjectStream& stream, const string_view& expected)
 {
     charbuff buffer;
     stream.CopyTo(buffer);
     REQUIRE(buffer == expected);
+}
+
+string getContents(const PdfPage& page)
+{
+    PdfCanvasInputDevice input(page);
+    string ret;
+    StringStreamDevice output(ret);
+    input.CopyTo(output);
+    return ret;
+}
+
+void drawSquareWithCross(PdfPainter& painter, double x, double y)
+{
+    painter.Save();
+    const double SquareSize = 6;
+    painter.GraphicsState.SetLineWidth(0.6);
+    painter.DrawRectangle(x - SquareSize / 2, y - SquareSize / 2, SquareSize, SquareSize);
+
+    painter.GraphicsState.SetLineWidth(0);
+    painter.DrawLine(x, y - SquareSize / 2, x, y + SquareSize / 2);
+    painter.DrawLine(x - SquareSize / 2, y, x + SquareSize / 2, y);
+    painter.Restore();
 }

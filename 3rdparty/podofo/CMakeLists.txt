@@ -51,17 +51,17 @@ if(NOT PODOFO_BUILD_LIB_ONLY)
     set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/target)
 endif()
 
-if (DEFINED PODOFO_STATIC)
-    message(FATAL_ERROR "PODOFO_STATIC shouldn't be defined externally. Set PODOFO_SHARED to FALSE if you need a static build")
+if (DEFINED PODOFO_SHARED)
+    message(FATAL_ERROR "PODOFO_SHARED shouldn't be defined externally. Set PODOFO_STATIC to TRUE if you need a static build")
 endif()
 
-option(PODOFO_SHARED "Build shared libraries (.dll/.so)" ON)
-if(PODOFO_SHARED)
-    set(PODOFO_STATIC FALSE)
-    add_compile_definitions(PODOFO_SHARED)
-else()
-    set(PODOFO_STATIC TRUE)
+option(PODOFO_STATIC "Build static libraries (.a/.lib)" FALSE)
+if(PODOFO_STATIC)
+    set(PODOFO_SHARED FALSE)
     add_compile_definitions(PODOFO_STATIC)
+else()
+    set(PODOFO_SHARED TRUE)
+    add_compile_definitions(PODOFO_SHARED)
 endif()
 
 message("Will install libraries to ${CMAKE_INSTALL_FULL_LIBDIR}")
@@ -89,7 +89,7 @@ if (MSVC)
     # /w34389: 'operator': signed/unsigned mismatch
     # /we4287: unsigned/negative constant mismatch
     # /w34100: unreferenced formal parameter
-    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /permissive- /w34388 /w34389 /we4287 /w34100 /Zc:__cplusplus")
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /permissive- /we4287 /W4 /Zc:__cplusplus")
 
     # Microsoft deprecate certain POSIX functions that we use.
     # for now, turn off these warnings.

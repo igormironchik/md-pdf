@@ -13,7 +13,6 @@ find_package( ImageMagick 6 EXACT REQUIRED COMPONENTS Magick++ MagickCore )
 add_definitions( -DMAGICKCORE_QUANTUM_DEPTH=16 )
 add_definitions( -DMAGICKCORE_HDRI_ENABLE=0 )
 add_definitions( -DPODOFO_SHARED )
-add_definitions( -Dpodofo_shared_EXPORTS )
 
 if( ENABLE_COVERAGE )
 	set( CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -g -O0 -fprofile-arcs -ftest-coverage" )

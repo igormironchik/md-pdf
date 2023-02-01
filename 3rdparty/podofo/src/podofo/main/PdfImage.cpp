@@ -182,8 +182,21 @@ charbuff PdfImage::initScanLine(PdfPixelFormat format, int rowSize, charbuff& sm
     unsigned defaultRowSize;
     switch (format)
     {
+        case PdfPixelFormat::Grayscale:
+        {
+            defaultRowSize = 4 * ((m_Width + 3) / 4);;
+            break;
+        }
+        case PdfPixelFormat::RGB24:
+        case PdfPixelFormat::BGR24:
+        {
+            defaultRowSize = 4 * ((3 * m_Width + 3) / 4);
+            break;
+        }
         case PdfPixelFormat::RGBA:
         case PdfPixelFormat::BGRA:
+        case PdfPixelFormat::ARGB:
+        case PdfPixelFormat::ABGR:
         {
             auto smaskObj = GetObject().GetDictionary().FindKey("SMask");
             if (smaskObj != nullptr)
@@ -194,17 +207,6 @@ charbuff PdfImage::initScanLine(PdfPixelFormat format, int rowSize, charbuff& sm
             }
 
             defaultRowSize = 4 * m_Width;
-            break;
-        }
-        case PdfPixelFormat::RGB24:
-        case PdfPixelFormat::BGR24:
-        {
-            defaultRowSize = 4 * ((3 * m_Width + 3) / 4);
-            break;
-        }
-        case PdfPixelFormat::Grayscale:
-        {
-            defaultRowSize = 4 * ((m_Width + 3) / 4);;
             break;
         }
         default:
@@ -303,6 +305,8 @@ void PdfImage::SetData(InputStream& stream, unsigned width, unsigned height, Pdf
             break;
         case PdfPixelFormat::RGBA:
         case PdfPixelFormat::BGRA:
+        case PdfPixelFormat::ARGB:
+        case PdfPixelFormat::ABGR:
             PODOFO_RAISE_ERROR_INFO(PdfErrorCode::NotImplemented, "Missing transparency support");
         default:
             PODOFO_RAISE_ERROR(PdfErrorCode::InvalidEnumValue);
@@ -312,6 +316,7 @@ void PdfImage::SetData(InputStream& stream, unsigned width, unsigned height, Pdf
     charbuff lineBuffer(rowSize < 0 ? defaultRowSize : (unsigned)rowSize);
     if (needFetch)
     {
+        // The format is not compatible with PDF layout
         charbuff pdfLineBuffer(pdfRowSize);
         for (unsigned i = 0; i < height; i++)
         {
@@ -366,8 +371,8 @@ void PdfImage::SetDataRaw(InputStream& stream, const PdfImageInfo& info)
     {
         PdfArray arr;
         arr.Add(PdfName(PoDoFo::ColorSpaceToNameRaw(info.ColorSpace)));
-        arr.insert(arr.begin(), info.ColorSpaceArray.begin(), info.ColorSpaceArray.end());
-        dict.AddKey("ColorSpace", info.ColorSpaceArray);
+        arr.insert(arr.begin() + 1, info.ColorSpaceArray.begin(), info.ColorSpaceArray.end());
+        dict.AddKey("ColorSpace", arr);
     }
 
     if (info.Filters.size() == 0)
@@ -776,9 +781,9 @@ void PdfImage::loadFromTiffHandle(void* handle)
 
             for (unsigned clr = 0; clr < numColors; clr++)
             {
-                data[3 * clr + 0] = rgbRed[clr] / 257;
-                data[3 * clr + 1] = rgbGreen[clr] / 257;
-                data[3 * clr + 2] = rgbBlue[clr] / 257;
+                data[3 * clr + 0] = (char)(rgbRed[clr] / 257);
+                data[3 * clr + 1] = (char)(rgbGreen[clr] / 257);
+                data[3 * clr + 2] = (char)(rgbBlue[clr] / 257);
             }
 
             // Create a colorspace object
@@ -1319,6 +1324,8 @@ unsigned PdfImage::getBufferSize(PdfPixelFormat format) const
     {
         case PdfPixelFormat::RGBA:
         case PdfPixelFormat::BGRA:
+        case PdfPixelFormat::ARGB:
+        case PdfPixelFormat::ABGR:
             return 4 * m_Width * m_Height;
         case PdfPixelFormat::RGB24:
         case PdfPixelFormat::BGR24:
@@ -1334,14 +1341,24 @@ void fetchPDFScanLineRGB(unsigned char* dstScanLine, unsigned width, const unsig
 {
     switch (srcPixelFormat)
     {
-        case PdfPixelFormat::BGRA:
         case PdfPixelFormat::BGR24:
+        case PdfPixelFormat::BGRA:
         {
             for (unsigned i = 0; i < width; i++)
             {
                 dstScanLine[i * 3 + 0] = srcScanLine[i * 3 + 2];
                 dstScanLine[i * 3 + 1] = srcScanLine[i * 3 + 1];
                 dstScanLine[i * 3 + 2] = srcScanLine[i * 3 + 0];
+            }
+            break;
+        }
+        case PdfPixelFormat::ABGR:
+        {
+            for (unsigned i = 0; i < width; i++)
+            {
+                dstScanLine[i * 3 + 0] = srcScanLine[i * 3 + 3];
+                dstScanLine[i * 3 + 1] = srcScanLine[i * 3 + 2];
+                dstScanLine[i * 3 + 2] = srcScanLine[i * 3 + 1];
             }
             break;
         }

@@ -153,18 +153,19 @@ PdfAuxData::drawText( double x, double y, const char * text,
 	firstOnPage = false;
 
 #ifndef MD_PDF_TESTING
-	painter->BeginText( x, y );
-	painter->GetTextState().SetFont( *font, size );
-	painter->GetTextState().SetFontScale( scale );
-	const auto st = painter->GetTextState();
-	painter->AddText( text );
-	painter->EndText();
+	painter->Text.Begin();
+	painter->Text.MoveTo( x, y );
+	painter->TextState.SetFont( *font, size );
+	painter->TextState.SetFontScale( scale );
+	const auto st = painter->TextState;
+	painter->Text.AddText( text );
+	painter->Text.End();
 
 	if( strikeout )
 	{
 		painter->Save();
 
-		painter->GetGraphicsState().SetLineWidth( font->GetStrikeOutThickness( st ) );
+		painter->GraphicsState.SetLineWidth( font->GetStrikeOutThickness( st ) );
 
 		painter->DrawLine( x,
 			y + font->GetStrikeOutPosition( st ),
@@ -186,18 +187,19 @@ PdfAuxData::drawText( double x, double y, const char * text,
 	}
 	else
 	{
-		painter->BeginText( x, y );
-		painter->GetTextState().SetFont( *font, size );
-		painter->GetTextState().SetFontScale( scale );
-		const auto st = painter->GetTextState();
-		painter->AddText( text );
-		painter->EndText();
+		painter->Text.Begin();
+		painter->Text.MoveTo( x, y );
+		painter->TextState.SetFont( *font, size );
+		painter->TextState.SetFontScale( scale );
+		const auto st = painter->TextState;
+		painter->Text.AddText( text );
+		painter->Text.End();
 
 		if( strikeout )
 		{
 			painter->Save();
 
-			painter->GetGraphicsState().SetLineWidth( font->GetStrikeOutThickness( st ) );
+			painter->GraphicsState.SetLineWidth( font->GetStrikeOutThickness( st ) );
 
 			painter->DrawLine( x,
 				y + font->GetStrikeOutPosition( st ),
@@ -287,10 +289,10 @@ PdfAuxData::save( const QString & fileName )
 }
 
 void
-PdfAuxData::drawRectangle( double x, double y, double width, double height )
+PdfAuxData::drawRectangle( double x, double y, double width, double height, PdfPathDrawMode m )
 {
 #ifndef MD_PDF_TESTING
-	painter->Rectangle( x, y, width, height );
+	painter->DrawRectangle( x, y, width, height, m );
 #else
 	if( printDrawings )
 		(*drawingsStream) << QStringLiteral(
@@ -299,7 +301,7 @@ PdfAuxData::drawRectangle( double x, double y, double width, double height )
 					QString::number( width, 'f', 16 ), QString::number( height, 'f', 16 ) );
 	else
 	{
-		painter->Rectangle( x, y, width, height );
+		painter->DrawRectangle( x, y, width, height, m );
 
 		if( QTest::currentTestFailed() )
 			self->terminate();
@@ -318,8 +320,8 @@ PdfAuxData::setColor( const QColor & c )
 {
 	m_colorsStack.push( c );
 
-	painter->GetGraphicsState().SetFillColor( PdfColor( c.redF(), c.greenF(), c.blueF() ) );
-	painter->GetGraphicsState().SetStrokeColor( PdfColor( c.redF(), c.greenF(), c.blueF() ) );
+	painter->GraphicsState.SetFillColor( PdfColor( c.redF(), c.greenF(), c.blueF() ) );
+	painter->GraphicsState.SetStrokeColor( PdfColor( c.redF(), c.greenF(), c.blueF() ) );
 }
 
 void
@@ -336,8 +338,8 @@ PdfAuxData::repeatColor()
 {
 	const auto & c = m_colorsStack.top();
 
-	painter->GetGraphicsState().SetFillColor( PdfColor( c.redF(), c.greenF(), c.blueF() ) );
-	painter->GetGraphicsState().SetStrokeColor( PdfColor( c.redF(), c.greenF(), c.blueF() ) );
+	painter->GraphicsState.SetFillColor( PdfColor( c.redF(), c.greenF(), c.blueF() ) );
+	painter->GraphicsState.SetStrokeColor( PdfColor( c.redF(), c.greenF(), c.blueF() ) );
 }
 
 
@@ -907,8 +909,9 @@ PdfRenderer::createFont( const QString & name, bool bold, bool italic, float siz
 	PdfMemDocument * doc, float scale, const PdfAuxData & pdfData )
 {
 	PdfFontSearchParams params;
-	if( bold ) params.Style |= PdfFontStyle::Bold;
-	if( italic ) params.Style |= PdfFontStyle::Italic;
+	params.Style = PdfFontStyle::Regular;
+	if( bold ) params.Style.value() |= PdfFontStyle::Bold;
+	if( italic ) params.Style.value() |= PdfFontStyle::Italic;
 
 #ifdef MD_PDF_TESTING
 	const QString internalName = name + ( bold ? QStringLiteral( " Bold" ) : QString() ) +
@@ -1410,8 +1413,7 @@ PdfRenderer::drawString( PdfAuxData & pdfData, const RenderOpts & renderOpts, co
 					pdfData.setColor( background );
 					pdfData.drawRectangle( pdfData.coords.x, pdfData.coords.y +
 						font->GetDescent( fontSt ) + d, length,
-						font->GetLineSpacing( fontSt ) );
-					pdfData.painter->Fill();
+						font->GetLineSpacing( fontSt ), PdfPathDrawMode::Fill );
 					pdfData.restoreColor();
 				}
 
@@ -1456,8 +1458,7 @@ PdfRenderer::drawString( PdfAuxData & pdfData, const RenderOpts & renderOpts, co
 							pdfData.drawRectangle( pdfData.coords.x, pdfData.coords.y +
 								font->GetDescent( fontSt ) +
 								d, spaceWidth * scale / 100.0,
-								font->GetLineSpacing( fontSt ) );
-							pdfData.painter->Fill();
+								font->GetLineSpacing( fontSt ), PdfPathDrawMode::Fill );
 							pdfData.restoreColor();
 						}
 
@@ -2831,8 +2832,7 @@ PdfRenderer::drawCode( PdfAuxData & pdfData, const RenderOpts & renderOpts,
 			pdfData.setColor( renderOpts.m_codeBackground );
 			pdfData.drawRectangle( pdfData.coords.x, y + font->GetDescent( cst ),
 				pdfData.coords.pageWidth - pdfData.coords.x - pdfData.coords.margins.right,
-				 h + lineHeight );
-			pdfData.painter->Fill();
+				 h + lineHeight, PdfPathDrawMode::Fill );
 			pdfData.restoreColor();
 
 			ret.append( { pdfData.currentPageIndex(), y, h + lineHeight } );
@@ -3069,8 +3069,7 @@ PdfRenderer::drawBlockquote( PdfAuxData & pdfData, const RenderOpts & renderOpts
 		pdfData.painter->SetCanvas( pdfData.doc->GetPages().GetPageAt( it.key() ) );
 		pdfData.setColor( renderOpts.m_borderColor );
 		pdfData.drawRectangle( pdfData.coords.margins.left + offset, it.value().y,
-			c_blockquoteMarkWidth, it.value().height );
-		pdfData.painter->Fill();
+			c_blockquoteMarkWidth, it.value().height, PdfPathDrawMode::Fill );
 		pdfData.restoreColor();
 	}
 
@@ -3318,8 +3317,7 @@ PdfRenderer::drawListItem( PdfAuxData & pdfData, const RenderOpts & renderOpts,
 			pdfData.drawRectangle(
 				pdfData.coords.margins.left + offset - ( orderedListNumberWidth + spaceWidth ),
 				firstLine.y + qAbs( firstLine.height - orderedListNumberWidth ) / 2.0,
-				orderedListNumberWidth, orderedListNumberWidth );
-			pdfData.painter->Stroke();
+				orderedListNumberWidth, orderedListNumberWidth, PdfPathDrawMode::Stroke );
 
 			if( item->isChecked() )
 			{
@@ -3328,8 +3326,8 @@ PdfRenderer::drawListItem( PdfAuxData & pdfData, const RenderOpts & renderOpts,
 				pdfData.drawRectangle(
 					pdfData.coords.margins.left + offset + d - ( orderedListNumberWidth + spaceWidth ),
 					firstLine.y + qAbs( firstLine.height - orderedListNumberWidth ) / 2.0 + d,
-					orderedListNumberWidth - 2.0 * d, orderedListNumberWidth - 2.0 * d );
-				pdfData.painter->Fill();
+					orderedListNumberWidth - 2.0 * d, orderedListNumberWidth - 2.0 * d,
+					PdfPathDrawMode::Fill );
 			}
 
 			pdfData.restoreColor();
@@ -3357,10 +3355,10 @@ PdfRenderer::drawListItem( PdfAuxData & pdfData, const RenderOpts & renderOpts,
 
 			pdfData.setColor( Qt::black );
 			const auto r = unorderedMarkWidth / 2.0;
-			pdfData.painter->Circle(
+			pdfData.painter->DrawCircle(
 				pdfData.coords.margins.left + offset + r - ( orderedListNumberWidth + spaceWidth ),
-				firstLine.y + qAbs( firstLine.height - unorderedMarkWidth ) / 2.0, r );
-			pdfData.painter->Fill();
+				firstLine.y + qAbs( firstLine.height - unorderedMarkWidth ) / 2.0, r,
+				PdfPathDrawMode::Fill );
 			pdfData.restoreColor();
 		}
 
@@ -4164,9 +4162,8 @@ PdfRenderer::drawTextLineInTable( double x, double & y, TextToDraw & text, doubl
 			pdfData.setColor( it->background );
 
 			pdfData.drawRectangle( x, y + f->GetDescent( st ),
-				it->width( pdfData, this, scale ), f->GetLineSpacing( st ) );
-
-			pdfData.painter->Fill();
+				it->width( pdfData, this, scale ), f->GetLineSpacing( st ),
+				PdfPathDrawMode::Fill );
 
 			pdfData.restoreColor();
 		}
@@ -4219,11 +4216,9 @@ PdfRenderer::drawTextLineInTable( double x, double & y, TextToDraw & text, doubl
 				const auto sw = f->GetStringLength( PdfString( " " ), st );
 
 				pdfData.drawRectangle( x, y + f->GetDescent( st ),
-					sw, f->GetLineSpacing( st ) );
+					sw, f->GetLineSpacing( st ), PdfPathDrawMode::Fill );
 
 				x += sw;
-
-				pdfData.painter->Fill();
 
 				pdfData.restoreColor();
 			}

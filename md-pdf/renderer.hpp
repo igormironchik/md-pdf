@@ -253,7 +253,7 @@ struct PdfAuxData {
 	//! Save document.
 	void save( const QString & fileName );
 	//! Draw rectangle.
-	void drawRectangle( double x, double y, double width, double height );
+	void drawRectangle( double x, double y, double width, double height, PdfPathDrawMode m );
 
 	//! Set color.
 	void setColor( const QColor & c );
