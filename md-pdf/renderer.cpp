@@ -598,6 +598,7 @@ PdfRenderer::renderImpl()
 		const int itemsCount = m_doc->items().size();
 
 		emit progress( 0 );
+		emit status( tr( "Rendering PDF..." ) );
 
 		PdfMemDocument document;
 
