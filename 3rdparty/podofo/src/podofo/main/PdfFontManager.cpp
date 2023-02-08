@@ -191,7 +191,7 @@ PdfFont& PdfFontManager::getOrCreateFontHashed(const shared_ptr<PdfFontMetrics>&
 {
     // TODO: Create a map indexed only on the hash of the font data
     // and search on that. Then remove the following
-    Descriptor descriptor(metrics->GetBaseFontName(),
+    Descriptor descriptor(metrics->GetFontNameSafe(),
         PdfStandard14FontType::Unknown,
         params.Encoding,
         true,
@@ -207,7 +207,7 @@ PdfFont& PdfFontManager::getOrCreateFontHashed(const shared_ptr<PdfFontMetrics>&
 void PdfFontManager::adaptSearchParams(string& fontName, PdfFontSearchParams& searchParams)
 {
     if ((searchParams.MatchBehavior & PdfFontMatchBehaviorFlags::NormalizePattern)
-        != PdfFontMatchBehaviorFlags::None)
+        == PdfFontMatchBehaviorFlags::None)
     {
         return;
     }
@@ -230,18 +230,18 @@ void PdfFontManager::adaptSearchParams(string& fontName, PdfFontSearchParams& se
 PdfFont* PdfFontManager::getImportedFont(const string_view& patternName,
     const PdfFontSearchParams& searchParams, const PdfFontCreateParams& createParams)
 {
-    auto found = m_cachedQueries.find(Descriptor(
+    auto& fonts = m_cachedQueries[Descriptor(
         patternName,
         PdfStandard14FontType::Unknown,
         createParams.Encoding,
         searchParams.Style != nullptr,
-        searchParams.Style == nullptr ? PdfFontStyle::Regular : *searchParams.Style));
-    if (found != m_cachedQueries.end())
+        searchParams.Style == nullptr ? PdfFontStyle::Regular : *searchParams.Style)];
+    if (fonts.size() != 0)
     {
         if (searchParams.FontSelector == nullptr)
-            return found->second[0];
+            return fonts[0];
         else
-            searchParams.FontSelector(found->second);
+            searchParams.FontSelector(fonts);
     }
 
     PdfFontSearchParams newParams = searchParams;
@@ -256,8 +256,9 @@ PdfFont* PdfFontManager::getImportedFont(const string_view& patternName,
     shared_ptr<PdfFontMetrics> metrics = PdfFontMetricsFreetype::FromBuffer(std::move(data));
     metrics->SetFilePath(std::move(fontpath), faceIndex);
 
-    auto newfont = PdfFont::Create(*m_doc, metrics, createParams);
-    return AddImported(std::move(newfont));
+    auto ret = AddImported(PdfFont::Create(*m_doc, metrics, createParams));
+    fonts.push_back(ret);
+    return ret;
 }
 
 PdfFontMetricsConstPtr PdfFontManager::SearchFontMetrics(const string_view& patternName, const PdfFontSearchParams& params)

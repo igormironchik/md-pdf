@@ -758,6 +758,8 @@ PdfRenderer::renderImpl()
 
 			finishPages( pdfData );
 
+			emit status( tr( "Saving PDF..." ) );
+
 			pdfData.save( m_fileName );
 
 			emit done( m_terminate );
