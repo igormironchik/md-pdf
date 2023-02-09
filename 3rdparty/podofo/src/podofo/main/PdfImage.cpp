@@ -97,8 +97,6 @@ void PdfImage::DecodeTo(OutputStream& stream, PdfPixelFormat format, int rowSize
 #ifdef PODOFO_HAVE_JPEG_LIB
                 jpeg_decompress_struct ctx;
 
-                // Setup variables for JPEGLib
-                ctx.out_color_space = format == PdfPixelFormat::Grayscale ? JCS_GRAYSCALE : JCS_RGB;
                 JpegErrorHandler jerr;
                 try
                 {
@@ -108,6 +106,12 @@ void PdfImage::DecodeTo(OutputStream& stream, PdfPixelFormat format, int rowSize
 
                     if (jpeg_read_header(&ctx, TRUE) <= 0)
                         PODOFO_RAISE_ERROR(PdfErrorCode::UnexpectedEOF);
+
+                    if (ctx.out_color_space != JCS_CMYK)
+                    {
+                        // out_color_space must be set after jpeg_read_header() and before jpeg_start_decompress()
+                        ctx.out_color_space = format == PdfPixelFormat::Grayscale ? JCS_GRAYSCALE : JCS_RGB;
+                    }
 
                     jpeg_start_decompress(&ctx);
 
@@ -1153,7 +1157,7 @@ void loadFromPngContent(PdfImage& image, png_structp png, png_infop pnginfo)
             && png_get_tRNS(png, pnginfo, &paletteTrans, &numTransColors, NULL)))
     {
         // Handle alpha channel and create smask
-        charbuff smask(width * height);
+        charbuff smask((size_t)width * height);
         png_uint_32 smaskIndex = 0;
         if (color_type == PNG_COLOR_TYPE_PALETTE)
         {
@@ -1196,7 +1200,7 @@ void loadFromPngContent(PdfImage& image, png_structp png, png_infop pnginfo)
                     smask[smaskIndex++] = row[c * 4 + 3]; // 4th byte for alpha
                 }
             }
-            len = 3 * width * height;
+            len = 3 * (size_t)width * height;
         }
         else if (color_type == PNG_COLOR_TYPE_GRAY_ALPHA)
         {
@@ -1209,7 +1213,7 @@ void loadFromPngContent(PdfImage& image, png_structp png, png_infop pnginfo)
                     smask[smaskIndex++] = row[c * 2 + 1]; // 2nd byte for alpha
                 }
             }
-            len = width * height;
+            len = (size_t)width * height;
         }
         PdfImageInfo smaksInfo;
         smaksInfo.Width = (unsigned)width;
