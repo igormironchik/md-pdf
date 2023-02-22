@@ -85,17 +85,20 @@ instead represent a generic octet buffer.
 
 ## API stability
 
-PoDoFo has an unstable API that is the results of an extensive API review of PoDoFo 0.9.x.
+PoDoFo has an unstable API that is the result of an extensive API review of PoDoFo 0.9.x.
 It is expected to converge to a stable API as soon as the review process is completed.
 See [API Stability](https://github.com/podofo/podofo/wiki/API-Stability) for more details.
 
 ## PoDoFo Tools
 
+> **Warning**: Tools are currently **untested** and **unmaintained**
+
 PoDoFo tools are still available in the source [tree](https://github.com/podofo/podofo/)
-but are currently untested and unmaintained. It's currently not recommended
-to include them in software distributions. If you want to build them make sure
-to bootstrap the CMake project with ```-DPODOFO_ENABLE_TOOLS=TRUE```.
-Tools are already enabled in the playground.
+but their compilation is disabled by default because they are unsted/unmaintained,
+and will not receive support until their status is cleared. It's not recommended to include them in software distributions.
+If you want to build them make sure to bootstrap the CMake project with ```-DPODOFO_ENABLE_TOOLS=TRUE```.
+Tools are conveniently enabled in the [playground](https://github.com/podofo/podofo/tree/master/playground)
+at least to ensure library changes won't break their compilation.
 
 ## TODO
 
@@ -106,11 +109,12 @@ at the [issue](https://github.com/podofo/podofo/issues) tracker.
 
 **Q: How do I sign a document?**
 
-**A:** The signing procedure is still low level as it was PoDoFo. This is gonna
-change, soon!, whith a new high-level API for signining being worked on,
-which will be fully unit tested. For now you should check the `podofosign`
-tool (**WARNING**: untested) which should give you the idea how to sign documents
-creating a *CMS* structure directly with OpenSSL.
+**A:** The signing procedure is still as low level as it was before the
+ongoing source changes. This is going to change, soon!, with a new high-level
+API for signing being worked on, which will be fully unit tested. For now you
+should check the `podofosign` tool (**WARNING**: untested) which should give
+you the idea how to sign documents creating a *CMS* structure directly with
+OpenSSL.
 To describe the procedure briefly, one has to fully Implement a `PdfSigner`,
 retrieve or create a `PdfSignature` field, create an output device (see next question)
 and use `PoDoFo::SignDocument(doc, device, signer, signature)`. When signing,
@@ -131,7 +135,7 @@ update as it was in PoDoFo? What should be done to correctly update/sign the
 document?**
 
 **A:** The previous mechanism in PoDoFo required enablement of document for
-incremental updates, which is a decisional step which I believe should be not
+incremental updates, which is a decision step which I believe should be not
 be necessary. Also:
 1. In case of file loaded document it still required to perform the update in
 the same file, and the check was performed on the path of the files being
@@ -139,7 +143,7 @@ operated to, which is unsafe;
 2. In case of buffers worked for one update/signing operation but didn't work
 for following operations.
 
-The idea is to implement a more explicit mehcanism that makes more clear
+The idea is to implement a more explicit mechanism that makes more clear
 and/or enforces the fact that the incremental update must be performed on the
 same file in case of file loaded documents or that underlying buffer will grow
 following subsequent operations in case of buffer loaded documents.
@@ -213,7 +217,7 @@ timeframes, or not fixed at all.
 ## Contributions
 
 Please subscribe to the project mailing [list](https://sourceforge.net/projects/podofo/lists/podofo-users)
-which is still followed by several of the original developers of PoDoFO.
+which is still followed by several of the original developers of PoDoFo.
 A gitter [community](https://gitter.im/podofo/community) has also been created to ease some more informal chatter.
 If you find a bug and know how to fix it, or you want to add a small feature, you're welcome to send a [pull request](https://github.com/podofo/podofo/pulls),
 providing it follows the [coding style](https://github.com/podofo/podofo/blob/master/CODING-STYLE.md)
@@ -237,8 +241,8 @@ to receive some feedback and discuss some basic design choices.
 
 ## Authors
 
-PoDoFo is currently developed and mantained by
-[Francesco Pretto](mailto:ceztko@gmail.com), together with Dominik Seichter an others. See the file
+PoDoFo is currently developed and maintained by
+[Francesco Pretto](mailto:ceztko@gmail.com), together with Dominik Seichter and others. See the file
 [AUTHORS.md](https://github.com/podofo/podofo/blob/master/AUTHORS.md) for more details.
 Please don't use personal emails for technical support requests, but create
 github [issues](https://github.com/podofo/podofo/issues) instead.
