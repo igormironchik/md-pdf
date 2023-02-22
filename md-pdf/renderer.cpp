@@ -153,13 +153,13 @@ PdfAuxData::drawText( double x, double y, const char * text,
 	firstOnPage = false;
 
 #ifndef MD_PDF_TESTING
-	painter->Text.Begin();
-	painter->Text.MoveTo( x, y );
+	painter->TextObject.Begin();
+	painter->TextObject.MoveTo( x, y );
 	painter->TextState.SetFont( *font, size );
 	painter->TextState.SetFontScale( scale );
 	const auto st = painter->TextState;
-	painter->Text.AddText( text );
-	painter->Text.End();
+	painter->TextObject.AddText( text );
+	painter->TextObject.End();
 
 	if( strikeout )
 	{
@@ -187,13 +187,13 @@ PdfAuxData::drawText( double x, double y, const char * text,
 	}
 	else
 	{
-		painter->Text.Begin();
-		painter->Text.MoveTo( x, y );
+		painter->TextObject.Begin();
+		painter->TextObject.MoveTo( x, y );
 		painter->TextState.SetFont( *font, size );
 		painter->TextState.SetFontScale( scale );
 		const auto st = painter->TextState;
-		painter->Text.AddText( text );
-		painter->Text.End();
+		painter->TextObject.AddText( text );
+		painter->TextObject.End();
 
 		if( strikeout )
 		{
