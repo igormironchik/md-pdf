@@ -158,6 +158,8 @@ jobs:
 
     - run: rm '/usr/local/bin/python3.11-config'
 
+    - run: rm '/usr/local/lib/libtcl8.6.dylib'
+
     - run: brew upgrade
 
     - run: brew install imagemagick@6
