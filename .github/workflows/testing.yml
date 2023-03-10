@@ -160,6 +160,8 @@ jobs:
 
     - run: rm '/usr/local/lib/libtcl8.6.dylib'
 
+    - run: rm '/usr/local/lib/libtk8.6.dylib'
+
     - run: brew upgrade
 
     - run: brew install imagemagick@6
