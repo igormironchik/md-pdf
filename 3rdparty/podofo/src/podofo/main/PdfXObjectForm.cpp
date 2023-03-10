@@ -13,7 +13,7 @@
 using namespace std;
 using namespace PoDoFo;
 
-PdfXObjectForm::PdfXObjectForm(PdfDocument& doc, const PdfRect& rect, const string_view& prefix)
+PdfXObjectForm::PdfXObjectForm(PdfDocument& doc, const Rect& rect, const string_view& prefix)
     : PdfXObject(doc, PdfXObjectType::Form, prefix), m_Rect(rect)
 {
     initXObject(rect);
@@ -23,7 +23,7 @@ PdfXObjectForm::PdfXObjectForm(PdfObject& obj)
     : PdfXObject(obj, PdfXObjectType::Form)
 {
     if (obj.GetDictionary().HasKey("BBox"))
-        m_Rect = PdfRect(obj.GetDictionary().MustFindKey("BBox").GetArray());
+        m_Rect = Rect::FromArray(obj.GetDictionary().MustFindKey("BBox").GetArray());
 
     auto resources = obj.GetDictionary().FindKey("Resources");
     if (resources != nullptr)
@@ -52,7 +52,7 @@ bool PdfXObjectForm::HasRotation(double& teta) const
     return false;
 }
 
-void PdfXObjectForm::SetRect(const PdfRect& rect)
+void PdfXObjectForm::SetRect(const Rect& rect)
 {
     PdfArray bbox;
     rect.ToArray(bbox);
@@ -76,7 +76,12 @@ inline PdfObjectStream& PdfXObjectForm::GetStreamForAppending(PdfStreamAppendFla
     return GetObject().GetOrCreateStream();
 }
 
-PdfRect PdfXObjectForm::GetRect() const
+Rect PdfXObjectForm::GetRect() const
+{
+    return m_Rect;
+}
+
+Rect PdfXObjectForm::GetRectRaw() const
 {
     return m_Rect;
 }
@@ -92,7 +97,7 @@ PdfResources& PdfXObjectForm::GetOrCreateResources()
     return *m_Resources;
 }
 
-void PdfXObjectForm::initXObject(const PdfRect& rect)
+void PdfXObjectForm::initXObject(const Rect& rect)
 {
     // Initialize static data
     if (m_Matrix.IsEmpty())
@@ -132,13 +137,13 @@ void PdfXObjectForm::initAfterPageInsertion(const PdfPage& page)
         {
             double temp;
 
-            temp = m_Rect.GetWidth();
-            m_Rect.SetWidth(m_Rect.GetHeight());
-            m_Rect.SetHeight(temp);
+            temp = m_Rect.Width;
+            m_Rect.Width = m_Rect.Height;
+            m_Rect.Height = temp;
 
-            temp = m_Rect.GetLeft();
-            m_Rect.SetLeft(m_Rect.GetBottom());
-            m_Rect.SetBottom(temp);
+            temp = m_Rect.X;
+            m_Rect.X = m_Rect.Y;
+            m_Rect.Y = temp;
         }
         break;
 
@@ -159,24 +164,24 @@ void PdfXObjectForm::initAfterPageInsertion(const PdfPage& page)
     switch (rotation)
     {
         case 90:
-            e = -m_Rect.GetLeft();
-            f = m_Rect.GetBottom() + m_Rect.GetHeight();
+            e = -m_Rect.X;
+            f = m_Rect.Y + m_Rect.Height;
             break;
 
         case 180:
-            e = m_Rect.GetLeft() + m_Rect.GetWidth();
-            f = m_Rect.GetBottom() + m_Rect.GetHeight();
+            e = m_Rect.X + m_Rect.Width;
+            f = m_Rect.Y + m_Rect.Height;
             break;
 
         case 270:
-            e = m_Rect.GetLeft() + m_Rect.GetWidth();
-            f = -m_Rect.GetBottom();
+            e = m_Rect.X + m_Rect.Width;
+            f = -m_Rect.Y;
             break;
 
         case 0:
         default:
-            e = -m_Rect.GetLeft();
-            f = -m_Rect.GetBottom();
+            e = -m_Rect.X;
+            f = -m_Rect.Y;
             break;
     }
 

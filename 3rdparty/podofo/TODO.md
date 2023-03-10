@@ -1,7 +1,3 @@
-### 0.10
-- PdfPainter: Fix Arc(), getMultiLineTextAsLines(),
-  current point handling in various shape drawing
-
 ### 0.11
 - PdfFontManager: Add font hash to cache descriptor
 - Add high-level signing API
@@ -16,7 +12,6 @@
 - PdfFilterFactory: Move CreateFilterList somewhere else (PdfFilter), make it private
 - Rename NameToColorSpaceRaw/ColorSpaceToNameRaw to something more consistent?
 - More enum <-> strings functions and make them public
-- Add PdfAnnotation::GetRectRaw, make GetRect() return normalized rotation rect
 - Make PdfObjectStream not flate filter by default in PdfMemDocument?
 - PdfElement: Optimize, keep dictionary/array pointer. Add GetObjectPtr()
 - PdfPageCollection: Fix caching (it's very slow at the moment)
@@ -37,11 +32,8 @@ either assume UTF-8 and/or checks for used codepoints
 - Added PdfResources::GetResource with enum type
 - Add a PdfRect-like class PdfCorners that avoid coordinates normalization
   by default
-- Add PdfPage::GetRectRaw(), make GetRect() return normalized rotation rect
 - Check PdfStreamedDocument working
 - Check/Review doxygen doc
-- Move IO System headers to common/
-- Extract Matrix PdfMath.h -> Matrix.h, move it to common/
 - PdfToggleButton: Add proper IsChecked/ExportValue handling
 - Review PdfPage::SetICCProfile()
 - Review PdfPageCollection::AppendDocumentPages(),

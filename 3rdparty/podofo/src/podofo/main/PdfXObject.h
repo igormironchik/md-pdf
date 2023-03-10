@@ -9,8 +9,8 @@
 
 #include "PdfElement.h"
 #include "PdfArray.h"
-#include "PdfRect.h"
-#include "PdfMath.h"
+#include <podofo/auxiliary/Matrix.h>
+#include <podofo/auxiliary/Rect.h>
 
 namespace PoDoFo {
 
@@ -18,7 +18,6 @@ class PdfObject;
 class PdfImage;
 class PdfXObjectForm;
 class PdfXObjectPostScript;
-class Matrix;
 
 /** A XObject is a content stream with several drawing commands and data
  *  which can be used throughout a PDF document.
@@ -49,7 +48,7 @@ public:
     template <typename XObjectT>
     static bool TryCreateFromObject(const PdfObject& obj, std::unique_ptr<const XObjectT>& xobj);
 
-    virtual PdfRect GetRect() const = 0;
+    virtual Rect GetRect() const = 0;
 
     Matrix GetMatrix() const;
 

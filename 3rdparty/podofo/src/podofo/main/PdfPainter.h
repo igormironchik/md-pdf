@@ -7,7 +7,6 @@
 #ifndef PDF_PAINTER_H
 #define PDF_PAINTER_H
 
-#include "PdfRect.h"
 #include "PdfCanvas.h"
 #include "PdfTextState.h"
 #include "PdfGraphicsState.h"
@@ -15,7 +14,7 @@
 #include "PdfPainterTextObject.h"
 #include "PdfContentStreamOperators.h"
 
-#include <podofo/common/StateStack.h>
+#include <podofo/auxiliary/StateStack.h>
 
 #include <podofo/staging/PdfShadingPattern.h>
 #include <podofo/staging/PdfTilingPattern.h>
@@ -53,7 +52,7 @@ enum class PdfPathDrawMode
 enum class PdfDrawTextStyle
 {
     Regular = 0,
-    StrikeOut = 1,
+    StrikeThrough = 1,
     Underline = 2,
 };
 
@@ -68,9 +67,10 @@ struct PODOFO_API PdfDrawTextMultiLineParams final
 
 struct PODOFO_API PdfPainterState final
 {
-    Vector2 CurrentPoint;
     PdfGraphicsState GraphicsState;
     PdfTextState TextState;         ///< The current sematical text state
+    nullable<Vector2> FirstPoint;
+    nullable<Vector2> CurrentPoint;
 private:
     friend class PdfPainter;
 private:
@@ -292,7 +292,7 @@ public:
      *
      *  \param rect rectangle
      */
-    void SetClipRect(const PdfRect& rect);
+    void SetClipRect(const Rect& rect);
 
     /** Stroke a line with current color and line settings.
      *  \param x1 x coordinate of the starting point
@@ -314,14 +314,16 @@ public:
      */
     void DrawCubicBezier(double x1, double y1, double x2, double y2, double x3, double y3, double x4, double y4);
 
-    /** Stroke an arc to the given coordinate, with angles and radius
+    /** Stroke a counterclockwise arc to the given coordinate spanning from given angles and radius
+     *  This is the equivalent of the "arc"/"arcn" operators in PostScript
      *  \param x x coordinate of the center of the arc (left coordinate)
      *  \param y y coordinate of the center of the arc (top coordinate)
      *	\param radius radius
-     *	\param angle1 angle1 in radians
-     *	\param angle2 angle2 in radians
+     *	\param startAngle startAngle in radians measured counterclockwise from the origin
+     *	\param endAngle endAngle in radians measured counterclockwise from the origin
+     *	\param clockwise The arc is drawn clockwise instead
      */
-    void DrawArc(double x, double y, double radius, double angle1, double angle2, bool counterclockwise = false);
+    void DrawArc(double x, double y, double radius, double startAngle, double endAngle, bool clockwise = false);
 
     /** Draw a circle
      *  \param x x center coordinate of the circle
@@ -355,7 +357,7 @@ public:
      *  \param roundX rounding factor, x direction
      *  \param roundY rounding factor, y direction
      */
-    void DrawRectangle(const PdfRect& rect, PdfPathDrawMode mode = PdfPathDrawMode::Stroke,
+    void DrawRectangle(const Rect& rect, PdfPathDrawMode mode = PdfPathDrawMode::Stroke,
         double roundX = 0.0, double roundY = 0.0);
 
     /** Draw a single-line text string on a page using a given font object.
@@ -389,7 +391,7 @@ public:
      *  \param rect bounding rectangle of the text
      *  \param params parameters of the draw operation
      */
-    void DrawTextMultiLine(const std::string_view& str, const PdfRect& rect,
+    void DrawTextMultiLine(const std::string_view& str, const Rect& rect,
         const PdfDrawTextMultiLineParams& params = { });
 
     /** Draw a single line of text horizontally aligned.
@@ -479,7 +481,10 @@ public:
      */
     unsigned short GetPrecision() const;
 
-    std::string_view GetView() const;
+    /**
+     * Get a string view of the current content stream being built
+     */
+    std::string_view GetContent() const;
 
 public:
     inline const PdfPainterStateStack& GetStateStack() const { return m_StateStack; }
@@ -548,15 +553,7 @@ private:
     void save();
     void restore();
     void reset();
-    void pathMoveTo(double x, double y);
-    void addLineTo(double x, double y);
-    void addCubicBezierTo(double x1, double y1, double x2, double y2, double x3, double y3);
-    void addArcTo(double x1, double y1, double x2, double y2, double radius);
-    void addArc(double x, double y, double radius, double startAngle, double endAngle, double counterclockwise);
-    void addCircle(double x, double y, double radius);
-    void addEllipse(double x, double y, double width, double height);
-    void addRectangle(double x, double y, double width, double height, double roundX, double roundY);
-    void closePath();
+    void drawRectangle(double x, double y, double width, double height, PdfPathDrawMode mode, double roundX, double roundY);
     void drawPath(PdfPathDrawMode mode);
     void stroke();
     void fill(bool useEvenOddRule);
@@ -667,7 +664,7 @@ private:
     void drawTextAligned(const std::string_view& str, double x, double y, double width,
         PdfHorizontalAlignment hAlignment, PdfDrawTextStyle style);
 
-    void drawText(const std::string_view& str, double x, double y, bool isUnderline, bool isStrikeOut);
+    void drawText(const std::string_view& str, double x, double y, bool isUnderline, bool isStrikeThrough);
 
     void drawMultiLineText(const std::string_view& str, double x, double y, double width, double height,
         PdfHorizontalAlignment hAlignment, PdfVerticalAlignment vAlignment, bool clip, bool skipSpaces,
@@ -686,7 +683,10 @@ private:
      */
     std::string expandTabs(const std::string_view& str) const;
     void checkStream();
-    void checkFont();
+    void openPath(double x, double y);
+    void resetPath();
+    void checkPathOpened() const;
+    void checkFont() const;
     void finishDrawing();
     void checkStatus(int expectedStatus);
     void enterTextObject();

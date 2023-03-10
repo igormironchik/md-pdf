@@ -17,7 +17,12 @@ constexpr double ARC_MAGIC = 0.552284749;
 
 static void convertRectToBezier(double x, double y, double width, double height, double pointsX[], double pointsY[]);
 static void writeColorComponents(PdfStringStream& stream, const cspan<double>& components);
+static double normalizeAngle(double alpha);
+static void getCirclePoint(double cx, double cy, double radius, double alpha, double& x, double& y);
+static void getArcBezierControlPoints(double cx, double cy, double x0, double y0, double x3, double y3,
+    double& x1, double& y1, double& x2, double& y2);
 
+// https://hepunx.rl.ac.uk/~adye/psdocs/ref/PSL2a.html#arct
 void PoDoFo::WriteArcTo(PdfStringStream& stream, double x0, double y0, double x1, double y1,
     double x2, double y2, double radius, Vector2& currP)
 {
@@ -54,18 +59,11 @@ void PoDoFo::WriteArcTo(PdfStringStream& stream, double x0, double y0, double x1
     double xc = (b0t * c2t - b2t * c0t) / (a0t * b2t - a2t * b0t);
     double yc = (c0t * a2t - c2t * a0t) / (a0t * b2t - a2t * b0t);
 
-    double ax = x1t - xc;
-    double ay = y1t - yc;
-    double bx = x2t - xc;
-    double by = y2t - yc;
-    double q1 = ax * ax + ay * ay;
-    double q2 = q1 + ax * bx + ay * by;
-    double k2 = (4 / 3.) * (sqrt(2 * q1 * q2) - q2) / (ax * by - ay * bx);
-
-    double c1x = xc + ax - k2 * ay;
-    double c1y = yc + ay + k2 * ax;
-    double c2x = xc + bx + k2 * by;
-    double c2y = yc + by - k2 * bx;
+    double c1x;
+    double c1y;
+    double c2x;
+    double c2y;
+    getArcBezierControlPoints(xc, yc, x1t, y1t, x2t, y2t, c1x, c1y, c2x, c2y);
 
     // Draw the advancement to the first tangent point
     PoDoFo::WriteOperator_l(stream, x1t, y1t);
@@ -79,19 +77,38 @@ void PoDoFo::WriteArcTo(PdfStringStream& stream, double x0, double y0, double x1
     currP.Y = y2t;
 }
 
+// https://hepunx.rl.ac.uk/~adye/psdocs/ref/PSL2a.html#arc
 void PoDoFo::WriteArc(PdfStringStream& stream, double x, double y, double radius,
-    double startAngle, double endAngle, double counterclockwise, Vector2& currP)
+    double startAngle, double endAngle, bool clockWise, Vector2& currP)
 {
-    (void)x;
-    (void)y;
-    (void)radius;
-    (void)startAngle;
-    (void)endAngle;
-    (void)counterclockwise;
-    (void)currP;
-    PoDoFo::WriteOperator_m(stream, x, y);
-    // https://www.w3.org/2015/04/2dcontext-lc-sample.html#dom-context-2d-arc
-    PODOFO_RAISE_ERROR(PdfErrorCode::NotImplemented);
+    startAngle = normalizeAngle(startAngle);
+    endAngle = normalizeAngle(endAngle);
+    double angleDiff = endAngle - startAngle;
+    if (!clockWise)
+        angleDiff = -angleDiff;
+
+    unsigned subArcCount = (unsigned)std::ceil(std::abs(angleDiff) / (numbers::pi / 2));
+    double x0;
+    double y0;
+    getCirclePoint(x, y, radius, startAngle, x0, y0);
+    PoDoFo::WriteOperator_l(stream, x0, y0);
+
+    double angleStep = angleDiff / subArcCount;
+    double angleOffset = startAngle;
+    double x1, x2, x3 = x0;
+    double y1, y2, y3 = y0;
+    for (unsigned i = 0; i < subArcCount; i++)
+    {
+        angleOffset += angleStep;
+        getCirclePoint(x, y, radius, angleOffset, x3, y3);
+        getArcBezierControlPoints(x, y, x0, y0, x3, y3, x1, y1, x2, y2);
+        PoDoFo::WriteOperator_c(stream, x1, y1, x2, y2, x3, y3);
+        x0 = x3;
+        y0 = y3;
+    }
+
+    currP.X = x3;
+    currP.Y = y3;
 }
 
 void PoDoFo::WriteCircle(PdfStringStream& stream, double x, double y, double radius, Vector2& currP)
@@ -111,9 +128,7 @@ void PoDoFo::WriteCircle(PdfStringStream& stream, double x, double y, double rad
         x + radius, y - radius * ARC_MAGIC,
         x + radius, y);
     PoDoFo::WriteOperator_h(stream);
-
-    // TODO: Add current position
-    (void)currP;
+    currP = Vector2(x + radius, y);
 }
 
 void PoDoFo::WriteEllipse(PdfStringStream& stream, double x, double y,
@@ -128,9 +143,7 @@ void PoDoFo::WriteEllipse(PdfStringStream& stream, double x, double y,
         PoDoFo::WriteOperator_c(stream, pointsX[i], pointsY[i], pointsX[i + 1], pointsY[i + 1], pointsX[i + 2], pointsY[i + 2]);
 
     PoDoFo::WriteOperator_h(stream);
-
-    // TODO: Add current position
-    (void)currP;
+    currP = Vector2(pointsX[BEZIER_POINTS - 1], pointsY[BEZIER_POINTS - 1]);
 }
 
 void PoDoFo::WriteRectangle(PdfStringStream& stream, double x, double y,
@@ -154,14 +167,12 @@ void PoDoFo::WriteRectangle(PdfStringStream& stream, double x, double y,
         PoDoFo::WriteOperator_l(stream, x, y + ry);
         PoDoFo::WriteOperator_c(stream, x, y + ry * b, x + rx * b, y, x + rx, y);
         PoDoFo::WriteOperator_h(stream);
-
-        // TODO: Add current position
-        (void)currP;
+        currP = Vector2(x + rx, y);
     }
     else
     {
         PoDoFo::WriteOperator_re(stream, x, y, width, height);
-        currP = Vector2(x + width, y + width);
+        currP = Vector2(x, y);
     }
 }
 
@@ -611,4 +622,52 @@ void writeColorComponents(PdfStringStream& stream, const cspan<double>& componen
 {
     for (unsigned i = 0; i < components.size(); i++)
         stream << components[i] << ' ';
+}
+
+double normalizeAngle(double alpha)
+{
+    return alpha - 2 * numbers::pi * std::floor(alpha / (2 * numbers::pi));
+}
+
+void getCirclePoint(double xc, double yc, double radius, double alpha, double& x, double& y)
+{
+    x = xc + radius * std::cos(alpha);
+    y = yc + radius * std::sin(alpha);
+}
+
+// Ref. https://stackoverflow.com/a/44829356/213871
+void getArcBezierControlPoints(double xc, double yc, double x0, double y0, double x3, double y3, double& x1, double& y1, double& x2, double& y2)
+{
+    double ax = x0 - xc;
+    double ay = y0 - yc;
+    double bx = x3 - xc;
+    double by = y3 - yc;
+    double q1 = ax * ax + ay * ay;
+    double q2 = q1 + ax * bx + ay * by;
+    double k2 = (4 / 3.) * (sqrt(2 * q1 * q2) - q2) / (ax * by - ay * bx);
+
+    x1 = xc + ax - k2 * ay;
+    y1 = yc + ay + k2 * ax;
+    x2 = xc + bx + k2 * by;
+    y2 = yc + by - k2 * bx;
+}
+
+void getControlPoint(double cx, double cy, double x0, double y0, double x2, double y2, double& x1, double& y1)
+{
+    // Compute the coefficients of the tantent to the point P0
+    double a0 = cy - y0;
+    double b0 = x0 - cx;
+    double a0t = b0;
+    double b0t = -a0;
+    double c0t = -b0 * x0 + a0 * y0;
+
+    // Compute the coefficients of the tantent to the point P0
+    double a2 = cy - y2;
+    double b2 = x2 - cx;
+    double a2t = b2;
+    double b2t = -a2;
+    double c2t = -b2 * x2 + a2 * y2;
+
+    x1 = (b0t * c2t - b2t * c0t) / (a0t * b2t - a2t * b0t);
+    y1 = (c0t * a2t - c2t * a0t) / (a0t * b2t - a2t * b0t);
 }

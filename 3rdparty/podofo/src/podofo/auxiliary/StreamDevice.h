@@ -4,14 +4,18 @@
  * SPDX-License-Identifier: LGPL-2.0-or-later
  */
 
-#ifndef PDF_INPUT_OUTPUT_DEVICE_H
-#define PDF_INPUT_OUTPUT_DEVICE_H
+#ifndef AUX_STREAM_DEVICE_H
+#define AUX_STREAM_DEVICE_H
 
+#include <cstring>
 #include <ostream>
 #include <fstream>
+#include <vector>
 
-#include "PdfInputDevice.h"
-#include "PdfOutputDevice.h"
+#include "basetypes.h"
+
+#include "InputDevice.h"
+#include "OutputDevice.h"
 
 namespace PoDoFo {
 
@@ -276,4 +280,4 @@ using BufferStreamDevice = ContainerStreamDevice<charbuff>;
 
 }
 
-#endif // PDF_INPUT_OUTPUT_DEVICE_H
+#endif // AUX_STREAM_DEVICE_H

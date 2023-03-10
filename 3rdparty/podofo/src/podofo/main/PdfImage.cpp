@@ -26,7 +26,7 @@ extern "C" {
 #include "PdfArray.h"
 #include "PdfColor.h"
 #include "PdfObjectStream.h"
-#include "PdfStreamDevice.h"
+#include <podofo/auxiliary/StreamDevice.h>
 
 // TIFF and JPEG headers already included through "PdfFiltersPrivate.h",
 // although in opposite order (first JPEG, then TIFF), if available of course
@@ -1307,9 +1307,9 @@ void PdfImage::SetInterpolate(bool value)
     this->GetDictionary().AddKey("Interpolate", value);
 }
 
-PdfRect PdfImage::GetRect() const
+Rect PdfImage::GetRect() const
 {
-    return PdfRect(0, 0, m_Width, m_Height);
+    return Rect(0, 0, m_Width, m_Height);
 }
 
 unsigned PdfImage::GetWidth() const

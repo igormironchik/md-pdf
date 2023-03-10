@@ -4,14 +4,14 @@
  * SPDX-License-Identifier: LGPL-2.0-or-later
  */
 
-#ifndef PDF_OUTPUT_DEVICE_H
-#define PDF_OUTPUT_DEVICE_H
+#ifndef AUX_OUTPUT_DEVICE_H
+#define AUX_OUTPUT_DEVICE_H
 
 #include <ostream>
 #include <fstream>
 
-#include "PdfStreamDeviceBase.h"
-#include "PdfOutputStream.h"
+#include "StreamDeviceBase.h"
+#include "OutputStream.h"
 
 namespace PoDoFo {
 
@@ -27,4 +27,4 @@ protected:
 
 };
 
-#endif // PDF_OUTPUT_DEVICE_H
+#endif // AUX_OUTPUT_DEVICE_H

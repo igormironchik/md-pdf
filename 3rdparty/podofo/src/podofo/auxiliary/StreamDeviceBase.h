@@ -4,10 +4,11 @@
  * SPDX-License-Identifier: LGPL-2.0-or-later
  */
 
-#ifndef PDF_DEVICE_BASE_H
-#define PDF_DEVICE_BASE_H
+#ifndef AUX_STREAM_DEVICE_BASE_H
+#define AUX_STREAM_DEVICE_BASE_H
 
-#include "PdfDeclarations.h"
+#include "basedefs.h"
+#include "EnumFlags.h"
 
 namespace PoDoFo {
 
@@ -83,4 +84,4 @@ private:
 
 ENABLE_BITMASK_OPERATORS(PoDoFo::DeviceAccess);
 
-#endif // PDF_DEVICE_BASE_H
+#endif // AUX_STREAM_DEVICE_BASE_H

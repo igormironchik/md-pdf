@@ -11,7 +11,7 @@
 #include "PdfDocument.h"
 #include "PdfArray.h"
 #include "PdfDictionary.h"
-#include "PdfStreamDevice.h"
+#include <podofo/auxiliary/StreamDevice.h>
 
 using namespace std;
 using namespace PoDoFo;
@@ -23,9 +23,6 @@ private:
     void init(OutputStream& outputStream, PdfFilterType filterType)
     {
         m_filter = PdfFilterFactory::Create(filterType);
-        if (m_filter == nullptr)
-            PODOFO_RAISE_ERROR(PdfErrorCode::UnsupportedFilter);
-
         m_filter->BeginEncode(outputStream);
     }
     ~PdfFilteredEncodeStream()
@@ -56,9 +53,6 @@ private:
         const PdfDictionary* decodeParms)
     {
         m_filter = PdfFilterFactory::Create(filterType);
-        if (m_filter == nullptr)
-            PODOFO_RAISE_ERROR(PdfErrorCode::UnsupportedFilter);
-
         m_filter->BeginDecode(outputStream, decodeParms);
     }
 
@@ -251,35 +245,43 @@ void PdfFilter::decodeTo(OutputStream& stream, const bufferview& inBuffer, const
 
 unique_ptr<PdfFilter> PdfFilterFactory::Create(PdfFilterType filterType)
 {
-    PdfFilter* filter = nullptr;
+    unique_ptr<PdfFilter> ret;
+    if (!TryCreate(filterType, ret))
+        PODOFO_RAISE_ERROR(PdfErrorCode::UnsupportedFilter);
+
+    return ret;
+}
+
+bool PdfFilterFactory::TryCreate(PdfFilterType filterType, unique_ptr<PdfFilter>& filter)
+{
     switch (filterType)
     {
         case PdfFilterType::ASCIIHexDecode:
-            filter = new PdfHexFilter();
-            break;
+            filter = unique_ptr<PdfFilter>(new PdfHexFilter());
+            return true;
         case PdfFilterType::ASCII85Decode:
-            filter = new PdfAscii85Filter();
-            break;
+            filter = unique_ptr<PdfFilter>(new PdfAscii85Filter());
+            return true;
         case PdfFilterType::LZWDecode:
-            filter = new PdfLZWFilter();
-            break;
+            filter = unique_ptr<PdfFilter>(new PdfLZWFilter());
+            return true;
         case PdfFilterType::FlateDecode:
-            filter = new PdfFlateFilter();
-            break;
+            filter = unique_ptr<PdfFilter>(new PdfFlateFilter());
+            return true;
         case PdfFilterType::RunLengthDecode:
-            filter = new PdfRLEFilter();
-            break;
+            filter = unique_ptr<PdfFilter>(new PdfRLEFilter());
+            return true;
+        case PdfFilterType::Crypt:
+            filter = unique_ptr<PdfFilter>(new PdfCryptFilter());
+            return true;
         case PdfFilterType::None:
         case PdfFilterType::DCTDecode:
         case PdfFilterType::CCITTFaxDecode:
         case PdfFilterType::JBIG2Decode:
         case PdfFilterType::JPXDecode:
-        case PdfFilterType::Crypt:
         default:
-            break;
+            return false;
     }
-
-    return unique_ptr<PdfFilter>(filter);
 }
 
 unique_ptr<OutputStream> PdfFilterFactory::CreateEncodeStream(const shared_ptr<OutputStream>& stream,
@@ -354,7 +356,7 @@ PdfFilterList PdfFilterFactory::CreateFilterList(const PdfObject& filtersObj)
 
 void PdfFilterFactory::addFilterTo(PdfFilterList& filters, const string_view& filter)
 {
-    auto type = PoDoFo::NameToFilter(filter);
+    auto type = PoDoFo::NameToFilter(filter, true);
     filters.push_back(type);
 }
 
@@ -481,4 +483,24 @@ void PdfFilter::FailEncodeDecode()
         m_OutputStream->Flush();
 
     m_OutputStream = nullptr;
+}
+
+void PdfFilter::BeginEncodeImpl()
+{
+    // Do nothing by default
+}
+
+void PdfFilter::EndDecodeImpl()
+{
+    // Do nothing by default
+}
+
+void PdfFilter::BeginDecodeImpl(const PdfDictionary*)
+{
+    // Do nothing by default
+}
+
+void PdfFilter::EndEncodeImpl()
+{
+    // Do nothing by default
 }

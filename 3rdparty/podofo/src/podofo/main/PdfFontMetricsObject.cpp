@@ -33,11 +33,12 @@ PdfFontMetricsObject::PdfFontMetricsObject(const PdfObject& font, const PdfObjec
     const PdfObject* obj;
     const PdfName& subType = font.GetDictionary().MustFindKey(PdfName::KeySubtype).GetName();
 
-    // Widths of a Type 1 font, which are in thousandths
-    // of a unit of text space
+    // Set a default identity matrix. Widths are normally in
+    // thousands of a unit of text space
     m_Matrix = { 1e-3, 0.0, 0.0, 1e-3, 0, 0 };
 
     // /FirstChar /LastChar /Widths are in the Font dictionary and not in the FontDescriptor
+    double missingWidthRaw = 0;
     if (subType == "Type1" || subType == "Type3" || subType == "TrueType")
     {
         if (subType == "Type1")
@@ -111,17 +112,21 @@ PdfFontMetricsObject::PdfFontMetricsObject(const PdfObject& font, const PdfObjec
                 }
             }
 
-            m_DefaultWidth = descriptor->GetDictionary().FindKeyAs<double>("MissingWidth", 0);
+            missingWidthRaw = descriptor->GetDictionary().FindKeyAs<double>("MissingWidth", 0);
         }
 
-        // Type3 fonts have a custom /FontMatrix
         const PdfObject* fontmatrix = nullptr;
         if (m_FontFileType == PdfFontFileType::Type3 && (fontmatrix = font.GetDictionary().FindKey("FontMatrix")) != nullptr)
         {
+            // Type3 fonts have a custom /FontMatrix
             auto& fontmatrixArr = fontmatrix->GetArray();
             for (int i = 0; i < 6; i++)
                 m_Matrix[i] = fontmatrixArr[i].GetReal();
         }
+
+        // Set the default width accordingly to possibly existing
+        // /MissingWidth and /FontMatrix
+        m_DefaultWidth = missingWidthRaw * m_Matrix[0];
 
         auto widths = font.GetDictionary().FindKey("Widths");
         if (widths != nullptr)
@@ -342,8 +347,8 @@ PdfFontMetricsObject::PdfFontMetricsObject(const PdfObject& font, const PdfObjec
     // Try to fine some sensible values
     m_UnderlineThickness = 1.0;
     m_UnderlinePosition = 0.0;
-    m_StrikeOutThickness = m_UnderlinePosition;
-    m_StrikeOutPosition = m_Ascent / 2.0;
+    m_StrikeThroughThickness = m_UnderlinePosition;
+    m_StrikeThroughPosition = m_Ascent / 2.0;
 }
 
 string_view PdfFontMetricsObject::GetFontName() const
@@ -440,9 +445,9 @@ double PdfFontMetricsObject::GetUnderlinePosition() const
     return m_UnderlinePosition;
 }
 
-double PdfFontMetricsObject::GetStrikeOutPosition() const
+double PdfFontMetricsObject::GetStrikeThroughPosition() const
 {
-    return m_StrikeOutPosition;
+    return m_StrikeThroughPosition;
 }
 
 double PdfFontMetricsObject::GetUnderlineThickness() const
@@ -450,9 +455,9 @@ double PdfFontMetricsObject::GetUnderlineThickness() const
     return m_UnderlineThickness;
 }
 
-double PdfFontMetricsObject::GetStrikeOutThickness() const
+double PdfFontMetricsObject::GetStrikeThroughThickness() const
 {
-    return m_StrikeOutThickness;
+    return m_StrikeThroughThickness;
 }
 
 double PdfFontMetricsObject::GetAscent() const

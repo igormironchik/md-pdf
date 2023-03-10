@@ -8,7 +8,7 @@
 #define PDF_GRAPHICS_STATE_H
 
 #include "PdfColor.h"
-#include "PdfMath.h"
+#include <podofo/auxiliary/Matrix.h>
 
 namespace PoDoFo
 {

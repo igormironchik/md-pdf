@@ -9,8 +9,8 @@
 #include <podofo/private/charconv_compat.h>
 #include <podofo/private/utfcpp_extensions.h>
 
-#include <podofo/main/PdfInputStream.h>
-#include <podofo/main/PdfOutputStream.h>
+#include <podofo/auxiliary/InputStream.h>
+#include <podofo/auxiliary/OutputStream.h>
 
 #include <podofo/private/istringviewstream.h>
 
@@ -356,7 +356,7 @@ string_view PoDoFo::ColorSpaceToNameRaw(PdfColorSpace colorSpace)
     }
 }
 
-PdfFilterType PoDoFo::NameToFilter(const string_view& name)
+PdfFilterType PoDoFo::NameToFilter(const string_view& name, bool lenient)
 {
     if (name == "ASCIIHexDecode")
         return PdfFilterType::ASCIIHexDecode;
@@ -378,29 +378,31 @@ PdfFilterType PoDoFo::NameToFilter(const string_view& name)
         return PdfFilterType::JPXDecode;
     else if (name == "Crypt")
         return PdfFilterType::Crypt;
-    else
-        PODOFO_RAISE_ERROR_INFO(PdfErrorCode::UnsupportedFilter, name);
-}
+    else if (lenient)
+    {
+        // "Acrobat viewers accept the abbreviated filter names shown in table titled
+        // 'Abbreviations for standard filter names' in addition to the standard ones
+        // These abbreviated names are intended for use only in the context of inline images
+        // (see Section 4.8.6, 'Inline Images'), they should not be used as filter names
+        // in any stream object.
+        if (name == "AHx")
+            return PdfFilterType::ASCIIHexDecode;
+        else if (name == "A85")
+            return PdfFilterType::ASCII85Decode;
+        else if (name == "LZW")
+            return PdfFilterType::LZWDecode;
+        else if (name == "Fl")
+            return PdfFilterType::FlateDecode;
+        else if (name == "RL")
+            return PdfFilterType::RunLengthDecode;
+        else if (name == "CCF")
+            return PdfFilterType::CCITTFaxDecode;
+        else if (name == "DCT")
+            return PdfFilterType::DCTDecode;
+        // No short names for JBIG2Decode, JPXDecode, Crypt
+    }
 
-PdfFilterType PoDoFo::NameToFilterShort(const string_view& name)
-{
-    if (name == "AHx")
-        return PdfFilterType::ASCIIHexDecode;
-    else if (name == "A85")
-        return PdfFilterType::ASCII85Decode;
-    else if (name == "LZW")
-        return PdfFilterType::LZWDecode;
-    else if (name == "Fl")
-        return PdfFilterType::FlateDecode;
-    else if (name == "RL")
-        return PdfFilterType::RunLengthDecode;
-    else if (name == "CCF")
-        return PdfFilterType::CCITTFaxDecode;
-    else if (name == "DCT")
-        return PdfFilterType::DCTDecode;
-    // No short names for JBIG2Decode, JPXDecode, Crypt
-    else
-        PODOFO_RAISE_ERROR_INFO(PdfErrorCode::UnsupportedFilter, name);
+    PODOFO_RAISE_ERROR_INFO(PdfErrorCode::UnsupportedFilter, name);
 }
 
 string_view PoDoFo::FilterToName(PdfFilterType filterType)
@@ -621,6 +623,56 @@ bool utls::IsWhiteSpace(char32_t ch)
         case U'\x2029':     // PARAGRAPH SEPARATOR
         // Feed
         case U'\t':         // CHARACTER TABULATION U+0009
+        case U'\n':         // LINE FEED U+000A
+        case U'\v':         // LINE TABULATION U+000B
+        case U'\f':         // FORM FEED U+000C
+        case U'\r':         // CARRIAGE RETURN U+000D
+        case U'\x0085':     // NEXT LINE
+            return true;
+        default:
+            return false;
+    }
+}
+
+bool utls::IsSpaceLikeChar(char32_t ch)
+{
+    switch (ch)
+    {
+        // Space separators
+        case U' ':          // SPACE U+0020
+        case U'\x00A0':     // NO-BREAK SPACE
+        case U'\x1680':     // OGHAM SPACE MARK
+        case U'\x2000':     // EN QUAD
+        case U'\x2001':     // EM QUAD
+        case U'\x2002':     // EN SPACE
+        case U'\x2003':     // EM SPACE
+        case U'\x2004':     // THREE-PER-EM SPACE
+        case U'\x2005':     // FOUR-PER-EM SPACE
+        case U'\x2006':     // SIX-PER-EM SPACE
+        case U'\x2007':     // FIGURE SPACE
+        case U'\x2008':     // PUNCTUATION SPAC
+        case U'\x2009':     // THIN SPACE
+        case U'\x200A':     // HAIR SPACE
+        case U'\x202F':     // NARROW NO-BREAK SPAC
+        case U'\x205F':     // MEDIUM MATHEMATICAL SPACE
+        case U'\x3000':     // IDEOGRAPHIC SPACE
+        // Feed
+        case U'\t':         // CHARACTER TABULATION U+0009
+            return true;
+        default:
+            return false;
+    }
+}
+
+bool utls::IsNewLineLikeChar(char32_t ch)
+{
+    switch (ch)
+    {
+        // Line separators
+        case U'\x2028':     // LINE SEPARATOR
+        // Paragraph separators
+        case U'\x2029':     // PARAGRAPH SEPARATOR
+        // Feed
         case U'\n':         // LINE FEED U+000A
         case U'\v':         // LINE TABULATION U+000B
         case U'\f':         // FORM FEED U+000C
@@ -1009,13 +1061,13 @@ void utls::WriteUtf16BETo(u16string& str, char32_t codePoint)
 
 void utls::ReadUtf16BEString(const bufferview& buffer, string& utf8str)
 {
-    utf8::u16bechariterable iterable(buffer.data(), buffer.size());
+    utf8::u16bechariterable iterable(buffer.data(), buffer.size(), true);
     utf8::utf16to8_lenient(iterable.begin(), iterable.end(), std::back_inserter(utf8str));
 }
 
 void utls::ReadUtf16LEString(const bufferview& buffer, string& utf8str)
 {
-    utf8::u16lechariterable iterable(buffer.data(), buffer.size());
+    utf8::u16lechariterable iterable(buffer.data(), buffer.size(), true);
     utf8::utf16to8_lenient(iterable.begin(), iterable.end(), std::back_inserter(utf8str));
 }
 

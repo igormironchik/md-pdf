@@ -21,7 +21,7 @@
 #include "PdfFont.h"
 
 #include <podofo/private/outstringstream.h>
-#include <podofo/common/StateStack.h>
+#include <podofo/auxiliary/StateStack.h>
 
 using namespace std;
 using namespace cmn;
@@ -107,7 +107,7 @@ struct ExtractionContext
 {
 public:
     ExtractionContext(vector<PdfTextEntry> &entries, const PdfPage &page, const string_view &pattern,
-        PdfTextExtractFlags flags, const nullable<PdfRect> &clipRect);
+        PdfTextExtractFlags flags, const nullable<Rect> &clipRect);
 public:
     void BeginText();
     void EndText();
@@ -134,7 +134,7 @@ public:
     const int PageIndex;
     const string Pattern;
     const EntryOptions Options;
-    const nullable<PdfRect> ClipRect;
+    const nullable<Rect> ClipRect;
     unique_ptr<Matrix> Rotation;
     vector<PdfTextEntry> &Entries;
     StringChunkPtr Chunk = std::make_unique<StringChunk>();
@@ -161,10 +161,10 @@ static void splitStringBySpaces(vector<StatefulString> &separatedStrings, const 
 static void trimSpacesBegin(StringChunk &chunk);
 static void trimSpacesEnd(StringChunk &chunk);
 static void addEntry(vector<PdfTextEntry> &textEntries, StringChunkList &strings,
-    const string_view &pattern, const EntryOptions &options, const nullable<PdfRect> &clipRect,
+    const string_view &pattern, const EntryOptions &options, const nullable<Rect> &clipRect,
     int pageIndex, const Matrix* rotation);
 static void addEntryChunk(vector<PdfTextEntry> &textEntries, StringChunkList &strings,
-    const string_view &pattern, const EntryOptions& options, const nullable<PdfRect> &clipRect,
+    const string_view &pattern, const EntryOptions& options, const nullable<Rect> &clipRect,
     int pageIndex, const Matrix* rotation);
 static void processChunks(const StringChunkList& chunks, string& destString,
     vector<unsigned>& positions, vector<const StatefulString*>& strings,
@@ -172,7 +172,7 @@ static void processChunks(const StringChunkList& chunks, string& destString,
 static double computeLength(const vector<const StatefulString*>& strings, const vector<GlyphAddress>& glyphAddresses,
     unsigned lowerIndex, unsigned upperIndex);
 static bool isMatchWholeWordSubstring(const string_view& str, const string_view& pattern, size_t& matchPos);
-static PdfRect computeBoundingBox(const TextState& textState, double boxWidth);
+static Rect computeBoundingBox(const TextState& textState, double boxWidth);
 static void read(const PdfVariantStack& stack, double &tx, double &ty);
 static void read(const PdfVariantStack& stack, double &a, double &b, double &c, double &d, double &e, double &f);
 static void getSubstringIndices(const vector<unsigned>& positions, unsigned lowerPos, unsigned upperLimitPos,
@@ -377,7 +377,7 @@ void PdfPage::ExtractTextTo(vector<PdfTextEntry>& entries, const string_view& pa
                     case PdfOperator::Q:
                     {
                         ASSERT(!context.BlockOpen, "Text block must be not open");
-                        context.States.Pop();
+                        ASSERT(context.States.PopLenient(), "Save/restore must be balanced");
                         break;
                     }
                     default:
@@ -428,7 +428,7 @@ void PdfPage::ExtractTextTo(vector<PdfTextEntry>& entries, const string_view& pa
 }
 
 void addEntry(vector<PdfTextEntry> &textEntries, StringChunkList &chunks, const string_view &pattern,
-    const EntryOptions &options, const nullable<PdfRect> &clipRect, int pageIndex, const Matrix* rotation)
+    const EntryOptions &options, const nullable<Rect> &clipRect, int pageIndex, const Matrix* rotation)
 {
     if (options.TokenizeWords)
     {
@@ -493,7 +493,7 @@ void addEntry(vector<PdfTextEntry> &textEntries, StringChunkList &chunks, const 
 }
 
 void addEntryChunk(vector<PdfTextEntry> &textEntries, StringChunkList &chunks, const string_view &pattern,
-    const EntryOptions& options, const nullable<PdfRect> &clipRect, int pageIndex, const Matrix* rotation)
+    const EntryOptions& options, const nullable<Rect> &clipRect, int pageIndex, const Matrix* rotation)
 {
     if (options.TrimSpaces)
     {
@@ -629,7 +629,7 @@ void addEntryChunk(vector<PdfTextEntry> &textEntries, StringChunkList &chunks, c
     }
 
     double strLength = computeLength(strings, glyphAddresses, lowerIndex, upperIndexLimit - 1);
-    nullable<PdfRect> bbox;
+    nullable<Rect> bbox;
     if (options.ComputeBoundingBox)
         bbox = computeBoundingBox(textState, strLength);
 
@@ -840,7 +840,7 @@ vector<double> StatefulString::computeLengths(const vector<double>& rawLengths)
 }
 
 ExtractionContext::ExtractionContext(vector<PdfTextEntry>& entries, const PdfPage& page, const string_view& pattern,
-    PdfTextExtractFlags flags , const nullable<PdfRect>& clipRect) :
+    PdfTextExtractFlags flags , const nullable<Rect>& clipRect) :
     m_page(page),
     PageIndex(page.GetPageNumber() - 1),
     Pattern(pattern),
@@ -854,7 +854,7 @@ ExtractionContext::ExtractionContext(vector<PdfTextEntry>& entries, const PdfPag
     // Determine page rotation transformation
     double teta;
     if (page.HasRotation(teta))
-        Rotation = std::make_unique<Matrix>(PoDoFo::GetFrameRotationTransform(page.GetRect(), teta));
+        Rotation = std::make_unique<Matrix>(PoDoFo::GetFrameRotationTransform(page.GetRectRaw(), teta));
 }
 
 void ExtractionContext::BeginText()
@@ -876,11 +876,10 @@ void ExtractionContext::EndText()
 
 void ExtractionContext::Tf_Operator(const PdfName &fontname, double fontsize)
 {
-    auto fontObj = getActualCanvas().GetFromResources("Font", fontname);
-    auto &doc = m_page.GetDocument();
+    auto resources = getActualCanvas().GetResources();
     double spacingLengthRaw = 0;
     States.Current->PdfState.FontSize = fontsize;
-    if (fontObj == nullptr || (States.Current->PdfState.Font = doc.GetFonts().GetLoadedFont(*fontObj)) == nullptr)
+    if (resources == nullptr || (States.Current->PdfState.Font = resources->GetFont(fontname)) == nullptr)
         PoDoFo::LogMessage(PdfLogSeverity::Warning, "Unable to find font object {}", fontname.GetString());
     else
         spacingLengthRaw = States.Current->GetWordSpacingLength();
@@ -1339,7 +1338,7 @@ NoMatch:
     return false;
 }
 
-PdfRect computeBoundingBox(const TextState& textState, double boxWidth)
+Rect computeBoundingBox(const TextState& textState, double boxWidth)
 {
     // NOTE: This is very inaccurate
     // TODO1: Handle multiple text/pdf states
@@ -1359,7 +1358,7 @@ PdfRect computeBoundingBox(const TextState& textState, double boxWidth)
     }
 
     auto position = textState.T_rm.GetTranslationVector();
-    return PdfRect(position.X, position.Y - descend, boxWidth, descend + ascent);
+    return Rect(position.X, position.Y - descend, boxWidth, descend + ascent);
 }
 
 void getSubstringIndices(const vector<unsigned>& positions, unsigned lowerPos, unsigned upperPosLim,

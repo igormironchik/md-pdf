@@ -1,10 +1,10 @@
-#ifndef COMMON_SPAN_H
-#define COMMON_SPAN_H
+#ifndef AUX_SPAN_H
+#define AUX_SPAN_H
 #pragma once
 
 #include "span.hpp"
 
-namespace COMMON_NAMESPACE
+namespace PoDoFo
 {
     // https://stackoverflow.com/questions/56845801/what-happened-to-stdcspan
     /** Constant span
@@ -18,4 +18,4 @@ namespace COMMON_NAMESPACE
     using mspan = tcb::span<T, Extent>;
 }
 
-#endif // COMMON_SPAN_H
+#endif // AUX_SPAN_H

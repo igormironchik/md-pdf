@@ -4,10 +4,8 @@
  * SPDX-License-Identifier: MPL-2.0
  */
 
-#ifndef PDF_MATH_BASE_H
-#define PDF_MATH_BASE_H
-
-#include "PdfDeclarations.h"
+#ifndef AUX_MATH_BASE_H
+#define AUX_MATH_BASE_H
 
 namespace PoDoFo
 {
@@ -63,4 +61,4 @@ namespace PoDoFo
     };
 }
 
-#endif // PDF_MATH_BASE_H
+#endif // AUX_MATH_BASE_H

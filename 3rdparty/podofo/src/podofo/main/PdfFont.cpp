@@ -16,7 +16,7 @@
 #include "PdfArray.h"
 #include "PdfEncoding.h"
 #include "PdfEncodingFactory.h"
-#include "PdfInputStream.h"
+#include <podofo/auxiliary/InputStream.h>
 #include "PdfObjectStream.h"
 #include "PdfWriter.h"
 #include "PdfCharCodeMap.h"
@@ -68,12 +68,12 @@ PdfFont::PdfFont(PdfObject& obj, const PdfFontMetricsConstPtr& metrics,
 
 PdfFont::~PdfFont() { }
 
-bool PdfFont::TryGetSubstituteFont(PdfFont*& substFont)
+bool PdfFont::TryGetSubstituteFont(PdfFont*& substFont) const
 {
     return TryGetSubstituteFont(PdfFontCreateFlags::None, substFont);
 }
 
-bool PdfFont::TryGetSubstituteFont(PdfFontCreateFlags initFlags, PdfFont*& substFont)
+bool PdfFont::TryGetSubstituteFont(PdfFontCreateFlags initFlags, PdfFont*& substFont) const
 {
     auto encoding = GetEncoding();
     auto& metrics = GetMetrics();
@@ -636,15 +636,15 @@ double PdfFont::GetUnderlinePosition(const PdfTextState& state) const
 }
 
 // CHECK-ME Should state.GetFontScale() be considered?
-double PdfFont::GetStrikeOutPosition(const PdfTextState& state) const
+double PdfFont::GetStrikeThroughPosition(const PdfTextState& state) const
 {
-    return m_Metrics->GetStrikeOutPosition() * state.FontSize;
+    return m_Metrics->GetStrikeThroughPosition() * state.FontSize;
 }
 
 // CHECK-ME Should state.GetFontScale() be considered?
-double PdfFont::GetStrikeOutThickness(const PdfTextState& state) const
+double PdfFont::GetStrikeThroughThickness(const PdfTextState& state) const
 {
-    return m_Metrics->GetStrikeOutThickness() * state.FontSize;
+    return m_Metrics->GetStrikeThroughThickness() * state.FontSize;
 }
 
 double PdfFont::GetAscent(const PdfTextState& state) const

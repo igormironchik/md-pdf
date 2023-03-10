@@ -165,12 +165,12 @@ PdfAuxData::drawText( double x, double y, const char * text,
 	{
 		painter->Save();
 
-		painter->GraphicsState.SetLineWidth( font->GetStrikeOutThickness( st ) );
+		painter->GraphicsState.SetLineWidth( font->GetStrikeThroughThickness( st ) );
 
 		painter->DrawLine( x,
-			y + font->GetStrikeOutPosition( st ),
+			y + font->GetStrikeThroughPosition( st ),
 			x + font->GetStringLength( text, st ),
-			y + font->GetStrikeOutPosition( st ) );
+			y + font->GetStrikeThroughPosition( st ) );
 
 		painter->Restore();
 	}
@@ -199,12 +199,12 @@ PdfAuxData::drawText( double x, double y, const char * text,
 		{
 			painter->Save();
 
-			painter->GraphicsState.SetLineWidth( font->GetStrikeOutThickness( st ) );
+			painter->GraphicsState.SetLineWidth( font->GetStrikeThroughThickness( st ) );
 
 			painter->DrawLine( x,
-				y + font->GetStrikeOutPosition( st ),
+				y + font->GetStrikeThroughPosition( st ),
 				x + font->GetStringLength( text, st ),
-				y + font->GetStrikeOutPosition( st ) );
+				y + font->GetStrikeThroughPosition( st ) );
 
 			painter->Restore();
 		}
@@ -890,7 +890,7 @@ PdfRenderer::resolveLinks( PdfAuxData & pdfData )
 			{
 				auto & page = pdfData.doc->GetPages().GetPageAt( r.second );
 				auto & annot = page.GetAnnotations().CreateAnnot< PdfAnnotationLink >(
-					PdfRect( r.first.x(), r.first.y(), r.first.width(), r.first.height() ) );
+					Rect( r.first.x(), r.first.y(), r.first.width(), r.first.height() ) );
 				annot.SetBorderStyle( 0.0, 0.0, 0.0 );
 				annot.SetDestination( m_dests.value( it.key(),
 					std::make_shared< PdfDestination >( *pdfData.page ) ) );
@@ -971,9 +971,9 @@ PdfRenderer::createPage( PdfAuxData & pdfData )
 
 		pdfData.coords = { { pdfData.coords.margins.left, pdfData.coords.margins.right,
 				pdfData.coords.margins.top, pdfData.coords.margins.bottom },
-			pdfData.page->GetRect().GetWidth(),
-			pdfData.page->GetRect().GetHeight(),
-			pdfData.coords.margins.left, pdfData.page->GetRect().GetHeight() -
+			pdfData.page->GetRect().Width,
+			pdfData.page->GetRect().Height,
+			pdfData.coords.margins.left, pdfData.page->GetRect().Height -
 				pdfData.coords.margins.top };
 
 		++pdfData.currentPageIdx;
@@ -1060,7 +1060,7 @@ PdfRenderer::drawHeading( PdfAuxData & pdfData, const RenderOpts & renderOpts,
 			m_dests.insert( item->label(),
 				std::make_shared< PdfDestination> ( pdfData.doc->GetPages().GetPageAt(
 						static_cast< unsigned int >( where.first.front().pageIdx ) ),
-					PdfRect( pdfData.coords.margins.left + offset, where.first.front().y,
+					Rect( pdfData.coords.margins.left + offset, where.first.front().y,
 						 pdfData.coords.pageWidth - pdfData.coords.margins.left -
 						 pdfData.coords.margins.right - offset, where.first.front().height ) ) );
 		}
@@ -1244,7 +1244,7 @@ PdfRenderer::drawLink( PdfAuxData & pdfData, const RenderOpts & renderOpts,
 				auto & annot = pdfData.doc->GetPages().GetPageAt(
 					static_cast< unsigned int >( r.second ) )
 						.GetAnnotations().CreateAnnot< PdfAnnotationLink >(
-					PdfRect( r.first.x(), r.first.y(), r.first.width(), r.first.height() ) );
+					Rect( r.first.x(), r.first.y(), r.first.width(), r.first.height() ) );
 				annot.SetBorderStyle( 0.0, 0.0, 0.0 );
 
 				auto action = std::make_shared< PdfAction >( *pdfData.doc, PdfActionType::URI );
@@ -3739,9 +3739,9 @@ PdfRenderer::addFootnote( std::shared_ptr< MD::Footnote< MD::QStringTrait > > f,
 	PdfAuxData tmpData = pdfData;
 	tmpData.coords = { { pdfData.coords.margins.left, pdfData.coords.margins.right,
 			pdfData.coords.margins.top, pdfData.coords.margins.bottom },
-		pdfData.page->GetRect().GetWidth(),
-		pdfData.page->GetRect().GetHeight(),
-		pdfData.coords.margins.left, pdfData.page->GetRect().GetHeight() -
+		pdfData.page->GetRect().Width,
+		pdfData.page->GetRect().Height,
+		pdfData.coords.margins.left, pdfData.page->GetRect().Height -
 			pdfData.coords.margins.top };
 
 	double lineHeight = 0.0;
@@ -4306,7 +4306,7 @@ PdfRenderer::processLinksInTable( PdfAuxData & pdfData,
 					auto & annot = pdfData.doc->GetPages().GetPageAt(
 						static_cast< unsigned int >( r.second ) )
 							.GetAnnotations().CreateAnnot< PdfAnnotationLink >(
-						PdfRect( r.first.x(), r.first.y(), r.first.width(), r.first.height() ) );
+						Rect( r.first.x(), r.first.y(), r.first.width(), r.first.height() ) );
 					annot.SetBorderStyle( 0.0, 0.0, 0.0 );
 
 					auto action = std::make_shared< PdfAction >( *pdfData.doc, PdfActionType::URI );

@@ -8,8 +8,8 @@
 
 #include "PdfDeclarations.h"
 
-#include "PdfInputStream.h"
-#include "PdfOutputStream.h"
+#include <podofo/auxiliary/InputStream.h>
+#include <podofo/auxiliary/OutputStream.h>
 
 namespace PoDoFo {
 
@@ -196,7 +196,7 @@ protected:
      *  EncodeBlock().
      * \see BeginEncode
      */
-    virtual void BeginEncodeImpl() { }
+    virtual void BeginEncodeImpl();
 
     /** Real implementation of EncodeBlock(). NEVER call this method directly.
      *
@@ -226,7 +226,7 @@ protected:
      *
      * \see EndEncode
      */
-    virtual void EndEncodeImpl() { }
+    virtual void EndEncodeImpl();
 
     /** Real implementation of BeginDecode(). NEVER call this method directly.
      *
@@ -238,7 +238,7 @@ protected:
      *  DecodeBlock().
      * \see BeginDecode
      */
-    virtual void BeginDecodeImpl(const PdfDictionary*) { }
+    virtual void BeginDecodeImpl(const PdfDictionary*);
 
     /** Real implementation of DecodeBlock(). NEVER call this method directly.
      *
@@ -268,10 +268,10 @@ protected:
      *
      * \see EndDecode
      */
-    virtual void EndDecodeImpl() { }
+    virtual void EndDecodeImpl();
 
-    inline OutputStream* GetStream() const { return m_OutputStream; }
-
+protected:
+    inline OutputStream& GetStream() const { return *m_OutputStream; }
 private:
     void encodeTo(OutputStream& stream, const bufferview& inBuffer);
     void decodeTo(OutputStream& stream, const bufferview& inBuffer, const PdfDictionary* decodeParms);
@@ -299,6 +299,7 @@ public:
      *           filter is available for this type.
      */
     static std::unique_ptr<PdfFilter> Create(PdfFilterType filterType);
+    static bool TryCreate(PdfFilterType filterType, std::unique_ptr<PdfFilter>& filter);
 
     /** Create an OutputStream that applies a list of filters
      *  on all data written to it.

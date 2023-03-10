@@ -329,7 +329,7 @@ static void draw_annotation(PdfDocument& document,
     PdfPainter& painter,
     int argc,
     char* argv[],
-    const PdfRect& annot_rect)
+    const Rect& annot_rect)
 {
     const char* annot_units = "mm";
     double font_size = convert_to_pdf_units("mm", 5.0);
@@ -401,8 +401,8 @@ static void draw_annotation(PdfDocument& document,
 
             painter.DrawTextMultiLine(text, left,
                 0.0,
-                annot_rect.GetWidth() - left,
-                annot_rect.GetHeight() - top);
+                annot_rect.Width - left,
+                annot_rect.Height - top);
         }
         else if (strcmp(argv[ii], "-annot-image") == 0)
         {
@@ -430,7 +430,7 @@ static void draw_annotation(PdfDocument& document,
             double dScaleX = left / image->GetWidth();
             double dScaleY = height / image->GetHeight();
 
-            painter.DrawImage(*image, left, annot_rect.GetHeight() - top - height, dScaleX, dScaleY);
+            painter.DrawImage(*image, left, annot_rect.Height - top - height, dScaleX, dScaleY);
         }
 
         // these are the only parameters without additional value
@@ -909,10 +909,10 @@ int main(int argc, char* argv[])
         else
         {
             auto& page = document.GetPages().GetPageAt(annot_page);
-            PdfRect annot_rect;
+            Rect annot_rect;
             if (annot_position)
             {
-                annot_rect = PdfRect(annot_left, page.GetMediaBox().GetHeight() - annot_top - annot_height, annot_width, annot_height);
+                annot_rect = Rect(annot_left, page.GetMediaBox().Height - annot_top - annot_height, annot_width, annot_height);
             }
 
             signature = &page.CreateField<PdfSignature>(name, annot_rect);
@@ -923,7 +923,7 @@ int main(int argc, char* argv[])
 
             if (annot_position)
             {
-                PdfRect annotSize(0.0, 0.0, annot_rect.GetWidth(), annot_rect.GetHeight());
+                Rect annotSize(0.0, 0.0, annot_rect.Width, annot_rect.Height);
                 auto sigXObject = document.CreateXObjectForm(annotSize);
                 PdfPainter painter;
 

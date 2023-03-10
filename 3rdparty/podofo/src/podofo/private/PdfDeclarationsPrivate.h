@@ -177,9 +177,7 @@ namespace PoDoFo
     std::vector<std::string> ToPdfKeywordsList(const std::string_view& str);
     std::string ToPdfKeywordsString(const cspan<std::string>&keywords);
 
-    PdfFilterType NameToFilter(const std::string_view& name);
-
-    PdfFilterType NameToFilterShort(const std::string_view& name);
+    PdfFilterType NameToFilter(const std::string_view& name, bool lenient);
 
     std::string_view FilterToName(PdfFilterType filterType);
 
@@ -241,6 +239,10 @@ namespace utls
     bool IsValidUtf8String(const std::string_view& str);
 
     bool IsStringDelimiter(char32_t ch);
+
+    bool IsSpaceLikeChar(char32_t ch);
+
+    bool IsNewLineLikeChar(char32_t ch);
 
     bool IsWhiteSpace(char32_t ch);
 

@@ -11,11 +11,11 @@
 using namespace std;
 using namespace PoDoFo;
 
-TEST_CASE("testEmptyContentsStream")
+TEST_CASE("TestEmptyContentsStream")
 {
     PdfMemDocument doc;
     auto& page1 = doc.GetPages().CreatePage(PdfPage::CreateStandardPageSize(PdfPageSize::A4));
-    auto& annot1 = page1.GetAnnotations().CreateAnnot<PdfAnnotationPopup>(PdfRect(300.0, 20.0, 250.0, 50.0));
+    auto& annot1 = page1.GetAnnotations().CreateAnnot<PdfAnnotationPopup>(Rect(300.0, 20.0, 250.0, 50.0));
     PdfString title("Author: Dominik Seichter");
     annot1.SetContents(title);
     annot1.SetOpen(true);
@@ -34,4 +34,20 @@ TEST_CASE("testEmptyContentsStream")
 
     auto& pageObj = page2.GetObject();
     REQUIRE(!pageObj.GetDictionary().HasKey("Contents"));
+}
+
+
+TEST_CASE("TestRotations")
+{
+    // The two documents are rotated but still portrait
+    PdfMemDocument doc;
+    doc.Load(TestUtils::GetTestInputFilePath("blank-rotated-90.pdf"));
+    auto rect = doc.GetPages().GetPageAt(0).GetRect();
+    
+    REQUIRE(rect == Rect(0, 0, 595, 842));
+
+    doc.Load(TestUtils::GetTestInputFilePath("blank-rotated-270.pdf"));
+    rect = doc.GetPages().GetPageAt(0).GetRect();
+
+    REQUIRE(rect == Rect(0, 0, 595, 842));
 }

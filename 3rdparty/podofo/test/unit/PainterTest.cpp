@@ -31,9 +31,9 @@ namespace
         }
 
         /** Get the current canvas size in PDF Units
-         *  \returns a PdfRect containing the page size available for drawing
+         *  \returns a Rect containing the page size available for drawing
          */
-        PdfRect GetRect() const override
+        Rect GetRectRaw() const override
         {
             PODOFO_RAISE_ERROR(PdfErrorCode::InternalLogic);
         }
@@ -116,7 +116,7 @@ TEST_CASE("TestPainter3")
     PdfPainter painter;
     painter.SetCanvas(page);
     painter.TextState.SetFont(doc.GetFonts().GetStandard14Font(PdfStandard14FontType::TimesRoman), 15);
-    painter.DrawText("Hello world", 100, 500, PdfDrawTextStyle::StrikeOut | PdfDrawTextStyle::Underline);
+    painter.DrawText("Hello world", 100, 500, PdfDrawTextStyle::StrikeThrough | PdfDrawTextStyle::Underline);
     painter.FinishDrawing();
     doc.Save(TestUtils::GetTestOutputFilePath("TestPainter3.pdf"));
 
@@ -166,24 +166,36 @@ TEST_CASE("TestPainter4")
     operators.TJ_Operator_Glyphs("orld", false);
     operators.TJ_Operator_End();
     painter.TextObject.End();
-    painter.DrawText("Test2", 100, 600, PdfDrawTextStyle::StrikeOut);
+    painter.DrawText("Test2", 100, 600, PdfDrawTextStyle::StrikeThrough);
 
     PdfPainterPath path;
     path.MoveTo(20, 20);
     path.AddArcTo(150, 20, 150, 70, 50);
     path.AddLineTo(150, 120);
+    path.AddArc(200, 120, 50, numbers::pi, numbers::pi/8, true);
+
+    auto currPoint1 = path.GetCurrentPoint();
+
+    PdfPainterPath path2;
+    path2.MoveTo(250, 120);
+    path2.AddLineTo(250, 80);
+    path.AddPath(path2, true);
+
+    auto currPoint2 = path.GetCurrentPoint();
     painter.DrawPath(path, PdfPathDrawMode::Stroke);
     path.Reset();
     path.MoveTo(40, 40);
     path.AddLineTo(100, 40);
     path.AddLineTo(70, 80);
     path.AddLineTo(40, 40);
-    path.AddCircle(200, 200, 60);
+    path.AddCircle(200, 300, 60);
     painter.DrawPath(path, PdfPathDrawMode::Fill);
     
     drawSquareWithCross(painter, 100, 20);
     drawSquareWithCross(painter, 100, 70);
     drawSquareWithCross(painter, 150, 70);
+    drawSquareWithCross(painter, currPoint1.X, currPoint1.Y);
+    drawSquareWithCross(painter, currPoint2.X, currPoint2.Y);
 
     painter.FinishDrawing();
     doc.Save(TestUtils::GetTestOutputFilePath("TestPainter4.pdf"));
@@ -211,16 +223,22 @@ ET
 100 20 l
 127.614237 20 150 42.385763 150 70 c
 150 120 l
+150 120 l
+150 143.853715 166.850112 164.385635 190.245484 169.039264 c
+213.640856 173.692893 237.065555 161.17213 246.193977 139.134172 c
+250 120 l
+250 120 m
+250 80 l
 S
 40 40 m
 100 40 l
 70 80 l
 40 40 l
-260 200 m
-260 233.137085 233.137085 260 200 260 c
-166.862915 260 140 233.137085 140 200 c
-140 166.862915 166.862915 140 200 140 c
-233.137085 140 260 166.862915 260 200 c
+260 300 m
+260 333.137085 233.137085 360 200 360 c
+166.862915 360 140 333.137085 140 300 c
+140 266.862915 166.862915 240 200 240 c
+233.137085 240 260 266.862915 260 300 c
 h
 f
 q
@@ -259,8 +277,106 @@ S
 153 70 l
 S
 Q
+q
+0.6 w
+243.193977 136.134172 6 6 re
+S
+0 w
+246.193977 136.134172 m
+246.193977 142.134172 l
+S
+243.193977 139.134172 m
+249.193977 139.134172 l
+S
+Q
+q
+0.6 w
+247 77 6 6 re
+S
+0 w
+250 77 m
+250 83 l
+S
+247 80 m
+253 80 l
+S
+Q
 Q
 )";
+    auto out = getContents(page);
+    REQUIRE(out == expected);
+}
+
+TEST_CASE("TestPainter5")
+{
+    PdfMemDocument doc;
+    auto& page = doc.GetPages().CreatePage(PdfPage::CreateStandardPageSize(PdfPageSize::A4));
+
+    PdfFontCreateParams params;
+    params.Encoding = PdfEncodingMapFactory::WinAnsiEncodingInstance();
+    auto& font = doc.GetFonts().GetStandard14Font(PdfStandard14FontType::Helvetica, params);
+
+    PdfPainter painter;
+    painter.SetCanvas(page);
+    painter.TextState.SetFont(font, 15);
+    painter.DrawTextMultiLine("Hello\nWorld", 100, 600, 100, 40);
+
+    painter.FinishDrawing();
+    doc.Save(TestUtils::GetTestOutputFilePath("TestPainter5.pdf"));
+
+    auto expected = R"(q
+BT
+/Ft5 15 Tf
+q
+100 600 100 40 re
+W
+n
+100 628.75 Td
+(Hello) Tj
+0 -15 Td
+(World) Tj
+Q
+ET
+Q
+)";
+
+    auto out = getContents(page);
+    REQUIRE(out == expected);
+}
+
+TEST_CASE("TestPainter6")
+{
+    PdfMemDocument doc;
+    auto& page = doc.GetPages().CreatePage(PdfPage::CreateStandardPageSize(PdfPageSize::A4));
+
+    PdfFontCreateParams params;
+    params.Encoding = PdfEncodingMapFactory::WinAnsiEncodingInstance();
+
+    PdfPainter painter;
+    painter.SetCanvas(page);
+    REQUIRE(painter.GetStateStack().Current->CurrentPoint == nullptr);
+    PdfPainterPath path;
+    path.AddRectangle(Rect(10,10, 100, 50));
+    painter.Save();
+    painter.DrawPath(path);
+    path.GetCurrentPoint() == Vector2(10, 10);
+    REQUIRE(painter.GetStateStack().Current->CurrentPoint == nullptr);
+    painter.Save();
+    auto& operators = static_cast<PdfContentStreamOperators&>(painter);
+    operators.n_Operator();
+    REQUIRE(painter.GetStateStack().Current->CurrentPoint == nullptr);
+    painter.FinishDrawing();
+    doc.Save(TestUtils::GetTestOutputFilePath("TestPainter6.pdf"));
+
+    auto expected = R"(q
+q
+10 10 100 50 re
+S
+q
+n
+Q
+)";
+
     auto out = getContents(page);
     REQUIRE(out == expected);
 }
