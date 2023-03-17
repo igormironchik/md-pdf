@@ -30,7 +30,7 @@ add_subdirectory( 3rdparty/podofo )
 set( BUILD_WIDGETS_EXAMPLES OFF CACHE INTERNAL "" FORCE )
 add_subdirectory( 3rdparty/widgets )
 
-set( BUILD_MD4QT_TESTS OFF CACHE INTERNAL "" FORCE )
+set( BUILD_MD4QT_QT_TESTS OFF CACHE INTERNAL "" FORCE )
 add_subdirectory( 3rdparty/md4qt )
 
 set( JKQtPlotter_BUILD_EXAMPLES OFF CACHE INTERNAL "" FORCE )
