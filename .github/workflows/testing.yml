@@ -115,7 +115,7 @@ jobs:
       run: conan install -of build .
 
     - name: Generate Makefiles
-      run: cmake -S . -B build -DCMAKE_PREFIX_PATH="${{ github.workspace }}/ImageMagick" -DCMAKE_BUILD_TYPE=Relese -G "NMake Makefiles"
+      run: cmake -S . -B build -DCMAKE_PREFIX_PATH="${{ github.workspace }}/ImageMagick" -DCMAKE_BUILD_TYPE=Relese -G "NMake Makefiles" -DCMAKE_VERBOSE_MAKEFILE=ON
 
     - name: Append PATH with packages
       run: echo "${{ github.workspace }}\build\bin" | Out-File -FilePath $env:GITHUB_PATH -Encoding utf8 -Append
