@@ -113,6 +113,11 @@ jobs:
 
     - name: Install dependencies with Conan
       run: conan install -of build .
+      
+    - name: Setup CMake
+      uses: jwlawson/actions-setup-cmake@v1.13
+      with:
+        cmake-version: '3.24.2'
 
     - name: Generate Makefiles
       run: cmake -S . -B build -DCMAKE_PREFIX_PATH="${{ github.workspace }}/ImageMagick" -DCMAKE_BUILD_TYPE=Relese -G "NMake Makefiles" -DCMAKE_VERBOSE_MAKEFILE=ON
