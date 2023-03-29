@@ -11,6 +11,9 @@ on:
   pull_request:
     branches: [master]
   workflow_dispatch:
+  
+env:
+  CONAN_USER_HOME: ${{ github.workspace }}
 
 jobs:
   linux:
@@ -107,8 +110,6 @@ jobs:
     
     - name: Enable developer command prompt
       uses: ilammy/msvc-dev-cmd@v1
-      
-    - run: set CONAN_USER_HOME="${{ github.workspace }}"
 
     - name: Install dependencies with Conan
       run: conan install -of build .
