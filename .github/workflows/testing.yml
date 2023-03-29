@@ -35,7 +35,7 @@ jobs:
     - name: Install Qt
       uses: jurplel/install-qt-action@v3
       with:
-        version: '6.3.1'
+        version: '6.4.3'
         
     - run: sudo apt install libfreetype6-dev libjpeg-dev libpng-dev zlib1g zlib1g-dev libfontconfig1-dev fontconfig lcov libmagick++-dev libxml2-dev libtiff-dev
 
@@ -95,13 +95,13 @@ jobs:
     - name: Install Conan
       id: conan
       uses: turtlebrowser/get-conan@main
-      with:
-        version: 1.59.0
+      
+    - run: conan profile detect
           
     - name: Install Qt
       uses: jurplel/install-qt-action@v3
       with:
-        version: '6.3.1'
+        version: '6.4.3'
         
     - name: Enable developer command prompt
       uses: ilammy/msvc-dev-cmd@v1
@@ -184,14 +184,7 @@ jobs:
     - name: Install Qt
       uses: jurplel/install-qt-action@v3
       with:
-        version: '6.3.1'
-
-#    - name: Install Conan
-#      id: conan
-#      uses: turtlebrowser/get-conan@main
-
-#    - name: Install dependencies with Conan
-#      run: conan install . --build=missing
+        version: '6.4.3'
 
     - name: Generate Makefiles
       run: cmake -DCMAKE_BUILD_TYPE=Relese -DOPENSSL_ROOT_DIR=$(brew --prefix)/opt/openssl@1.1 .

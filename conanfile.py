@@ -2,7 +2,7 @@ from conan import ConanFile
 
 class DependenciesRecipe(ConanFile):
     settings = "os", "compiler", "build_type", "arch"
-    generators = "cmake_find_package"
+    generators = "CMakeDeps"
 
     def requirements(self):
         self.requires("openssl/1.1.1s")
