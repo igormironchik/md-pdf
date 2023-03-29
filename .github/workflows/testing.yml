@@ -107,26 +107,18 @@ jobs:
         version: '6.4.3'
         
     - run: mkdir build
-    
-    - name: Enable developer command prompt
-      uses: ilammy/msvc-dev-cmd@v1
 
     - name: Install dependencies with Conan
       run: conan install -of build .
       
-    - name: Setup CMake
-      uses: jwlawson/actions-setup-cmake@v1.13
-      with:
-        cmake-version: '3.24.2'
-
     - name: Generate Makefiles
-      run: cmake -S . -B build -DCMAKE_PREFIX_PATH="${{ github.workspace }}/ImageMagick" -DCMAKE_BUILD_TYPE=Relese -G "NMake Makefiles" -DCMAKE_VERBOSE_MAKEFILE=ON
+      run: cmake -S . -B build -DCMAKE_PREFIX_PATH="${{ github.workspace }}/ImageMagick" -DCMAKE_BUILD_TYPE=Relese
 
     - name: Append PATH with packages
       run: echo "${{ github.workspace }}\build\bin" | Out-File -FilePath $env:GITHUB_PATH -Encoding utf8 -Append
 
     - name: Build
-      run: cmake --build build
+      run: cmake --build build --config release
 
     - name: Test
       run: ctest --output-on-failure --verbose --test-dir build
