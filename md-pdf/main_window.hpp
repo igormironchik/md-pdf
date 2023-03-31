@@ -48,6 +48,8 @@ public:
 	explicit MainWidget( QWidget * parent );
 	~MainWidget() override;
 
+	void setMarkdownFile( const QString & fileName );
+
 private slots:
 	void changeLinkColor();
 	void changeBorderColor();
@@ -62,6 +64,9 @@ private slots:
 	void mmButtonToggled( bool on );
 	void textFontChanged( const QFont & f );
 	void codeFontChanged( const QFont & f );
+
+private:
+	void changeStateOfStartButton();
 
 private:
 	QScopedPointer< Ui::MainWindow > m_ui;
@@ -86,6 +91,8 @@ public:
 	MainWindow();
 	~MainWindow() override = default;
 
+	void setMarkdownFile( const QString & fileName );
+
 private slots:
 	//! About.
 	void about();
@@ -95,6 +102,9 @@ private slots:
 	void licenses();
 	//! Quit.
 	void quit();
+
+private:
+	MainWidget * ui = nullptr;
 }; // class MainWindow
 
 #endif // MD_PDF_MAIN_WINDOW_HPP_INCLUDED

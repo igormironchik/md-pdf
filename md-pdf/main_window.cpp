@@ -138,6 +138,14 @@ MainWidget::~MainWidget()
 }
 
 void
+MainWidget::setMarkdownFile( const QString & fileName )
+{
+	m_ui->m_fileName->setText( fileName );
+
+	changeStateOfStartButton();
+}
+
+void
 MainWidget::changeLinkColor()
 {
 	QColorDialog dlg( m_ui->m_linkColor->color(), this );
@@ -192,6 +200,15 @@ MainWidget::changeCodeColor()
 }
 
 void
+MainWidget::changeStateOfStartButton()
+{
+	if( m_textFontOk && m_codeFontOk )
+		m_ui->m_startBtn->setEnabled( true );
+	else
+		m_ui->m_startBtn->setEnabled( false );
+}
+
+void
 MainWidget::selectMarkdown()
 {
 	const auto fileName = QFileDialog::getOpenFileName( this, tr( "Select Markdown" ),
@@ -202,10 +219,7 @@ MainWidget::selectMarkdown()
 	{
 		m_ui->m_fileName->setText( fileName );
 
-		if( m_textFontOk && m_codeFontOk )
-			m_ui->m_startBtn->setEnabled( true );
-		else
-			m_ui->m_startBtn->setEnabled( false );
+		changeStateOfStartButton();
 	}
 }
 
@@ -392,9 +406,15 @@ MainWindow::MainWindow()
 		this, &MainWindow::aboutQt );
 	help->addAction( tr( "Licenses" ), this, &MainWindow::licenses );
 
-	auto * w = new MainWidget( this );
+	ui = new MainWidget( this );
 
-	setCentralWidget( w );
+	setCentralWidget( ui );
+}
+
+void
+MainWindow::setMarkdownFile( const QString & fileName )
+{
+	ui->setMarkdownFile( fileName );
 }
 
 void

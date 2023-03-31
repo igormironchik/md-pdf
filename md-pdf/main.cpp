@@ -26,6 +26,7 @@
 // Qt include.
 #include <QString>
 #include <QApplication>
+#include <QCommandLineParser>
 
 // Magick++ include.
 #include <Magick++.h>
@@ -36,6 +37,18 @@ int main( int argc, char ** argv )
 	Magick::InitializeMagick( nullptr );
 
 	QApplication app( argc, argv );
+
+	QCommandLineParser parser;
+	parser.setApplicationDescription( QStringLiteral( "Markdown converter to PDF." ) );
+	parser.addHelpOption();
+	parser.addPositionalArgument( QStringLiteral( "markdown" ),
+		QStringLiteral( "Markdown file to open." ) );
+
+	parser.process( app );
+
+	const auto args = parser.positionalArguments();
+
+	const auto fileName = ( args.isEmpty() ? QString() : args.at( 0 ) );
 
 	QIcon appIcon( QStringLiteral( ":/img/icon_256x256.png" ) );
 	appIcon.addFile( QStringLiteral( ":/img/icon_128x128.png" ) );
@@ -48,6 +61,9 @@ int main( int argc, char ** argv )
 
 	MainWindow w;
 	w.show();
+
+	if( !fileName.isEmpty() )
+		w.setMarkdownFile( fileName );
 
 	return app.exec();
 }
