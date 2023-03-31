@@ -1,7 +1,6 @@
 
 project( test.render )
 
-find_package( Qt6Core REQUIRED )
 find_package( Qt6Test REQUIRED )
 find_package( Qt6Gui REQUIRED )
 find_package( Qt6Widgets REQUIRED )
