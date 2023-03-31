@@ -193,6 +193,8 @@ jobs:
 
     - name: Build
       run: make
+      
+    - run: otool -L ./bin/test.render
 
     - name: Test
       run: |
