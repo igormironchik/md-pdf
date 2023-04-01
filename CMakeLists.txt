@@ -16,7 +16,7 @@ find_package( Qt6Core REQUIRED )
 if( UNIX AND NOT APPLE )
 	list( PREPEND CMAKE_INSTALL_RPATH "${QT6_INSTALL_PREFIX}/lib:\$ORIGIN/../lib" )
 else()
-	list( PREPEND CMAKE_INSTALL_RPATH "${QT6_INSTALL_PREFIX}/lib:@executable_path/../lib" )
+	list( PREPEND CMAKE_INSTALL_RPATH "${QT6_INSTALL_PREFIX}/lib:@executable_path/../lib/.:@loader_path/../lib/." )
 endif()
 
 set( CMAKE_BUILD_WITH_INSTALL_RPATH TRUE )
