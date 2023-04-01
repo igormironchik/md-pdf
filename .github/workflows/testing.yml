@@ -123,81 +123,79 @@ jobs:
     - name: Test
       run: ctest --output-on-failure --verbose --test-dir build -C Release
 
-#   macos:
-#     name: macos
-#     runs-on: macos-11
-# 
-#     strategy:
-#       fail-fast: true
-#       matrix:
-#         language: ['cpp']
-# 
-#     steps:
-#     - name: Checkout repository
-#       uses: actions/checkout@v3
-#       with:
-#         submodules: true
-# 
-#     - run: brew update
-# 
-#     - run: rm '/usr/local/bin/2to3'
-# 
-#     - run: rm '/usr/local/bin/2to3-3.11'
-# 
-#     - run: rm '/usr/local/bin/idle3'
-# 
-#     - run: rm '/usr/local/bin/idle3.11'
-# 
-#     - run: rm '/usr/local/bin/pydoc3'
-# 
-#     - run: rm '/usr/local/bin/pydoc3.11'
-# 
-#     - run: rm '/usr/local/bin/python3'
-# 
-#     - run: rm '/usr/local/bin/python3.11'
-# 
-#     - run: rm '/usr/local/bin/python3-config'
-# 
-#     - run: rm '/usr/local/bin/python3.11-config'
-# 
-#     - run: rm '/usr/local/lib/libtcl8.6.dylib'
-# 
-#     - run: rm '/usr/local/lib/libtk8.6.dylib'
-# 
-#     - run: brew upgrade
-# 
-#     - run: brew install imagemagick@6
-# 
-#     - run: brew uninstall imagemagick
-# 
-#     - run: cp -r /usr/local/opt/imagemagick@6/bin /usr/local
-# 
-#     - run: cp -r /usr/local/opt/imagemagick@6/lib /usr/local
-# 
-#     - run: cp -r /usr/local/opt/imagemagick@6/include /usr/local
-# 
-#     - run: cp -r /usr/local/opt/imagemagick@6/etc /usr/local
-# 
-#     - run: cp -r /usr/local/opt/imagemagick@6/share /usr/local
-# 
-#     - name: Test ImageMagick
-#       run: convert -version
-# 
-#     - name: Install Qt
-#       uses: jurplel/install-qt-action@v3
-#       with:
-#         version: '6.4.3'
-# 
-#     - name: Generate Makefiles
-#       run: cmake -DCMAKE_BUILD_TYPE=Relese -DOPENSSL_ROOT_DIR=$(brew --prefix)/opt/openssl@1.1 .
-# 
-#     - name: Build
-#       run: make
-#       
-#     - run: otool -L ./bin/test.render
-# 
-#     - name: Test
-#       run: |
-#         export QT_QPA_PLATFORM=offscreen
-#         export DYLD_FRAMEWORK_PATH=${{ github.workspace }}/../Qt/6.3.1/macos/lib:$DYLD_FRAMEWORK_PATH
-#         ctest --output-on-failure --verbose
+  macos:
+    name: macos
+    runs-on: macos-11
+
+    strategy:
+      fail-fast: true
+      matrix:
+        language: ['cpp']
+
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v3
+      with:
+        submodules: true
+
+    - run: brew update
+
+    - run: rm '/usr/local/bin/2to3'
+
+    - run: rm '/usr/local/bin/2to3-3.11'
+
+    - run: rm '/usr/local/bin/idle3'
+
+    - run: rm '/usr/local/bin/idle3.11'
+
+    - run: rm '/usr/local/bin/pydoc3'
+
+    - run: rm '/usr/local/bin/pydoc3.11'
+
+    - run: rm '/usr/local/bin/python3'
+
+    - run: rm '/usr/local/bin/python3.11'
+
+    - run: rm '/usr/local/bin/python3-config'
+
+    - run: rm '/usr/local/bin/python3.11-config'
+
+    - run: rm '/usr/local/lib/libtcl8.6.dylib'
+
+    - run: rm '/usr/local/lib/libtk8.6.dylib'
+
+    - run: brew upgrade
+
+    - run: brew install imagemagick@6
+
+    - run: brew uninstall imagemagick
+
+    - run: cp -r /usr/local/opt/imagemagick@6/bin /usr/local
+
+    - run: cp -r /usr/local/opt/imagemagick@6/lib /usr/local
+
+    - run: cp -r /usr/local/opt/imagemagick@6/include /usr/local
+
+    - run: cp -r /usr/local/opt/imagemagick@6/etc /usr/local
+
+    - run: cp -r /usr/local/opt/imagemagick@6/share /usr/local
+
+    - name: Test ImageMagick
+      run: convert -version
+
+    - name: Install Qt
+      uses: jurplel/install-qt-action@v3
+      with:
+        version: '6.4.3'
+
+    - name: Generate Makefiles
+      run: cmake -DCMAKE_BUILD_TYPE=Relese -DOPENSSL_ROOT_DIR=$(brew --prefix)/opt/openssl@1.1 .
+
+    - name: Build
+      run: make
+
+    - name: Test
+      run: |
+        export QT_QPA_PLATFORM=offscreen
+        export DYLD_FRAMEWORK_PATH=${{ github.workspace }}/../Qt/6.4.3/macos/lib:$DYLD_FRAMEWORK_PATH
+        ctest --output-on-failure --verbose
