@@ -3,7 +3,7 @@
 #
 # You may wish to alter this file to override the set of languages analyzed,
 # or to provide custom queries or build logic.
-name: "build"
+name: "macos"
 
 on:
   push:
@@ -90,6 +90,10 @@ jobs:
     - run: otool -L ./bin/test.render
     
     - run: otool -l ./bin/test.render
+    
+    - run: ls ./bin
+    
+    - run: ls ./lib
 
     - name: Test
       run: |
