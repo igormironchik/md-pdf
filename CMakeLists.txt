@@ -3,6 +3,8 @@ cmake_minimum_required( VERSION 3.19 )
 
 project( md-pdf )
 
+option( BUILD_MDPDF_TESTS "Build tests? Default ON." ON )
+
 list( PREPEND CMAKE_PREFIX_PATH ${CMAKE_CURRENT_BINARY_DIR} )
 list( PREPEND CMAKE_MODULE_PATH ${CMAKE_CURRENT_BINARY_DIR} )
 list( PREPEND CMAKE_MODULE_PATH ${CMAKE_CURRENT_SOURCE_DIR}/cmake )
@@ -54,6 +56,8 @@ add_subdirectory( 3rdparty/JKQtPlotter )
 
 add_subdirectory( md-pdf )
 
-enable_testing()
+if( BUILD_MDPDF_TESTS )
+	enable_testing()
 
-add_subdirectory( tests )
+	add_subdirectory( tests )
+endif()
