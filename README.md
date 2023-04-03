@@ -10,6 +10,10 @@ Because I want to feed root Markdown file to the application and get
 complete PDF with all subpages that linked in root file. I tried to find
 such ready tool, but my search was unsuccessful.
 
+# Installers
+
+You can get `x64` installers for `Linux` and `Windows` [here](https://github.com/igormironchik/markdown).
+
 # Testing
 
 If you will find a bug of rendering, please, try to localize the issue in
