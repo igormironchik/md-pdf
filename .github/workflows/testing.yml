@@ -191,7 +191,7 @@ jobs:
         version: '6.5.0'
 
     - name: Generate Makefiles
-      run: cmake -DCMAKE_BUILD_TYPE=Relese .
+      run: cmake -DCMAKE_BUILD_TYPE=Relese -DOPENSSL_ROOT_DIR=$(brew --prefix)/opt/openssl@3 .
 
     - name: Build
       run: make
