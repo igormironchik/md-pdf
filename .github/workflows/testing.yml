@@ -38,9 +38,9 @@ jobs:
     - name: Install Qt
       uses: jurplel/install-qt-action@v3
       with:
-        version: '6.4.3'
+        version: '6.5.0'
         
-    - run: sudo apt install libfreetype6-dev libjpeg-dev libpng-dev zlib1g zlib1g-dev libfontconfig1-dev fontconfig lcov libmagick++-dev libxml2-dev libtiff-dev
+    - run: sudo apt install libfreetype6-dev libjpeg-dev libpng-dev zlib1g zlib1g-dev libfontconfig1-dev fontconfig lcov libmagick++-dev libxml2-dev libtiff-dev libssl-dev
 
     - name: Generate Makefiles
       run: cmake -DENABLE_COVERAGE=ON -DCMAKE_BUILD_TYPE=Debug .
@@ -104,7 +104,7 @@ jobs:
     - name: Install Qt
       uses: jurplel/install-qt-action@v3
       with:
-        version: '6.4.3'
+        version: '6.5.0'
         
     - run: mkdir build
 
@@ -179,6 +179,8 @@ jobs:
     - run: cp -r /usr/local/opt/imagemagick@6/etc /usr/local
 
     - run: cp -r /usr/local/opt/imagemagick@6/share /usr/local
+    
+    - run: brew install openssl@3
 
     - name: Test ImageMagick
       run: convert -version
@@ -186,10 +188,10 @@ jobs:
     - name: Install Qt
       uses: jurplel/install-qt-action@v3
       with:
-        version: '6.4.3'
+        version: '6.5.0'
 
     - name: Generate Makefiles
-      run: cmake -DCMAKE_BUILD_TYPE=Relese -DOPENSSL_ROOT_DIR=$(brew --prefix)/opt/openssl@1.1 .
+      run: cmake -DCMAKE_BUILD_TYPE=Relese .
 
     - name: Build
       run: make

@@ -40,9 +40,9 @@ jobs:
     - name: Install Qt
       uses: jurplel/install-qt-action@v3
       with:
-        version: '6.2.0'
+        version: '6.5.0'
         
-    - run: sudo apt install libfreetype6-dev libjpeg-dev libpng-dev zlib1g-dev libfontconfig1-dev fontconfig libmagick++-dev libxml2-dev libtiff-dev
+    - run: sudo apt install libfreetype6-dev libjpeg-dev libpng-dev zlib1g-dev libfontconfig1-dev fontconfig libmagick++-dev libxml2-dev libtiff-dev libssl-dev
 
     - run: |
        cmake .
