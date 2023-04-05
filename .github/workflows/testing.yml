@@ -79,22 +79,6 @@ jobs:
       with:
         submodules: true
 
-    - uses: suisei-cn/actions-download-file@v1
-      id: downloadfile
-      name: Download ImageMagick
-      with:
-        url: "https://github.com/igormironchik/md-pdf/releases/download/0.7.0/ImageMagick.zip"
-        target: downloads/
-
-    - name: Unzip ImageMagick
-      run: 7z x downloads/ImageMagick.zip
-
-    - name: Append ImageMagick into PATH
-      run: echo "${{ github.workspace }}/ImageMagick" | Out-File -FilePath $env:GITHUB_PATH -Encoding utf8 -Append
-
-    - name: Test ImageMagick
-      run: convert -version
-
     - name: Install Conan
       id: conan
       uses: turtlebrowser/get-conan@main
@@ -112,7 +96,7 @@ jobs:
       run: conan install -of build .
       
     - name: Generate Makefiles
-      run: cmake -S . -B build -DCMAKE_PREFIX_PATH="${{ github.workspace }}/ImageMagick" -DCMAKE_BUILD_TYPE=Relese
+      run: cmake -S . -B build -DCMAKE_BUILD_TYPE=Relese
 
     - name: Append PATH with packages
       run: echo "${{ github.workspace }}\build\bin" | Out-File -FilePath $env:GITHUB_PATH -Encoding utf8 -Append
@@ -199,5 +183,5 @@ jobs:
     - name: Test
       run: |
         export QT_QPA_PLATFORM=offscreen
-        export DYLD_FRAMEWORK_PATH=${{ github.workspace }}/../Qt/6.4.3/macos/lib:$DYLD_FRAMEWORK_PATH
+        export DYLD_FRAMEWORK_PATH=${{ github.workspace }}/../Qt/6.5.0/macos/lib:$DYLD_FRAMEWORK_PATH
         ctest --output-on-failure --verbose

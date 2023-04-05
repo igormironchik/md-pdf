@@ -25,6 +25,32 @@ else()
 	list( PREPEND CMAKE_INSTALL_RPATH "@loader_path/../lib" )
 endif()
 
+if( WIN32 )
+	set( OPENSSL_ROOT_DIR ${CMAKE_CURRENT_SOURCE_DIR}/3rdparty/Windows/OpenSSL )
+	list( APPEND CMAKE_PREFIX_PATH ${CMAKE_CURRENT_SOURCE_DIR}/3rdparty/Windows/ImageMagick )
+
+	file( COPY ${CMAKE_CURRENT_SOURCE_DIR}/3rdparty/Windows/OpenSSL/bin/libcrypto-3-x64.dll
+		DESTINATION ${CMAKE_CURRENT_BINARY_DIR}/bin )
+	file( COPY ${CMAKE_CURRENT_SOURCE_DIR}/3rdparty/Windows/OpenSSL/bin/libssl-3-x64.dll
+		DESTINATION ${CMAKE_CURRENT_BINARY_DIR}/bin )
+	file( GLOB ENGINES_FILES ${CMAKE_CURRENT_SOURCE_DIR}/3rdparty/Windows/OpenSSL/lib/engines-3/* )
+	file( COPY ${ENGINES_FILES}
+		DESTINATION ${CMAKE_CURRENT_BINARY_DIR}/lib/engines-3 )
+	file( GLOB OSSL_MODULES_FILES ${CMAKE_CURRENT_SOURCE_DIR}/3rdparty/Windows/OpenSSL/lib/ossl-modules/* )
+	file( COPY ${OSSL_MODULES_FILES}
+		DESTINATION ${CMAKE_CURRENT_BINARY_DIR}/lib/ossl-modules )
+
+	file( GLOB IM_DLL_FILES ${CMAKE_CURRENT_SOURCE_DIR}/3rdparty/Windows/ImageMagick/*.dll )
+	file( COPY ${IM_DLL_FILES}
+		DESTINATION ${CMAKE_CURRENT_BINARY_DIR}/bin )
+	file( GLOB IM_XML_FILES ${CMAKE_CURRENT_SOURCE_DIR}/3rdparty/Windows/ImageMagick/*.xml )
+	file( COPY ${IM_XML_FILES}
+		DESTINATION ${CMAKE_CURRENT_BINARY_DIR}/bin )
+	file( GLOB IM_MODULES_FILES ${CMAKE_CURRENT_SOURCE_DIR}/3rdparty/Windows/ImageMagick/modules/* )
+	file( COPY ${IM_MODULES_FILES}
+		DESTINATION ${CMAKE_CURRENT_BINARY_DIR}/bin/modules )
+endif()
+
 set( CMAKE_BUILD_WITH_INSTALL_RPATH TRUE )
 set( CMAKE_INSTALL_RPATH_USE_LINK_PATH TRUE )
 set( CMAKE_MACOSX_RPATH TRUE )

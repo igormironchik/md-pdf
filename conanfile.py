@@ -14,10 +14,8 @@ class DependenciesRecipe(ConanFile):
         self.requires("libiconv/1.17")
         if self.settings.os == "Windows":
             self.requires("fontconfig/2.13.93")
-            self.requires("openssl/3.1.0")
 
     def configure(self):
-        self.options["openssl"].shared = False
         self.options["freetype"].shared = False
         self.options["libjpeg"].shared = False
         self.options["libpng"].shared = False
