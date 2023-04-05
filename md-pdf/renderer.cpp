@@ -1084,9 +1084,8 @@ PdfRenderer::drawHeading( PdfAuxData & pdfData, const RenderOpts & renderOpts,
 			m_dests.insert( item->label(),
 				std::make_shared< PdfDestination> ( pdfData.doc->GetPages().GetPageAt(
 						static_cast< unsigned int >( where.first.front().pageIdx ) ),
-					Rect( pdfData.coords.margins.left + offset, where.first.front().y,
-						 pdfData.coords.pageWidth - pdfData.coords.margins.left -
-						 pdfData.coords.margins.right - offset, where.first.front().height ) ) );
+					pdfData.coords.margins.left + offset,
+					where.first.front().y + where.first.front().height, 1.0 ) );
 		}
 
 		return where;
@@ -2385,7 +2384,7 @@ PdfRenderer::drawFootnote( PdfAuxData & pdfData, const RenderOpts & renderOpts,
 
 			m_dests.insert( footnoteRefId,
 				std::make_shared< PdfDestination> ( pdfData.doc->GetPages().GetPageAt( p ),
-					Rect( x, y, w, font->GetLineSpacing( st ) ) ) );
+					x, y + font->GetLineSpacing( st ), 1.0 ) );
 
 			pdfData.painter->SetCanvas( pdfData.doc->GetPages().GetPageAt( p ) );
 
