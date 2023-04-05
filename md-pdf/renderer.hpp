@@ -396,7 +396,8 @@ private:
 		double offset, float scale, bool inFootnote );
 	//! \return Height of the footnote.
 	QVector< WhereDrawn > drawFootnote( PdfAuxData & pdfData, const RenderOpts & renderOpts,
-		std::shared_ptr< MD::Document< MD::QStringTrait > > doc, MD::Footnote< MD::QStringTrait > * note,
+		std::shared_ptr< MD::Document< MD::QStringTrait > > doc,
+		const QString & footnoteRefId, MD::Footnote< MD::QStringTrait > * note,
 		CalcHeightOpt heightCalcOpt, double * lineHeight = nullptr );
 	//! \return Height of the footnote.
 	QVector< WhereDrawn > footnoteHeight( PdfAuxData & pdfData, const RenderOpts & renderOpts,
@@ -407,7 +408,8 @@ private:
 		const QVector< WhereDrawn > & h, const double & currentY, int currentPage,
 		double lineHeight, bool addExtraLine = false );
 	//! Add footnote.
-	void addFootnote( std::shared_ptr< MD::Footnote< MD::QStringTrait > > f, PdfAuxData & pdfData,
+	void addFootnote( const QString & refId,
+		std::shared_ptr< MD::Footnote< MD::QStringTrait > > f, PdfAuxData & pdfData,
 		const RenderOpts & renderOpts, std::shared_ptr< MD::Document< MD::QStringTrait > > doc );
 
 	//! List item type.
@@ -542,6 +544,7 @@ private:
 		QByteArray image;
 		QString url;
 		QString footnote;
+		QString footnoteRef;
 		QColor color;
 		QColor background;
 		std::shared_ptr< MD::Footnote< MD::QStringTrait > > footnoteObj;
@@ -579,7 +582,7 @@ private:
 		QVector< QVector< CellData > > & table, int row,
 		PdfAuxData & pdfData, double offset, double lineHeight,
 		const RenderOpts & renderOpts, std::shared_ptr< MD::Document< MD::QStringTrait > > doc,
-		QVector< std::shared_ptr< MD::Footnote< MD::QStringTrait > > > & footnotes,
+		QVector< QPair< QString, std::shared_ptr< MD::Footnote< MD::QStringTrait > > > > & footnotes,
 		float scale, bool inFootnote );
 	//! Draw table border.
 	void drawRowBorder( PdfAuxData & pdfData, int startPage, QVector< WhereDrawn > & ret,
@@ -601,8 +604,8 @@ private:
 	void drawTextLineInTable( double x, double & y, TextToDraw & text, double lineHeight,
 		PdfAuxData & pdfData, QMap< QString, QVector< QPair< QRectF, unsigned int > > > & links,
 		PdfFont * font, int & currentPage, int & endPage, double & endY,
-		QVector< std::shared_ptr< MD::Footnote< MD::QStringTrait > > > & footnotes, bool inFootnote,
-		float scale );
+		QVector< QPair< QString, std::shared_ptr< MD::Footnote< MD::QStringTrait > > > > & footnotes,
+		bool inFootnote, float scale );
 	//! Create new page in table.
 	void newPageInTable( PdfAuxData & pdfData, int & currentPage, int & endPage,
 		double & endY );
@@ -632,12 +635,14 @@ private:
 	QMap< QString, std::shared_ptr< PdfDestination > > m_dests;
 	//! Links that not yet clickable.
 	QMultiMap< QString, QVector< QPair< QRectF, unsigned int > > > m_unresolvedLinks;
+	//! Footnotes links.
+	QMap< QString, QPair< QRectF, unsigned int > > m_unresolvedFootnotesLinks;
 	//! Cache of images.
 	QMap< QString, QByteArray > m_imageCache;
 	//! Footnote counter.
 	int m_footnoteNum;
 	//! Footnotes to draw.
-	QVector< std::shared_ptr< MD::Footnote< MD::QStringTrait > > > m_footnotes;
+	QVector< QPair< QString, std::shared_ptr< MD::Footnote< MD::QStringTrait > > > > m_footnotes;
 #ifdef MD_PDF_TESTING
 	bool m_isError;
 #endif

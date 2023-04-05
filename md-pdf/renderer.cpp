@@ -751,7 +751,8 @@ PdfRenderer::renderImpl()
 				drawHorizontalLine( pdfData, m_opts );
 
 				for( const auto & f : qAsConst( m_footnotes ) )
-					drawFootnote( pdfData, m_opts, m_doc, f.get(), CalcHeightOpt::Unknown );
+					drawFootnote( pdfData, m_opts, m_doc, f.first, f.second.get(),
+						CalcHeightOpt::Unknown );
 			}
 
 			resolveLinks( pdfData );
@@ -863,6 +864,7 @@ PdfRenderer::clean()
 {
 	m_dests.clear();
 	m_unresolvedLinks.clear();
+	m_unresolvedFootnotesLinks.clear();
 }
 
 double
@@ -902,6 +904,28 @@ PdfRenderer::resolveLinks( PdfAuxData & pdfData )
 			terminate();
 
 			QFAIL( "Unresolved link." );
+		}
+#endif // MD_PDF_TESTING
+	}
+
+	for( auto it = m_unresolvedFootnotesLinks.cbegin(),
+		last = m_unresolvedFootnotesLinks.cend(); it != last; ++it )
+	{
+		if( m_dests.contains( it.key() ) )
+		{
+			auto & page = pdfData.doc->GetPages().GetPageAt( it.value().second );
+			auto & annot = page.GetAnnotations().CreateAnnot< PdfAnnotationLink >(
+				Rect( it.value().first.x(), it.value().first.y(),
+					it.value().first.width(), it.value().first.height() ) );
+			annot.SetBorderStyle( 0.0, 0.0, 0.0 );
+			annot.SetDestination( m_dests.value( it.key() ) );
+		}
+#ifdef MD_PDF_TESTING
+		else
+		{
+			terminate();
+
+			QFAIL( "Unresolved footnote link." );
 		}
 #endif // MD_PDF_TESTING
 	}
@@ -1060,9 +1084,8 @@ PdfRenderer::drawHeading( PdfAuxData & pdfData, const RenderOpts & renderOpts,
 			m_dests.insert( item->label(),
 				std::make_shared< PdfDestination> ( pdfData.doc->GetPages().GetPageAt(
 						static_cast< unsigned int >( where.first.front().pageIdx ) ),
-					Rect( pdfData.coords.margins.left + offset, where.first.front().y,
-						 pdfData.coords.pageWidth - pdfData.coords.margins.left -
-						 pdfData.coords.margins.right - offset, where.first.front().height ) ) );
+					pdfData.coords.margins.left + offset,
+					where.first.front().y + where.first.front().height, 1.0 ) );
 		}
 
 		return where;
@@ -1885,15 +1908,24 @@ PdfRenderer::drawParagraph( PdfAuxData & pdfData, const RenderOpts & renderOpts,
 								w, lineHeight ),
 							pdfData.currentPageIndex() ) );
 
+						m_unresolvedFootnotesLinks.insert( ref->id(),
+							qMakePair( QRectF( pdfData.coords.x, pdfData.coords.y,
+									w, lineHeight ),
+								pdfData.currentPageIndex() ) );
+
 						++m_footnoteNum;
+
+						pdfData.setColor( renderOpts.m_linkColor );
 
 						pdfData.drawText( pdfData.coords.x, pdfData.coords.y + lineHeight -
 								footnoteFont->GetLineSpacing( footnoteSt ), str,
 							footnoteFont, footnoteSt.FontSize, 1.0, false );
 
+						pdfData.restoreColor();
+
 						pdfData.coords.x += w;
 
-						addFootnote( fit->second, pdfData, renderOpts, doc );
+						addFootnote( ref->id(), fit->second, pdfData, renderOpts, doc );
 					}
 				}
 			}
@@ -2250,8 +2282,8 @@ PdfRenderer::reserveSpaceForFootnote( PdfAuxData & pdfData, const RenderOpts & r
 QVector< WhereDrawn >
 PdfRenderer::drawFootnote( PdfAuxData & pdfData, const RenderOpts & renderOpts,
 	std::shared_ptr< MD::Document< MD::QStringTrait > > doc,
-	MD::Footnote< MD::QStringTrait > * note, CalcHeightOpt heightCalcOpt,
-	double * lineHeight )
+	const QString & footnoteRefId, MD::Footnote< MD::QStringTrait > * note,
+	CalcHeightOpt heightCalcOpt, double * lineHeight )
 {
 	QVector< WhereDrawn > ret;
 
@@ -2350,6 +2382,10 @@ PdfRenderer::drawFootnote( PdfAuxData & pdfData, const RenderOpts & renderOpts,
 				c_offset - w;
 			const auto p = ret.constFirst().pageIdx;
 
+			m_dests.insert( footnoteRefId,
+				std::make_shared< PdfDestination> ( pdfData.doc->GetPages().GetPageAt( p ),
+					x, y + font->GetLineSpacing( st ), 1.0 ) );
+
 			pdfData.painter->SetCanvas( pdfData.doc->GetPages().GetPageAt( p ) );
 
 			pdfData.drawText( x, y, str, font, st.FontSize, 1.0, false );
@@ -2371,7 +2407,7 @@ PdfRenderer::footnoteHeight( PdfAuxData & pdfData, const RenderOpts & renderOpts
 	std::shared_ptr< MD::Document< MD::QStringTrait > > doc, MD::Footnote< MD::QStringTrait > * note,
 	double * lineHeight )
 {
-	return drawFootnote( pdfData, renderOpts, doc, note, CalcHeightOpt::Full, lineHeight );
+	return drawFootnote( pdfData, renderOpts, doc, "", note, CalcHeightOpt::Full, lineHeight );
 }
 
 QPair< QRectF, unsigned int >
@@ -3586,6 +3622,7 @@ PdfRenderer::createAuxTable( PdfAuxData & pdfData, const RenderOpts & renderOpts
 									false, false, false,
 									renderOpts.m_textFontSize };
 								item.footnote = QString::number( m_footnoteNum++ );
+								item.footnoteRef = ref->id();
 								item.footnoteObj = fit->second;
 
 								data.items.append( item );
@@ -3708,7 +3745,7 @@ PdfRenderer::drawTable( PdfAuxData & pdfData, const RenderOpts & renderOpts,
 
 	moveToNewLine( pdfData, offset, lineHeight, 1.0, lineHeight );
 
-	QVector< std::shared_ptr< MD::Footnote< MD::QStringTrait > > > footnotes;
+	QVector< QPair< QString, std::shared_ptr< MD::Footnote< MD::QStringTrait > > > > footnotes;
 	bool first = true;
 	WhereDrawn firstLine;
 
@@ -3727,13 +3764,14 @@ PdfRenderer::drawTable( PdfAuxData & pdfData, const RenderOpts & renderOpts,
 	}
 
 	for( const auto & f : qAsConst( footnotes ) )
-		addFootnote( f, pdfData, renderOpts, doc );
+		addFootnote( f.first, f.second, pdfData, renderOpts, doc );
 
 	return { ret, firstLine };
 }
 
 void
-PdfRenderer::addFootnote( std::shared_ptr< MD::Footnote< MD::QStringTrait > > f, PdfAuxData & pdfData,
+PdfRenderer::addFootnote( const QString & refId,
+	std::shared_ptr< MD::Footnote< MD::QStringTrait > > f, PdfAuxData & pdfData,
 	const RenderOpts & renderOpts, std::shared_ptr< MD::Document< MD::QStringTrait > > doc )
 {
 	PdfAuxData tmpData = pdfData;
@@ -3751,14 +3789,14 @@ PdfRenderer::addFootnote( std::shared_ptr< MD::Footnote< MD::QStringTrait > > f,
 	reserveSpaceForFootnote( pdfData, renderOpts, h, pdfData.coords.y,
 		pdfData.currentPageIdx, lineHeight );
 
-	m_footnotes.append( f );
+	m_footnotes.append( { refId, f } );
 }
 
 QPair< QVector< WhereDrawn >, WhereDrawn >
 PdfRenderer::drawTableRow( QVector< QVector< CellData > > & table, int row, PdfAuxData & pdfData,
 	double offset, double lineHeight, const RenderOpts & renderOpts,
 	std::shared_ptr< MD::Document< MD::QStringTrait > > doc,
-	QVector< std::shared_ptr< MD::Footnote< MD::QStringTrait > > > & footnotes,
+	QVector< QPair< QString, std::shared_ptr< MD::Footnote< MD::QStringTrait > > > > & footnotes,
 	float scale, bool inFootnote )
 {
 	QVector< WhereDrawn > ret;
@@ -4092,8 +4130,8 @@ void
 PdfRenderer::drawTextLineInTable( double x, double & y, TextToDraw & text, double lineHeight,
 	PdfAuxData & pdfData, QMap< QString, QVector< QPair< QRectF, unsigned int > > > & links,
 	PdfFont * font, int & currentPage, int & endPage, double & endY,
-	QVector< std::shared_ptr< MD::Footnote< MD::QStringTrait > > > & footnotes, bool inFootnote,
-	float scale )
+	QVector< QPair< QString, std::shared_ptr< MD::Footnote< MD::QStringTrait > > > > & footnotes,
+	bool inFootnote, float scale )
 {
 	y -= lineHeight;
 
@@ -4204,7 +4242,7 @@ PdfRenderer::drawTextLineInTable( double x, double & y, TextToDraw & text, doubl
 
 				x += w;
 
-				footnotes.append( it->footnoteObj );
+				footnotes.append( { it->footnoteRef, it->footnoteObj } );
 			}
 		}
 

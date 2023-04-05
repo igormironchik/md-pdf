@@ -5,7 +5,6 @@ class DependenciesRecipe(ConanFile):
     generators = "CMakeDeps"
 
     def requirements(self):
-        self.requires("openssl/1.1.1s")
         self.requires("freetype/2.12.1")
         self.requires("libjpeg/9e")
         self.requires("libpng/1.6.39")
@@ -17,15 +16,14 @@ class DependenciesRecipe(ConanFile):
             self.requires("fontconfig/2.13.93")
 
     def configure(self):
-        self.options["openssl"].shared = True
-        self.options["freetype"].shared = True
-        self.options["libjpeg"].shared = True
-        self.options["libpng"].shared = True
-        self.options["zlib"].shared = True
-        self.options["libtiff"].shared = True
-        self.options["libxml2"].shared = True
-        self.options["libiconv"].shared = True
-        self.options["fontconfig"].shared = True
+        self.options["freetype"].shared = False
+        self.options["libjpeg"].shared = False
+        self.options["libpng"].shared = False
+        self.options["zlib"].shared = False
+        self.options["libtiff"].shared = False
+        self.options["libxml2"].shared = False
+        self.options["libiconv"].shared = False
+        self.options["fontconfig"].shared = False
 
     def imports(self):
         self.copy("*.dll", "bin", "bin")

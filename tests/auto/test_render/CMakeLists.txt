@@ -55,6 +55,10 @@ target_link_libraries( test.render syntax podofo_shared
 	JKQTMathTextSharedLib JKQTCommonSharedLib
 	Qt6::Widgets Qt6::Gui Qt6::Network Qt6::Test Qt6::Core )
 
+if( WIN32 )
+	set( SUFFIX ".bat" )
+endif()
+
 add_test( NAME test.render
-	COMMAND ${CMAKE_CURRENT_BINARY_DIR}/../../../bin/test.render
+	COMMAND ${CMAKE_CURRENT_BINARY_DIR}/../../../bin/test.render${SUFFIX}
 	WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/../../../bin )
