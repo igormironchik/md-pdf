@@ -147,6 +147,8 @@ jobs:
     - run: rm '/usr/local/lib/libtcl8.6.dylib'
 
     - run: rm '/usr/local/lib/libtk8.6.dylib'
+    
+    - run: rm '/usr/local/bin/go
 
     - run: brew upgrade
 
