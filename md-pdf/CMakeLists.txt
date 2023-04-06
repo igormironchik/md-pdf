@@ -5,8 +5,8 @@ set( CMAKE_AUTOMOC ON )
 set( CMAKE_AUTORCC ON )
 set( CMAKE_AUTOUIC ON )
 
-find_package( Qt6Widgets REQUIRED )
-find_package( Qt6Network REQUIRED )
+find_package( Qt6Widgets 6.5.0 REQUIRED )
+find_package( Qt6Network 6.5.0 REQUIRED )
 find_package( ImageMagick 6 EXACT REQUIRED COMPONENTS Magick++ MagickCore )
 
 add_definitions( -DMAGICKCORE_QUANTUM_DEPTH=16 )

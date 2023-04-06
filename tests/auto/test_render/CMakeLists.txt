@@ -1,10 +1,10 @@
 
 project( test.render )
 
-find_package( Qt6Test REQUIRED )
-find_package( Qt6Gui REQUIRED )
-find_package( Qt6Widgets REQUIRED )
-find_package( Qt6Network REQUIRED )
+find_package( Qt6Test 6.5.0 REQUIRED )
+find_package( Qt6Gui 6.5.0 REQUIRED )
+find_package( Qt6Widgets 6.5.0 REQUIRED )
+find_package( Qt6Network 6.5.0 REQUIRED )
 find_package( ImageMagick 6 EXACT REQUIRED COMPONENTS Magick++ MagickCore )
 
 add_definitions( -DMAGICKCORE_QUANTUM_DEPTH=16 )
