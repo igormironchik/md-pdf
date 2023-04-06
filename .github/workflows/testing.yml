@@ -149,6 +149,8 @@ jobs:
     - run: rm '/usr/local/lib/libtk8.6.dylib'
     
     - run: rm '/usr/local/bin/go'
+    
+    - run: rm '/usr/local/bin/gofmt'
 
     - run: brew upgrade
 
