@@ -1,0 +1,7 @@
+
+#pragma once
+
+// Qt include.
+#include <QString>
+
+static const QString c_version = QStringLiteral( "@MDPDF_VERSION@" );

@@ -46,10 +46,20 @@ include_directories( ${CMAKE_CURRENT_SOURCE_DIR}
 	${CMAKE_CURRENT_BINARY_DIR}/../3rdparty/podofo/src/podofo
 	${ImageMagick_INCLUDE_DIRS}
 	${CMAKE_CURRENT_SOURCE_DIR}/../3rdparty/JKQtPlotter/lib
-	${md4qt_INCLUDE_DIRECTORIES} )
+	${md4qt_INCLUDE_DIRECTORIES}
+	${CMAKE_CURRENT_BINARY_DIR} )
 
 link_directories( ${CMAKE_CURRENT_BINARY_DIR}/../3rdparty/podofo/src/podofo
 	${CMAKE_CURRENT_BINARY_DIR}/../3rdparty/podofo/src )
+	
+execute_process( COMMAND git rev-parse --short HEAD
+	OUTPUT_VARIABLE MDPDF_VERSION_MINOR
+	WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
+	OUTPUT_STRIP_TRAILING_WHITESPACE )
+
+set( MDPDF_VERSION "0.9.2 build ${MDPDF_VERSION_MINOR}" )
+
+configure_file( version.hpp.in ${CMAKE_CURRENT_BINARY_DIR}/version.hpp )
 
 add_library( syntax STATIC ${LIB_SYNTAX_SRC} )
 

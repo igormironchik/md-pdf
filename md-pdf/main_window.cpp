@@ -29,6 +29,7 @@
 #include "renderer.hpp"
 #include "progress.hpp"
 #include "const.hpp"
+#include "version.hpp"
 
 // Qt include.
 #include <QToolButton>
@@ -404,7 +405,8 @@ MainWindow::MainWindow()
 		this, &MainWindow::about );
 	help->addAction( QIcon( QStringLiteral( ":/img/qt.png" ) ), tr( "About Qt" ),
 		this, &MainWindow::aboutQt );
-	help->addAction( tr( "Licenses" ), this, &MainWindow::licenses );
+	help->addAction( QIcon( QStringLiteral( ":/img/bookmarks-organize.png" ) ),
+		tr( "Licenses" ), this, &MainWindow::licenses );
 
 	ui = new MainWidget( this );
 
@@ -422,9 +424,10 @@ MainWindow::about()
 {
 	QMessageBox::about( this, tr( "About MD-PDF Converter" ),
 		tr( "MD-PDF Converter.\n\n"
+			"Version %1\n\n"
 			"Author - Igor Mironchik (igor.mironchik at gmail dot com).\n\n"
 			"Copyright (c) 2019-2022 Igor Mironchik.\n\n"
-			"Licensed under GNU GPL 3.0." ) );
+			"Licensed under GNU GPL 3.0." ).arg( c_version ) );
 }
 
 void
