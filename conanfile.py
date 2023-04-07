@@ -13,7 +13,7 @@ class DependenciesRecipe(ConanFile):
         self.requires("libxml2/2.10.3")
         self.requires("libiconv/1.17")
         if self.settings.os == "Windows":
-            self.requires("fontconfig/2.13.93")
+            self.requires("fontconfig/2.14.2")
 
     def configure(self):
         self.options["freetype"].shared = False
