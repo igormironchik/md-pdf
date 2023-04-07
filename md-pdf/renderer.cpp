@@ -657,6 +657,19 @@ PdfRenderer::renderImpl()
 
 			for( auto it = m_doc->items().cbegin(), last = m_doc->items().cend(); it != last; ++it )
 			{
+				switch( (*it)->type() )
+				{
+					case MD::ItemType::Anchor :
+						pdfData.anchors.push_back(
+							static_cast< MD::Anchor< MD::QStringTrait >* > ( it->get() )->label() );
+
+					default:
+						break;
+				}
+			}
+
+			for( auto it = m_doc->items().cbegin(), last = m_doc->items().cend(); it != last; ++it )
+			{
 				++itemIdx;
 
 				{
@@ -1260,7 +1273,7 @@ PdfRenderer::drawLink( PdfAuxData & pdfData, const RenderOpts & renderOpts,
 	if( draw )
 	{
 		// If Web URL.
-		if( !QUrl( url ).isRelative() )
+		if( !pdfData.anchors.contains( url ) )
 		{
 			for( const auto & r : qAsConst( rects ) )
 			{

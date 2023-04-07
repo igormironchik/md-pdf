@@ -199,6 +199,8 @@ struct PdfAuxData {
 	int currentPageIdx = -1;
 	//! Coordinates and margins.
 	CoordsPageAttribs coords;
+	//! Anchors in document.
+	QStringList anchors;
 	//! Reserved spaces on the pages for footnotes.
 	QMap< unsigned int, double > reserved;
 	//! Drawing footnotes or the document?
