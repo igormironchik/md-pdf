@@ -737,7 +737,9 @@ PdfRenderer::renderImpl()
 					{
 						auto * a = static_cast< MD::Anchor< MD::QStringTrait >* > ( it->get() );
 						m_dests.insert( a->label(),
-							std::make_shared< PdfDestination > ( *pdfData.page ) );
+							std::make_shared< PdfDestination > ( *pdfData.page,
+								pdfData.coords.margins.left,
+								pdfData.coords.pageHeight - pdfData.coords.margins.top, 0.0 ) );
 					}
 						break;
 
@@ -907,8 +909,7 @@ PdfRenderer::resolveLinks( PdfAuxData & pdfData )
 				auto & annot = page.GetAnnotations().CreateAnnot< PdfAnnotationLink >(
 					Rect( r.first.x(), r.first.y(), r.first.width(), r.first.height() ) );
 				annot.SetBorderStyle( 0.0, 0.0, 0.0 );
-				annot.SetDestination( m_dests.value( it.key(),
-					std::make_shared< PdfDestination >( *pdfData.page ) ) );
+				annot.SetDestination( m_dests.value( it.key() ) );
 			}
 		}
 #ifdef MD_PDF_TESTING
@@ -1098,7 +1099,7 @@ PdfRenderer::drawHeading( PdfAuxData & pdfData, const RenderOpts & renderOpts,
 				std::make_shared< PdfDestination> ( pdfData.doc->GetPages().GetPageAt(
 						static_cast< unsigned int >( where.first.front().pageIdx ) ),
 					pdfData.coords.margins.left + offset,
-					where.first.front().y + where.first.front().height, 1.0 ) );
+					where.first.front().y + where.first.front().height, 0.0 ) );
 		}
 
 		return where;
@@ -2397,7 +2398,7 @@ PdfRenderer::drawFootnote( PdfAuxData & pdfData, const RenderOpts & renderOpts,
 
 			m_dests.insert( footnoteRefId,
 				std::make_shared< PdfDestination> ( pdfData.doc->GetPages().GetPageAt( p ),
-					x, y + font->GetLineSpacing( st ), 1.0 ) );
+					x, y + font->GetLineSpacing( st ), 0.0 ) );
 
 			pdfData.painter->SetCanvas( pdfData.doc->GetPages().GetPageAt( p ) );
 
