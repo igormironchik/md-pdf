@@ -88,10 +88,6 @@ Good example of work of this application is
  
  * I do not render HTML tags in Markdown.
 
- * On `Windows` platform fonts should be installed for all users into `C:\Windows\Fonts` folder,
- just right click on font file and choose `Install for all users`. Otherwise font will be visible
- in GUI, but will not accessible for backend and you will see a strange error.
-
  * Some LaTeX Math expressions can be wrongly rendered. I use very good
  library `JKQtPlotter` to render LaTeX Math, and not everything is
  implemented there. But most common math things are done.
