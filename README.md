@@ -75,11 +75,6 @@ On Windows `Conan` is a fresh wind to build this project.
 
 On Linux you can use what you want, that is why this is my favorite OS.
 
-# Example
-
-Good example of work of this application is
-[PDF version of my book.](https://github.com/igormironchik/qt-widgets-on-real-example/blob/master/pdf/The%20book%20about%20real%20examples%20of%20Qt%20Widgets%20usage.pdf)
-
 # Screenshot
 
 ![](mdpdf.png)
