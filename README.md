@@ -32,7 +32,7 @@ git submodule update --init --recursive
 
 To build this application first of all install dependencies of `PoDoFo`
 
- * `openssl` 1.1
+ * `openssl`
  * `freetype`
  * `libjpeg`
  * `libpng`
