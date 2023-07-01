@@ -1060,7 +1060,7 @@ void testReadXRefSubsection()
     }
 }
 
-TEST_CASE("testReadXRefStreamContents")
+TEST_CASE("TestReadXRefStreamContents")
 {
     // test valid stream
     try
@@ -1157,7 +1157,7 @@ TEST_CASE("testReadXRefStreamContents")
     }
     catch (PdfError& error)
     {
-        REQUIRE(error.GetCode() == PdfErrorCode::NoXRef);
+        REQUIRE(error.GetCode() == PdfErrorCode::InvalidXRefStream);
     }
     catch (exception&)
     {
@@ -1210,7 +1210,7 @@ TEST_CASE("testReadXRefStreamContents")
     }
     catch (PdfError& error)
     {
-        REQUIRE(error.GetCode() == PdfErrorCode::NoXRef);
+        REQUIRE(error.GetCode() == PdfErrorCode::InvalidXRefStream);
     }
     catch (exception&)
     {
@@ -1314,7 +1314,7 @@ TEST_CASE("testReadXRefStreamContents")
     }
     catch (PdfError& error)
     {
-        REQUIRE(error.GetCode() == PdfErrorCode::InvalidXRefType);
+        REQUIRE(error.GetCode() == PdfErrorCode::InvalidXRefStream);
     }
     catch (exception&)
     {
@@ -1363,7 +1363,7 @@ TEST_CASE("testReadXRefStreamContents")
     }
     catch (PdfError& error)
     {
-        REQUIRE(error.GetCode() == PdfErrorCode::NoXRef);
+        REQUIRE(error.GetCode() == PdfErrorCode::InvalidXRefStream);
     }
     catch (exception&)
     {
@@ -1722,7 +1722,7 @@ TEST_CASE("testReadXRefStreamContents")
     }
     catch (PdfError& error)
     {
-        REQUIRE(error.GetCode() == PdfErrorCode::NoXRef);
+        REQUIRE(error.GetCode() == PdfErrorCode::InvalidXRefStream);
     }
     catch (exception&)
     {
@@ -1772,7 +1772,7 @@ TEST_CASE("testReadXRefStreamContents")
     }
     catch (PdfError& error)
     {
-        REQUIRE(error.GetCode() == PdfErrorCode::NoXRef);
+        REQUIRE(error.GetCode() == PdfErrorCode::InvalidXRefStream);
     }
     catch (exception&)
     {
@@ -2530,7 +2530,7 @@ TEST_CASE("testLoopingPageTree")
     }
     catch (PdfError& error)
     {
-        REQUIRE(error.GetCode() == PdfErrorCode::PageNotFound);
+        REQUIRE(error.GetCode() == PdfErrorCode::BrokenFile);
     }
 
     // CVE-2021-30471 test for pages tree /Kids array that refer back to an ancestor (document root object)
@@ -2558,7 +2558,7 @@ TEST_CASE("testLoopingPageTree")
     }
     catch (PdfError& error)
     {
-        REQUIRE(error.GetCode() == PdfErrorCode::PageNotFound);
+        REQUIRE(error.GetCode() == PdfErrorCode::BrokenFile);
     }
 }
 

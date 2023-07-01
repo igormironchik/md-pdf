@@ -33,3 +33,15 @@ TEST_CASE("ErrorFilePath")
         REQUIRE(fs::u8path(path) == fs::u8path("main") / "PdfVariant.cpp");
     }
 }
+
+TEST_CASE("TestMetadataSet")
+{
+    PdfMemDocument doc;
+    auto& metadata = doc.GetMetadata();
+    metadata.SetTitle(PdfString("TestTitle"));
+    REQUIRE(metadata.GetTitle()->GetString() == "TestTitle");
+    metadata.SetTitle(PdfString("TestTitle2"));
+    REQUIRE(metadata.GetTitle()->GetString() == "TestTitle2");
+    metadata.SetTitle(nullptr);
+    REQUIRE(metadata.GetTitle() == nullptr);
+}

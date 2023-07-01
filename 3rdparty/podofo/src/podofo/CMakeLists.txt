@@ -70,17 +70,22 @@ add_compile_definitions(PODOFO_BUILD)
 if(PODOFO_BUILD_STATIC)
     message("Building static podofo library")
     add_library(podofo_static STATIC ${PODOFO_SOURCES})
+    add_library(podofo::podofo ALIAS podofo_static)
     target_link_libraries(podofo_static podofo_private ${PODOFO_LIB_DEPENDS})
     set_target_properties(podofo_static PROPERTIES
-        VERSION "${PODOFO_LIBVERSION}"
+        VERSION "${PODOFO_VERSION}"
         SOVERSION "${PODOFO_SOVERSION}"
         CLEAN_DIRECT_OUTPUT 1
         OUTPUT_NAME "podofo"
     )
-    install(TARGETS podofo_static
+    install(TARGETS podofo_static podofo_private
+        EXPORT podofo-config
         RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
         LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
         ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}
+    )
+    install(EXPORT podofo-config
+        DESTINATION share/podofo
     )
     set(PODOFO_LIBRARIES podofo_static podofo_private
         CACHE INTERNAL "Which podofo library variant to depend on")
@@ -89,12 +94,13 @@ endif()
 if(PODOFO_BUILD_SHARED)
     message("Building shared podofo library")
     add_library(podofo_shared SHARED ${PODOFO_SOURCES})
+    add_library(podofo::podofo ALIAS podofo_shared)
     target_link_libraries(podofo_shared PRIVATE podofo_private ${PODOFO_LIB_DEPENDS})
     # TODO: set /wd4251 flag if we're doing a debug build with
     # Visual Studio, since it produces invalid warnings about STL
     # use.
     set_target_properties(podofo_shared PROPERTIES
-        VERSION "${PODOFO_LIBVERSION}"
+        VERSION "${PODOFO_VERSION}"
         SOVERSION "${PODOFO_SOVERSION}"
         CLEAN_DIRECT_OUTPUT 1
         OUTPUT_NAME "podofo"
@@ -102,9 +108,13 @@ if(PODOFO_BUILD_SHARED)
     # Since we're building a shared podofo, prefer to depend on this one for
     # tests and tools over the static library (if built).
     install(TARGETS podofo_shared
+        EXPORT podofo-config
         RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
         LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
         ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}
+    )
+    install(EXPORT podofo-config
+        DESTINATION share/podofo
     )
 
     # Create a pkg-config file for linking against shared library

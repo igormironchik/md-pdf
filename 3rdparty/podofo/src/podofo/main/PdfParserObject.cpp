@@ -39,11 +39,10 @@ PdfParserObject::PdfParserObject(PdfDocument* doc, const PdfReference& indirectR
     InputStreamDevice& device, ssize_t offset) :
     PdfObject(PdfVariant(), indirectReference, true),
     m_device(&device),
-    m_Encrypt(nullptr),
-    m_IsTrailer(false),
     m_Offset(offset < 0 ? device.GetPosition() : offset),
-    m_HasStream(false),
-    m_StreamOffset(0)
+    m_StreamOffset(0),
+    m_IsTrailer(false),
+    m_HasStream(false)
 {
     // Parsed objects by definition are initially not dirty
     resetDirty();
@@ -237,6 +236,9 @@ ReadStream:
     {
         auto input = m_Encrypt->CreateEncryptionInputStream(*m_device, static_cast<size_t>(size), GetIndirectReference());
         getOrCreateStream().InitData(*input, static_cast<ssize_t>(size), PdfFilterFactory::CreateFilterList(*this));
+        // Release the encrypt object after loading the stream.
+        // It's not needed for serialization here
+        m_Encrypt = nullptr;
     }
     else
     {

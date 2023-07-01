@@ -579,9 +579,9 @@ unique_ptr<PdfEncrypt> PdfEncrypt::CreateFromObject(const PdfObject& encryptObj)
             (rValue == 5 && PdfEncrypt::IsEncryptionEnabled(PdfEncryptAlgorithm::AESV3))
             || (rValue == 6 && PdfEncrypt::IsEncryptionEnabled(PdfEncryptAlgorithm::AESV3R6))))
         {
-            PdfString permsValue = encryptObj.GetDictionary().GetKey("Perms")->GetString();
-            PdfString oeValue = encryptObj.GetDictionary().GetKey("OE")->GetString();
-            PdfString ueValue = encryptObj.GetDictionary().GetKey("UE")->GetString();
+            PdfString permsValue = encryptObj.GetDictionary().MustFindKey("Perms").GetString();
+            PdfString oeValue = encryptObj.GetDictionary().MustFindKey("OE").GetString();
+            PdfString ueValue = encryptObj.GetDictionary().MustFindKey("UE").GetString();
 
             return unique_ptr<PdfEncrypt>(new PdfEncryptAESV3(oValue, oeValue, uValue,
                 ueValue, pValue, permsValue, (PdfAESV3Revision)rValue));
@@ -1128,8 +1128,17 @@ PdfEncryptRC4::PdfEncryptRC4(PdfString oValue, PdfString uValue, PdfPermissions 
     m_eKeyLength = static_cast<PdfKeyLength>(length);
     m_keyLength = length / 8;
     m_EncryptMetadata = encryptMetadata;
-    std::memcpy(m_oValue, oValue.GetRawData().data(), 32);
-    std::memcpy(m_uValue, uValue.GetRawData().data(), 32);
+
+    auto& oValueData = oValue.GetRawData();
+    if (oValueData.size() < 32)
+        PODOFO_RAISE_ERROR_INFO(PdfErrorCode::InvalidEncryptionDict, "/O value is invalid");
+
+    auto& uValueData = uValue.GetRawData();
+    if (uValueData.size() < 32)
+        PODOFO_RAISE_ERROR_INFO(PdfErrorCode::InvalidEncryptionDict, "/U value is invalid");
+
+    std::memcpy(m_oValue, oValueData.data(), 32);
+    std::memcpy(m_uValue, uValueData.data(), 32);
 
     // Init buffers
     std::memset(m_rc4key, 0, 16);
@@ -1390,8 +1399,17 @@ PdfEncryptAESV2::PdfEncryptAESV2(PdfString oValue, PdfString uValue, PdfPermissi
     m_keyLength = (int)PdfKeyLength::L128 / 8;
     m_rValue = 4;
     m_EncryptMetadata = encryptMetadata;
-    std::memcpy(m_oValue, oValue.GetRawData().data(), 32);
-    std::memcpy(m_uValue, uValue.GetRawData().data(), 32);
+
+    auto& oValueData = oValue.GetRawData();
+    if (oValueData.size() < 32)
+        PODOFO_RAISE_ERROR_INFO(PdfErrorCode::InvalidEncryptionDict, "/O value is invalid");
+
+    auto& uValueData = uValue.GetRawData();
+    if (uValueData.size() < 32)
+        PODOFO_RAISE_ERROR_INFO(PdfErrorCode::InvalidEncryptionDict, "/U value is invalid");
+
+    std::memcpy(m_oValue, oValueData.data(), 32);
+    std::memcpy(m_uValue, uValueData.data(), 32);
 
     // Init buffers
     std::memset(m_rc4key, 0, 16);
@@ -1904,11 +1922,31 @@ PdfEncryptAESV3::PdfEncryptAESV3(PdfString oValue, PdfString oeValue, PdfString 
     m_eKeyLength = PdfKeyLength::L256;
     m_keyLength = (int)PdfKeyLength::L256 / 8;
     m_rValue = (int)revision;
-    std::memcpy(m_oValue, oValue.GetRawData().data(), 48);
-    std::memcpy(m_oeValue, oeValue.GetRawData().data(), 32);
-    std::memcpy(m_uValue, uValue.GetRawData().data(), 48);
-    std::memcpy(m_ueValue, ueValue.GetRawData().data(), 32);
-    std::memcpy(m_permsValue, permsValue.GetRawData().data(), 16);
+    auto& oValueData = oValue.GetRawData();
+    if (oValueData.size() < 48)
+        PODOFO_RAISE_ERROR_INFO(PdfErrorCode::InvalidEncryptionDict, "/O value is invalid");
+
+    auto& oeValueData = oeValue.GetRawData();
+    if (oeValueData.size() < 32)
+        PODOFO_RAISE_ERROR_INFO(PdfErrorCode::InvalidEncryptionDict, "/OE value is invalid");
+
+    auto& uValueData = uValue.GetRawData();
+    if (uValueData.size() < 48)
+        PODOFO_RAISE_ERROR_INFO(PdfErrorCode::InvalidEncryptionDict, "/U value is invalid");
+
+    auto& ueValueData = ueValue.GetRawData();
+    if (ueValueData.size() < 32)
+        PODOFO_RAISE_ERROR_INFO(PdfErrorCode::InvalidEncryptionDict, "/UE value is invalid");
+
+    auto& permsValueData = permsValue.GetRawData();
+    if (permsValueData.size() < 16)
+        PODOFO_RAISE_ERROR_INFO(PdfErrorCode::InvalidEncryptionDict, "/Perms value is invalid");
+
+    std::memcpy(m_oValue, oValueData.data(), 48);
+    std::memcpy(m_oeValue, oeValueData.data(), 32);
+    std::memcpy(m_uValue, uValueData.data(), 48);
+    std::memcpy(m_ueValue, ueValueData.data(), 32);
+    std::memcpy(m_permsValue, permsValueData.data(), 16);
     std::memset(m_encryptionKey, 0, 32);
 }
 

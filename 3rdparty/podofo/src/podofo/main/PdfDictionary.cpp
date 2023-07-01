@@ -145,18 +145,20 @@ PdfObject* PdfDictionary::findKey(const string_view& key) const
 
 PdfObject* PdfDictionary::findKeyParent(const string_view& key) const
 {
-    PdfObject* obj = findKey(key);
+    utls::RecursionGuard guard;
+    auto obj = findKey(key);
     if (obj == nullptr)
     {
-        PdfObject* parent = findKey("Parent");
-        if (parent == nullptr)
+        auto parent = findKey("Parent");
+        if (parent == nullptr || parent->GetIndirectReference() == GetOwner()->GetIndirectReference())
         {
             return nullptr;
         }
         else
         {
-            if (parent->IsDictionary())
-                return parent->GetDictionary().findKeyParent(key);
+            PdfDictionary* parentDict;
+            if (parent->TryGetDictionary(parentDict))
+                return parentDict->findKeyParent(key);
             else
                 return nullptr;
         }
@@ -262,7 +264,7 @@ const PdfObject& PdfDictionary::MustFindKey(const string_view& key) const
 {
     auto obj = findKey(key);
     if (obj == nullptr)
-        PODOFO_RAISE_ERROR(PdfErrorCode::NoObject);
+        PODOFO_RAISE_ERROR_INFO(PdfErrorCode::NoObject, "No object with key /{} found", key);
 
     return *obj;
 }
@@ -271,7 +273,7 @@ PdfObject& PdfDictionary::MustFindKey(const string_view& key)
 {
     auto obj = findKey(key);
     if (obj == nullptr)
-        PODOFO_RAISE_ERROR(PdfErrorCode::NoObject);
+        PODOFO_RAISE_ERROR_INFO(PdfErrorCode::NoObject, "No object with key /{} found", key);
 
     return *obj;
 }
@@ -290,7 +292,7 @@ const PdfObject& PdfDictionary::MustFindKeyParent(const string_view& key) const
 {
     auto obj = findKeyParent(key);
     if (obj == nullptr)
-        PODOFO_RAISE_ERROR(PdfErrorCode::NoObject);
+        PODOFO_RAISE_ERROR_INFO(PdfErrorCode::NoObject, "No object with key /{} found", key);
 
     return *obj;
 }
@@ -299,7 +301,7 @@ PdfObject& PdfDictionary::MustFindKeyParent(const string_view& key)
 {
     auto obj = findKeyParent(key);
     if (obj == nullptr)
-        PODOFO_RAISE_ERROR(PdfErrorCode::NoObject);
+        PODOFO_RAISE_ERROR_INFO(PdfErrorCode::NoObject, "No object with key /{} found", key);
 
     return *obj;
 }

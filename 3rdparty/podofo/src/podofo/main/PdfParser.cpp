@@ -37,7 +37,7 @@ static unsigned s_MaxObjectCount = (1U << 23) - 1;
 
 PdfParser::PdfParser(PdfIndirectObjectList& objects) :
     m_buffer(std::make_shared<charbuff>(PdfTokenizer::BufferSize)),
-    m_tokenizer(m_buffer, true),
+    m_tokenizer(m_buffer),
     m_Objects(&objects),
     m_StrictParsing(false)
 {
@@ -688,7 +688,7 @@ void PdfParser::readObjectsInternal(InputStreamDevice& device)
                         unique_ptr<PdfParserObject> obj(new PdfParserObject(m_Objects->GetDocument(), reference, device, (ssize_t)entry.Offset));
                         try
                         {
-                            obj->SetEncrypt(m_Encrypt.get());
+                            obj->SetEncrypt(m_Encrypt);
                             if (m_Encrypt != nullptr && obj->IsDictionary())
                             {
                                 auto typeObj = obj->GetDictionary().GetKey(PdfName::KeyType);
@@ -949,11 +949,6 @@ const PdfObject& PdfParser::GetTrailer() const
 bool PdfParser::IsEncrypted() const
 {
     return m_Encrypt != nullptr;
-}
-
-unique_ptr<PdfEncrypt> PdfParser::TakeEncrypt()
-{
-    return std::move(m_Encrypt);
 }
 
 unsigned PdfParser::GetMaxObjectCount()

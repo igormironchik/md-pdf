@@ -5,6 +5,10 @@
   "Digital Signature Appearances" document specification
 
 ### 1.0
+- PdfParserObject: Release the device after loading
+- PdfMemDocument: Consider removing SetEncrypt(encrypt)
+- PdfEncrypt: Consider removing CreateFromEncrypt (shared_ptr in PdfMemDocument could be used now)
+- PdfContents: Remove PdfContents::Reset(obj) (keep parameterless) and make constructors private
 - Restore manuals
 - Review all page import functions to check correct working/improve
   the code
@@ -16,7 +20,6 @@
 - More enum <-> strings functions and make them public
 - Make PdfObjectStream not flate filter by default in PdfMemDocument?
 - PdfElement: Optimize, keep dictionary/array pointer. Add GetObjectPtr()
-- PdfPageCollection: Fix caching (it's very slow at the moment)
 - PdfPageCollection: Add iteration on PdfPage*. See PdfAnnotationCollection
 - PdfPageCollection::CreatePage() with PdfPageSize or default inferred from doc
 - PdfPage: Add GetFields() iteration
