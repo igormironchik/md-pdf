@@ -7,7 +7,7 @@ class DependenciesRecipe(ConanFile):
     def requirements(self):
         self.requires("freetype/2.13.0")
         self.requires("libjpeg/9e")
-        self.requires("libpng/1.6.39")
+        self.requires("libpng/1.6.40")
         self.requires("zlib/1.2.13")
         self.requires("libtiff/4.4.0")
         self.requires("libxml2/2.10.3")
