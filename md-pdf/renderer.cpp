@@ -535,7 +535,11 @@ PdfRenderer::CellData::heightToWidth( double lineHeight, double spaceWidth, floa
 			const double iHeight = std::round( (double) pdfImg->GetHeight() /
 				(double) pdfData.m_dpi * 72.0 );
 
-			height += iHeight / ( iWidth / width ) * scale;
+			if( iWidth > width )
+				height += iHeight / ( iWidth / width ) * scale;
+			else
+				height += iHeight * scale;
+
 			newLine = true;
 		}
 	}
@@ -3906,7 +3910,8 @@ PdfRenderer::drawTableRow( QVector< QVector< CellData > > & table, int row, PdfA
 					(double) pdfData.m_dpi * 72.0 );
 				const double dpiScale = (double) img->GetWidth() / iWidth;
 
-				auto ratio = it->at( 0 ).width / iWidth * scale;
+				auto ratio = ( iWidth > it->at( 0 ).width ? it->at( 0 ).width / iWidth * scale :
+					1.0 * scale );
 
 				auto h = iHeight * ratio;
 
