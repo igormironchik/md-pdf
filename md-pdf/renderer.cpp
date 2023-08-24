@@ -621,6 +621,8 @@ PdfRenderer::renderImpl()
 
 		pdfData.m_colorsStack.push( Qt::black );
 
+		pdfData.md = m_doc;
+
 #ifdef MD_PDF_TESTING
 		pdfData.fonts[ QStringLiteral( "Droid Serif" ) ] = c_font;
 		pdfData.fonts[ QStringLiteral( "Droid Serif Bold" ) ] = c_boldFont;
@@ -1278,7 +1280,8 @@ PdfRenderer::drawLink( PdfAuxData & pdfData, const RenderOpts & renderOpts,
 	if( draw )
 	{
 		// If Web URL.
-		if( !pdfData.anchors.contains( url ) )
+		if( !pdfData.anchors.contains( url ) &&
+			pdfData.md->labeledHeadings().find( url ) == pdfData.md->labeledHeadings().cend() )
 		{
 			for( const auto & r : qAsConst( rects ) )
 			{

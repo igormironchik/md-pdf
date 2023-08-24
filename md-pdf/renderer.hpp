@@ -221,6 +221,8 @@ struct PdfAuxData {
 	QStack< QColor > m_colorsStack;
 	//! DPI.
 	quint16 m_dpi;
+	//! Markdown document.
+	std::shared_ptr< MD::Document< MD::QStringTrait > > md;
 
 #ifdef MD_PDF_TESTING
 	QMap< QString, QString > fonts;
