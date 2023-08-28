@@ -262,6 +262,9 @@ TestRender::initTestCase()
 	QFontDatabase::addApplicationFont( c_boldFont );
 	QFontDatabase::addApplicationFont( c_boldItalicFont );
 	QFontDatabase::addApplicationFont( c_monoFont );
+	QFontDatabase::addApplicationFont( c_monoItalicFont );
+	QFontDatabase::addApplicationFont( c_monoBoldFont );
+	QFontDatabase::addApplicationFont( c_monoBoldItalicFont );
 }
 
 void

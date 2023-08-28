@@ -44,11 +44,16 @@ set( ITALIC_FONT ${CMAKE_CURRENT_SOURCE_DIR}/../../fonts/droid_serif_italic.ttf 
 set( BOLD_FONT ${CMAKE_CURRENT_SOURCE_DIR}/../../fonts/droid_serif_bold.ttf )
 set( BOLD_ITALIC_FONT ${CMAKE_CURRENT_SOURCE_DIR}/../../fonts/droid_serif_italic_bold.ttf )
 set( MONO_FONT ${CMAKE_CURRENT_SOURCE_DIR}/../../fonts/courier_new_mc_serif.ttf )
+set( MONO_ITALIC_FONT ${CMAKE_CURRENT_SOURCE_DIR}/../../fonts/courier_new_mc_serif_italic.ttf )
+set( MONO_BOLD_FONT ${CMAKE_CURRENT_SOURCE_DIR}/../../fonts/courier_new_mc_serif_bold.ttf )
+set( MONO_BOLD_ITALIC_FONT ${CMAKE_CURRENT_SOURCE_DIR}/../../fonts/courier_new_mc_serif_italic_bold.ttf )
 set( WORKING_FOLDER ${CMAKE_CURRENT_SOURCE_DIR} )
 
 configure_file( test_const.hpp.in test_const.hpp @ONLY )
 
 link_directories( ${CMAKE_CURRENT_SOURCE_DIR}/../../../lib )
+
+qt6_add_resources( SRC ${CMAKE_CURRENT_SOURCE_DIR}/../../../md-pdf/resources.qrc )
 
 add_executable( test.render ${SRC} )
 

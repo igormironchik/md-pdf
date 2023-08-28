@@ -629,6 +629,9 @@ PdfRenderer::renderImpl()
 		pdfData.fonts[ QStringLiteral( "Droid Serif Italic" ) ] = c_italicFont;
 		pdfData.fonts[ QStringLiteral( "Droid Serif Bold Italic" ) ] = c_boldItalicFont;
 		pdfData.fonts[ QStringLiteral( "Courier New" ) ] = c_monoFont;
+		pdfData.fonts[ QStringLiteral( "Courier New Italic" ) ] = c_monoItalicFont;
+		pdfData.fonts[ QStringLiteral( "Courier New Bold" ) ] = c_monoBoldFont;
+		pdfData.fonts[ QStringLiteral( "Courier New Bold Italic" ) ] = c_monoBoldItalicFont;
 
 		pdfData.self = this;
 
@@ -1584,7 +1587,7 @@ PdfRenderer::drawInlinedCode( PdfAuxData & pdfData, const RenderOpts & renderOpt
 		doc, newLine,
 		nullptr, 0.0, 0.0, nullptr, m_footnoteNum,
 		offset, firstInParagraph, cw,
-		renderOpts.m_syntax->theme().backgroundColor( KSyntaxHighlighting::Theme::Normal ),
+		renderOpts.m_syntax->theme().editorColor( KSyntaxHighlighting::Theme::CodeFolding ),
 		inFootnote, false );
 }
 
@@ -2892,8 +2895,8 @@ PdfRenderer::drawCode( PdfAuxData & pdfData, const RenderOpts & renderOpts,
 
 		if( i < j )
 		{
-			pdfData.setColor( renderOpts.m_syntax->theme().backgroundColor(
-				KSyntaxHighlighting::Theme::Normal ) );
+			pdfData.setColor( renderOpts.m_syntax->theme().editorColor(
+				KSyntaxHighlighting::Theme::CodeFolding ) );
 			pdfData.drawRectangle( pdfData.coords.x, y + font->GetDescent( cst ),
 				pdfData.coords.pageWidth - pdfData.coords.x - pdfData.coords.margins.right,
 				 h + lineHeight, PdfPathDrawMode::Fill );
@@ -2924,7 +2927,7 @@ PdfRenderer::drawCode( PdfAuxData & pdfData, const RenderOpts & renderOpts,
 				if( italic || bold )
 				{
 					f = createFont( renderOpts.m_codeFont, bold, italic, renderOpts.m_codeFontSize,
-						pdfData.doc, scale, pdfData );
+							pdfData.doc, scale, pdfData );
 				}
 
 				pdfData.drawText( pdfData.coords.x, pdfData.coords.y,
@@ -3547,8 +3550,8 @@ PdfRenderer::createAuxTable( PdfAuxData & pdfData, const RenderOpts & renderOpts
 							item.word = w;
 							item.font = { renderOpts.m_codeFont, false, false, false,
 								renderOpts.m_codeFontSize };
-							item.background = renderOpts.m_syntax->theme().backgroundColor(
-								KSyntaxHighlighting::Theme::Normal );
+							item.background = renderOpts.m_syntax->theme().editorColor(
+								KSyntaxHighlighting::Theme::CodeFolding );
 
 							data.items.append( item );
 						}
