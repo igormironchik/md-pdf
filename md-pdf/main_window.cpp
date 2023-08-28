@@ -65,18 +65,9 @@ MainWidget::MainWidget( QWidget * parent )
 
 	m_ui->m_linkColor->setColor( QColor( 33, 122, 255 ) );
 	m_ui->m_borderColor->setColor( QColor( 81, 81, 81 ) );
-	m_ui->m_codeBackground->setColor( QColor( 222, 222, 222 ) );
-	m_ui->m_codeColor->setColor( QColor( 0, 0, 0 ) );
-	m_ui->m_keywordColor->setColor( QColor( 128, 128, 0 ) );
-	m_ui->m_commentColor->setColor( QColor( 0, 128, 0 ) );
 
 	connect( m_ui->m_linkColor, &ColorWidget::clicked, this, &MainWidget::changeLinkColor );
 	connect( m_ui->m_borderColor, &ColorWidget::clicked, this, &MainWidget::changeBorderColor );
-	connect( m_ui->m_codeBackground, &ColorWidget::clicked,
-		this, &MainWidget::changeCodeBackground );
-	connect( m_ui->m_keywordColor, &ColorWidget::clicked, this, &MainWidget::changeKeywordColor );
-	connect( m_ui->m_commentColor, &ColorWidget::clicked, this, &MainWidget::changeCommentColor );
-	connect( m_ui->m_codeColor, &ColorWidget::clicked, this, &MainWidget::changeCodeColor );
 	connect( m_ui->m_fileNameBtn, &QToolButton::clicked,
 		this, &MainWidget::selectMarkdown );
 	connect( m_ui->m_startBtn, &QPushButton::clicked,
@@ -165,42 +156,6 @@ MainWidget::changeBorderColor()
 }
 
 void
-MainWidget::changeCodeBackground()
-{
-	QColorDialog dlg( m_ui->m_codeBackground->color(), this );
-
-	if( QDialog::Accepted == dlg.exec() )
-		m_ui->m_codeBackground->setColor( dlg.currentColor() );
-}
-
-void
-MainWidget::changeKeywordColor()
-{
-	QColorDialog dlg( m_ui->m_keywordColor->color(), this );
-
-	if( QDialog::Accepted == dlg.exec() )
-		m_ui->m_keywordColor->setColor( dlg.currentColor() );
-}
-
-void
-MainWidget::changeCommentColor()
-{
-	QColorDialog dlg( m_ui->m_commentColor->color(), this );
-
-	if( QDialog::Accepted == dlg.exec() )
-		m_ui->m_commentColor->setColor( dlg.currentColor() );
-}
-
-void
-MainWidget::changeCodeColor()
-{
-	QColorDialog dlg( m_ui->m_codeColor->color(), this );
-
-	if( QDialog::Accepted == dlg.exec() )
-		m_ui->m_codeColor->setColor( dlg.currentColor() );
-}
-
-void
 MainWidget::changeStateOfStartButton()
 {
 	if( m_textFontOk && m_codeFontOk )
@@ -255,10 +210,6 @@ MainWidget::process()
 			opts.m_mathFontSize = m_ui->m_mathFontSize->value();
 			opts.m_linkColor = m_ui->m_linkColor->color();
 			opts.m_borderColor = m_ui->m_borderColor->color();
-			opts.m_codeBackground = m_ui->m_codeBackground->color();
-			opts.m_keywordColor = m_ui->m_keywordColor->color();
-			opts.m_commentColor = m_ui->m_commentColor->color();
-			opts.m_codeColor = m_ui->m_codeColor->color();
 			opts.m_left = ( m_ui->m_pt->isChecked() ? m_ui->m_left->value() :
 				m_ui->m_left->value() / c_mmInPt );
 			opts.m_right = ( m_ui->m_pt->isChecked() ? m_ui->m_right->value() :

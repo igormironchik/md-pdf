@@ -21,6 +21,7 @@
 */
 
 #include <md-pdf/renderer.hpp>
+#include <md-pdf/syntax.hpp>
 
 // md4qt include.
 #define MD4QT_QT_SUPPORT
@@ -119,13 +120,12 @@ struct TestRendering {
 
 		RenderOpts opts;
 		opts.m_borderColor = QColor( 81, 81, 81 );
+		opts.m_linkColor = QColor( 33, 122, 255 );
 		opts.m_bottom = 50.0;
-		opts.m_codeBackground = QColor( 222, 222, 222 );
-		opts.m_codeColor = QColor( 0, 0, 0 );
+		opts.m_syntax = std::make_shared< Syntax > ();
+		opts.m_syntax->setTheme( opts.m_syntax->themeForName( QStringLiteral( "GitHub Light" ) ) );
 		opts.m_codeFont = QStringLiteral( "Courier New" );
 		opts.m_codeFontSize = codeFontSize;
-		opts.m_commentColor = QColor( 0, 128, 0 );
-		opts.m_keywordColor = QColor( 128, 128, 0 );
 		opts.m_left = 50.0;
 		opts.m_linkColor = QColor( 33, 122, 255 );
 		opts.m_right = 50.0;

@@ -26,28 +26,27 @@
 // Qt include.
 #include <QString>
 #include <QVector>
-#include <QSharedPointer>
+#include <QMap>
+
+// KF6SyntaxHighlighting include.
+#include <abstracthighlighter.h>
+#include <repository.h>
+#include <theme.h>
+#include <definition.h>
+#include <format.h>
 
 
 //
 // Syntax
 //
 
-//! Base class for syntax highlighters.
-class Syntax
+//! Syntax highlighters.
+class Syntax final
+	:	public KSyntaxHighlighting::AbstractHighlighter
 {
-protected:
-	Syntax() = default;
-
 public:
-	virtual ~Syntax() = default;
-
-	//! Color role.
-	enum class ColorRole {
-		Regular,
-		Keyword,
-		Comment
-	}; // enum class ColorRole
+	Syntax();
+	~Syntax() override = default;
 
 	//! Color for the text.
 	struct Color {
@@ -57,75 +56,27 @@ public:
 		qsizetype startPos;
 		//! End position of text.
 		qsizetype endPos;
-		//! Color role.
-		ColorRole color;
+		//! Format.
+		KSyntaxHighlighting::Format format;
 	}; // struct Color
 
 	//! Vector of colored text auxiliary structs.
 	using Colors = QVector< Color >;
 
-	//! \return Vector of colored text auxiliary structs.
-	virtual Colors prepare( const QStringList & lines ) const;
+	void applyFormat( int offset, int length, const KSyntaxHighlighting::Format & format ) override;
 
-	//! \return Concrete syntax highlighter.
-	static QSharedPointer< Syntax > createSyntaxHighlighter( const QString & language );
+	//! \return Vector of colored text auxiliary structs.
+	Colors prepare( const QStringList & lines );
+
+	KSyntaxHighlighting::Definition definitionForName( const QString & name ) const;
+	KSyntaxHighlighting::Theme themeForName( const QString & name ) const;
+
+private:
+	int currentLineNumber = 0;
+	Colors currentColors;
+	KSyntaxHighlighting::Repository repository;
+	QMap< QString, KSyntaxHighlighting::Definition > definitions;
+	QMap< QString, KSyntaxHighlighting::Theme > themes;
 }; // class Syntax
-
-
-//
-// CppSyntax
-//
-
-//! Syntax for C++.
-class CppSyntax final
-	:	public Syntax
-{
-protected:
-	friend class Syntax;
-
-	CppSyntax() = default;
-
-public:
-	//! \return Vector of colored text auxiliary structs.
-	Colors prepare( const QStringList & lines ) const override;
-}; // class CppSyntax
-
-
-//
-// JavaSyntax
-//
-
-//! Syntax for Java.
-class JavaSyntax final
-	:	public Syntax
-{
-protected:
-	friend class Syntax;
-
-	JavaSyntax() = default;
-
-public:
-	//! \return Vector of colored text auxiliary structs.
-	Colors prepare( const QStringList & lines ) const override;
-}; // class JavaSyntax
-
-
-//
-// QMLSyntax
-//
-
-//! Syntax for QML.
-class QMLSyntax final
-	:	public Syntax
-{
-protected:
-	friend class Syntax;
-
-	QMLSyntax() = default;
-
-public:
-	//! \return Vector of colored text auxiliary structs.
-	Colors prepare( const QStringList & lines ) const override;
-}; // class QMLSyntax
 
 #endif // MD_PDF_SYNTAX_HPP_INCLUDED

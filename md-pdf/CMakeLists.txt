@@ -47,7 +47,9 @@ include_directories( ${CMAKE_CURRENT_SOURCE_DIR}
 	${ImageMagick_INCLUDE_DIRS}
 	${CMAKE_CURRENT_SOURCE_DIR}/../3rdparty/JKQtPlotter/lib
 	${md4qt_INCLUDE_DIRECTORIES}
-	${CMAKE_CURRENT_BINARY_DIR} )
+	${CMAKE_CURRENT_BINARY_DIR}
+	${CMAKE_CURRENT_SOURCE_DIR}/../3rdparty/ksyntaxhighlighting/src
+	${CMAKE_CURRENT_BINARY_DIR}/../3rdparty/ksyntaxhighlighting/src )
 
 link_directories( ${CMAKE_CURRENT_BINARY_DIR}/../3rdparty/podofo/src/podofo
 	${CMAKE_CURRENT_BINARY_DIR}/../3rdparty/podofo/src )
@@ -63,10 +65,11 @@ configure_file( version.hpp.in ${CMAKE_CURRENT_BINARY_DIR}/version.hpp )
 
 add_library( syntax STATIC ${LIB_SYNTAX_SRC} )
 
-target_link_libraries( syntax Qt6::Core )
+target_link_libraries( syntax KF6SyntaxHighlighting Qt6::Gui Qt6::Network Qt6::Core )
 
 add_executable( md-pdf-gui WIN32 ${GUI_SRC} )
 
 target_link_libraries( md-pdf-gui syntax widgets ${ImageMagick_LIBRARIES}
-	JKQTMathTextSharedLib JKQTCommonSharedLib Qt6::Widgets Qt6::Network Qt6::Core
+	JKQTMathTextSharedLib JKQTCommonSharedLib KF6SyntaxHighlighting
+	Qt6::Widgets Qt6::Network Qt6::Core
 	podofo_shared )

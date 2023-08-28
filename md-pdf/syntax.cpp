@@ -23,6 +23,9 @@
 // md-pdf include.
 #include "syntax.hpp"
 
+// KF6SyntaxHighlighting include.
+#include <state.h>
+
 // Qt include.
 #include <QPair>
 
@@ -31,492 +34,68 @@
 // Syntax
 //
 
-//! \return Vector of colored text auxiliary structs.
-Syntax::Colors
-Syntax::prepare( const QStringList & lines ) const
+Syntax::Syntax()
 {
-	Colors ret;
+	const auto defs = repository.definitions();
 
-	int i = 0;
+	for( const auto & d : defs )
+	{
+		if( d.name() == QStringLiteral( "C++" ) )
+		{
+			definitions.insert( QStringLiteral( "c++" ), d );
+			definitions.insert( QStringLiteral( "cpp" ), d );
+
+		}
+		else
+			definitions.insert( d.name().toLower(), d );
+	}
+
+	const auto th = repository.themes();
+
+	for( const auto & t : th )
+		themes.insert( t.name(), t );
+}
+
+KSyntaxHighlighting::Definition
+Syntax::definitionForName( const QString & name ) const
+{
+	static KSyntaxHighlighting::Definition defaultDefinition;
+
+	if( definitions.contains( name.toLower() ) )
+		return definitions[ name.toLower() ];
+	else
+		return defaultDefinition;
+}
+
+KSyntaxHighlighting::Theme
+Syntax::themeForName( const QString & name ) const
+{
+	static KSyntaxHighlighting::Theme defaultTheme;
+
+	if( themes.contains( name ) )
+		return themes[ name ];
+	else
+		return defaultTheme;
+}
+
+void
+Syntax::applyFormat( int offset, int length, const KSyntaxHighlighting::Format & format )
+{
+	currentColors.push_back( { currentLineNumber, offset, offset + length - 1, format } );
+}
+
+Syntax::Colors
+Syntax::prepare( const QStringList & lines )
+{
+	KSyntaxHighlighting::State st;
+	currentLineNumber = 0;
+	currentColors.clear();
 
 	for( const auto & s : qAsConst( lines ) )
 	{
-		ret.append( { i, 0, s.length() - 1, ColorRole::Regular } );
-		++i;
+		st = highlightLine( s, st );
+		++currentLineNumber;
 	}
 
-	return ret;
-}
-
-QSharedPointer< Syntax >
-Syntax::createSyntaxHighlighter( const QString & language )
-{
-	if( language.toLower().simplified() == QStringLiteral( "cpp" ) )
-		return QSharedPointer< Syntax > ( new CppSyntax );
-	else if( language.toLower().simplified() == QStringLiteral( "java" ) )
-		return QSharedPointer< Syntax > ( new JavaSyntax );
-	else if( language.toLower().simplified() == QStringLiteral( "qml" ) )
-		return QSharedPointer< Syntax > ( new QMLSyntax );
-	else
-		return QSharedPointer< Syntax > ( new Syntax );
-}
-
-namespace /* anonymous */ {
-
-//! Word in the string.
-struct Word {
-	QString word;
-	int startPos;
-	int endPos;
-}; // struct Word
-
-//! Find next word in the string.
-Word
-nextWord( const QString & line, int startPos, int stopPos,
-	const QString & special )
-{
-	Word w;
-
-	while( startPos < stopPos && ( line[ startPos ].isSpace() ||
-		special.contains( line[ startPos ] ) ) )
-			++startPos;
-
-	int i = startPos;
-
-	for( ; i < stopPos; ++i )
-	{
-		if( line[ i ].isSpace() || special.contains( line[ i ] ) )
-			break;
-	}
-
-	w.startPos = startPos;
-	w.endPos = i - 1;
-	w.word = line.mid( startPos, i - startPos );
-
-	return w;
-}
-
-//! Comment type.
-enum class CommentType {
-	NoComment,
-	Single,
-	Multi
-}; // enum class CommentType
-
-//! \return Position of string.
-int
-stringPos( const QString & line, int startPos, const QString & what )
-{
-	return line.indexOf( what, startPos );
-}
-
-//! Find comment position.
-QPair< int, CommentType >
-commentPos( const QString & line, int startPos,
-	const QString & startMultiComment,
-	//! Empty if not used.
-	const QString & startSingleComment )
-{
-	const auto mi = stringPos( line, startPos, startMultiComment );
-
-	if( mi != -1 )
-		return qMakePair( mi, CommentType::Multi );
-
-	if( !startSingleComment.isEmpty() )
-	{
-		const auto si = stringPos( line, startPos, startSingleComment );
-
-		if( si != -1 )
-			return qMakePair( si, CommentType::Single );
-	}
-
-	return qMakePair( line.length(), CommentType::NoComment );
-}
-
-//! Find multiline comment end.
-QPair< int, bool >
-multilineCommentEnd( const QString & line, int startPos,
-	const QString & endMultiComment )
-{
-	const auto mi = stringPos( line, startPos, endMultiComment );
-
-	if( mi != -1 )
-		return qMakePair( mi + endMultiComment.length(), true );
-
-	return qMakePair( line.length(), false );
-}
-
-//! C++ keywords.
-static const QStringList c_cppKeyWords = {
-	QStringLiteral( "asm" ),
-	QStringLiteral( "auto" ),
-	QStringLiteral( "bool" ),
-	QStringLiteral( "break" ),
-	QStringLiteral( "case" ),
-	QStringLiteral( "catch" ),
-	QStringLiteral( "char" ),
-	QStringLiteral( "class" ),
-	QStringLiteral( "const" ),
-	QStringLiteral( "continue" ),
-	QStringLiteral( "default" ),
-	QStringLiteral( "delete" ),
-	QStringLiteral( "do" ),
-	QStringLiteral( "double" ),
-	QStringLiteral( "else" ),
-	QStringLiteral( "enum" ),
-	QStringLiteral( "explicit" ),
-	QStringLiteral( "export" ),
-	QStringLiteral( "extern" ),
-	QStringLiteral( "false" ),
-	QStringLiteral( "final" ),
-	QStringLiteral( "float" ),
-	QStringLiteral( "for" ),
-	QStringLiteral( "friend" ),
-	QStringLiteral( "goto" ),
-	QStringLiteral( "if" ),
-	QStringLiteral( "inline" ),
-	QStringLiteral( "int" ),
-	QStringLiteral( "long" ),
-	QStringLiteral( "mutable" ),
-	QStringLiteral( "namespace" ),
-	QStringLiteral( "new" ),
-	QStringLiteral( "nullptr" ),
-	QStringLiteral( "operator" ),
-	QStringLiteral( "override" ),
-	QStringLiteral( "private" ),
-	QStringLiteral( "protected" ),
-	QStringLiteral( "public" ),
-	QStringLiteral( "register" ),
-	QStringLiteral( "return" ),
-	QStringLiteral( "short" ),
-	QStringLiteral( "signed" ),
-	QStringLiteral( "sizeof" ),
-	QStringLiteral( "static" ),
-	QStringLiteral( "struct" ),
-	QStringLiteral( "switch" ),
-	QStringLiteral( "template" ),
-	QStringLiteral( "this" ),
-	QStringLiteral( "throw" ),
-	QStringLiteral( "true" ),
-	QStringLiteral( "try" ),
-	QStringLiteral( "typedef" ),
-	QStringLiteral( "typeid" ),
-	QStringLiteral( "typename" ),
-	QStringLiteral( "union" ),
-	QStringLiteral( "unsigned" ),
-	QStringLiteral( "using" ),
-	QStringLiteral( "virtual" ),
-	QStringLiteral( "void" ),
-	QStringLiteral( "volatile" ),
-	QStringLiteral( "wchar_t" ),
-	QStringLiteral( "while" )
-};
-
-//! Java keywords.
-static const QStringList c_javaKeyWords = {
-	QStringLiteral( "abstract" ),
-	QStringLiteral( "boolean" ),
-	QStringLiteral( "break" ),
-	QStringLiteral( "byte" ),
-	QStringLiteral( "case" ),
-	QStringLiteral( "catch" ),
-	QStringLiteral( "char" ),
-	QStringLiteral( "class" ),
-	QStringLiteral( "continue" ),
-	QStringLiteral( "default" ),
-	QStringLiteral( "do" ),
-	QStringLiteral( "double" ),
-	QStringLiteral( "else" ),
-	QStringLiteral( "enum" ),
-	QStringLiteral( "extends" ),
-	QStringLiteral( "final" ),
-	QStringLiteral( "finally" ),
-	QStringLiteral( "float" ),
-	QStringLiteral( "for" ),
-	QStringLiteral( "if" ),
-	QStringLiteral( "goto" ),
-	QStringLiteral( "implements" ),
-	QStringLiteral( "import" ),
-	QStringLiteral( "instanceof" ),
-	QStringLiteral( "int" ),
-	QStringLiteral( "interface" ),
-	QStringLiteral( "long" ),
-	QStringLiteral( "native" ),
-	QStringLiteral( "new" ),
-	QStringLiteral( "null" ),
-	QStringLiteral( "package" ),
-	QStringLiteral( "private" ),
-	QStringLiteral( "protected" ),
-	QStringLiteral( "public" ),
-	QStringLiteral( "return" ),
-	QStringLiteral( "short" ),
-	QStringLiteral( "static" ),
-	QStringLiteral( "strictfp" ),
-	QStringLiteral( "super" ),
-	QStringLiteral( "switch" ),
-	QStringLiteral( "synchronized" ),
-	QStringLiteral( "this" ),
-	QStringLiteral( "throw" ),
-	QStringLiteral( "throws" ),
-	QStringLiteral( "transient" ),
-	QStringLiteral( "try" ),
-	QStringLiteral( "void" ),
-	QStringLiteral( "volatile" ),
-	QStringLiteral( "while" )
-};
-
-//! QML keywords.
-static const QStringList c_qmlKeyWords = {
-	QStringLiteral( "and" ),
-	QStringLiteral( "alert" ),
-	QStringLiteral( "alias" ),
-	QStringLiteral( "array" ),
-	QStringLiteral( "as" ),
-	QStringLiteral( "assert" ),
-	QStringLiteral( "async" ),
-	QStringLiteral( "await" ),
-	QStringLiteral( "bool" ),
-	QStringLiteral( "break" ),
-	QStringLiteral( "case" ),
-	QStringLiteral( "class" ),
-	QStringLiteral( "component" ),
-	QStringLiteral( "continue" ),
-	QStringLiteral( "const" ),
-	QStringLiteral( "default" ),
-	QStringLiteral( "double" ),
-	QStringLiteral( "else" ),
-	QStringLiteral( "except" ),
-	QStringLiteral( "false" ),
-	QStringLiteral( "finally" ),
-	QStringLiteral( "for" ),
-	QStringLiteral( "from" ),
-	QStringLiteral( "function" ),
-	QStringLiteral( "global" ),
-	QStringLiteral( "id" ),
-	QStringLiteral( "if" ),
-	QStringLiteral( "import" ),
-	QStringLiteral( "in" ),
-	QStringLiteral( "int" ),
-	QStringLiteral( "is" ),
-	QStringLiteral( "lambda" ),
-	QStringLiteral( "let" ),
-	QStringLiteral( "nan" ),
-	QStringLiteral( "not" ),
-	QStringLiteral( "null" ),
-	QStringLiteral( "object" ),
-	QStringLiteral( "of" ),
-	QStringLiteral( "or" ),
-	QStringLiteral( "parent" ),
-	QStringLiteral( "promise" ),
-	QStringLiteral( "property" ),
-	QStringLiteral( "raise" ),
-	QStringLiteral( "readonly" ),
-	QStringLiteral( "real" ),
-	QStringLiteral( "required" ),
-	QStringLiteral( "return" ),
-	QStringLiteral( "root" ),
-	QStringLiteral( "signal" ),
-	QStringLiteral( "string" ),
-	QStringLiteral( "switch" ),
-	QStringLiteral( "then" ),
-	QStringLiteral( "this" ),
-	QStringLiteral( "true" ),
-	QStringLiteral( "try" ),
-	QStringLiteral( "type" ),
-	QStringLiteral( "undefined" ),
-	QStringLiteral( "until" ),
-	QStringLiteral( "var" ),
-	QStringLiteral( "while" ),
-	QStringLiteral( "yield" )
-};
-
-//! \return Prepared colors.
-Syntax::Colors
-prepareColors( const QStringList & lines, const QString & startMultiComment,
-	const QString & endMultiComment, const QString & startSingleComment,
-	const QString & special, const QStringList & keywords )
-{
-	Syntax::Colors ret;
-
-	int lineIdx = 0;
-
-	bool commentClosed = true;
-
-	for( const auto & l : qAsConst( lines ) )
-	{
-		int pos = 0;
-		int end = 0;
-
-		if( !commentClosed )
-		{
-			const auto cEnd = multilineCommentEnd( l, 0, endMultiComment );
-
-			if( cEnd.second )
-			{
-				pos = cEnd.first;
-				end = pos;
-
-				ret.append( { lineIdx, 0, cEnd.first - 1, Syntax::ColorRole::Comment } );
-
-				commentClosed = true;
-			}
-			else
-			{
-				ret.append( { lineIdx, 0, l.length() - 1, Syntax::ColorRole::Comment } );
-
-				++lineIdx;
-
-				continue;
-			}
-		}
-
-		auto c = commentPos( l, pos, startMultiComment, startSingleComment );
-
-		while( c.first <= l.length() )
-		{
-			while( pos < ( c.second != CommentType::NoComment ? c.first : l.length() ) )
-			{
-				const auto w = nextWord( l, pos, c.first, special );
-
-				if( keywords.contains( w.word ) )
-				{
-					pos = w.startPos;
-
-					if( pos != end )
-						ret.append( { lineIdx, end, pos - 1, Syntax::ColorRole::Regular } );
-
-					end = w.endPos + 1;
-
-					ret.append( { lineIdx, w.startPos, w.endPos, Syntax::ColorRole::Keyword } );
-				}
-
-				pos = w.endPos + 1;
-			}
-
-			if( pos != end )
-				ret.append( { lineIdx, end,
-					( c.second != CommentType::NoComment ? c.first - 1 : l.length() - 1 ),
-					Syntax::ColorRole::Regular } );
-
-			if( c.second == CommentType::NoComment )
-				break;
-
-			if( c.second == CommentType::Single )
-			{
-				ret.append( { lineIdx, c.first, l.length() - 1, Syntax::ColorRole::Comment } );
-
-				break;
-			}
-
-			if( c.second == CommentType::Multi )
-			{
-				bool doBreak = false;
-
-				while( true )
-				{
-					auto cEnd = multilineCommentEnd( l, c.first + startMultiComment.length(),
-						endMultiComment );
-
-					pos = cEnd.first;
-					end = pos;
-
-					if( cEnd.second )
-					{
-						commentClosed = true;
-
-						if( cEnd.first == l.length() )
-						{
-							ret.append( { lineIdx, c.first, cEnd.first - 1,
-								Syntax::ColorRole::Comment } );
-
-							doBreak = true;
-
-							break;
-						}
-						else
-						{
-							ret.append( { lineIdx, c.first, cEnd.first - 1,
-								Syntax::ColorRole::Comment } );
-
-							c = commentPos( l, cEnd.first, startMultiComment, startSingleComment );
-
-							if( c.first == cEnd.first )
-							{
-								if( c.second == CommentType::Single )
-								{
-									ret.append( { lineIdx, c.first, l.length() - 1,
-										Syntax::ColorRole::Comment } );
-
-									doBreak = true;
-
-									break;
-								}
-							}
-							else
-								break;
-						}
-					}
-					else
-					{
-						commentClosed = false;
-
-						ret.append( { lineIdx, c.first, l.length() - 1,
-							Syntax::ColorRole::Comment } );
-
-						doBreak = true;
-
-						break;
-					}
-				}
-
-				if( doBreak )
-					break;
-			}
-		}
-
-		++lineIdx;
-	}
-
-	return ret;
-}
-
-} /* namespace anonymous */
-
-
-//
-// CppSyntax
-//
-
-Syntax::Colors
-CppSyntax::prepare( const QStringList & lines ) const
-{
-	return prepareColors( lines, QStringLiteral( "/*" ), QStringLiteral( "*/" ),
-		QStringLiteral( "//" ), QStringLiteral( ":,.-/*+=<>!&()~%^|?[]{};" ),
-		c_cppKeyWords );
-}
-
-
-//
-// JavaSyntax
-//
-
-Syntax::Colors
-JavaSyntax::prepare( const QStringList & lines ) const
-{
-	return prepareColors( lines, QStringLiteral( "/*" ), QStringLiteral( "*/" ),
-		QStringLiteral( "//" ), QStringLiteral( ":,./*-+=<>!&()~%^|?[]{};" ),
-		c_javaKeyWords );
-}
-
-
-//
-// QMLSyntax
-//
-
-Syntax::Colors
-QMLSyntax::prepare( const QStringList & lines ) const
-{
-	return prepareColors( lines, QStringLiteral( "/*" ), QStringLiteral( "*/" ),
-		QStringLiteral( "//" ), QStringLiteral( ":,./*-+=<>!&()~%^|?[]{};" ),
-		c_qmlKeyWords );
+	return currentColors;
 }

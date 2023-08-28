@@ -22,7 +22,6 @@
 
 // md-pdf include.
 #include "renderer.hpp"
-#include "syntax.hpp"
 #include "const.hpp"
 
 #ifdef MD_PDF_TESTING
@@ -318,7 +317,7 @@ PdfAuxData::drawRectangle( double x, double y, double width, double height, PdfP
 void
 PdfAuxData::setColor( const QColor & c )
 {
-	m_colorsStack.push( c );
+	colorsStack.push( c );
 
 	painter->GraphicsState.SetFillColor( PdfColor( c.redF(), c.greenF(), c.blueF() ) );
 	painter->GraphicsState.SetStrokeColor( PdfColor( c.redF(), c.greenF(), c.blueF() ) );
@@ -327,8 +326,8 @@ PdfAuxData::setColor( const QColor & c )
 void
 PdfAuxData::restoreColor()
 {
-	if( m_colorsStack.size() > 1 )
-		m_colorsStack.pop();
+	if( colorsStack.size() > 1 )
+		colorsStack.pop();
 
 	repeatColor();
 }
@@ -336,7 +335,7 @@ PdfAuxData::restoreColor()
 void
 PdfAuxData::repeatColor()
 {
-	const auto & c = m_colorsStack.top();
+	const auto & c = colorsStack.top();
 
 	painter->GraphicsState.SetFillColor( PdfColor( c.redF(), c.greenF(), c.blueF() ) );
 	painter->GraphicsState.SetStrokeColor( PdfColor( c.redF(), c.greenF(), c.blueF() ) );
@@ -448,7 +447,7 @@ PdfRenderer::CellItem::width( PdfAuxData & pdfData, PdfRenderer * render, float 
 		auto pdfImg = pdfData.doc->CreateImage();
 		pdfImg->LoadFromBuffer( { image.data(), static_cast< size_t > ( image.size() ) } );
 
-		return std::round( (double) pdfImg->GetWidth() / (double) pdfData.m_dpi * 72.0 );
+		return std::round( (double) pdfImg->GetWidth() / (double) pdfData.dpi * 72.0 );
 	}
 	else if( !url.isEmpty() )
 		return f->GetStringLength( createPdfString( url ), st );
@@ -531,9 +530,9 @@ PdfRenderer::CellData::heightToWidth( double lineHeight, double spaceWidth, floa
 				static_cast< size_t > ( it->image.size() ) } );
 
 			const double iWidth = std::round( (double) pdfImg->GetWidth() /
-				(double) pdfData.m_dpi * 72.0 );
+				(double) pdfData.dpi * 72.0 );
 			const double iHeight = std::round( (double) pdfImg->GetHeight() /
-				(double) pdfData.m_dpi * 72.0 );
+				(double) pdfData.dpi * 72.0 );
 
 			if( iWidth > width )
 				height += iHeight / ( iWidth / width ) * scale;
@@ -617,9 +616,10 @@ PdfRenderer::renderImpl()
 		pdfData.coords.margins.right = m_opts.m_right;
 		pdfData.coords.margins.top = m_opts.m_top;
 		pdfData.coords.margins.bottom = m_opts.m_bottom;
-		pdfData.m_dpi = m_opts.m_dpi;
+		pdfData.dpi = m_opts.m_dpi;
+		pdfData.syntax = m_opts.m_syntax;
 
-		pdfData.m_colorsStack.push( Qt::black );
+		pdfData.colorsStack.push( Qt::black );
 
 		pdfData.md = m_doc;
 
@@ -1059,7 +1059,7 @@ PdfRenderer::createPage( PdfAuxData & pdfData )
 			pdfData.coords.y -= pdfData.lineHeight;
 	}
 
-	if( pdfData.m_colorsStack.size() > 1 )
+	if( pdfData.colorsStack.size() > 1 )
 		pdfData.repeatColor();
 }
 
@@ -1583,7 +1583,9 @@ PdfRenderer::drawInlinedCode( PdfAuxData & pdfData, const RenderOpts & renderOpt
 		textFont->GetLineSpacing( st ),
 		doc, newLine,
 		nullptr, 0.0, 0.0, nullptr, m_footnoteNum,
-		offset, firstInParagraph, cw, renderOpts.m_codeBackground, inFootnote, false );
+		offset, firstInParagraph, cw,
+		renderOpts.m_syntax->theme().backgroundColor( KSyntaxHighlighting::Theme::Normal ),
+		inFootnote, false );
 }
 
 void
@@ -2455,9 +2457,9 @@ PdfRenderer::drawImage( PdfAuxData & pdfData, const RenderOpts & renderOpts,
 			pdfImg->LoadFromBuffer( { img.data() , static_cast< size_t > ( img.size() ) } );
 
 			const double iWidth = std::round( (double) pdfImg->GetWidth() /
-				(double) pdfData.m_dpi * 72.0 );
+				(double) pdfData.dpi * 72.0 );
 			const double iHeight = std::round( (double) pdfImg->GetHeight() /
-				(double) pdfData.m_dpi * 72.0 );
+				(double) pdfData.dpi * 72.0 );
 
 			newLine = true;
 
@@ -2543,9 +2545,9 @@ PdfRenderer::drawImage( PdfAuxData & pdfData, const RenderOpts & renderOpts,
 			pdfImg->LoadFromBuffer( { img.data(), static_cast< size_t > ( img.size() ) } );
 
 			const double iWidth = std::round( (double) pdfImg->GetWidth() /
-				(double) pdfData.m_dpi * 72.0 );
+				(double) pdfData.dpi * 72.0 );
 			const double iHeight = std::round( (double) pdfImg->GetHeight() /
-				(double) pdfData.m_dpi * 72.0 );
+				(double) pdfData.dpi * 72.0 );
 
 			newLine = true;
 
@@ -2865,7 +2867,8 @@ PdfRenderer::drawCode( PdfAuxData & pdfData, const RenderOpts & renderOpts,
 			return {};
 	}
 
-	const auto colored = Syntax::createSyntaxHighlighter( item->syntax() )->prepare( lines );
+	pdfData.syntax->setDefinition( pdfData.syntax->definitionForName( item->syntax().toLower() ) );
+	const auto colored = pdfData.syntax->prepare( lines );
 	int currentWord = 0;
 	const auto spaceWidth = font->GetStringLength( PdfString( " " ), cst );
 
@@ -2889,7 +2892,8 @@ PdfRenderer::drawCode( PdfAuxData & pdfData, const RenderOpts & renderOpts,
 
 		if( i < j )
 		{
-			pdfData.setColor( renderOpts.m_codeBackground );
+			pdfData.setColor( renderOpts.m_syntax->theme().backgroundColor(
+				KSyntaxHighlighting::Theme::Normal ) );
 			pdfData.drawRectangle( pdfData.coords.x, y + font->GetDescent( cst ),
 				pdfData.coords.pageWidth - pdfData.coords.x - pdfData.coords.margins.right,
 				 h + lineHeight, PdfPathDrawMode::Fill );
@@ -2907,27 +2911,25 @@ PdfRenderer::drawCode( PdfAuxData & pdfData, const RenderOpts & renderOpts,
 				if( currentWord == colored.size() || colored[ currentWord ].line != i )
 					break;
 
-				switch( colored[ currentWord ].color )
-				{
-					case Syntax::ColorRole::Keyword :
-						pdfData.setColor( renderOpts.m_keywordColor );
-						break;
-
-					case Syntax::ColorRole::Regular :
-						pdfData.setColor( renderOpts.m_codeColor );
-						break;
-
-					case Syntax::ColorRole::Comment :
-						pdfData.setColor( renderOpts.m_commentColor );
-						break;
-				}
+				pdfData.setColor( colored[ currentWord ].format.textColor( pdfData.syntax->theme() ) );
 
 				const auto length = colored[ currentWord ].endPos -
 					colored[ currentWord ].startPos + 1;
 
+				PdfFont * f = font;
+
+				const auto italic = colored[ currentWord ].format.isItalic( pdfData.syntax->theme() );
+				const auto bold = colored[ currentWord ].format.isBold( pdfData.syntax->theme() );
+
+				if( italic || bold )
+				{
+					f = createFont( renderOpts.m_codeFont, bold, italic, renderOpts.m_codeFontSize,
+						pdfData.doc, scale, pdfData );
+				}
+
 				pdfData.drawText( pdfData.coords.x, pdfData.coords.y,
 					createPdfString( lines.at( i ).mid( colored[ currentWord ].startPos, length ) ),
-					font, cst.FontSize, 1.0, false );
+					f, cst.FontSize, 1.0, false );
 
 				pdfData.coords.x += spaceWidth * length;
 
@@ -3545,7 +3547,8 @@ PdfRenderer::createAuxTable( PdfAuxData & pdfData, const RenderOpts & renderOpts
 							item.word = w;
 							item.font = { renderOpts.m_codeFont, false, false, false,
 								renderOpts.m_codeFontSize };
-							item.background = renderOpts.m_codeBackground;
+							item.background = renderOpts.m_syntax->theme().backgroundColor(
+								KSyntaxHighlighting::Theme::Normal );
 
 							data.items.append( item );
 						}
@@ -3908,9 +3911,9 @@ PdfRenderer::drawTableRow( QVector< QVector< CellData > > & table, int row, PdfA
 				img->LoadFromBuffer( { c->image.data(), static_cast< size_t > ( c->image.size() ) } );
 
 				const double iWidth = std::round( (double) img->GetWidth() /
-					(double) pdfData.m_dpi * 72.0 );
+					(double) pdfData.dpi * 72.0 );
 				const double iHeight = std::round( (double) img->GetHeight() /
-					(double) pdfData.m_dpi * 72.0 );
+					(double) pdfData.dpi * 72.0 );
 				const double dpiScale = (double) img->GetWidth() / iWidth;
 
 				auto ratio = ( iWidth > it->at( 0 ).width ? it->at( 0 ).width / iWidth * scale :

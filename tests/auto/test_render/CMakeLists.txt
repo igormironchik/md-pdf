@@ -32,7 +32,9 @@ include_directories( ${CMAKE_CURRENT_SOURCE_DIR}
 	${CMAKE_CURRENT_SOURCE_DIR}/../../../3rdparty/JKQtPlotter/lib
 	${md4qt_INCLUDE_DIRECTORIES}
 	${CMAKE_CURRENT_BINARY_DIR}
-	${ImageMagick_INCLUDE_DIRS} )
+	${ImageMagick_INCLUDE_DIRS}
+	${CMAKE_CURRENT_SOURCE_DIR}/../../../3rdparty/ksyntaxhighlighting/src
+	${CMAKE_CURRENT_BINARY_DIR}/../../../3rdparty/ksyntaxhighlighting/src )
 
 link_directories( ${CMAKE_CURRENT_BINARY_DIR}/../../../3rdparty/podofo/src/podofo )
 link_directories( ${CMAKE_CURRENT_BINARY_DIR}/../../../3rdparty/podofo/src )

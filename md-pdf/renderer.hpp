@@ -49,6 +49,9 @@
 #include <memory>
 #include <string_view>
 
+// nd-pdf include.
+#include "syntax.hpp"
+
 using namespace PoDoFo;
 
 //! Footnote scale.
@@ -103,14 +106,6 @@ struct RenderOpts
 	QColor m_linkColor;
 	//! Borders color.
 	QColor m_borderColor;
-	//! Code background.
-	QColor m_codeBackground;
-	//! Keyword color.
-	QColor m_keywordColor;
-	//! Comment color.
-	QColor m_commentColor;
-	//! Regular code color.
-	QColor m_codeColor;
 	//! Left margin.
 	double m_left;
 	//! Right margin.
@@ -121,6 +116,8 @@ struct RenderOpts
 	double m_bottom;
 	//! DPI.
 	quint16 m_dpi;
+	//! Syntax highlighter.
+	std::shared_ptr< Syntax > m_syntax;
 
 #ifdef MD_PDF_TESTING
 	bool printDrawings = false;
@@ -218,11 +215,13 @@ struct PdfAuxData {
 	//! Extra space before footnotes.
 	double extraInFootnote = 0.0;
 	//! Colors stack.
-	QStack< QColor > m_colorsStack;
+	QStack< QColor > colorsStack;
 	//! DPI.
-	quint16 m_dpi;
+	quint16 dpi;
 	//! Markdown document.
 	std::shared_ptr< MD::Document< MD::QStringTrait > > md;
+	//! Syntax highlighter.
+	std::shared_ptr< Syntax > syntax;
 
 #ifdef MD_PDF_TESTING
 	QMap< QString, QString > fonts;
