@@ -42,6 +42,7 @@
 #include <QMenu>
 #include <QMenuBar>
 #include <QApplication>
+#include <QComboBox>
 
 // podofo include.
 #include <podofo/podofo.h>
@@ -60,6 +61,7 @@ MainWidget::MainWidget( QWidget * parent )
 	,	m_thread( new QThread( this ) )
 	,	m_textFontOk( false )
 	,	m_codeFontOk( false )
+	,	m_syntax( new Syntax )
 {
 	m_ui->setupUi( this );
 
@@ -121,6 +123,15 @@ MainWidget::MainWidget( QWidget * parent )
 
 	textFontChanged( m_ui->m_textFont->currentFont() );
 	codeFontChanged( m_ui->m_codeFont->currentFont() );
+
+	QStringList themeNames;
+	const auto themes = m_syntax->repository().themes();
+
+	for( const auto & t : themes )
+		themeNames.push_back( t.name() );
+
+	m_ui->m_codeTheme->addItems( themeNames );
+	m_ui->m_codeTheme->setCurrentText( QStringLiteral( "GitHub Light" ) );
 }
 
 MainWidget::~MainWidget()
@@ -219,6 +230,8 @@ MainWidget::process()
 			opts.m_bottom = ( m_ui->m_pt->isChecked() ? m_ui->m_bottom->value() :
 				m_ui->m_bottom->value() / c_mmInPt );
 			opts.m_dpi = m_ui->m_dpi->value();
+			opts.m_syntax = m_syntax;
+			m_syntax->setTheme( m_syntax->themeForName( m_ui->m_codeTheme->currentText() ) );
 
 
 			ProgressDlg progress( pdf, this );

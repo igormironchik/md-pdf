@@ -36,24 +36,30 @@
 
 Syntax::Syntax()
 {
-	const auto defs = repository.definitions();
+	const auto defs = m_repository.definitions();
 
 	for( const auto & d : defs )
 	{
 		if( d.name() == QStringLiteral( "C++" ) )
 		{
-			definitions.insert( QStringLiteral( "c++" ), d );
-			definitions.insert( QStringLiteral( "cpp" ), d );
+			m_definitions.insert( QStringLiteral( "c++" ), d );
+			m_definitions.insert( QStringLiteral( "cpp" ), d );
 
 		}
 		else
-			definitions.insert( d.name().toLower(), d );
+			m_definitions.insert( d.name().toLower(), d );
 	}
 
-	const auto th = repository.themes();
+	const auto th = m_repository.themes();
 
 	for( const auto & t : th )
-		themes.insert( t.name(), t );
+		m_themes.insert( t.name(), t );
+}
+
+const KSyntaxHighlighting::Repository &
+Syntax::repository() const
+{
+	return m_repository;
 }
 
 KSyntaxHighlighting::Definition
@@ -61,8 +67,8 @@ Syntax::definitionForName( const QString & name ) const
 {
 	static KSyntaxHighlighting::Definition defaultDefinition;
 
-	if( definitions.contains( name.toLower() ) )
-		return definitions[ name.toLower() ];
+	if( m_definitions.contains( name.toLower() ) )
+		return m_definitions[ name.toLower() ];
 	else
 		return defaultDefinition;
 }
@@ -72,8 +78,8 @@ Syntax::themeForName( const QString & name ) const
 {
 	static KSyntaxHighlighting::Theme defaultTheme;
 
-	if( themes.contains( name ) )
-		return themes[ name ];
+	if( m_themes.contains( name ) )
+		return m_themes[ name ];
 	else
 		return defaultTheme;
 }
@@ -81,21 +87,21 @@ Syntax::themeForName( const QString & name ) const
 void
 Syntax::applyFormat( int offset, int length, const KSyntaxHighlighting::Format & format )
 {
-	currentColors.push_back( { currentLineNumber, offset, offset + length - 1, format } );
+	m_currentColors.push_back( { m_currentLineNumber, offset, offset + length - 1, format } );
 }
 
 Syntax::Colors
 Syntax::prepare( const QStringList & lines )
 {
 	KSyntaxHighlighting::State st;
-	currentLineNumber = 0;
-	currentColors.clear();
+	m_currentLineNumber = 0;
+	m_currentColors.clear();
 
 	for( const auto & s : qAsConst( lines ) )
 	{
 		st = highlightLine( s, st );
-		++currentLineNumber;
+		++m_currentLineNumber;
 	}
 
-	return currentColors;
+	return m_currentColors;
 }

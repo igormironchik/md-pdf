@@ -604,6 +604,26 @@
    <container>1</container>
   </customwidget>
  </customwidgets>
+ <tabstops>
+  <tabstop>m_textFont</tabstop>
+  <tabstop>m_textFontSize</tabstop>
+  <tabstop>m_codeFont</tabstop>
+  <tabstop>m_codeFontSize</tabstop>
+  <tabstop>m_mathFont</tabstop>
+  <tabstop>m_mathFontSize</tabstop>
+  <tabstop>m_codeTheme</tabstop>
+  <tabstop>m_dpi</tabstop>
+  <tabstop>m_fileName</tabstop>
+  <tabstop>m_recursive</tabstop>
+  <tabstop>m_fileNameBtn</tabstop>
+  <tabstop>m_top</tabstop>
+  <tabstop>m_left</tabstop>
+  <tabstop>m_mm</tabstop>
+  <tabstop>m_pt</tabstop>
+  <tabstop>m_right</tabstop>
+  <tabstop>m_bottom</tabstop>
+  <tabstop>m_startBtn</tabstop>
+ </tabstops>
  <resources/>
  <connections/>
  <buttongroups>

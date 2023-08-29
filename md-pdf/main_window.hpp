@@ -33,6 +33,12 @@
 #include <QThread>
 #include <QMainWindow>
 
+// C++ include.
+#include <memory>
+
+// md-pdf include.
+#include "syntax.hpp"
+
 
 //
 // MainWidget
@@ -69,6 +75,7 @@ private:
 	QThread * m_thread;
 	bool m_textFontOk;
 	bool m_codeFontOk;
+	std::shared_ptr< Syntax > m_syntax;
 
 	Q_DISABLE_COPY( MainWidget )
 }; // class MainWindow

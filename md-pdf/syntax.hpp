@@ -71,12 +71,14 @@ public:
 	KSyntaxHighlighting::Definition definitionForName( const QString & name ) const;
 	KSyntaxHighlighting::Theme themeForName( const QString & name ) const;
 
+	const KSyntaxHighlighting::Repository & repository() const;
+
 private:
-	int currentLineNumber = 0;
-	Colors currentColors;
-	KSyntaxHighlighting::Repository repository;
-	QMap< QString, KSyntaxHighlighting::Definition > definitions;
-	QMap< QString, KSyntaxHighlighting::Theme > themes;
+	int m_currentLineNumber = 0;
+	Colors m_currentColors;
+	KSyntaxHighlighting::Repository m_repository;
+	QMap< QString, KSyntaxHighlighting::Definition > m_definitions;
+	QMap< QString, KSyntaxHighlighting::Theme > m_themes;
 }; // class Syntax
 
 #endif // MD_PDF_SYNTAX_HPP_INCLUDED
