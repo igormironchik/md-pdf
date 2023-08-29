@@ -55,7 +55,7 @@
 using namespace PoDoFo;
 
 //! Footnote scale.
-static const float c_footnoteScale = 0.75;
+static const double c_footnoteScale = 0.75;
 
 
 #ifdef MD_PDF_TESTING
@@ -334,8 +334,8 @@ protected:
 #endif
 
 	//! Create font.
-	PdfFont * createFont( const QString & name, bool bold, bool italic, float size,
-		PdfMemDocument * doc, float scale, const PdfAuxData & pdfData );
+	PdfFont * createFont( const QString & name, bool bold, bool italic, double size,
+		PdfMemDocument * doc, double scale, const PdfAuxData & pdfData );
 
 private:
 	//! Create new page.
@@ -368,35 +368,35 @@ private:
 	QPair< QVector< WhereDrawn >, WhereDrawn > drawHeading( PdfAuxData & pdfData, const RenderOpts & renderOpts,
 		MD::Heading< MD::QStringTrait > * item, std::shared_ptr< MD::Document< MD::QStringTrait > > doc, double offset,
 		double nextItemMinHeight, CalcHeightOpt heightCalcOpt,
-		float scale, bool withNewLine = true );
+		double scale, bool withNewLine = true );
 	//! Draw paragraph.
 	QPair< QVector< WhereDrawn >, WhereDrawn > drawParagraph( PdfAuxData & pdfData, const RenderOpts & renderOpts,
 		MD::Paragraph< MD::QStringTrait > * item, std::shared_ptr< MD::Document< MD::QStringTrait > > doc, double offset,
 		bool withNewLine, CalcHeightOpt heightCalcOpt,
-		float scale, bool inFootnote );
+		double scale, bool inFootnote );
 	//! Draw block of code.
 	QPair< QVector< WhereDrawn >, WhereDrawn > drawCode( PdfAuxData & pdfData, const RenderOpts & renderOpts,
 		MD::Code< MD::QStringTrait > * item, std::shared_ptr< MD::Document< MD::QStringTrait > > doc, double offset,
 		CalcHeightOpt heightCalcOpt,
-		float scale );
+		double scale );
 	//! Draw blockquote.
 	QPair< QVector< WhereDrawn >, WhereDrawn > drawBlockquote( PdfAuxData & pdfData, const RenderOpts & renderOpts,
 		MD::Blockquote< MD::QStringTrait > * item, std::shared_ptr< MD::Document< MD::QStringTrait > > doc, double offset,
-		CalcHeightOpt heightCalcOpt, float scale, bool inFootnote );
+		CalcHeightOpt heightCalcOpt, double scale, bool inFootnote );
 	//! Draw list.
 	QPair< QVector< WhereDrawn >, WhereDrawn > drawList( PdfAuxData & pdfData, const RenderOpts & renderOpts,
 		MD::List< MD::QStringTrait > * item, std::shared_ptr< MD::Document< MD::QStringTrait > > doc, int bulletWidth,
 		double offset = 0.0, CalcHeightOpt heightCalcOpt = CalcHeightOpt::Unknown,
-		float scale = 1.0, bool inFootnote = false, bool nested = false );
+		double scale = 1.0, bool inFootnote = false, bool nested = false );
 	//! Draw table.
 	QPair< QVector< WhereDrawn >, WhereDrawn > drawTable( PdfAuxData & pdfData, const RenderOpts & renderOpts,
 		MD::Table< MD::QStringTrait > * item, std::shared_ptr< MD::Document< MD::QStringTrait > > doc, double offset,
-		CalcHeightOpt heightCalcOpt, float scale, bool inFootnote );
+		CalcHeightOpt heightCalcOpt, double scale, bool inFootnote );
 
 	//! \return Minimum necessary height to draw item, meant at least one line.
 	double minNecessaryHeight( PdfAuxData & pdfData, const RenderOpts & renderOpts,
 		std::shared_ptr< MD::Item< MD::QStringTrait > > item, std::shared_ptr< MD::Document< MD::QStringTrait > > doc,
-		double offset, float scale, bool inFootnote );
+		double offset, double scale, bool inFootnote );
 	//! \return Height of the footnote.
 	QVector< WhereDrawn > drawFootnote( PdfAuxData & pdfData, const RenderOpts & renderOpts,
 		std::shared_ptr< MD::Document< MD::QStringTrait > > doc,
@@ -429,7 +429,7 @@ private:
 	QPair< QVector< WhereDrawn >, WhereDrawn > drawListItem( PdfAuxData & pdfData, const RenderOpts & renderOpts,
 		MD::ListItem< MD::QStringTrait > * item, std::shared_ptr< MD::Document< MD::QStringTrait > > doc, int & idx,
 		ListItemType & prevListItemType, int bulletWidth, double offset,
-		CalcHeightOpt heightCalcOpt, float scale, bool inFootnote, bool firstInList );
+		CalcHeightOpt heightCalcOpt, double scale, bool inFootnote, bool firstInList );
 
 	//! Auxiliary struct for calculation of spaces scales to shrink text to width.
 	struct CustomWidth {
@@ -492,22 +492,22 @@ private:
 	QVector< QPair< QRectF, unsigned int > > drawText( PdfAuxData & pdfData,
 		const RenderOpts & renderOpts, MD::Text< MD::QStringTrait > * item,
 		std::shared_ptr< MD::Document< MD::QStringTrait > > doc, bool & newLine,
-		PdfFont * footnoteFont, float footnoteFontSize, float footnoteFontScale,
+		PdfFont * footnoteFont, double footnoteFontSize, double footnoteFontScale,
 		MD::Item< MD::QStringTrait > * nextItem, int footnoteNum, double offset,
-		bool firstInParagraph, CustomWidth * cw, float scale, bool inFootnote );
+		bool firstInParagraph, CustomWidth * cw, double scale, bool inFootnote );
 	//! Draw inlined code.
 	QVector< QPair< QRectF, unsigned int > > drawInlinedCode( PdfAuxData & pdfData,
 		const RenderOpts & renderOpts, MD::Code< MD::QStringTrait > * item,
 		std::shared_ptr< MD::Document< MD::QStringTrait > > doc, bool & newLine, double offset,
-		bool firstInParagraph, CustomWidth * cw, float scale, bool inFootnote );
+		bool firstInParagraph, CustomWidth * cw, double scale, bool inFootnote );
 	//! Draw string.
 	QVector< QPair< QRectF, unsigned int > > drawString( PdfAuxData & pdfData,
 		const RenderOpts & renderOpts, const QString & str,
-		PdfFont * spaceFont, float spaceFontSize, float spaceFontScale,
-		PdfFont * font, float fontSize, float fontScale,
+		PdfFont * spaceFont, double spaceFontSize, double spaceFontScale,
+		PdfFont * font, double fontSize, double fontScale,
 		double lineHeight,
 		std::shared_ptr< MD::Document< MD::QStringTrait > > doc, bool & newLine,
-		PdfFont * footnoteFont, float footnoteFontSize, float footnoteFontScale,
+		PdfFont * footnoteFont, double footnoteFontSize, double footnoteFontScale,
 		MD::Item< MD::QStringTrait > * nextItem,
 		int footnoteNum, double offset,
 		bool firstInParagraph, CustomWidth * cw, const QColor & background,
@@ -516,18 +516,18 @@ private:
 	QVector< QPair< QRectF, unsigned int > > drawLink( PdfAuxData & pdfData,
 		const RenderOpts & renderOpts, MD::Link< MD::QStringTrait > * item,
 		std::shared_ptr< MD::Document< MD::QStringTrait > > doc, bool & newLine,
-		PdfFont * footnoteFont, float footnoteFontSize, float footnoteFontScale,
+		PdfFont * footnoteFont, double footnoteFontSize, double footnoteFontScale,
 		MD::Item< MD::QStringTrait > * nextItem, int footnoteNum, double offset,
-		bool firstInParagraph, CustomWidth * cw, float scale, bool inFootnote );
+		bool firstInParagraph, CustomWidth * cw, double scale, bool inFootnote );
 	//! Draw image.
 	QPair< QRectF, unsigned int > drawImage( PdfAuxData & pdfData, const RenderOpts & renderOpts,
 		MD::Image< MD::QStringTrait > * item, std::shared_ptr< MD::Document< MD::QStringTrait > > doc, bool & newLine, double offset,
-		bool firstInParagraph, CustomWidth * cw, float scale );
+		bool firstInParagraph, CustomWidth * cw, double scale );
 	//! Draw math expression.
 	QPair< QRectF, unsigned int > drawMathExpr( PdfAuxData & pdfData, const RenderOpts & renderOpts,
 		MD::Math< MD::QStringTrait > * item, std::shared_ptr< MD::Document< MD::QStringTrait > > doc,
 		bool & newLine, double offset, bool hasNext,
-		bool firstInParagraph, CustomWidth * cw, float scale );
+		bool firstInParagraph, CustomWidth * cw, double scale );
 
 	//! Font in table.
 	struct Font {
@@ -554,7 +554,7 @@ private:
 		Font font;
 
 		//! \return Width of the item.
-		double width( PdfAuxData & pdfData, PdfRenderer * render, float scale ) const;
+		double width( PdfAuxData & pdfData, PdfRenderer * render, double scale ) const;
 	}; // struct CellItem
 
 	//! Cell in the table.
@@ -566,7 +566,7 @@ private:
 
 		void setWidth( double w ) { width = w; }
 		//! Calculate height for the given width.
-		void heightToWidth( double lineHeight, double spaceWidth, float scale,
+		void heightToWidth( double lineHeight, double spaceWidth, double scale,
 			PdfAuxData & pdfData, PdfRenderer * render );
 	}; //  struct CellData
 
@@ -576,17 +576,17 @@ private:
 	QVector< QVector< CellData > >
 	createAuxTable( PdfAuxData & pdfData, const RenderOpts & renderOpts,
 		MD::Table< MD::QStringTrait > * item, std::shared_ptr< MD::Document< MD::QStringTrait > > doc,
-		float scale, bool inFootnote );
+		double scale, bool inFootnote );
 	//! Calculate size of the cells in the table.
 	void calculateCellsSize( PdfAuxData & pdfData, QVector< QVector< CellData > > & auxTable,
-		double spaceWidth, double offset, double lineHeight, float scale );
+		double spaceWidth, double offset, double lineHeight, double scale );
 	//! Draw table's row.
 	QPair< QVector< WhereDrawn >, WhereDrawn > drawTableRow(
 		QVector< QVector< CellData > > & table, int row,
 		PdfAuxData & pdfData, double offset, double lineHeight,
 		const RenderOpts & renderOpts, std::shared_ptr< MD::Document< MD::QStringTrait > > doc,
 		QVector< QPair< QString, std::shared_ptr< MD::Footnote< MD::QStringTrait > > > > & footnotes,
-		float scale, bool inFootnote );
+		double scale, bool inFootnote );
 	//! Draw table border.
 	void drawRowBorder( PdfAuxData & pdfData, int startPage, QVector< WhereDrawn > & ret,
 		const RenderOpts & renderOpts, double offset, const QVector< QVector< CellData > > & table,
@@ -608,7 +608,7 @@ private:
 		PdfAuxData & pdfData, QMap< QString, QVector< QPair< QRectF, unsigned int > > > & links,
 		PdfFont * font, int & currentPage, int & endPage, double & endY,
 		QVector< QPair< QString, std::shared_ptr< MD::Footnote< MD::QStringTrait > > > > & footnotes,
-		bool inFootnote, float scale );
+		bool inFootnote, double scale );
 	//! Create new page in table.
 	void newPageInTable( PdfAuxData & pdfData, int & currentPage, int & endPage,
 		double & endY );

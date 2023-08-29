@@ -432,7 +432,7 @@ PdfRenderer::CustomWidth::totalHeight() const
 //
 
 double
-PdfRenderer::CellItem::width( PdfAuxData & pdfData, PdfRenderer * render, float scale ) const
+PdfRenderer::CellItem::width( PdfAuxData & pdfData, PdfRenderer * render, double scale ) const
 {
 	auto * f = render->createFont( font.family, font.bold, font.italic,
 		font.size, pdfData.doc, scale, pdfData );
@@ -468,7 +468,7 @@ PdfRenderer::CellItem::width( PdfAuxData & pdfData, PdfRenderer * render, float 
 //
 
 void
-PdfRenderer::CellData::heightToWidth( double lineHeight, double spaceWidth, float scale,
+PdfRenderer::CellData::heightToWidth( double lineHeight, double spaceWidth, double scale,
 	PdfAuxData & pdfData, PdfRenderer * render )
 {
 	height = 0.0;
@@ -955,8 +955,8 @@ PdfRenderer::resolveLinks( PdfAuxData & pdfData )
 }
 
 PdfFont *
-PdfRenderer::createFont( const QString & name, bool bold, bool italic, float size,
-	PdfMemDocument * doc, float scale, const PdfAuxData & pdfData )
+PdfRenderer::createFont( const QString & name, bool bold, bool italic, double size,
+	PdfMemDocument * doc, double scale, const PdfAuxData & pdfData )
 {
 	PdfFontSearchParams params;
 	params.Style = PdfFontStyle::Regular;
@@ -1091,7 +1091,7 @@ PdfRenderer::createQString( const char * str )
 QPair< QVector< WhereDrawn >, WhereDrawn >
 PdfRenderer::drawHeading( PdfAuxData & pdfData, const RenderOpts & renderOpts,
 	MD::Heading< MD::QStringTrait > * item, std::shared_ptr< MD::Document< MD::QStringTrait > > doc,
-	double offset, double nextItemMinHeight, CalcHeightOpt heightCalcOpt, float scale,
+	double offset, double nextItemMinHeight, CalcHeightOpt heightCalcOpt, double scale,
 	bool withNewLine )
 {
 	if( item && item->text().get() )
@@ -1120,9 +1120,9 @@ PdfRenderer::drawHeading( PdfAuxData & pdfData, const RenderOpts & renderOpts,
 QVector< QPair< QRectF, unsigned int > >
 PdfRenderer::drawText( PdfAuxData & pdfData, const RenderOpts & renderOpts,
 	MD::Text< MD::QStringTrait > * item, std::shared_ptr< MD::Document< MD::QStringTrait > > doc,
-	bool & newLine, PdfFont * footnoteFont, float footnoteFontSize, float footnoteFontScale,
+	bool & newLine, PdfFont * footnoteFont, double footnoteFontSize, double footnoteFontScale,
 	MD::Item< MD::QStringTrait > * nextItem, int footnoteNum,
-	double offset, bool firstInParagraph, CustomWidth * cw, float scale, bool inFootnote )
+	double offset, bool firstInParagraph, CustomWidth * cw, double scale, bool inFootnote )
 {
 	auto * spaceFont = createFont( renderOpts.m_textFont, false, false,
 		renderOpts.m_textFontSize, pdfData.doc, scale, pdfData );
@@ -1182,9 +1182,9 @@ normalizeRects( const QVector< QPair< QRectF, unsigned int > > & rects )
 QVector< QPair< QRectF, unsigned int > >
 PdfRenderer::drawLink( PdfAuxData & pdfData, const RenderOpts & renderOpts,
 	MD::Link< MD::QStringTrait > * item, std::shared_ptr< MD::Document< MD::QStringTrait > > doc,
-	bool & newLine, PdfFont * footnoteFont, float footnoteFontSize, float footnoteFontScale,
+	bool & newLine, PdfFont * footnoteFont, double footnoteFontSize, double footnoteFontScale,
 	MD::Item< MD::QStringTrait > * nextItem, int footnoteNum,
-	double offset, bool firstInParagraph, CustomWidth * cw, float scale, bool inFootnote )
+	double offset, bool firstInParagraph, CustomWidth * cw, double scale, bool inFootnote )
 {
 	QVector< QPair< QRectF, unsigned int > > rects;
 
@@ -1310,11 +1310,11 @@ PdfRenderer::drawLink( PdfAuxData & pdfData, const RenderOpts & renderOpts,
 
 QVector< QPair< QRectF, unsigned int > >
 PdfRenderer::drawString( PdfAuxData & pdfData, const RenderOpts & renderOpts, const QString & str,
-	PdfFont * spaceFont, float spaceFontSize, float spaceFontScale,
-	PdfFont * font, float fontSize, float fontScale,
+	PdfFont * spaceFont, double spaceFontSize, double spaceFontScale,
+	PdfFont * font, double fontSize, double fontScale,
 	double lineHeight,
 	std::shared_ptr< MD::Document< MD::QStringTrait > > doc, bool & newLine,
-	PdfFont * footnoteFont, float footnoteFontSize, float footnoteFontScale,
+	PdfFont * footnoteFont, double footnoteFontSize, double footnoteFontScale,
 	MD::Item< MD::QStringTrait > * nextItem,
 	int footnoteNum, double offset,
 	bool firstInParagraph, CustomWidth * cw, const QColor & background, bool inFootnote,
@@ -1569,7 +1569,7 @@ PdfRenderer::drawString( PdfAuxData & pdfData, const RenderOpts & renderOpts, co
 QVector< QPair< QRectF, unsigned int > >
 PdfRenderer::drawInlinedCode( PdfAuxData & pdfData, const RenderOpts & renderOpts,
 	MD::Code< MD::QStringTrait > * item, std::shared_ptr< MD::Document< MD::QStringTrait > > doc, bool & newLine, double offset,
-	bool firstInParagraph, CustomWidth * cw, float scale, bool inFootnote )
+	bool firstInParagraph, CustomWidth * cw, double scale, bool inFootnote )
 {
 	auto * textFont = createFont( renderOpts.m_textFont, false, false, renderOpts.m_textFontSize,
 		pdfData.doc, scale, pdfData );
@@ -1653,7 +1653,7 @@ QPair< QVector< WhereDrawn >, WhereDrawn >
 PdfRenderer::drawParagraph( PdfAuxData & pdfData, const RenderOpts & renderOpts,
 	MD::Paragraph< MD::QStringTrait > * item, std::shared_ptr< MD::Document< MD::QStringTrait > > doc,
 	double offset, bool withNewLine,
-	CalcHeightOpt heightCalcOpt, float scale, bool inFootnote )
+	CalcHeightOpt heightCalcOpt, double scale, bool inFootnote )
 {
 	QVector< QPair< QRectF, unsigned int > > rects;
 
@@ -1974,7 +1974,7 @@ QPair< QRectF, unsigned int >
 PdfRenderer::drawMathExpr( PdfAuxData & pdfData, const RenderOpts & renderOpts,
 	MD::Math< MD::QStringTrait > * item, std::shared_ptr< MD::Document< MD::QStringTrait > > doc,
 	bool & newLine, double offset, bool hasNext,
-	bool firstInParagraph, CustomWidth * cw, float scale )
+	bool firstInParagraph, CustomWidth * cw, double scale )
 {
 	static const double dpi = 200.0;
 
@@ -2439,7 +2439,7 @@ PdfRenderer::footnoteHeight( PdfAuxData & pdfData, const RenderOpts & renderOpts
 QPair< QRectF, unsigned int >
 PdfRenderer::drawImage( PdfAuxData & pdfData, const RenderOpts & renderOpts,
 	MD::Image< MD::QStringTrait > * item, std::shared_ptr< MD::Document< MD::QStringTrait > > doc,
-	bool & newLine, double offset, bool firstInParagraph, CustomWidth * cw, float scale )
+	bool & newLine, double offset, bool firstInParagraph, CustomWidth * cw, double scale )
 {
 	Q_UNUSED( doc )
 
@@ -2785,7 +2785,7 @@ PdfRenderer::loadImage( MD::Image< MD::QStringTrait > * item )
 QPair< QVector< WhereDrawn >, WhereDrawn >
 PdfRenderer::drawCode( PdfAuxData & pdfData, const RenderOpts & renderOpts,
 	MD::Code< MD::QStringTrait > * item, std::shared_ptr< MD::Document< MD::QStringTrait > > doc, double offset, CalcHeightOpt heightCalcOpt,
-	float scale )
+	double scale )
 {
 	Q_UNUSED( doc )
 
@@ -2958,7 +2958,7 @@ PdfRenderer::drawCode( PdfAuxData & pdfData, const RenderOpts & renderOpts,
 QPair< QVector< WhereDrawn >, WhereDrawn >
 PdfRenderer::drawBlockquote( PdfAuxData & pdfData, const RenderOpts & renderOpts,
 	MD::Blockquote< MD::QStringTrait > * item, std::shared_ptr< MD::Document< MD::QStringTrait > > doc, double offset,
-	CalcHeightOpt heightCalcOpt, float scale, bool inFootnote )
+	CalcHeightOpt heightCalcOpt, double scale, bool inFootnote )
 {
 	QVector< WhereDrawn > ret;
 
@@ -3146,7 +3146,7 @@ PdfRenderer::drawBlockquote( PdfAuxData & pdfData, const RenderOpts & renderOpts
 QPair< QVector< WhereDrawn >, WhereDrawn >
 PdfRenderer::drawList( PdfAuxData & pdfData, const RenderOpts & renderOpts,
 	MD::List< MD::QStringTrait > * item, std::shared_ptr< MD::Document< MD::QStringTrait > > doc, int bulletWidth, double offset,
-	CalcHeightOpt heightCalcOpt, float scale, bool inFootnote, bool nested )
+	CalcHeightOpt heightCalcOpt, double scale, bool inFootnote, bool nested )
 {
 	QVector< WhereDrawn > ret;
 
@@ -3205,7 +3205,7 @@ QPair< QVector< WhereDrawn >, WhereDrawn >
 PdfRenderer::drawListItem( PdfAuxData & pdfData, const RenderOpts & renderOpts,
 	MD::ListItem< MD::QStringTrait > * item, std::shared_ptr< MD::Document< MD::QStringTrait > > doc, int & idx,
 	ListItemType & prevListItemType, int bulletWidth, double offset, CalcHeightOpt heightCalcOpt,
-	float scale, bool inFootnote, bool firstInList )
+	double scale, bool inFootnote, bool firstInList )
 {
 	auto * font = createFont( renderOpts.m_textFont, false, false, renderOpts.m_textFontSize,
 		pdfData.doc, scale, pdfData );
@@ -3489,7 +3489,7 @@ operator == ( const PdfRenderer::Font & f1, const PdfRenderer::Font & f2 )
 
 QVector< QVector< PdfRenderer::CellData > >
 PdfRenderer::createAuxTable( PdfAuxData & pdfData, const RenderOpts & renderOpts,
-	MD::Table< MD::QStringTrait > * item, std::shared_ptr< MD::Document< MD::QStringTrait > > doc, float scale, bool inFootnote )
+	MD::Table< MD::QStringTrait > * item, std::shared_ptr< MD::Document< MD::QStringTrait > > doc, double scale, bool inFootnote )
 {
 	Q_UNUSED( pdfData )
 	Q_UNUSED( scale )
@@ -3677,7 +3677,7 @@ PdfRenderer::createAuxTable( PdfAuxData & pdfData, const RenderOpts & renderOpts
 
 void
 PdfRenderer::calculateCellsSize( PdfAuxData & pdfData, QVector< QVector< CellData > > & auxTable,
-	double spaceWidth, double offset, double lineHeight, float scale )
+	double spaceWidth, double offset, double lineHeight, double scale )
 {
 	QVector< double > columnWidthes;
 	columnWidthes.resize( auxTable.size() );
@@ -3702,7 +3702,7 @@ QPair< QVector< WhereDrawn >, WhereDrawn >
 PdfRenderer::drawTable( PdfAuxData & pdfData, const RenderOpts & renderOpts,
 	MD::Table< MD::QStringTrait > * item, std::shared_ptr< MD::Document< MD::QStringTrait > > doc,
 	double offset, CalcHeightOpt heightCalcOpt,
-	float scale, bool inFootnote )
+	double scale, bool inFootnote )
 {
 	QVector< WhereDrawn > ret;
 
@@ -3824,7 +3824,7 @@ PdfRenderer::drawTableRow( QVector< QVector< CellData > > & table, int row, PdfA
 	double offset, double lineHeight, const RenderOpts & renderOpts,
 	std::shared_ptr< MD::Document< MD::QStringTrait > > doc,
 	QVector< QPair< QString, std::shared_ptr< MD::Footnote< MD::QStringTrait > > > > & footnotes,
-	float scale, bool inFootnote )
+	double scale, bool inFootnote )
 {
 	QVector< WhereDrawn > ret;
 
@@ -4159,7 +4159,7 @@ PdfRenderer::drawTextLineInTable( double x, double & y, TextToDraw & text, doubl
 	PdfAuxData & pdfData, QMap< QString, QVector< QPair< QRectF, unsigned int > > > & links,
 	PdfFont * font, int & currentPage, int & endPage, double & endY,
 	QVector< QPair< QString, std::shared_ptr< MD::Footnote< MD::QStringTrait > > > > & footnotes,
-	bool inFootnote, float scale )
+	bool inFootnote, double scale )
 {
 	y -= lineHeight;
 
@@ -4390,7 +4390,7 @@ PdfRenderer::processLinksInTable( PdfAuxData & pdfData,
 double
 PdfRenderer::minNecessaryHeight( PdfAuxData & pdfData, const RenderOpts & renderOpts,
 	std::shared_ptr< MD::Item< MD::QStringTrait > > item, std::shared_ptr< MD::Document< MD::QStringTrait > > doc,
-	double offset, float scale, bool inFootnote )
+	double offset, double scale, bool inFootnote )
 {
 	QVector< WhereDrawn > ret;
 
