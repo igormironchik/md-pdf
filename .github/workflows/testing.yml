@@ -40,7 +40,7 @@ jobs:
       with:
         version: '6.5.1'
         
-    - run: sudo apt install libfreetype6-dev libjpeg-dev libpng-dev zlib1g zlib1g-dev libfontconfig1-dev fontconfig lcov libmagick++-dev libxml2-dev libtiff-dev libssl-dev
+    - run: sudo apt install libfreetype6-dev libjpeg-dev libpng-dev zlib1g zlib1g-dev libfontconfig1-dev fontconfig lcov libmagick++-dev libxml2-dev libtiff-dev libssl-dev extra-cmake-modules
 
     - name: Generate Makefiles
       run: cmake -DENABLE_COVERAGE=ON -DCMAKE_BUILD_TYPE=Debug .
@@ -94,6 +94,9 @@ jobs:
 
     - name: Install dependencies with Conan
       run: conan install -of build .
+      
+    - name: Install ECM
+      run: cmd /c install-extra-cmake-modules.bat
       
     - name: Generate Makefiles
       run: cmake -S . -B build -DCMAKE_BUILD_TYPE=Relese
