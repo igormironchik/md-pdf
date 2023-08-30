@@ -596,6 +596,8 @@ PdfRenderer::isError() const
 void
 PdfRenderer::renderImpl()
 {
+	PdfAuxData pdfData;
+
 	try
 	{
 		const int itemsCount = m_doc->items().size();
@@ -606,8 +608,6 @@ PdfRenderer::renderImpl()
 		PdfMemDocument document;
 
 		PdfPainter painter;
-
-		PdfAuxData pdfData;
 
 		pdfData.doc = &document;
 		pdfData.painter = &painter;
@@ -749,6 +749,7 @@ PdfRenderer::renderImpl()
 							std::make_shared< PdfDestination > ( *pdfData.page,
 								pdfData.coords.margins.left,
 								pdfData.coords.pageHeight - pdfData.coords.margins.top, 0.0 ) );
+						pdfData.currentFile = a->label();
 					}
 						break;
 
@@ -812,7 +813,7 @@ PdfRenderer::renderImpl()
 			}
 
 			handleException( pdfData,
-				QString::fromLatin1( "Error in PoDoFo library:\n%1" ).arg( msg ) );
+				QString::fromLatin1( "Error during drawing PDF:\n%1" ).arg( msg ) );
 		}
 		catch( const PdfRendererError & e )
 		{
@@ -820,7 +821,7 @@ PdfRenderer::renderImpl()
 		}
 		catch( const std::exception & e )
 		{
-			handleException( pdfData, QString::fromLatin1( "Error in PoDoFo library: %1" )
+			handleException( pdfData, QString::fromLatin1( "Error during drawing PDF: %1" )
 				.arg( e.what() ) );
 		}
 
@@ -837,7 +838,16 @@ PdfRenderer::renderImpl()
 #ifdef MD_PDF_TESTING
 		m_isError = true;
 #endif
-		emit error( QString::fromLatin1( "Error in PoDoFo library." ) );
+		const auto fullMsg = QStringLiteral( "%1\n\nError occured in the \"%2\" file, "
+			"between start position %3 on line %4 and end position %5 on line %6." )
+				.arg( QStringLiteral( "Error during drawing PDF." ) )
+				.arg( pdfData.currentFile )
+				.arg( pdfData.startPos + 1 )
+				.arg( pdfData.startLine + 1 )
+				.arg( pdfData.endPos + 1 )
+				.arg( pdfData.endLine + 1 );
+
+		emit error( fullMsg );
 	}
 
 	try {
@@ -848,7 +858,7 @@ PdfRenderer::renderImpl()
 #ifdef MD_PDF_TESTING
 		m_isError = true;
 #endif
-		emit error( QString::fromLatin1( "Error in PoDoFo library: %1" )
+		emit error( QString::fromLatin1( "Error freeing memory after all operations: %1" )
 			.arg( e.what() ) );
 	}
 
@@ -870,7 +880,16 @@ PdfRenderer::handleException( PdfAuxData & pdfData, const QString & msg )
 	m_isError = true;
 #endif
 
-	emit error( msg );
+	const auto fullMsg = QStringLiteral( "%1\n\nError occured in the \"%2\" file, "
+		"between start position %3 on line %4 and end position %5 on line %6." )
+			.arg( msg )
+			.arg( pdfData.currentFile )
+			.arg( pdfData.startPos + 1 )
+			.arg( pdfData.startLine + 1 )
+			.arg( pdfData.endPos + 1 )
+			.arg( pdfData.endLine + 1 );
+
+	emit error( fullMsg );
 }
 
 void
@@ -1141,7 +1160,8 @@ PdfRenderer::drawText( PdfAuxData & pdfData, const RenderOpts & renderOpts,
 		doc, newLine,
 		footnoteFont, footnoteFontSize, footnoteFontScale, nextItem, footnoteNum, offset,
 		firstInParagraph, cw, QColor(), inFootnote,
-		item->opts() & MD::TextOption::StrikethroughText );
+		item->opts() & MD::TextOption::StrikethroughText,
+		item->startLine(), item->startColumn(), item->endLine(), item->endColumn() );
 }
 
 namespace /* anonymous */ {
@@ -1243,7 +1263,9 @@ PdfRenderer::drawLink( PdfAuxData & pdfData, const RenderOpts & renderOpts,
 							( it == item->p()->items().begin() && firstInParagraph ),
 							cw, QColor(), inFootnote,
 							text->opts() & MD::StrikethroughText ||
-								item->opts() & MD::StrikethroughText) );
+								item->opts() & MD::StrikethroughText,
+							text->startLine(), text->startColumn(),
+							text->endLine(), text->endColumn() ) );
 					}
 						break;
 
@@ -1269,7 +1291,8 @@ PdfRenderer::drawLink( PdfAuxData & pdfData, const RenderOpts & renderOpts,
 				doc, newLine,
 				footnoteFont, footnoteFontSize, footnoteFontScale, nextItem, footnoteNum, offset,
 				firstInParagraph, cw, QColor(), inFootnote,
-				item->opts() & MD::TextOption::StrikethroughText );
+				item->opts() & MD::TextOption::StrikethroughText,
+				item->startLine(), item->startColumn(), item->endLine(), item->endColumn() );
 
 		pdfData.restoreColor();
 	}
@@ -1318,10 +1341,16 @@ PdfRenderer::drawString( PdfAuxData & pdfData, const RenderOpts & renderOpts, co
 	MD::Item< MD::QStringTrait > * nextItem,
 	int footnoteNum, double offset,
 	bool firstInParagraph, CustomWidth * cw, const QColor & background, bool inFootnote,
-	bool strikeout )
+	bool strikeout, long long int startLine, long long int startPos,
+	long long int endLine, long long int endPos )
 {
 	Q_UNUSED( doc )
 	Q_UNUSED( renderOpts )
+
+	pdfData.startLine = startLine;
+	pdfData.startPos = startPos;
+	pdfData.endLine = endLine;
+	pdfData.endPos = endPos;
 
 	bool draw = true;
 
@@ -1588,7 +1617,8 @@ PdfRenderer::drawInlinedCode( PdfAuxData & pdfData, const RenderOpts & renderOpt
 		nullptr, 0.0, 0.0, nullptr, m_footnoteNum,
 		offset, firstInParagraph, cw,
 		renderOpts.m_syntax->theme().editorColor( KSyntaxHighlighting::Theme::CodeFolding ),
-		inFootnote, false );
+		inFootnote, false, item->startLine(), item->startColumn(),
+		item->endLine(), item->endColumn() );
 }
 
 void
@@ -1923,6 +1953,9 @@ PdfRenderer::drawParagraph( PdfAuxData & pdfData, const RenderOpts & renderOpts,
 
 					if( fit != doc->footnotesMap().cend() )
 					{
+						pdfData.footnotesAnchorsMap.insert( fit->second.get(),
+							pdfData.currentFile );
+
 						const auto str = createPdfString( QString::number( m_footnoteNum ) );
 
 						auto footnoteSt = st;
@@ -2313,6 +2346,9 @@ PdfRenderer::drawFootnote( PdfAuxData & pdfData, const RenderOpts & renderOpts,
 {
 	QVector< WhereDrawn > ret;
 
+	if( heightCalcOpt == CalcHeightOpt::Unknown && pdfData.footnotesAnchorsMap.contains( note ) )
+		pdfData.currentFile = pdfData.footnotesAnchorsMap[ note ];
+
 	static const double c_offset = 2.0;
 
 	auto * font = createFont( renderOpts.m_textFont, false, false,
@@ -2444,6 +2480,10 @@ PdfRenderer::drawImage( PdfAuxData & pdfData, const RenderOpts & renderOpts,
 	Q_UNUSED( doc )
 
 	bool draw = true;
+	pdfData.startLine = item->startLine();
+	pdfData.startPos = item->startColumn();
+	pdfData.endLine = item->endLine();
+	pdfData.endPos = item->endColumn();
 
 	if( cw && !cw->isDrawing() )
 		draw = false;

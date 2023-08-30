@@ -222,6 +222,18 @@ struct PdfAuxData {
 	std::shared_ptr< MD::Document< MD::QStringTrait > > md;
 	//! Syntax highlighter.
 	std::shared_ptr< Syntax > syntax;
+	//! Start line of procesing in the document.
+	long long int startLine = 0;
+	//! Start position in the start line.
+	long long int startPos = 0;
+	//! End line of procesing in the document.
+	long long int endLine = 0;
+	//! End position in the end line.
+	long long int endPos = 0;
+	//! Current file.
+	QString currentFile;
+	//! Footnotes map to map anchors.
+	QMap< MD::Footnote< MD::QStringTrait > *, QString > footnotesAnchorsMap;
 
 #ifdef MD_PDF_TESTING
 	QMap< QString, QString > fonts;
@@ -511,7 +523,8 @@ private:
 		MD::Item< MD::QStringTrait > * nextItem,
 		int footnoteNum, double offset,
 		bool firstInParagraph, CustomWidth * cw, const QColor & background,
-		bool inFootnote, bool strikeout );
+		bool inFootnote, bool strikeout, long long int startLine, long long int startPos,
+		long long int endLine, long long int endPos );
 	//! Draw link.
 	QVector< QPair< QRectF, unsigned int > > drawLink( PdfAuxData & pdfData,
 		const RenderOpts & renderOpts, MD::Link< MD::QStringTrait > * item,
