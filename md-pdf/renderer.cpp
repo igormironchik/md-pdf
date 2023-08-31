@@ -477,10 +477,14 @@ PdfRenderer::CellData::heightToWidth( double lineHeight, double spaceWidth, doub
 
 	double w = 0.0;
 
+	bool addMargin = false;
+
 	for( auto it = items.cbegin(), last = items.cend(); it != last; ++it )
 	{
 		if( it->image.isNull() )
 		{
+			addMargin = false;
+
 			if( newLine )
 			{
 				height += lineHeight;
@@ -540,7 +544,15 @@ PdfRenderer::CellData::heightToWidth( double lineHeight, double spaceWidth, doub
 				height += iHeight * scale;
 
 			newLine = true;
+
+			if( !addMargin )
+				addMargin = true;
+			else
+				continue;
 		}
+
+		if( addMargin )
+			height += c_tableMargin;
 	}
 }
 
@@ -3944,16 +3956,24 @@ PdfRenderer::drawTableRow( QVector< QVector< CellData > > & table, int row, PdfA
 			( lastItemInCell->image.isEmpty() && !lastItemInCell->url.isEmpty() ) ||
 			!lastItemInCell->footnote.isEmpty() ) : false;
 
+		bool addMargin = false;
+
 		for( auto c = it->at( row ).items.cbegin(), clast = it->at( row ).items.cend(); c != clast; ++c )
 		{
 			if( !c->image.isNull() && !text.text.isEmpty() )
+			{
 				drawTextLineInTable( x, y, text, lineHeight, pdfData, links, textFont, currentPage,
 					endPage, endY, footnotes, inFootnote, scale );
+				addMargin = false;
+			}
 
 			if( !c->image.isNull() )
 			{
 				if( textBefore )
 					y -= lineHeight;
+
+				if( addMargin )
+					y -= c_tableMargin;
 
 				auto img = pdfData.doc->CreateImage();
 				img->LoadFromBuffer( { c->image.data(), static_cast< size_t > ( c->image.size() ) } );
@@ -4003,9 +4023,12 @@ PdfRenderer::drawTableRow( QVector< QVector< CellData > > & table, int row, PdfA
 						currentPage ) );
 
 				textBefore = false;
+				addMargin = true;
 			}
 			else
 			{
+				addMargin = false;
+
 				auto * font = createFont( c->font.family, c->font.bold, c->font.italic,
 					c->font.size, pdfData.doc, scale, pdfData );
 
