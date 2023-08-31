@@ -3938,6 +3938,11 @@ PdfRenderer::drawTableRow( QVector< QVector< CellData > > & table, int row, PdfA
 		}
 
 		bool textBefore = false;
+		const CellItem * lastItemInCell = it->at( row ).items.isEmpty() ?
+			nullptr : &( it->at( row ).items.back() );
+		const bool wasTextInLastPos = lastItemInCell ? ( !lastItemInCell->word.isEmpty() ||
+			( lastItemInCell->image.isEmpty() && !lastItemInCell->url.isEmpty() ) ||
+			!lastItemInCell->footnote.isEmpty() ) : false;
 
 		for( auto c = it->at( row ).items.cbegin(), clast = it->at( row ).items.cend(); c != clast; ++c )
 		{
@@ -3992,7 +3997,7 @@ PdfRenderer::drawTableRow( QVector< QVector< CellData > > & table, int row, PdfA
 				pdfData.drawImage( x + o, y, img.get(), ratio / dpiScale, ratio / dpiScale );
 
 				if( !c->url.isEmpty() )
-					links[ c->url ].append( qMakePair( QRectF( x, y,
+					links[ c->url ].append( qMakePair( QRectF( x + o, y,
 							c->width( pdfData, this, scale ),
 							iHeight * ratio ),
 						currentPage ) );
@@ -4082,7 +4087,7 @@ PdfRenderer::drawTableRow( QVector< QVector< CellData > > & table, int row, PdfA
 			drawTextLineInTable( x, y, text, lineHeight, pdfData, links, textFont, currentPage,
 				endPage, endY, footnotes, inFootnote, scale );
 
-		y -= c_tableMargin - textFont->GetDescent( tst );
+		y -= c_tableMargin - ( wasTextInLastPos ? textFont->GetDescent( tst ) : 0.0 );
 
 		if( y < endY  && currentPage == pdfData.currentPageIndex() )
 			endY = y;
