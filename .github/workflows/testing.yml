@@ -93,7 +93,7 @@ jobs:
     - run: mkdir build
 
     - name: Install dependencies with Conan
-      run: conan install -of build .
+      run: conan install -of build --build=missing .
       
     - name: Install ECM
       run: cmd /c install-extra-cmake-modules.bat
