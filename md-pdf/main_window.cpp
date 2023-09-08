@@ -178,9 +178,11 @@ MainWidget::changeStateOfStartButton()
 void
 MainWidget::selectMarkdown()
 {
+	const auto folder = m_ui->m_fileName->text().isEmpty() ? QDir::homePath() :
+		QFileInfo( m_ui->m_fileName->text() ).absolutePath();
+
 	const auto fileName = QFileDialog::getOpenFileName( this, tr( "Select Markdown" ),
-		QDir::homePath(),
-		tr( "Markdown (*.md *.markdown)" ) );
+		folder, tr( "Markdown (*.md *.markdown)" ) );
 
 	if( !fileName.isEmpty() )
 	{
