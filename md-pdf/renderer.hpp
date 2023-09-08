@@ -585,6 +585,13 @@ private:
 
 	//! \return Height of the row.
 	double rowHeight( const QVector< QVector< CellData > > & table, int row );
+	//! Create auxiliary cell.
+	void
+	createAuxCell( const RenderOpts & renderOpts,
+		CellData & data,
+		MD::Item< MD::QStringTrait > * item,
+		std::shared_ptr< MD::Document< MD::QStringTrait > > doc,
+		bool inFootnote, const QString & url = {}, const QColor & color = {} );
 	//! Create auxiliary table for drawing.
 	QVector< QVector< CellData > >
 	createAuxTable( PdfAuxData & pdfData, const RenderOpts & renderOpts,

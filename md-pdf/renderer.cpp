@@ -3539,6 +3539,195 @@ operator == ( const PdfRenderer::Font & f1, const PdfRenderer::Font & f2 )
 		f1.size == f2.size );
 }
 
+void
+PdfRenderer::createAuxCell( const RenderOpts & renderOpts,
+	CellData & data,
+	MD::Item< MD::QStringTrait > * item,
+	std::shared_ptr< MD::Document< MD::QStringTrait > > doc,
+	bool inFootnote,
+	const QString & url,
+	const QColor & color )
+{
+	switch( item->type() )
+	{
+		case MD::ItemType::Text :
+		{
+			auto * t = static_cast< MD::Text< MD::QStringTrait >* > ( item );
+
+			const auto words = t->text().split( QLatin1Char( ' ' ),
+				Qt::SkipEmptyParts );
+
+			for( const auto & w : words )
+			{
+				CellItem item;
+				item.word = w;
+				item.font = { renderOpts.m_textFont,
+					(bool) ( t->opts() & MD::TextOption::BoldText ),
+					(bool) ( t->opts() & MD::TextOption::ItalicText ),
+					(bool) ( t->opts() & MD::TextOption::StrikethroughText ),
+					renderOpts.m_textFontSize };
+
+				if( !url.isEmpty() )
+					item.url = url;
+
+				if( color.isValid() )
+					item.color = color;
+
+				data.items.append( item );
+			}
+		}
+			break;
+
+		case MD::ItemType::Code :
+		{
+			auto * c = static_cast< MD::Code< MD::QStringTrait >* > ( item );
+
+			const auto words = c->text().split( QLatin1Char( ' ' ),
+				Qt::SkipEmptyParts );
+
+			for( const auto & w : words )
+			{
+				CellItem item;
+				item.word = w;
+				item.font = { renderOpts.m_codeFont, false, false, false,
+					renderOpts.m_codeFontSize };
+				item.background = renderOpts.m_syntax->theme().editorColor(
+					KSyntaxHighlighting::Theme::CodeFolding );
+
+				if( !url.isEmpty() )
+					item.url = url;
+
+				if( color.isValid() )
+					item.color = color;
+
+				data.items.append( item );
+			}
+		}
+			break;
+
+		case MD::ItemType::Link :
+		{
+			auto * l = static_cast< MD::Link< MD::QStringTrait >* > ( item );
+
+			QString url = l->url();
+
+			const auto lit = doc->labeledLinks().find( url );
+
+			if( lit != doc->labeledLinks().cend() )
+				url = lit->second->url();
+
+			if( !l->img()->isEmpty() )
+			{
+				CellItem item;
+				item.image = loadImage( l->img().get() );
+				item.url = url;
+				item.font = { renderOpts.m_textFont,
+					(bool) ( l->opts() & MD::TextOption::BoldText ),
+					(bool) ( l->opts() & MD::TextOption::ItalicText ),
+					(bool) ( l->opts() & MD::TextOption::StrikethroughText ),
+					renderOpts.m_textFontSize };
+
+				data.items.append( item );
+			}
+			else if( !l->p()->isEmpty() )
+			{
+				for( auto pit = l->p()->items().cbegin(), plast = l->p()->items().cend();
+					pit != plast; ++pit )
+				{
+					createAuxCell( renderOpts, data, pit->get(), doc, inFootnote,
+						url, renderOpts.m_linkColor );
+				}
+			}
+			else if( !l->text().isEmpty() )
+			{
+				const auto words = l->text().split( QLatin1Char( ' ' ),
+					Qt::SkipEmptyParts );
+
+				for( const auto & w : words )
+				{
+					CellItem item;
+					item.word = w;
+					item.font = { renderOpts.m_textFont,
+						(bool) ( l->opts() & MD::TextOption::BoldText ),
+						(bool) ( l->opts() & MD::TextOption::ItalicText ),
+						(bool) ( l->opts() & MD::TextOption::StrikethroughText ),
+						renderOpts.m_textFontSize };
+					item.url = url;
+					item.color = renderOpts.m_linkColor;
+
+					data.items.append( item );
+				}
+			}
+			else
+			{
+				CellItem item;
+				item.font = { renderOpts.m_textFont,
+					(bool) ( l->opts() & MD::TextOption::BoldText ),
+					(bool) ( l->opts() & MD::TextOption::ItalicText ),
+					(bool) ( l->opts() & MD::TextOption::StrikethroughText ),
+					renderOpts.m_textFontSize };
+				item.url = url;
+				item.color = renderOpts.m_linkColor;
+
+				data.items.append( item );
+			}
+		}
+			break;
+
+		case MD::ItemType::Image :
+		{
+			auto * i = static_cast< MD::Image< MD::QStringTrait >* > ( item );
+
+			CellItem item;
+
+			emit status( tr( "Loading image." ) );
+
+			item.image = loadImage( i );
+			item.font = { renderOpts.m_textFont,
+				false, false, false, renderOpts.m_textFontSize };
+
+			if( !url.isEmpty() )
+				item.url = url;
+
+			data.items.append( item );
+		}
+			break;
+
+		case MD::ItemType::FootnoteRef :
+		{
+			if( !inFootnote )
+			{
+				auto * ref = static_cast< MD::FootnoteRef< MD::QStringTrait >* > ( item );
+
+				const auto fit = doc->footnotesMap().find( ref->id() );
+
+				if( fit != doc->footnotesMap().cend() )
+				{
+					CellItem item;
+					item.font = { renderOpts.m_textFont,
+						false, false, false,
+						renderOpts.m_textFontSize };
+					item.footnote = QString::number( m_footnoteNum++ );
+					item.footnoteRef = ref->id();
+					item.footnoteObj = fit->second;
+
+					if( !url.isEmpty() )
+						item.url = url;
+
+					if( color.isValid() )
+						item.color = color;
+
+					data.items.append( item );
+				}
+			}
+		}
+			break;
+
+		default :
+			break;
+	}
+}
+
 QVector< QVector< PdfRenderer::CellData > >
 PdfRenderer::createAuxTable( PdfAuxData & pdfData, const RenderOpts & renderOpts,
 	MD::Table< MD::QStringTrait > * item, std::shared_ptr< MD::Document< MD::QStringTrait > > doc, double scale, bool inFootnote )
@@ -3564,156 +3753,7 @@ PdfRenderer::createAuxTable( PdfAuxData & pdfData, const RenderOpts & renderOpts
 			data.alignment = item->columnAlignment( i );
 
 			for( auto it = (*cit)->items().cbegin(), last = (*cit)->items().cend(); it != last; ++it )
-			{
-				switch( (*it)->type() )
-				{
-					case MD::ItemType::Text :
-					{
-						auto * t = static_cast< MD::Text< MD::QStringTrait >* > ( it->get() );
-
-						const auto words = t->text().split( QLatin1Char( ' ' ),
-							Qt::SkipEmptyParts );
-
-						for( const auto & w : words )
-						{
-							CellItem item;
-							item.word = w;
-							item.font = { renderOpts.m_textFont,
-								(bool) ( t->opts() & MD::TextOption::BoldText ),
-								(bool) ( t->opts() & MD::TextOption::ItalicText ),
-								(bool) ( t->opts() & MD::TextOption::StrikethroughText ),
-								renderOpts.m_textFontSize };
-
-							data.items.append( item );
-						}
-					}
-						break;
-
-					case MD::ItemType::Code :
-					{
-						auto * c = static_cast< MD::Code< MD::QStringTrait >* > ( it->get() );
-
-						const auto words = c->text().split( QLatin1Char( ' ' ),
-							Qt::SkipEmptyParts );
-
-						for( const auto & w : words )
-						{
-							CellItem item;
-							item.word = w;
-							item.font = { renderOpts.m_codeFont, false, false, false,
-								renderOpts.m_codeFontSize };
-							item.background = renderOpts.m_syntax->theme().editorColor(
-								KSyntaxHighlighting::Theme::CodeFolding );
-
-							data.items.append( item );
-						}
-					}
-						break;
-
-					case MD::ItemType::Link :
-					{
-						auto * l = static_cast< MD::Link< MD::QStringTrait >* > ( it->get() );
-
-						QString url = l->url();
-
-						const auto lit = doc->labeledLinks().find( url );
-
-						if( lit != doc->labeledLinks().cend() )
-							url = lit->second->url();
-
-						if( !l->img()->isEmpty() )
-						{
-							CellItem item;
-							item.image = loadImage( l->img().get() );
-							item.url = url;
-							item.font = { renderOpts.m_textFont,
-								(bool) ( l->opts() & MD::TextOption::BoldText ),
-								(bool) ( l->opts() & MD::TextOption::ItalicText ),
-								(bool) ( l->opts() & MD::TextOption::StrikethroughText ),
-								renderOpts.m_textFontSize };
-
-							data.items.append( item );
-						}
-						else if( !l->text().isEmpty() )
-						{
-							const auto words = l->text().split( QLatin1Char( ' ' ),
-								Qt::SkipEmptyParts );
-
-							for( const auto & w : words )
-							{
-								CellItem item;
-								item.word = w;
-								item.font = { renderOpts.m_textFont,
-									(bool) ( l->opts() & MD::TextOption::BoldText ),
-									(bool) ( l->opts() & MD::TextOption::ItalicText ),
-									(bool) ( l->opts() & MD::TextOption::StrikethroughText ),
-									renderOpts.m_textFontSize };
-								item.url = url;
-								item.color = renderOpts.m_linkColor;
-
-								data.items.append( item );
-							}
-						}
-						else
-						{
-							CellItem item;
-							item.font = { renderOpts.m_textFont,
-								(bool) ( l->opts() & MD::TextOption::BoldText ),
-								(bool) ( l->opts() & MD::TextOption::ItalicText ),
-								(bool) ( l->opts() & MD::TextOption::StrikethroughText ),
-								renderOpts.m_textFontSize };
-							item.url = url;
-							item.color = renderOpts.m_linkColor;
-
-							data.items.append( item );
-						}
-					}
-						break;
-
-					case MD::ItemType::Image :
-					{
-						auto * i = static_cast< MD::Image< MD::QStringTrait >* > ( it->get() );
-
-						CellItem item;
-
-						emit status( tr( "Loading image." ) );
-
-						item.image = loadImage( i );
-						item.font = { renderOpts.m_textFont,
-							false, false, false, renderOpts.m_textFontSize };
-
-						data.items.append( item );
-					}
-						break;
-
-					case MD::ItemType::FootnoteRef :
-					{
-						if( !inFootnote )
-						{
-							auto * ref = static_cast< MD::FootnoteRef< MD::QStringTrait >* > ( it->get() );
-
-							const auto fit = doc->footnotesMap().find( ref->id() );
-
-							if( fit != doc->footnotesMap().cend() )
-							{
-								CellItem item;
-								item.font = { renderOpts.m_textFont,
-									false, false, false,
-									renderOpts.m_textFontSize };
-								item.footnote = QString::number( m_footnoteNum++ );
-								item.footnoteRef = ref->id();
-								item.footnoteObj = fit->second;
-
-								data.items.append( item );
-							}
-						}
-					}
-						break;
-
-					default :
-						break;
-				}
-			}
+				createAuxCell( renderOpts, data, it->get(), doc, inFootnote );
 
 			auxTable[ i ].append( data );
 
@@ -4433,7 +4473,8 @@ PdfRenderer::processLinksInTable( PdfAuxData & pdfData,
 
 			rects.append( r );
 
-			if( !QUrl( url ).isRelative() )
+			if( !pdfData.anchors.contains( url ) &&
+				pdfData.md->labeledHeadings().find( url ) == pdfData.md->labeledHeadings().cend() )
 			{
 				for( const auto & r : qAsConst( rects ) )
 				{
