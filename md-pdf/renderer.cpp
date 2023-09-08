@@ -2666,7 +2666,7 @@ convert( const Magick::Image & img )
 
 			qimg.setPixel( x, y, QColor( static_cast< int> ( 255 * rgb.red() ),
 				static_cast< int > ( 255 * rgb.green() ),
-				static_cast< int > ( 255 * rgb.blue() ) ).rgb());
+				static_cast< int > ( 255 * rgb.blue() ) ).rgb() );
 		}
 	}
 
@@ -2724,8 +2724,6 @@ LoadImageFromNetwork::loadFinished()
 	{
 		try {
 			Magick::Image img;
-			Magick::Color c( 0x00, 0x00, 0x00, 0xFFFF );
-			img.backgroundColor( c );
 			QTemporaryFile file( QStringLiteral( "XXXXXX.svg" ) );
 			if( file.open() )
 			{
@@ -2772,8 +2770,6 @@ PdfRenderer::loadImage( MD::Image< MD::QStringTrait > * item )
 		{
 			try {
 				Magick::Image mimg;
-				Magick::Color c(0x0, 0x0, 0x0, 0xFFFF);
-				mimg.backgroundColor( c );
 				mimg.read( item->url().toStdString() );
 				mimg.magick( "png" );
 				img = convert( mimg );
