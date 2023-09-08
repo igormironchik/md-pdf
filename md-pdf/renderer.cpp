@@ -1232,82 +1232,84 @@ PdfRenderer::drawLink( PdfAuxData & pdfData, const RenderOpts & renderOpts,
 	if( cw && !cw->isDrawing() )
 		draw = false;
 
-	// If text link.
-	if( item->img()->isEmpty() )
+	auto * font = createFont( renderOpts.m_textFont, item->opts() & MD::TextOption::BoldText,
+		item->opts() & MD::TextOption::ItalicText, renderOpts.m_textFontSize,
+		pdfData.doc, scale, pdfData );
+
+	PdfTextState st;
+	st.FontSize = renderOpts.m_textFontSize * scale;
+
+	if( !item->p()->isEmpty() )
 	{
 		pdfData.setColor( renderOpts.m_linkColor );
 
-		auto * font = createFont( renderOpts.m_textFont, item->opts() & MD::TextOption::BoldText,
-			item->opts() & MD::TextOption::ItalicText, renderOpts.m_textFontSize,
-			pdfData.doc, scale, pdfData );
-
-		PdfTextState st;
-		st.FontSize = renderOpts.m_textFontSize * scale;
-
-		if( !item->p()->isEmpty() )
+		for( auto it = item->p()->items().begin(), last = item->p()->items().end();
+			it != last; ++it )
 		{
-			for( auto it = item->p()->items().begin(), last = item->p()->items().end();
-				it != last; ++it )
+			switch( (*it)->type() )
 			{
-				switch( (*it)->type() )
+				case MD::ItemType::Text :
 				{
-					case MD::ItemType::Text :
-					{
-						auto * text = std::static_pointer_cast< MD::Text< MD::QStringTrait > >( *it ).get();
+					auto * text = std::static_pointer_cast< MD::Text< MD::QStringTrait > >( *it ).get();
 
-						auto * spaceFont = createFont( renderOpts.m_textFont, false, false,
-							renderOpts.m_textFontSize, pdfData.doc, scale, pdfData );
+					auto * spaceFont = createFont( renderOpts.m_textFont, false, false,
+						renderOpts.m_textFontSize, pdfData.doc, scale, pdfData );
 
-						auto * font = createFont( renderOpts.m_textFont,
-							text->opts() & MD::BoldText || item->opts() & MD::BoldText,
-							text->opts() & MD::ItalicText || item->opts() & MD::ItalicText,
-							renderOpts.m_textFontSize, pdfData.doc, scale, pdfData );
+					auto * font = createFont( renderOpts.m_textFont,
+						text->opts() & MD::BoldText || item->opts() & MD::BoldText,
+						text->opts() & MD::ItalicText || item->opts() & MD::ItalicText,
+						renderOpts.m_textFontSize, pdfData.doc, scale, pdfData );
 
-						PdfTextState st;
-						st.FontSize = renderOpts.m_textFontSize * scale;
+					PdfTextState st;
+					st.FontSize = renderOpts.m_textFontSize * scale;
 
-						rects.append( drawString( pdfData, renderOpts, text->text(),
-							spaceFont, renderOpts.m_textFontSize, scale,
-							font, renderOpts.m_textFontSize, scale,
-							font->GetLineSpacing( st ),
-							doc, newLine, footnoteFont, footnoteFontSize, footnoteFontScale,
-							( it == std::prev( last ) ? nextItem : nullptr ), footnoteNum, offset,
-							( it == item->p()->items().begin() && firstInParagraph ),
-							cw, QColor(), inFootnote,
-							text->opts() & MD::StrikethroughText ||
-								item->opts() & MD::StrikethroughText,
-							text->startLine(), text->startColumn(),
-							text->endLine(), text->endColumn() ) );
-					}
-						break;
-
-					case MD::ItemType::Code :
-						rects.append( drawInlinedCode( pdfData, renderOpts,
-							static_cast< MD::Code< MD::QStringTrait >* > ( it->get() ),
-							doc, newLine, offset,
-							( it == item->p()->items().begin() && firstInParagraph ), cw, scale,
-							inFootnote ) );
-						break;
-
-					default :
-						break;
+					rects.append( drawString( pdfData, renderOpts, text->text(),
+						spaceFont, renderOpts.m_textFontSize, scale,
+						font, renderOpts.m_textFontSize, scale,
+						font->GetLineSpacing( st ),
+						doc, newLine, footnoteFont, footnoteFontSize, footnoteFontScale,
+						( it == std::prev( last ) ? nextItem : nullptr ), footnoteNum, offset,
+						( it == item->p()->items().begin() && firstInParagraph ),
+						cw, QColor(), inFootnote,
+						text->opts() & MD::StrikethroughText ||
+							item->opts() & MD::StrikethroughText,
+						text->startLine(), text->startColumn(),
+						text->endLine(), text->endColumn() ) );
 				}
+					break;
+
+				case MD::ItemType::Code :
+					rects.append( drawInlinedCode( pdfData, renderOpts,
+						static_cast< MD::Code< MD::QStringTrait >* > ( it->get() ),
+						doc, newLine, offset,
+						( it == item->p()->items().begin() && firstInParagraph ), cw, scale,
+						inFootnote ) );
+					break;
+
+				case MD::ItemType::Image :
+					rects.append( drawImage( pdfData, renderOpts,
+						static_cast< MD::Image< MD::QStringTrait >* > ( it->get() ),
+						doc, newLine, offset,
+						( it == item->p()->items().begin() && firstInParagraph ), cw, scale ) );
+
+				default :
+					break;
 			}
 		}
-		else
-			rects = drawString( pdfData, renderOpts, url,
-				createFont( renderOpts.m_textFont, false, false, renderOpts.m_textFontSize,
-					pdfData.doc, scale, pdfData ), renderOpts.m_textFontSize, scale,
-				font, renderOpts.m_textFontSize, scale,
-				font->GetLineSpacing( st ),
-				doc, newLine,
-				footnoteFont, footnoteFontSize, footnoteFontScale, nextItem, footnoteNum, offset,
-				firstInParagraph, cw, QColor(), inFootnote,
-				item->opts() & MD::TextOption::StrikethroughText,
-				item->startLine(), item->startColumn(), item->endLine(), item->endColumn() );
 
 		pdfData.restoreColor();
 	}
+	else if( item->img()->isEmpty() )
+		rects = drawString( pdfData, renderOpts, url,
+			createFont( renderOpts.m_textFont, false, false, renderOpts.m_textFontSize,
+				pdfData.doc, scale, pdfData ), renderOpts.m_textFontSize, scale,
+			font, renderOpts.m_textFontSize, scale,
+			font->GetLineSpacing( st ),
+			doc, newLine,
+			footnoteFont, footnoteFontSize, footnoteFontScale, nextItem, footnoteNum, offset,
+			firstInParagraph, cw, QColor(), inFootnote,
+			item->opts() & MD::TextOption::StrikethroughText,
+			item->startLine(), item->startColumn(), item->endLine(), item->endColumn() );
 	// Otherwise image link.
 	else
 		rects.append( drawImage( pdfData, renderOpts, item->img().get(), doc, newLine, offset,
@@ -3612,7 +3614,16 @@ PdfRenderer::createAuxCell( const RenderOpts & renderOpts,
 			if( lit != doc->labeledLinks().cend() )
 				url = lit->second->url();
 
-			if( !l->img()->isEmpty() )
+			if( !l->p()->isEmpty() )
+			{
+				for( auto pit = l->p()->items().cbegin(), plast = l->p()->items().cend();
+					pit != plast; ++pit )
+				{
+					createAuxCell( renderOpts, data, pit->get(), doc, inFootnote,
+						url, renderOpts.m_linkColor );
+				}
+			}
+			else if( !l->img()->isEmpty() )
 			{
 				CellItem item;
 				item.image = loadImage( l->img().get() );
@@ -3624,15 +3635,6 @@ PdfRenderer::createAuxCell( const RenderOpts & renderOpts,
 					renderOpts.m_textFontSize };
 
 				data.items.append( item );
-			}
-			else if( !l->p()->isEmpty() )
-			{
-				for( auto pit = l->p()->items().cbegin(), plast = l->p()->items().cend();
-					pit != plast; ++pit )
-				{
-					createAuxCell( renderOpts, data, pit->get(), doc, inFootnote,
-						url, renderOpts.m_linkColor );
-				}
 			}
 			else if( !l->text().isEmpty() )
 			{
