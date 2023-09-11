@@ -395,6 +395,7 @@ PdfRenderer::CustomWidth::calcScale( double lineWidth )
 
 			m_height.append( h );
 			m_descent.append( d );
+			m_images.append( m_width.at( i ).isImage );
 
 			w = 0.0;
 			sw = 0.0;
@@ -1423,7 +1424,7 @@ PdfRenderer::drawString( PdfAuxData & pdfData, const RenderOpts & renderOpts, co
 		}
 		else if( cw )
 		{
-			cw->append( { 0.0, lineHeight, 0.0, false, true, true, "" } );
+			cw->append( { 0.0, lineHeight, 0.0, false, true, true, false, "" } );
 			pdfData.coords.x = pdfData.coords.margins.left + offset;
 		}
 	};
@@ -1466,7 +1467,7 @@ PdfRenderer::drawString( PdfAuxData & pdfData, const RenderOpts & renderOpts, co
 					spaceFont, spaceFontSt.FontSize, scale / 100.0, false );
 			}
 			else if( cw )
-				cw->append( { w, lineHeight, 0.0, true, false, true, " " } );
+				cw->append( { w, lineHeight, 0.0, true, false, true, false, " " } );
 
 			ret.append( qMakePair( QRectF( pdfData.coords.x,
 				pdfData.coords.y + d,
@@ -1519,7 +1520,7 @@ PdfRenderer::drawString( PdfAuxData & pdfData, const RenderOpts & renderOpts, co
 			}
 			else if( cw )
 				cw->append( { length + ( it + 1 == last && footnoteAtEnd ? footnoteWidth : 0.0 ),
-					lineHeight, 0.0, false, false, true, *it } );
+					lineHeight, 0.0, false, false, true, false, *it } );
 
 			pdfData.coords.x += length;
 
@@ -1559,7 +1560,7 @@ PdfRenderer::drawString( PdfAuxData & pdfData, const RenderOpts & renderOpts, co
 							spaceFont, spaceFontSt.FontSize, scale / 100.0, strikeout );
 					}
 					else if( cw )
-						cw->append( { spaceWidth, lineHeight, 0.0, true, false, true, " " } );
+						cw->append( { spaceWidth, lineHeight, 0.0, true, false, true, false, " " } );
 
 					pdfData.coords.x += spaceWidth * scale / 100.0;
 				}
@@ -1595,12 +1596,12 @@ PdfRenderer::drawString( PdfAuxData & pdfData, const RenderOpts & renderOpts, co
 				}
 				else if( cw )
 					cw->append( { font->GetStringLength( str, fontSt ),
-						lineHeight, 0.0, false, false, true, *it } );
+						lineHeight, 0.0, false, false, true, false, *it } );
 
 				newLineFn();
 
 				if( cw && it + 1 == last && footnoteAtEnd )
-					cw->append( { footnoteWidth, lineHeight, 0.0, false, false, true,
+					cw->append( { footnoteWidth, lineHeight, 0.0, false, false, true, false,
 						QString::number( footnoteNum ) } );
 			}
 		}
@@ -1731,6 +1732,7 @@ PdfRenderer::drawParagraph( PdfAuxData & pdfData, const RenderOpts & renderOpts,
 	auto footnoteNum = m_footnoteNum;
 
 	bool lineBreak = false;
+	bool firstInParagraph = true;
 
 	// Calculate words/lines/spaces widthes.
 	for( auto it = item->items().begin(), last = item->items().end(); it != last; ++it )
@@ -1749,17 +1751,19 @@ PdfRenderer::drawParagraph( PdfAuxData & pdfData, const RenderOpts & renderOpts,
 					static_cast< MD::Text< MD::QStringTrait >* > ( it->get() ),
 					doc, newLine, footnoteFont, st.FontSize, c_footnoteScale,
 					( it + 1 != last ? ( it + 1 )->get() : nullptr ),
-					footnoteNum, offset, ( it == item->items().begin() || lineBreak ), &cw, scale,
+					footnoteNum, offset, ( firstInParagraph || lineBreak ), &cw, scale,
 					inFootnote );
 				lineBreak = false;
+				firstInParagraph = false;
 				break;
 
 			case MD::ItemType::Code :
 				drawInlinedCode( pdfData, renderOpts,
 					static_cast< MD::Code< MD::QStringTrait >* > ( it->get() ),
-					doc, newLine, offset, ( it == item->items().begin() || lineBreak ), &cw, scale,
+				doc, newLine, offset, ( firstInParagraph || lineBreak ), &cw, scale,
 					inFootnote );
 				lineBreak = false;
+				firstInParagraph = false;
 				break;
 
 			case MD::ItemType::Link :
@@ -1767,38 +1771,44 @@ PdfRenderer::drawParagraph( PdfAuxData & pdfData, const RenderOpts & renderOpts,
 					static_cast< MD::Link< MD::QStringTrait >* > ( it->get() ),
 					doc, newLine, footnoteFont, st.FontSize, c_footnoteScale,
 					( it + 1 != last ? ( it + 1 )->get() : nullptr ),
-					footnoteNum, offset, ( it == item->items().begin() || lineBreak ), &cw, scale,
+					footnoteNum, offset, ( firstInParagraph || lineBreak ), &cw, scale,
 					inFootnote );
 				lineBreak = false;
+				firstInParagraph = false;
 				break;
 
 			case MD::ItemType::Image :
 				drawImage( pdfData, renderOpts,
 					static_cast< MD::Image< MD::QStringTrait >* > ( it->get() ),
-					doc, newLine, offset, ( it == item->items().begin() || lineBreak ), &cw, scale );
+					doc, newLine, offset, ( firstInParagraph || lineBreak ), &cw, scale );
 				lineBreak = false;
+				firstInParagraph = false;
 				break;
 
 			case MD::ItemType::Math :
 				drawMathExpr( pdfData, renderOpts,
 					static_cast< MD::Math< MD::QStringTrait >* > ( it->get() ),
 					doc, newLine, offset, ( std::next( it ) != last),
-					( it == item->items().begin() || lineBreak ),
+					( firstInParagraph || lineBreak ),
 					&cw, scale );
 				lineBreak = false;
+				firstInParagraph = false;
 				break;
 
 			case MD::ItemType::LineBreak :
 			{
 				lineBreak = true;
-				cw.append( { 0.0, lineHeight, 0.0, false, true, false, "" } );
+				cw.append( { 0.0, lineHeight, 0.0, false, true, false, false, "" } );
 				pdfData.coords.x = pdfData.coords.margins.left + offset;
 			}
 				break;
 
 			case MD::ItemType::FootnoteRef :
+			{
 				++footnoteNum;
 				lineBreak = false;
+				firstInParagraph = false;
+			}
 				break;
 
 			default :
@@ -1806,7 +1816,7 @@ PdfRenderer::drawParagraph( PdfAuxData & pdfData, const RenderOpts & renderOpts,
 		}
 	}
 
-	cw.append( { 0.0, lineHeight, 0.0, false, true, false, "" } );
+	cw.append( { 0.0, lineHeight, 0.0, false, true, false, false, "" } );
 
 	cw.calcScale( pdfData.coords.pageWidth - pdfData.coords.margins.left -
 		pdfData.coords.margins.right - offset );
@@ -1868,16 +1878,6 @@ PdfRenderer::drawParagraph( PdfAuxData & pdfData, const RenderOpts & renderOpts,
 	pdfData.coords.x = pdfData.coords.margins.left + offset;
 
 	bool extraOnFirstLine = true;
-
-	if( heightCalcOpt == CalcHeightOpt::Unknown )
-	{
-		if( pdfData.coords.y < pdfData.coords.margins.bottom )
-		{
-			createPage( pdfData );
-			extraOnFirstLine = false;
-		}
-	}
-
 	newLine = false;
 
 	const auto firstLineY = pdfData.coords.y;
@@ -1887,6 +1887,7 @@ PdfRenderer::drawParagraph( PdfAuxData & pdfData, const RenderOpts & renderOpts,
 	pdfData.continueParagraph = true;
 
 	lineBreak = false;
+	firstInParagraph = true;
 
 	// Actual drawing.
 	for( auto it = item->items().begin(), last = item->items().end(); it != last; ++it )
@@ -1901,32 +1902,39 @@ PdfRenderer::drawParagraph( PdfAuxData & pdfData, const RenderOpts & renderOpts,
 		switch( (*it)->type() )
 		{
 			case MD::ItemType::Text :
+			{
 				rects.append( drawText( pdfData, renderOpts,
 					static_cast< MD::Text< MD::QStringTrait >* > ( it->get() ),
 					doc, newLine, nullptr, 0.0, 1.0, nullptr, m_footnoteNum,
-					offset, ( it == item->items().begin() || lineBreak ), &cw, scale, inFootnote ) );
+					offset, ( firstInParagraph || lineBreak ), &cw, scale, inFootnote ) );
 				lineBreak = false;
+				firstInParagraph = false;
+			}
 				break;
 
 			case MD::ItemType::Code :
+			{
 				rects.append( drawInlinedCode( pdfData, renderOpts,
 					static_cast< MD::Code< MD::QStringTrait >* > ( it->get() ),
-					doc, newLine, offset, ( it == item->items().begin() || lineBreak ), &cw, scale,
+					doc, newLine, offset, ( firstInParagraph || lineBreak ), &cw, scale,
 					inFootnote ) );
 				lineBreak = false;
+				firstInParagraph = false;
+			}
 				break;
 
 			case MD::ItemType::Link :
 			{
 				auto link = static_cast< MD::Link< MD::QStringTrait >* > ( it->get() );
 
-				if( !link->img()->isEmpty() && extraOnFirstLine )
+				if( cw.isImage() && extraOnFirstLine )
 					pdfData.coords.y += cw.height();
 
 				rects.append( drawLink( pdfData, renderOpts, link,
 					doc, newLine, nullptr, 0.0, 1.0, nullptr, m_footnoteNum,
-					offset, ( it == item->items().begin() || lineBreak ), &cw, scale, inFootnote ) );
+					offset, ( firstInParagraph || lineBreak ), &cw, scale, inFootnote ) );
 				lineBreak = false;
+				firstInParagraph = false;
 			}
 				break;
 
@@ -1937,28 +1945,35 @@ PdfRenderer::drawParagraph( PdfAuxData & pdfData, const RenderOpts & renderOpts,
 
 				rects.append( drawImage( pdfData, renderOpts,
 					static_cast< MD::Image< MD::QStringTrait >* > ( it->get() ),
-					doc, newLine, offset, ( it == item->items().begin() || lineBreak ), &cw, scale ) );
+					doc, newLine, offset, ( firstInParagraph || lineBreak ), &cw, scale ) );
 				lineBreak = false;
+				firstInParagraph = false;
 			}
 				break;
 
 			case MD::ItemType::Math :
+			{
 				rects.append( drawMathExpr( pdfData, renderOpts,
 					static_cast< MD::Math< MD::QStringTrait >* > ( it->get() ),
 					doc, newLine, offset, ( std::next( it ) != last ),
-					( it == item->items().begin() || lineBreak ),
+					( firstInParagraph || lineBreak ),
 					&cw, scale ) );
 				lineBreak = false;
+				firstInParagraph = false;
+			}
 				break;
 
 			case MD::ItemType::LineBreak :
+			{
 				lineBreak = true;
 				moveToNewLine( pdfData, offset, lineHeight, 1.0, lineHeight );
+			}
 				break;
 
 			case MD::ItemType::FootnoteRef :
 			{
 				lineBreak = false;
+
 				if( !inFootnote )
 				{
 					auto * ref = static_cast< MD::FootnoteRef< MD::QStringTrait >* > ( it->get() );
@@ -2001,6 +2016,8 @@ PdfRenderer::drawParagraph( PdfAuxData & pdfData, const RenderOpts & renderOpts,
 						addFootnote( ref->id(), fit->second, pdfData, renderOpts, doc );
 					}
 				}
+
+				firstInParagraph = false;
 			}
 				break;
 
@@ -2008,7 +2025,7 @@ PdfRenderer::drawParagraph( PdfAuxData & pdfData, const RenderOpts & renderOpts,
 				break;
 		}
 
-		extraOnFirstLine = false;
+		extraOnFirstLine = firstInParagraph;
 	}
 
 	pdfData.continueParagraph = false;
@@ -2251,11 +2268,11 @@ PdfRenderer::drawMathExpr( PdfAuxData & pdfData, const RenderOpts & renderOpts,
 
 			pdfData.coords.x = pdfData.coords.margins.left + offset;
 
-			cw->append( { 0.0, 0.0, descent, false, true, false, "" } );
-			cw->append( { 0.0, height, descent, false, true, false, "" } );
+			cw->append( { 0.0, 0.0, descent, false, true, false, false, "" } );
+			cw->append( { 0.0, height, descent, false, true, false, true, "" } );
 
 			if( hasNext )
-				cw->append( { 0.0, 0.0, descent, false, true, false, "" } );
+				cw->append( { 0.0, 0.0, descent, false, true, false, false, "" } );
 		}
 		else
 		{
@@ -2271,11 +2288,11 @@ PdfRenderer::drawMathExpr( PdfAuxData & pdfData, const RenderOpts & renderOpts,
 
 			if( iWidth - availableWidth > 0.01 )
 			{
-				cw->append( { 0.0, lineHeight, descent, false, true, true, "" } );
+				cw->append( { 0.0, lineHeight, descent, false, true, true, false, "" } );
 				pdfData.coords.x = pdfData.coords.margins.left + offset;
 			}
 			else
-				cw->append( { spaceWidth, lineHeight, descent, true, false, true, " " } );
+				cw->append( { spaceWidth, lineHeight, descent, true, false, true, false, " " } );
 
 			double imgScale = 1.0;
 
@@ -2294,7 +2311,7 @@ PdfRenderer::drawMathExpr( PdfAuxData & pdfData, const RenderOpts & renderOpts,
 
 			cw->append( { iWidth * imgScale,
 				iHeight * imgScale - font->GetDescent( st ),
-				descent, false, false, hasNext, "" } );
+				descent, false, false, hasNext, false, "" } );
 		}
 	}
 
@@ -2549,11 +2566,14 @@ PdfRenderer::drawImage( PdfAuxData & pdfData, const RenderOpts & renderOpts,
 			{
 				imgScale = ( pageHeight / ( iHeight * imgScale ) ) * scale;
 
-				createPage( pdfData );
+				if( !pdfData.firstOnPage )
+				{
+					createPage( pdfData );
+
+					pdfData.coords.x += offset;
+				}
 
 				pdfData.freeSpaceOn( pdfData.currentPageIndex() );
-
-				pdfData.coords.x += offset;
 			}
 			else if( iHeight * imgScale > availableHeight )
 			{
@@ -2638,9 +2658,9 @@ PdfRenderer::drawImage( PdfAuxData & pdfData, const RenderOpts & renderOpts,
 		pdfData.coords.x = pdfData.coords.margins.left + offset;
 
 		if( !cw->isEmpty() )
-			cw->append( { 0.0, 0.0, 0.0, false, true, false, "" } );
+			cw->append( { 0.0, 0.0, 0.0, false, true, false, false, "" } );
 
-		cw->append( { 0.0, height, 0.0, false, true, false, "" } );
+		cw->append( { 0.0, height, 0.0, false, true, false, true, "" } );
 
 		return qMakePair( QRectF(), pdfData.currentPageIndex() );
 	}

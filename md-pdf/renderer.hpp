@@ -453,6 +453,7 @@ private:
 			bool isSpace = false;
 			bool isNewLine = false;
 			bool shrink = true;
+			bool isImage = false;
 			QString word;
 		}; // struct Width
 
@@ -462,6 +463,8 @@ private:
 		double scale() { return m_scale.at( m_pos ); }
 		//! \return Height of the line.
 		double height() { return m_height.at( m_pos ); }
+		//! \return Is current item an image?
+		bool isImage() const { return m_images.at( m_pos ); }
 		//! \return Descent of the line.
 		double descent() { return m_descent.at( m_pos ); }
 		//! Move to next line.
@@ -496,6 +499,8 @@ private:
 		QVector< double > m_height;
 		//! Descents of lines.
 		QVector< double > m_descent;
+		//! Flags of images.
+		QVector< bool > m_images;
 		//! Position of current line.
 		int m_pos = 0;
 	}; // struct CustomWidth
