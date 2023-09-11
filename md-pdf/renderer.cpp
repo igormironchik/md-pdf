@@ -36,6 +36,8 @@
 #include <QBuffer>
 #include <QTemporaryFile>
 #include <QPainter>
+#include <QApplication>
+#include <QScreen>
 
 // Magick++ include.
 #include <Magick++.h>
@@ -2040,7 +2042,7 @@ PdfRenderer::drawMathExpr( PdfAuxData & pdfData, const RenderOpts & renderOpts,
 	bool & newLine, double offset, bool hasNext,
 	bool firstInParagraph, CustomWidth * cw, double scale )
 {
-	static const double dpi = 200.0;
+	static const double dpi = 300.0;
 
 	JKQTMathText mt;
 	mt.useAnyUnicode( renderOpts.m_mathFont, renderOpts.m_mathFont );
@@ -2126,11 +2128,14 @@ PdfRenderer::drawMathExpr( PdfAuxData & pdfData, const RenderOpts & renderOpts,
 			{
 				imgScale = ( pageHeight / ( iHeight * imgScale ) ) * scale;
 
-				createPage( pdfData );
+				if( !pdfData.firstOnPage )
+				{
+					createPage( pdfData );
+
+					pdfData.coords.x += offset;
+				}
 
 				pdfData.freeSpaceOn( pdfData.currentPageIndex() );
-
-				pdfData.coords.x += offset;
 			}
 			else if( iHeight * imgScale - availableHeight > 0.01 )
 			{
