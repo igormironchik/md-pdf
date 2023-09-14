@@ -1170,6 +1170,7 @@ PdfRenderer::drawText( PdfAuxData & pdfData, const RenderOpts & renderOpts,
 
 	return drawString( pdfData, renderOpts, item->text(),
 		spaceFont, renderOpts.m_textFontSize, scale,
+		spaceFont, renderOpts.m_textFontSize, scale,
 		font, renderOpts.m_textFontSize, scale,
 		font->GetLineSpacing( st ),
 		doc, newLine,
@@ -1268,6 +1269,7 @@ PdfRenderer::drawLink( PdfAuxData & pdfData, const RenderOpts & renderOpts,
 
 					rects.append( drawString( pdfData, renderOpts, text->text(),
 						spaceFont, renderOpts.m_textFontSize, scale,
+						spaceFont, renderOpts.m_textFontSize, scale,
 						font, renderOpts.m_textFontSize, scale,
 						font->GetLineSpacing( st ),
 						doc, newLine, footnoteFont, footnoteFontSize, footnoteFontScale,
@@ -1303,9 +1305,13 @@ PdfRenderer::drawLink( PdfAuxData & pdfData, const RenderOpts & renderOpts,
 		pdfData.restoreColor();
 	}
 	else if( item->img()->isEmpty() )
+	{
+		auto * spaceFont = createFont( renderOpts.m_textFont, false, false,
+			renderOpts.m_textFontSize, pdfData.doc, scale, pdfData );
+
 		rects = drawString( pdfData, renderOpts, url,
-			createFont( renderOpts.m_textFont, false, false, renderOpts.m_textFontSize,
-				pdfData.doc, scale, pdfData ), renderOpts.m_textFontSize, scale,
+			spaceFont, renderOpts.m_textFontSize, scale,
+			spaceFont, renderOpts.m_textFontSize, scale,
 			font, renderOpts.m_textFontSize, scale,
 			font->GetLineSpacing( st ),
 			doc, newLine,
@@ -1313,6 +1319,7 @@ PdfRenderer::drawLink( PdfAuxData & pdfData, const RenderOpts & renderOpts,
 			firstInParagraph, cw, QColor(), inFootnote,
 			item->opts() & MD::TextOption::StrikethroughText,
 			item->startLine(), item->startColumn(), item->endLine(), item->endColumn() );
+	}
 	// Otherwise image link.
 	else
 		rects.append( drawImage( pdfData, renderOpts, item->img().get(), doc, newLine, offset,
@@ -1350,6 +1357,7 @@ PdfRenderer::drawLink( PdfAuxData & pdfData, const RenderOpts & renderOpts,
 
 QVector< QPair< QRectF, unsigned int > >
 PdfRenderer::drawString( PdfAuxData & pdfData, const RenderOpts & renderOpts, const QString & str,
+	PdfFont * firstSpaceFont, double firstSpaceFontSize, double firstSpaceFontScale,
 	PdfFont * spaceFont, double spaceFontSize, double spaceFontScale,
 	PdfFont * font, double fontSize, double fontScale,
 	double lineHeight,
@@ -1390,6 +1398,9 @@ PdfRenderer::drawString( PdfAuxData & pdfData, const RenderOpts & renderOpts, co
 
 	PdfTextState spaceFontSt;
 	spaceFontSt.FontSize = spaceFontSize * spaceFontScale;
+
+	PdfTextState firstSpaceFontSt;
+	firstSpaceFontSt.FontSize = firstSpaceFontSize * firstSpaceFontScale;
 
 	if( footnoteAtEnd )
 	{
@@ -1450,7 +1461,7 @@ PdfRenderer::drawString( PdfAuxData & pdfData, const RenderOpts & renderOpts, co
 	if( !firstInParagraph && !newLine && !words.isEmpty() &&
 		!charsWithoutSpaceBefore.contains( words.first() ) )
 	{
-		const auto w = spaceFont->GetStringLength( PdfString( " " ), spaceFontSt );
+		const auto w = firstSpaceFont->GetStringLength( PdfString( " " ), firstSpaceFontSt );
 
 		auto scale = 100.0;
 
@@ -1466,7 +1477,7 @@ PdfRenderer::drawString( PdfAuxData & pdfData, const RenderOpts & renderOpts, co
 			if( draw )
 			{
 				pdfData.drawText( pdfData.coords.x, pdfData.coords.y + d, " ",
-					spaceFont, spaceFontSt.FontSize, scale / 100.0, false );
+					firstSpaceFont, firstSpaceFontSt.FontSize, scale / 100.0, false );
 			}
 			else if( cw )
 				cw->append( { w, lineHeight, 0.0, true, false, true, false, " " } );
@@ -1629,6 +1640,7 @@ PdfRenderer::drawInlinedCode( PdfAuxData & pdfData, const RenderOpts & renderOpt
 	st.FontSize = renderOpts.m_textFontSize * scale;
 
 	return drawString( pdfData, renderOpts, item->text(),
+		textFont, renderOpts.m_textFontSize, scale,
 		font, renderOpts.m_codeFontSize, scale,
 		font, renderOpts.m_codeFontSize, scale,
 		textFont->GetLineSpacing( st ),

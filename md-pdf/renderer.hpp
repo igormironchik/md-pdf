@@ -520,6 +520,7 @@ private:
 	//! Draw string.
 	QVector< QPair< QRectF, unsigned int > > drawString( PdfAuxData & pdfData,
 		const RenderOpts & renderOpts, const QString & str,
+		PdfFont * firstSpaceFont, double firstSpaceFontSize, double firstSpaceFontScale,
 		PdfFont * spaceFont, double spaceFontSize, double spaceFontScale,
 		PdfFont * font, double fontSize, double fontScale,
 		double lineHeight,
