@@ -1614,8 +1614,10 @@ PdfRenderer::drawString( PdfAuxData & pdfData, const RenderOpts & renderOpts, co
 
 QVector< QPair< QRectF, unsigned int > >
 PdfRenderer::drawInlinedCode( PdfAuxData & pdfData, const RenderOpts & renderOpts,
-	MD::Code< MD::QStringTrait > * item, std::shared_ptr< MD::Document< MD::QStringTrait > > doc, bool & newLine, double offset,
-	bool firstInParagraph, CustomWidth * cw, double scale, bool inFootnote )
+	MD::Code< MD::QStringTrait > * item, std::shared_ptr< MD::Document< MD::QStringTrait > > doc,
+	bool & newLine, double offset,
+	bool firstInParagraph, CustomWidth * cw,
+	double scale, bool inFootnote )
 {
 	auto * textFont = createFont( renderOpts.m_textFont, false, false, renderOpts.m_textFontSize,
 		pdfData.doc, scale, pdfData );
@@ -1627,8 +1629,8 @@ PdfRenderer::drawInlinedCode( PdfAuxData & pdfData, const RenderOpts & renderOpt
 	st.FontSize = renderOpts.m_textFontSize * scale;
 
 	return drawString( pdfData, renderOpts, item->text(),
-		font, renderOpts.m_codeFontSize, 1.0,
-		font, renderOpts.m_codeFontSize, 1.0,
+		font, renderOpts.m_codeFontSize, scale,
+		font, renderOpts.m_codeFontSize, scale,
 		textFont->GetLineSpacing( st ),
 		doc, newLine,
 		nullptr, 0.0, 0.0, nullptr, m_footnoteNum,
