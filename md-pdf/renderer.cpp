@@ -1492,9 +1492,91 @@ PdfRenderer::drawString( PdfAuxData & pdfData, const RenderOpts & renderOpts, co
 			newLineFn();
 	}
 
+	const auto fullWidth = pdfData.coords.pageWidth - pdfData.coords.margins.left -
+		pdfData.coords.margins.right;
+
+	const auto spaceWidth = font->GetStringLength( PdfString( " " ), fontSt );
+
 	// Draw words.
 	for( auto it = words.begin(), last = words.end(); it != last; ++it )
 	{
+		auto countCharsForAvailableSpace = []( const QString & s, double availableWidth,
+			PdfFont * font, const PdfTextState & fontSt, QString & tmp ) -> qsizetype
+		{
+			qsizetype i = 0;
+
+			for( ; i < s.length(); ++i )
+			{
+				tmp.push_back( s[ i ] );
+				const auto p = createPdfString( tmp );
+				const auto l = font->GetStringLength( p, fontSt );
+
+				if( l > availableWidth && !( qAbs( l - availableWidth ) < 0.01 ) )
+				{
+					tmp.removeLast();
+
+					--i;
+
+					break;
+				}
+			}
+
+			return ( i < s.length() ? ++i : i );
+		}; // countCharsForAvailableSpace
+
+		auto drawSpaceIfNeeded = [&]()
+		{
+			if( it + 1 != last )
+			{
+				const auto nextLength = font->GetStringLength( createPdfString(
+					*( it + 1 ) ), fontSt ) + ( it + 2 == last && footnoteAtEnd ? footnoteWidth : 0.0 );
+
+				auto scale = 100.0;
+
+				if( draw && cw )
+					scale = cw->scale();
+
+				const auto availableWidth = wv - ( pdfData.coords.x > 0.0 ? pdfData.coords.x : 0.0 ) -
+					spaceWidth * scale / 100.0;
+
+				const auto xv = pdfData.coords.x + spaceWidth * scale / 100.0 + nextLength;
+
+				QString tmp;
+
+				if( ( xv < wv || qAbs( xv - wv ) < 0.01 ) ||
+					( nextLength > fullWidth * 2.0 / 3.0 &&
+						countCharsForAvailableSpace( *( it + 1 ), availableWidth,
+							font, fontSt, tmp ) > 4 ) )
+				{
+					if( draw )
+					{
+						ret.append( qMakePair( QRectF( pdfData.coords.x,
+							pdfData.coords.y + d,
+							spaceWidth * scale / 100.0, lineHeight ), pdfData.currentPageIndex() ) );
+
+						if( background.isValid() )
+						{
+							pdfData.setColor( background );
+							pdfData.drawRectangle( pdfData.coords.x, pdfData.coords.y +
+								font->GetDescent( fontSt ) +
+								d, spaceWidth * scale / 100.0,
+								font->GetLineSpacing( fontSt ), PdfPathDrawMode::Fill );
+							pdfData.restoreColor();
+						}
+
+						pdfData.drawText( pdfData.coords.x, pdfData.coords.y + d, " ",
+							spaceFont, spaceFontSt.FontSize, scale / 100.0, strikeout );
+					}
+					else if( cw )
+						cw->append( { spaceWidth, lineHeight, 0.0, true, false, true, false, " " } );
+
+					pdfData.coords.x += spaceWidth * scale / 100.0;
+				}
+				else
+					newLineFn();
+			}
+		}; // drawSpaceIfNeeded
+
 		{
 			QMutexLocker lock( &m_mutex );
 
@@ -1537,85 +1619,82 @@ PdfRenderer::drawString( PdfAuxData & pdfData, const RenderOpts & renderOpts, co
 
 			pdfData.coords.x += length;
 
-			// Draw space if needed.
-			if( it + 1 != last )
-			{
-				const auto spaceWidth = font->GetStringLength( PdfString( " " ), fontSt );
-				const auto nextLength = font->GetStringLength( createPdfString(
-					*( it + 1 ) ), fontSt ) + ( it + 2 == last && footnoteAtEnd ? footnoteWidth : 0.0 );
-
-				auto scale = 100.0;
-
-				if( draw && cw )
-					scale = cw->scale();
-
-				const auto xv = pdfData.coords.x + spaceWidth * scale / 100.0 + nextLength;
-
-				if( xv < wv || qAbs( xv - wv ) < 0.01 )
-				{
-					if( draw )
-					{
-						ret.append( qMakePair( QRectF( pdfData.coords.x,
-							pdfData.coords.y + d,
-							spaceWidth * scale / 100.0, lineHeight ), pdfData.currentPageIndex() ) );
-
-						if( background.isValid() )
-						{
-							pdfData.setColor( background );
-							pdfData.drawRectangle( pdfData.coords.x, pdfData.coords.y +
-								font->GetDescent( fontSt ) +
-								d, spaceWidth * scale / 100.0,
-								font->GetLineSpacing( fontSt ), PdfPathDrawMode::Fill );
-							pdfData.restoreColor();
-						}
-
-						pdfData.drawText( pdfData.coords.x, pdfData.coords.y + d, " ",
-							spaceFont, spaceFontSt.FontSize, scale / 100.0, strikeout );
-					}
-					else if( cw )
-						cw->append( { spaceWidth, lineHeight, 0.0, true, false, true, false, " " } );
-
-					pdfData.coords.x += spaceWidth * scale / 100.0;
-				}
-				else
-					newLineFn();
-			}
+			drawSpaceIfNeeded();
 		}
 		// Need to move to new line.
 		else
 		{
-			const auto xv = pdfData.coords.margins.left + offset + length +
+			const auto worldLength = length +
 				( it + 1 == last && footnoteAtEnd ? footnoteWidth : 0.0 );
+			auto availableWidth = ( wv - ( pdfData.coords.x > 0.0 ? pdfData.coords.x : 0.0 ) );
 
-			if( xv < wv || qAbs( xv - wv ) < 0.01 )
+			auto splitAndDraw = [&] ( QString s )
 			{
-				newLineFn();
+				while( s.length() )
+				{
+					QString tmp;
+					const auto i = countCharsForAvailableSpace( s, availableWidth,
+						font, fontSt, tmp );
 
-				--it;
+					s.remove( 0, i );
+
+					const auto p = createPdfString( tmp );
+					const auto w = font->GetStringLength( p, fontSt );
+
+					if( draw )
+					{
+						pdfData.drawText( pdfData.coords.x, pdfData.coords.y + d, p,
+							font, fontSize * fontScale, 1.0, strikeout );
+
+						ret.append( qMakePair( QRectF( pdfData.coords.x,
+								pdfData.coords.y + d, w, lineHeight ),
+							pdfData.currentPageIndex() ) );
+					}
+					else if( cw )
+						cw->append( { w, lineHeight, 0.0, false, false, true, false, tmp } );
+
+					availableWidth = fullWidth;
+
+					pdfData.coords.x += w;
+
+					if( s.length() )
+						newLineFn();
+				}
+
+				if( !draw && cw && it + 1 == last && footnoteAtEnd )
+					cw->append( { footnoteWidth, lineHeight, 0.0, false, false, true, false,
+						QString::number( footnoteNum ) } );
+
+				drawSpaceIfNeeded();
+			}; // splitAndDraw
+
+			if( worldLength > fullWidth * 2.0 / 3.0 )
+			{
+				QString tmp;
+
+				if( countCharsForAvailableSpace( *it, availableWidth, font, fontSt, tmp ) > 4 )
+					splitAndDraw( *it );
+				else
+				{
+					if( worldLength < fullWidth || qAbs( worldLength - fullWidth ) < 0.01 )
+					{
+						newLineFn();
+
+						--it;
+					}
+					else
+					{
+						newLineFn();
+
+						splitAndDraw( *it );
+					}
+				}
 			}
 			else
 			{
 				newLineFn();
 
-				if( draw )
-				{
-					pdfData.drawText( pdfData.coords.x, pdfData.coords.y + d, str,
-						font, fontSize * fontScale, 1.0, strikeout );
-
-					ret.append( qMakePair( QRectF( pdfData.coords.x,
-							pdfData.coords.y + d,
-							font->GetStringLength( str, fontSt ), lineHeight ),
-						pdfData.currentPageIndex() ) );
-				}
-				else if( cw )
-					cw->append( { font->GetStringLength( str, fontSt ),
-						lineHeight, 0.0, false, false, true, false, *it } );
-
-				newLineFn();
-
-				if( cw && it + 1 == last && footnoteAtEnd )
-					cw->append( { footnoteWidth, lineHeight, 0.0, false, false, true, false,
-						QString::number( footnoteNum ) } );
+				--it;
 			}
 		}
 	}
