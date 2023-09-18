@@ -1130,6 +1130,11 @@ PdfRenderer::drawHeading( PdfAuxData & pdfData, const RenderOpts & renderOpts,
 {
 	if( item && item->text().get() )
 	{
+		pdfData.startLine = item->startLine();
+		pdfData.startPos = item->startColumn();
+		pdfData.endLine = item->endLine();
+		pdfData.endPos = item->endColumn();
+
 		const auto where = drawParagraph( pdfData, renderOpts, item->text().get(), doc,
 			offset, withNewLine, heightCalcOpt,
 			scale * ( 1.0 + ( 7 - item->level() ) * 0.25 ),
@@ -1158,6 +1163,11 @@ PdfRenderer::drawText( PdfAuxData & pdfData, const RenderOpts & renderOpts,
 	MD::Item< MD::QStringTrait > * nextItem, int footnoteNum,
 	double offset, bool firstInParagraph, CustomWidth * cw, double scale, bool inFootnote )
 {
+	pdfData.startLine = item->startLine();
+	pdfData.startPos = item->startColumn();
+	pdfData.endLine = item->endLine();
+	pdfData.endPos = item->endColumn();
+
 	auto * spaceFont = createFont( renderOpts.m_textFont, false, false,
 		renderOpts.m_textFontSize, pdfData.doc, scale, pdfData );
 
@@ -1222,6 +1232,11 @@ PdfRenderer::drawLink( PdfAuxData & pdfData, const RenderOpts & renderOpts,
 	MD::Item< MD::QStringTrait > * nextItem, int footnoteNum,
 	double offset, bool firstInParagraph, CustomWidth * cw, double scale, bool inFootnote )
 {
+	pdfData.startLine = item->startLine();
+	pdfData.startPos = item->startColumn();
+	pdfData.endLine = item->endLine();
+	pdfData.endPos = item->endColumn();
+
 	QVector< QPair< QRectF, unsigned int > > rects;
 
 	QString url = item->url();
@@ -1709,6 +1724,11 @@ PdfRenderer::drawInlinedCode( PdfAuxData & pdfData, const RenderOpts & renderOpt
 	bool firstInParagraph, CustomWidth * cw,
 	double scale, bool inFootnote )
 {
+	pdfData.startLine = item->startLine();
+	pdfData.startPos = item->startColumn();
+	pdfData.endLine = item->endLine();
+	pdfData.endPos = item->endColumn();
+
 	auto * textFont = createFont( renderOpts.m_textFont, false, false, renderOpts.m_textFontSize,
 		pdfData.doc, scale, pdfData );
 
@@ -1795,6 +1815,11 @@ PdfRenderer::drawParagraph( PdfAuxData & pdfData, const RenderOpts & renderOpts,
 	double offset, bool withNewLine,
 	CalcHeightOpt heightCalcOpt, double scale, bool inFootnote )
 {
+	pdfData.startLine = item->startLine();
+	pdfData.startPos = item->startColumn();
+	pdfData.endLine = item->endLine();
+	pdfData.endPos = item->endColumn();
+
 	QVector< QPair< QRectF, unsigned int > > rects;
 
 	{
@@ -2135,6 +2160,11 @@ PdfRenderer::drawMathExpr( PdfAuxData & pdfData, const RenderOpts & renderOpts,
 	bool & newLine, double offset, bool hasNext,
 	bool firstInParagraph, CustomWidth * cw, double scale )
 {
+	pdfData.startLine = item->startLine();
+	pdfData.startPos = item->startColumn();
+	pdfData.endLine = item->endLine();
+	pdfData.endPos = item->endColumn();
+
 	static const double dpi = 300.0;
 
 	JKQTMathText mt;
@@ -3139,6 +3169,11 @@ PdfRenderer::drawBlockquote( PdfAuxData & pdfData, const RenderOpts & renderOpts
 	MD::Blockquote< MD::QStringTrait > * item, std::shared_ptr< MD::Document< MD::QStringTrait > > doc, double offset,
 	CalcHeightOpt heightCalcOpt, double scale, bool inFootnote )
 {
+	pdfData.startLine = item->startLine();
+	pdfData.startPos = item->startColumn();
+	pdfData.endLine = item->endLine();
+	pdfData.endPos = item->endColumn();
+
 	QVector< WhereDrawn > ret;
 
 	if( heightCalcOpt == CalcHeightOpt::Unknown )
@@ -3327,6 +3362,11 @@ PdfRenderer::drawList( PdfAuxData & pdfData, const RenderOpts & renderOpts,
 	MD::List< MD::QStringTrait > * item, std::shared_ptr< MD::Document< MD::QStringTrait > > doc, int bulletWidth, double offset,
 	CalcHeightOpt heightCalcOpt, double scale, bool inFootnote, bool nested )
 {
+	pdfData.startLine = item->startLine();
+	pdfData.startPos = item->startColumn();
+	pdfData.endLine = item->endLine();
+	pdfData.endPos = item->endColumn();
+
 	QVector< WhereDrawn > ret;
 
 	{
@@ -3386,6 +3426,11 @@ PdfRenderer::drawListItem( PdfAuxData & pdfData, const RenderOpts & renderOpts,
 	ListItemType & prevListItemType, int bulletWidth, double offset, CalcHeightOpt heightCalcOpt,
 	double scale, bool inFootnote, bool firstInList )
 {
+	pdfData.startLine = item->startLine();
+	pdfData.startPos = item->startColumn();
+	pdfData.endLine = item->endLine();
+	pdfData.endPos = item->endColumn();
+
 	auto * font = createFont( renderOpts.m_textFont, false, false, renderOpts.m_textFontSize,
 		pdfData.doc, scale, pdfData );
 
