@@ -2475,6 +2475,11 @@ PdfRenderer::drawFootnote( PdfAuxData & pdfData, const RenderOpts & renderOpts,
 {
 	QVector< WhereDrawn > ret;
 
+	pdfData.startLine = note->startLine();
+	pdfData.startPos = note->startColumn();
+	pdfData.endLine = note->endLine();
+	pdfData.endPos = note->endColumn();
+
 	if( heightCalcOpt == CalcHeightOpt::Unknown && pdfData.footnotesAnchorsMap.contains( note ) )
 		pdfData.currentFile = pdfData.footnotesAnchorsMap[ note ];
 
@@ -2952,10 +2957,16 @@ PdfRenderer::loadImage( MD::Image< MD::QStringTrait > * item )
 
 QPair< QVector< WhereDrawn >, WhereDrawn >
 PdfRenderer::drawCode( PdfAuxData & pdfData, const RenderOpts & renderOpts,
-	MD::Code< MD::QStringTrait > * item, std::shared_ptr< MD::Document< MD::QStringTrait > > doc, double offset, CalcHeightOpt heightCalcOpt,
+	MD::Code< MD::QStringTrait > * item, std::shared_ptr< MD::Document< MD::QStringTrait > > doc,
+	double offset, CalcHeightOpt heightCalcOpt,
 	double scale )
 {
 	Q_UNUSED( doc )
+
+	pdfData.startLine = item->startLine();
+	pdfData.startPos = item->startColumn();
+	pdfData.endLine = item->endLine();
+	pdfData.endPos = item->endColumn();
 
 	if( item->text().isEmpty() )
 		return {};
@@ -3913,6 +3924,11 @@ PdfRenderer::drawTable( PdfAuxData & pdfData, const RenderOpts & renderOpts,
 	double scale, bool inFootnote )
 {
 	QVector< WhereDrawn > ret;
+
+	pdfData.startLine = item->startLine();
+	pdfData.startPos = item->startColumn();
+	pdfData.endLine = item->endLine();
+	pdfData.endPos = item->endColumn();
 
 	{
 		QMutexLocker lock( &m_mutex );
