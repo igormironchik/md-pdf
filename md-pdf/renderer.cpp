@@ -1936,7 +1936,8 @@ PdfRenderer::drawParagraph( PdfAuxData & pdfData, const RenderOpts & renderOpts,
 		}
 	}
 
-	cw.append( { 0.0, lineHeight, 0.0, false, true, false, false, "" } );
+	if( !cw.isNewLineAtEnd() )
+		cw.append( { 0.0, lineHeight, 0.0, false, true, false, false, "" } );
 
 	cw.calcScale( pdfData.coords.pageWidth - pdfData.coords.margins.left -
 		pdfData.coords.margins.right - offset );
@@ -2679,7 +2680,12 @@ PdfRenderer::drawImage( PdfAuxData & pdfData, const RenderOpts & renderOpts,
 			const auto lineHeight = font->GetLineSpacing( st );
 
 			if( !firstInParagraph )
+			{
 				moveToNewLine( pdfData, offset, lineHeight, 1.0, lineHeight );
+
+				if( cw && !cw->isImage() )
+					cw->moveToNextLine();
+			}
 			else
 				pdfData.coords.x += offset;
 
@@ -2732,6 +2738,9 @@ PdfRenderer::drawImage( PdfAuxData & pdfData, const RenderOpts & renderOpts,
 				iWidth * imgScale, iHeight * imgScale );
 
 			moveToNewLine( pdfData, offset, lineHeight, 1.0, lineHeight );
+
+			if( cw )
+				cw->moveToNextLine();
 
 			return qMakePair( r, pdfData.currentPageIndex() );
 		}
@@ -2790,7 +2799,7 @@ PdfRenderer::drawImage( PdfAuxData & pdfData, const RenderOpts & renderOpts,
 
 		pdfData.coords.x = pdfData.coords.margins.left + offset;
 
-		if( !cw->isEmpty() )
+		if( !cw->isNewLineAtEnd() && !firstInParagraph )
 			cw->append( { 0.0, 0.0, 0.0, false, true, false, false, "" } );
 
 		cw->append( { 0.0, height, 0.0, false, true, false, true, "" } );
