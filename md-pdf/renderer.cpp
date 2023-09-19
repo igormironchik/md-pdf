@@ -3607,60 +3607,63 @@ PdfRenderer::drawListItem( PdfAuxData & pdfData, const RenderOpts & renderOpts,
 
 	if( heightCalcOpt == CalcHeightOpt::Unknown )
 	{
-		pdfData.painter->SetCanvas( pdfData.doc->GetPages().GetPageAt( firstLine.pageIdx ) );
-
-		if( item->isTaskList() )
+		if( firstLine.pageIdx >= 0 )
 		{
-			pdfData.setColor( Qt::black );
-			pdfData.drawRectangle(
-				pdfData.coords.margins.left + offset - ( orderedListNumberWidth + spaceWidth ),
-				firstLine.y + qAbs( firstLine.height - orderedListNumberWidth ) / 2.0,
-				orderedListNumberWidth, orderedListNumberWidth, PdfPathDrawMode::Stroke );
+			pdfData.painter->SetCanvas( pdfData.doc->GetPages().GetPageAt( firstLine.pageIdx ) );
 
-			if( item->isChecked() )
+			if( item->isTaskList() )
 			{
-				const auto d = orderedListNumberWidth * 0.2;
-
+				pdfData.setColor( Qt::black );
 				pdfData.drawRectangle(
-					pdfData.coords.margins.left + offset + d - ( orderedListNumberWidth + spaceWidth ),
-					firstLine.y + qAbs( firstLine.height - orderedListNumberWidth ) / 2.0 + d,
-					orderedListNumberWidth - 2.0 * d, orderedListNumberWidth - 2.0 * d,
+					pdfData.coords.margins.left + offset - ( orderedListNumberWidth + spaceWidth ),
+					firstLine.y + qAbs( firstLine.height - orderedListNumberWidth ) / 2.0,
+					orderedListNumberWidth, orderedListNumberWidth, PdfPathDrawMode::Stroke );
+
+				if( item->isChecked() )
+				{
+					const auto d = orderedListNumberWidth * 0.2;
+
+					pdfData.drawRectangle(
+						pdfData.coords.margins.left + offset + d - ( orderedListNumberWidth + spaceWidth ),
+						firstLine.y + qAbs( firstLine.height - orderedListNumberWidth ) / 2.0 + d,
+						orderedListNumberWidth - 2.0 * d, orderedListNumberWidth - 2.0 * d,
+						PdfPathDrawMode::Fill );
+				}
+
+				pdfData.restoreColor();
+			}
+			else if( item->listType() == MD::ListItem< MD::QStringTrait >::Ordered )
+			{
+				if( prevListItemType == ListItemType::Unordered )
+					idx = 1;
+				else if( prevListItemType == ListItemType::Ordered )
+					++idx;
+
+				prevListItemType = ListItemType::Ordered;
+
+				const QString idxText = QString::number( idx ) + QLatin1Char( '.' );
+
+				pdfData.drawText(
+					pdfData.coords.margins.left + offset - ( orderedListNumberWidth + spaceWidth ),
+					firstLine.y + qAbs( firstLine.height - font->GetAscent( st ) ) / 2.0,
+					createPdfString( idxText ),
+					font, st.FontSize, 1.0, false );
+			}
+			else
+			{
+				prevListItemType = ListItemType::Unordered;
+
+				pdfData.setColor( Qt::black );
+				const auto r = unorderedMarkWidth / 2.0;
+				pdfData.painter->DrawCircle(
+					pdfData.coords.margins.left + offset + r - ( orderedListNumberWidth + spaceWidth ),
+					firstLine.y + qAbs( firstLine.height - unorderedMarkWidth ) / 2.0, r,
 					PdfPathDrawMode::Fill );
+				pdfData.restoreColor();
 			}
 
-			pdfData.restoreColor();
+			pdfData.painter->SetCanvas( pdfData.doc->GetPages().GetPageAt( pdfData.currentPageIndex() ) );
 		}
-		else if( item->listType() == MD::ListItem< MD::QStringTrait >::Ordered )
-		{
-			if( prevListItemType == ListItemType::Unordered )
-				idx = 1;
-			else if( prevListItemType == ListItemType::Ordered )
-				++idx;
-
-			prevListItemType = ListItemType::Ordered;
-
-			const QString idxText = QString::number( idx ) + QLatin1Char( '.' );
-
-			pdfData.drawText(
-				pdfData.coords.margins.left + offset - ( orderedListNumberWidth + spaceWidth ),
-				firstLine.y + qAbs( firstLine.height - font->GetAscent( st ) ) / 2.0,
-				createPdfString( idxText ),
-				font, st.FontSize, 1.0, false );
-		}
-		else
-		{
-			prevListItemType = ListItemType::Unordered;
-
-			pdfData.setColor( Qt::black );
-			const auto r = unorderedMarkWidth / 2.0;
-			pdfData.painter->DrawCircle(
-				pdfData.coords.margins.left + offset + r - ( orderedListNumberWidth + spaceWidth ),
-				firstLine.y + qAbs( firstLine.height - unorderedMarkWidth ) / 2.0, r,
-				PdfPathDrawMode::Fill );
-			pdfData.restoreColor();
-		}
-
-		pdfData.painter->SetCanvas( pdfData.doc->GetPages().GetPageAt( pdfData.currentPageIndex() ) );
 	}
 
 	return { ret, firstLine };
