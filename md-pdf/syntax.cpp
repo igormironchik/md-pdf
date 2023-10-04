@@ -46,6 +46,11 @@ Syntax::Syntax()
 			m_definitions.insert( QStringLiteral( "cpp" ), d );
 
 		}
+		else if( d.name() == QStringLiteral( "JavaScript" ) )
+		{
+			m_definitions.insert( QStringLiteral( "javascript" ), d );
+			m_definitions.insert( QStringLiteral( "js" ), d );
+		}
 		else
 			m_definitions.insert( d.name().toLower(), d );
 	}
