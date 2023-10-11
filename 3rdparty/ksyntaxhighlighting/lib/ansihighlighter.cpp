@@ -21,6 +21,7 @@
 #include <QHash>
 #include <QIODevice>
 #include <QTextStream>
+#include <QStringBuilder>
 
 #include <cmath>
 #include <vector>
