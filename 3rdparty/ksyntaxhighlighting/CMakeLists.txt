@@ -13,11 +13,13 @@ include(ECMSetupVersion)
 include(ECMGenerateExportHeader)
 include(ECMQtDeclareLoggingCategory)
 
-set(ksyntaxhighlighting_version_header "${CMAKE_CURRENT_BINARY_DIR}/src/ksyntaxhighlighting_version.h")
+set(ksyntaxhighlighting_version_header "${CMAKE_CURRENT_BINARY_DIR}/lib/ksyntaxhighlighting_version.h")
 ecm_setup_version(PROJECT
     VARIABLE_PREFIX KSYNTAXHIGHLIGHTING
     VERSION_HEADER "${ksyntaxhighlighting_version_header}"
     SOVERSION 6
 )
 
-add_subdirectory( src )
+add_subdirectory( indexer )
+add_subdirectory( data )
+add_subdirectory( lib )

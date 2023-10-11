@@ -90,7 +90,7 @@ add_subdirectory( 3rdparty/JKQtPlotter )
 
 add_subdirectory( 3rdparty/ksyntaxhighlighting )
 
-add_subdirectory( md-pdf )
+add_subdirectory( src )
 
 if( BUILD_MDPDF_TESTS )
 	enable_testing()

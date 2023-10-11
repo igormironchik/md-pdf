@@ -19,8 +19,8 @@ if( ENABLE_COVERAGE )
 endif( ENABLE_COVERAGE )
 
 set( SRC main.cpp
-	../../../md-pdf/renderer.cpp
-	../../../md-pdf/renderer.hpp )
+	../../../src/renderer.cpp
+	../../../src/renderer.hpp )
 
 add_definitions( -DMD_PDF_TESTING )
 
@@ -33,8 +33,8 @@ include_directories( ${CMAKE_CURRENT_SOURCE_DIR}
 	${md4qt_INCLUDE_DIRECTORIES}
 	${CMAKE_CURRENT_BINARY_DIR}
 	${ImageMagick_INCLUDE_DIRS}
-	${CMAKE_CURRENT_SOURCE_DIR}/../../../3rdparty/ksyntaxhighlighting/src
-	${CMAKE_CURRENT_BINARY_DIR}/../../../3rdparty/ksyntaxhighlighting/src )
+	${CMAKE_CURRENT_SOURCE_DIR}/../../../3rdparty/ksyntaxhighlighting/lib
+	${CMAKE_CURRENT_BINARY_DIR}/../../../3rdparty/ksyntaxhighlighting/lib )
 
 link_directories( ${CMAKE_CURRENT_BINARY_DIR}/../../../3rdparty/podofo/src/podofo )
 link_directories( ${CMAKE_CURRENT_BINARY_DIR}/../../../3rdparty/podofo/src )
@@ -53,7 +53,7 @@ configure_file( test_const.hpp.in test_const.hpp @ONLY )
 
 link_directories( ${CMAKE_CURRENT_SOURCE_DIR}/../../../lib )
 
-qt6_add_resources( SRC ${CMAKE_CURRENT_SOURCE_DIR}/../../../md-pdf/resources.qrc )
+qt6_add_resources( SRC ${CMAKE_CURRENT_SOURCE_DIR}/../../../src/resources.qrc )
 
 add_executable( test.render ${SRC} )
 

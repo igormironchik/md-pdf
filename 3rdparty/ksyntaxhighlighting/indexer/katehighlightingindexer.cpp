@@ -175,8 +175,8 @@ void init_parser(SAX2XMLReaderImpl &parser)
 
 #endif
 
-#include "../src/worddelimiters_p.h"
-#include "../src/xml_p.h"
+#include "../lib/worddelimiters_p.h"
+#include "../lib/xml_p.h"
 
 #include <array>
 

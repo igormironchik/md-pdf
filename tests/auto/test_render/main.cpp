@@ -20,8 +20,8 @@
 	along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-#include <md-pdf/renderer.hpp>
-#include <md-pdf/syntax.hpp>
+#include <src/renderer.hpp>
+#include <src/syntax.hpp>
 
 // md4qt include.
 #define MD4QT_QT_SUPPORT
