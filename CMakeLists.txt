@@ -88,6 +88,8 @@ set( JKQtPlotter_BUILD_EXAMPLES OFF CACHE INTERNAL "" FORCE )
 set( JKQtPlotter_BUILD_TOOLS OFF CACHE INTERNAL "" FORCE )
 add_subdirectory( 3rdparty/JKQtPlotter )
 
+find_package( Perl REQUIRED )
+
 add_subdirectory( 3rdparty/ksyntaxhighlighting )
 
 add_subdirectory( src )
