@@ -25,7 +25,7 @@
 #include <QPainter>
 #include <QPair>
 #include "jkqtplotter/jkqtptools.h"
-#include "jkqtcommon_statistics_and_math/jkqtpmathparser.h"
+#include "jkqtmath/jkqtpmathparser.h"
 #include "jkqtplotter/jkqtplotter_imexport.h"
 #include "jkqtplotter/graphs/jkqtpevaluatedfunction.h"
 
@@ -67,7 +67,7 @@ public:
     /** \copydoc dependentVariableName */
     QString getDependentVariableName() const;
 
-public slots:
+public Q_SLOTS:
     /** \copydoc errorFunction */
     void setErrorFunction(const QString & __value);
     /** \copydoc function */
@@ -104,7 +104,7 @@ protected:
 
 
 /*! \brief This implements line plots where the data is taken from a user supplied function \f$ y=f(x) \f$ The function is defined as a string and parsed by JKMathParser
-    \ingroup jkqtplotter_parsedFgraphs
+    \ingroup jkqtplotter_functiongraphs
 
     Additional function parameters may be given in the vector parameters. They are accessible in the function as \c p1 , \c p2 , \c p3 , ...
     Parameters may also be given from a data column. Then first the params from the column and the the parameters from the vector are numbered.
@@ -149,7 +149,7 @@ class JKQTPLOTTER_LIB_EXPORT JKQTPXParsedFunctionLineGraph: public JKQTPParsedFu
 
 
 /*! \brief This implements line plots where the data is taken from a user supplied function \f$ x=f(y) \f$ The function is defined as a string and parsed by JKMathParser
-    \ingroup jkqtplotter_parsedFgraphs
+    \ingroup jkqtplotter_functiongraphs
 
     Additional function parameters may be given in the vector parameters. They are accessible in the function as \c p1 , \c p2 , \c p3 , ...
     Parameters may also be given from a data column. Then first the params from the column and the the parameters from the vector are numbered.

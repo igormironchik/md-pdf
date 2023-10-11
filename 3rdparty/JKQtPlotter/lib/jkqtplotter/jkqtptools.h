@@ -48,7 +48,7 @@
 #include "jkqtcommon/jkqtpstringtools.h"
 #include "jkqtcommon/jkqtpdebuggingtools.h"
 #include "jkqtcommon/jkqtpmathtools.h"
-#include "jkqtcommon_statistics_and_math/jkqtpalgorithms.h"
+#include "jkqtmath/jkqtpalgorithms.h"
 #include "jkqtcommon/jkqtpcodestructuring.h"
 #if __cplusplus >= 202002L
 # include <version>
@@ -162,6 +162,7 @@ JKQTPLOTTER_LIB_EXPORT JKQTPMouseDoubleClickActions String2JKQTPMouseDoubleClick
 enum JKQTPMouseWheelActions {
     jkqtpmwaZoomByWheel=0, /*!< \brief use the mouse-wheel for zooming */
     jkqtpmwaPanByWheel, /*!< \brief use the mouse-wheel for panning the plot */
+    jkqtpmwaZoomByWheelAndTrackpadPan, /*!< \brief use the mouse-wheel for zooming. In addition, this tries to recognize track-pad pan gestures and applies them. \note This is needed, because Qt converts track-pad zoom AND pan gestures to wheelEvents, but does not provide the source. Therefore a heuristics is required to interpret both! */
 };
 
 /** \brief convert a JKQTPMouseWheelActions to a <a href="http://doc.qt.io/qt-5/qstring.html">QString</a>
@@ -503,10 +504,22 @@ JKQTPLOTTER_LIB_EXPORT JKQTPCALabelType String2JKQTPCALabelType(const QString& p
  * \ingroup jkqtpplottersupprt
  */
 enum JKQTPLabelPosition {
-    JKQTPLabelMin=0,            /*!< \brief the axis label is near the min value of the axis (left/bottom) */
-    JKQTPLabelMax,            /*!< \brief the axis label is near the max value of the axis (right/top) */
-    JKQTPLabelCenter,          /*!< \brief the label is at the center of the axis */
-    JKQTPLabelPositionMax=JKQTPLabelCenter
+    JKQTPLabelMin=0,            /*!< \brief the axis label is near the min value of the axis (left/bottom)
+                                     \image html labelstyles/JKQTPLabelMin.png
+                                     \image html labelstyles/JKQTPLabelMin_zeroaxis.png */
+    JKQTPLabelMax,             /*!< \brief the axis label is near the max value of the axis (right/top)
+                                     \image html labelstyles/JKQTPLabelMax.png
+                                     \image html labelstyles/JKQTPLabelMax_zeroaxis.png */
+    JKQTPLabelCenter,          /*!< \brief the label is at the center of the axis
+                                     \image html labelstyles/JKQTPLabelCenter.png
+                                     \image html labelstyles/JKQTPLabelCenter_zeroaxis.png */
+    JKQTPLabelMinBesides,      /*!< \brief the axis label is near the min value of the axis (left/bottom), but besides the axis tip
+                                     \image html labelstyles/JKQTPLabelMinBesides.png
+                                     \image html labelstyles/JKQTPLabelMinBesides_zeroaxis.png */
+    JKQTPLabelMaxBesides,      /*!< \brief the axis label is near the max value of the axis (right/top), but besides the axis tip
+                                     \image html labelstyles/JKQTPLabelMaxBesides.png
+                                     \image html labelstyles/JKQTPLabelMaxBesides_zeroaxis.png */
+    JKQTPLabelPositionMax=JKQTPLabelMaxBesides
 };
 
 
@@ -654,7 +667,7 @@ JKQTPLOTTER_LIB_EXPORT JKQTPErrorPlotstyle String2JKQTPErrorPlotstyle(const QStr
 
 
 /** \brief plot styles for the error information
- * \ingroup jkqtplotter_linesymbolgraphs_simple
+ * \ingroup jkqtplotter_linesymbolgraphs_line
  *
  * \see JKQTPSpecialLineTypeComboBox
  */
@@ -668,12 +681,12 @@ enum JKQTPSpecialLineType {
 
 
 /** \brief converts a JKQTPSpecialLineType variable into a human-readable string
- * \ingroup jkqtplotter_linesymbolgraphs_simple
+ * \ingroup jkqtplotter_linesymbolgraphs_line
  */
 JKQTPLOTTER_LIB_EXPORT QString JKQTPSpecialLineType2String(JKQTPSpecialLineType pos);
 
 /** \brief converts a String into a JKQTPSpecialLineType
- * \ingroup jkqtplotter_linesymbolgraphs_simple
+ * \ingroup jkqtplotter_linesymbolgraphs_line
  */
 JKQTPLOTTER_LIB_EXPORT JKQTPSpecialLineType String2JKQTPSpecialLineType(const QString& pos);
 

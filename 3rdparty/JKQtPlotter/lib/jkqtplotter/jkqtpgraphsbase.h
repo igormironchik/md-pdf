@@ -110,7 +110,7 @@ class JKQTPLOTTER_LIB_EXPORT JKQTPPlotElement: public QObject {
         Q_PROPERTY(bool visible READ isVisible WRITE setVisible)
         Q_PROPERTY(QString title READ getTitle WRITE setTitle)
         Q_PROPERTY(bool highlighted READ isHighlighted WRITE setHighlighted)
-    public slots:
+    public Q_SLOTS:
         /** \brief sets whether the graph is visible in the plot  */
         void setVisible(bool __value);
         /** \brief sets whether the graph is drawn in a highlighted style in the plot  */
@@ -208,16 +208,16 @@ class JKQTPLOTTER_LIB_EXPORT JKQTPPlotElement: public QObject {
 
 
 
-        /** \brief tool routine that transforms an x-coordinate (plot coordinate --> pixels) for this plot element */
+        /** \brief tool routine that transforms an x-coordinate (plot coordinate --> pixels) for this plot element, uses the axis referenced in xAxisRef */
         double transformX(double x) const;
 
-        /** \brief tool routine that transforms a y-coordinate (plot coordinate --> pixels) for this plot element */
+        /** \brief tool routine that transforms a y-coordinate (plot coordinate --> pixels) for this plot element, uses the axis referenced in yAxisRef */
         double transformY(double y) const;
 
-        /** \brief tool routine that backtransforms an x-coordinate (pixels --> plot coordinate) for this plot element */
+        /** \brief tool routine that backtransforms an x-coordinate (pixels --> plot coordinate) for this plot element, uses the axis referenced in xAxisRef */
         double backtransformX(double x) const;
 
-        /** \brief tool routine that backtransforms a y-coordinate (pixels --> plot coordinate) for this plot element */
+        /** \brief tool routine that backtransforms a y-coordinate (pixels --> plot coordinate) for this plot element, uses the axis referenced in yAxisRef */
         double backtransformY(double y) const;
 
 
@@ -254,6 +254,31 @@ class JKQTPLOTTER_LIB_EXPORT JKQTPPlotElement: public QObject {
         /** \brief transform all y-coordinates in a vector \a x */
         QVector<double> transformY(const QVector<double>& x) const;
 
+        /** \copydoc xAxisRef */
+        void setXAxis(JKQTPCoordinateAxisRef ref);
+        /** \copydoc xAxisRef */
+        JKQTPCoordinateAxisRef getXAxisRef() const;
+        /** \copydoc yAxisRef */
+        void setYAxis(JKQTPCoordinateAxisRef ref);
+        /** \copydoc yAxisRef */
+        JKQTPCoordinateAxisRef getYAxisRef() const;
+        /** \brief returns the actual x-Axis-object from the parent plotter, referenced in xAxisRef */
+        /** \brief returns the actual x-Axis-object from the parent plotter, referenced in xAxisRef */
+        inline const JKQTPCoordinateAxis* getXAxis() const {
+            return parent->getXAxis(xAxisRef);
+        }
+        /** \brief returns the actual y-Axis-object from the parent plotter, referenced in yAxisRef */
+        inline const JKQTPCoordinateAxis* getYAxis() const {
+            return parent->getYAxis(yAxisRef);
+        }
+        /** \brief set the coordinate axes to use for this plot element
+         *
+         *  \see xAxisRef, yAxisRef, transformX(), transformY()
+         */
+        void setAxes(JKQTPCoordinateAxisRef ref);
+
+        Q_PROPERTY(JKQTPCoordinateAxisRef xAxisRef READ getXAxisRef WRITE setXAxis)
+        Q_PROPERTY(JKQTPCoordinateAxisRef yAxisRef READ getYAxisRef WRITE setYAxis)
 
     protected:
 
@@ -356,6 +381,11 @@ class JKQTPLOTTER_LIB_EXPORT JKQTPPlotElement: public QObject {
         bool highlighted;
         /** \brief internal storage for the used parent plot style */
         int parentPlotStyle;
+        /** \brief indicates which coordinate axis to use for coordinate transforms in x-direction */
+        JKQTPCoordinateAxisRef xAxisRef;
+        /** \brief indicates which coordinate axis to use for coordinate transforms in y-direction */
+        JKQTPCoordinateAxisRef yAxisRef;
+
 
 
         /** \brief dataset with graph-points and associated data fro the function hitTest()
@@ -469,7 +499,7 @@ public:
     DrawMode getDrawMode() const;
 
     Q_PROPERTY(DrawMode drawMode READ getDrawMode WRITE setDrawMode)
-public slots:
+public Q_SLOTS:
     /** \copybrief m_drawMode
          *
          *  \param mode the DrawMode to use from now on
@@ -514,7 +544,7 @@ public:
     /** \brief default wirtual destructor */
     virtual ~JKQTPPlotAnnotationElement() ;
 
-public slots:
+public Q_SLOTS:
 
 protected:
 
@@ -600,7 +630,7 @@ public:
      * \see See JKQTPPlotElement::hitTest() for details on the function definition!
      */
     virtual double hitTest(const QPointF &posSystem, QPointF* closestSpotSystem=nullptr, QString* label=nullptr, HitTestMode mode=HitTestXY) const override;
-public slots:
+public Q_SLOTS:
     /** \brief sets xColumn and yColumn at the same time */
     void setXYColumns(size_t xCol, size_t yCol);
     /** \brief sets xColumn and yColumn at the same time */
@@ -683,17 +713,29 @@ public:
     double getBaseline() const;
 
     Q_PROPERTY(double baseline READ getBaseline WRITE setBaseline)
-public slots:
+public Q_SLOTS:
     /** \copydoc m_baseline */
     void setBaseline(double __value);
 
 protected:
+    /** \brief can be called by JKQTPGraph::getXMinMax() or JKQTPGraph::getYMinMax() calculates min/max/... for data from the given column, including the baseline */
+    bool getMinMaxWithBaseline(int dataColumn, double &minv, double &maxv, double &smallestGreaterZero);
+    /** \brief can be called by JKQTPGraph::getXMinMax() or JKQTPGraph::getYMinMax() calculates min/max/... for data from the given column, including the baseline and an optional error */
+    bool getMinMaxWithErrorsAndBaseline(int dataColumn, int errorColumn, int errorColumnLower, bool errorSymmetric, double &minv, double &maxv, double &smallestGreaterZero);
+
 
     /** \brief baseline of the plot (NOTE: 0 is interpreted as until plot border in log-mode!!!)
      *
      * \image html impulsesplot_baseline.png
      */
     double m_baseline;
+
+private:
+    /** \brief returns the upper error for the i-th datapoint, read from datastore \a ds */
+    double getErrorU(int i, const JKQTPDatastore* ds, int xErrorColumn) const;
+    /** \brief returns the lower error for the i-th datapoint, read from datastore \a ds */
+    double getErrorL(int i, const JKQTPDatastore *ds, int xErrorColumn, int xErrorColumnLower, bool xErrorSymmetric) const;
+
 };
 
 
@@ -728,7 +770,7 @@ public:
     virtual double hitTest(const QPointF &posSystem, QPointF* closestSpotSystem=nullptr, QString* label=nullptr, HitTestMode mode=HitTestXY) const override;
 
     Q_PROPERTY(int yColumn2 READ getYColumn2 WRITE setYColumn2)
-public slots:
+public Q_SLOTS:
     /** \brief sets xColumn, yColumn and yColumn2 at the same time */
     void setXYYColumns(size_t xCol, size_t yCol, size_t y2Col);
     /** \brief sets xColumn, yColumn and yColumn2 at the same time */
@@ -789,7 +831,7 @@ public:
     virtual double hitTest(const QPointF &posSystem, QPointF* closestSpotSystem=nullptr, QString* label=nullptr, HitTestMode mode=HitTestXY) const override;
 
     Q_PROPERTY(int xColumn2 READ getXColumn2 WRITE setXColumn2)
-public slots:
+public Q_SLOTS:
     /** \brief sets xColumn, yColumn and xColumn2 at the same time */
     void setXXYColumns(size_t xCol, size_t x2Col, size_t yCol);
     /** \brief sets xColumn, yColumn and xColumn2 at the same time */
@@ -871,7 +913,7 @@ class JKQTPLOTTER_LIB_EXPORT JKQTPSingleColumnGraph: public JKQTPGraph {
         Q_PROPERTY(int dataColumn READ getDataColumn WRITE setDataColumn)
         Q_PROPERTY(DataDirection dataDirection READ getDataDirection WRITE setDataDirection)
 
-    public slots:
+    public Q_SLOTS:
         /** \copydoc dataColumn */
         void setDataColumn(int __value);
         /** \copydoc dataColumn */

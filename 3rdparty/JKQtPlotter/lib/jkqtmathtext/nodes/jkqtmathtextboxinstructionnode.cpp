@@ -60,7 +60,7 @@ JKQTMathTextNodeSize JKQTMathTextBoxInstructionNode::getSizeInternal(QPainter& p
     inst.modifier(ev, getParameters());
     const QPen p=inst.pen(ev, getParameters(), parentMathText);
     const QBrush b=inst.brush(ev, getParameters(), parentMathText);
-    const QFontMetricsF fmNonItalic(JKQTMathTextGetNonItalic(currentEv.getFont(parentMathText)));
+    const QFontMetricsF fmNonItalic(JKQTMathTextGetNonItalic(currentEv.getFont(parentMathText)), painter.device());
     const double lw=p.widthF();
     const double padding=inst.paddingFactor*fmNonItalic.tightBoundingRect("x").width();
 
@@ -81,7 +81,7 @@ double JKQTMathTextBoxInstructionNode::draw(QPainter& painter, double x, double 
     inst.modifier(ev, getParameters());
     const QPen p=inst.pen(ev, getParameters(), parentMathText);
     const QBrush b=inst.brush(ev, getParameters(), parentMathText);
-    const QFontMetricsF fmNonItalic(JKQTMathTextGetNonItalic(currentEv.getFont(parentMathText)));
+    const QFontMetricsF fmNonItalic(JKQTMathTextGetNonItalic(currentEv.getFont(parentMathText)), painter.device());
     const double lw=p.widthF();
     const double padding=inst.paddingFactor*fmNonItalic.tightBoundingRect("x").width();
     const double rr=inst.roundingFactor*fmNonItalic.tightBoundingRect("x").width();
@@ -169,6 +169,9 @@ QHash<QString, JKQTMathTextBoxInstructionNode::InstructionProperties> JKQTMathTe
 
 void JKQTMathTextBoxInstructionNode::fillInstructions()
 {
+    static std::mutex sMutex;
+    std::lock_guard<std::mutex> lock(sMutex);
+    if (instructions.size()>0) return;
 
     {
         InstructionProperties i(InstructionProperties::NoModification,

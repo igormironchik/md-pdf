@@ -84,7 +84,7 @@ double JKQTMathTextSimpleInstructionNode::draw(QPainter &painter, double x, doub
     fillInstructions();
     QFont f=currentEv.getFont(parentMathText);
     f.setStyleStrategy(QFont::PreferDefault);
-    const QFontMetricsF fm(f);
+    const QFontMetricsF fm(f, painter.device());
     const QString txt=executeInstruction();
     const QRectF bb=fm.boundingRect(txt);
     painter.setPen(currentEv.color);
@@ -129,7 +129,7 @@ JKQTMathTextNodeSize JKQTMathTextSimpleInstructionNode::getSizeInternal(QPainter
     fillInstructions();
     QFont f=currentEv.getFont(parentMathText);
     f.setStyleStrategy(QFont::PreferDefault);
-    const QFontMetricsF fm(f);
+    const QFontMetricsF fm(f, painter.device());
     const QString txt=executeInstruction();
     const QRectF bb=fm.boundingRect(txt);
     JKQTMathTextNodeSize s;
@@ -144,6 +144,9 @@ QHash<QString, JKQTMathTextSimpleInstructionNode::InstructionProperties> JKQTMat
 
 void JKQTMathTextSimpleInstructionNode::fillInstructions()
 {
+    static std::mutex sMutex;
+    std::lock_guard<std::mutex> lock(sMutex);
+    if (instructions.size()>0) return;
     {
         InstructionProperties i([](const QStringList& parameters) -> QString {
             bool ok=false;

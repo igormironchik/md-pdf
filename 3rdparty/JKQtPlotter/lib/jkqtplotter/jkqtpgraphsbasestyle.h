@@ -121,7 +121,7 @@ class JKQTPLOTTER_LIB_EXPORT JKQTGeometricSpecificStyleProperties: public JKQTGr
       Q_GADGET
 #endif
 public:
-     JKQTGeometricSpecificStyleProperties(const JKQTBasePlotterStyle& parent);
+     explicit JKQTGeometricSpecificStyleProperties(const JKQTBasePlotterStyle& parent);
      JKQTGeometricSpecificStyleProperties(const JKQTBasePlotterStyle& parent, const JKQTGraphsSpecificStyleProperties& other);
      JKQTGeometricSpecificStyleProperties(JKQTPPlotStyleType type, const JKQTBasePlotterStyle& parent);
      JKQTGeometricSpecificStyleProperties(JKQTPPlotStyleType type, const JKQTGraphsSpecificStyleProperties& other, const JKQTBasePlotterStyle &parent);
@@ -171,7 +171,7 @@ class JKQTPLOTTER_LIB_EXPORT JKQTAnnotationsSpecificStyleProperties: public JKQT
       Q_GADGET
 #endif
 public:
-     JKQTAnnotationsSpecificStyleProperties(const JKQTBasePlotterStyle& parent);
+     explicit JKQTAnnotationsSpecificStyleProperties(const JKQTBasePlotterStyle& parent);
      JKQTAnnotationsSpecificStyleProperties(const JKQTBasePlotterStyle& parent, const JKQTGraphsSpecificStyleProperties& other);
      JKQTAnnotationsSpecificStyleProperties(const JKQTAnnotationsSpecificStyleProperties& other)=default;
      JKQTAnnotationsSpecificStyleProperties(JKQTAnnotationsSpecificStyleProperties&& other)=default;
@@ -216,7 +216,7 @@ class JKQTPLOTTER_LIB_EXPORT JKQTBarchartSpecificStyleProperties: public JKQTGra
      Q_GADGET
 #endif
 public:
-    JKQTBarchartSpecificStyleProperties(const JKQTBasePlotterStyle& parent);
+    explicit JKQTBarchartSpecificStyleProperties(const JKQTBasePlotterStyle& parent);
     JKQTBarchartSpecificStyleProperties(const JKQTBasePlotterStyle& parent, const JKQTGraphsSpecificStyleProperties& other);
     JKQTBarchartSpecificStyleProperties(const JKQTBarchartSpecificStyleProperties& other)=default;
     JKQTBarchartSpecificStyleProperties(JKQTBarchartSpecificStyleProperties&& other)=default;
@@ -244,11 +244,53 @@ public:
     double defaultRectRadiusAtValue;
     /** \brief corner radius (in pt) for bars at the "baseline" end */
     double defaultRectRadiusAtBaseline;
+    /** \brief indicates whether to draw a baseline (style is derived from axis style) */
+    bool drawBaseline;
 
 
 };
 
 
+
+/** \brief Support Class for JKQTBasePlotter, which summarizes all properties that define the visual styling of impulse/stick graph elements
+*  \ingroup jkqtpplotter_styling_classes
+*
+*  \see JKQTBasePlotter, \ref jkqtpplotter_styling
+*/
+class JKQTPLOTTER_LIB_EXPORT JKQTImpulseSpecificStyleProperties: public JKQTGraphsSpecificStyleProperties {
+#ifndef JKQTPLOTTER_WORKAROUND_QGADGET_BUG
+     Q_GADGET
+#endif
+public:
+    explicit JKQTImpulseSpecificStyleProperties(const JKQTBasePlotterStyle& parent);
+    JKQTImpulseSpecificStyleProperties(const JKQTBasePlotterStyle& parent, const JKQTGraphsSpecificStyleProperties& other);
+    JKQTImpulseSpecificStyleProperties(const JKQTImpulseSpecificStyleProperties& other)=default;
+    JKQTImpulseSpecificStyleProperties(JKQTImpulseSpecificStyleProperties&& other)=default;
+    JKQTImpulseSpecificStyleProperties& operator=(const JKQTImpulseSpecificStyleProperties& other)=default;
+    JKQTImpulseSpecificStyleProperties& operator=(JKQTImpulseSpecificStyleProperties&& other)=default;
+
+
+    /** \brief loads the plot properties from a <a href="http://doc.qt.io/qt-5/qsettings.html")">QSettings</a> object
+        *
+        *  \param settings QSettings-object to read from
+        *  \param group Group in the QSettings-object to read from
+        *  \param defaultStyle If a setting cannot be found in \a settings, default values are taken from this object
+        *                      By default, this is a default-constructed object
+        */
+    void loadSettings(const QSettings &settings, const QString& group, const JKQTImpulseSpecificStyleProperties &defaultStyle);
+
+    /** \brief saves the plot properties into a <a href="http://doc.qt.io/qt-5/qsettings.html")">QSettings</a> object.
+        *
+        *  \param settings QSettings-object to save to
+        *  \param group Group in the QSettings-object to save to
+        */
+    void saveSettings(QSettings& settings, const QString& group) const;
+
+    /** \brief indicates whether to draw a baseline (style is derived from axis style) */
+    bool drawBaseline;
+
+
+};
 /** \brief Support Class for JKQTBasePlotter, which summarizes all properties that define the visual styling of a JKQTBasePlotter
  *  \ingroup jkqtpplotter_styling_classes
  *
@@ -259,7 +301,7 @@ class JKQTPLOTTER_LIB_EXPORT JKQTGraphsBaseStyle {
       Q_GADGET
 #endif
     public:
-        JKQTGraphsBaseStyle(const JKQTBasePlotterStyle& parent);
+        explicit JKQTGraphsBaseStyle(const JKQTBasePlotterStyle& parent);
 
 
 
@@ -297,7 +339,7 @@ class JKQTPLOTTER_LIB_EXPORT JKQTGraphsBaseStyle {
         /** \brief styling options for filled graphs */
         JKQTGraphsSpecificStyleProperties filledStyle;
         /** \brief styling options for impulses graphs */
-        JKQTGraphsSpecificStyleProperties impulseStyle;
+        JKQTImpulseSpecificStyleProperties impulseStyle;
         /** \brief styling options for geometric elements */
         JKQTGeometricSpecificStyleProperties geometricStyle;
 		/** \brief styling options for annotation elements */
@@ -317,6 +359,15 @@ class JKQTPLOTTER_LIB_EXPORT JKQTGraphsBaseStyle {
         QVector<JKQTPGraphSymbols> defaultGraphSymbols;
         /** \brief Qt::BrushStyle used to automatically style different graphs differently */
         QVector<Qt::BrushStyle> defaultGraphFillStyles;
+
+        /** \brief standard color palette for the default style */
+        static QVector<QColor> getDefaultGraphColors();
+        /** \brief a list of Qt::PenStyles used to automatically style different graphs differently in the default style */
+        static QVector<Qt::PenStyle> getDefaultGraphPenStyles();
+        /** \brief list of JKQTPGraphSymbols used to automatically assign to different graphs in the default style */
+        static QVector<JKQTPGraphSymbols> getDefaultGraphSymbols();
+        /** \brief list of Qt::BrushStyle used to automatically style different graphs differently in the default style */
+        static QVector<Qt::BrushStyle> getDefaultGraphFillStyles();
 
 };
 

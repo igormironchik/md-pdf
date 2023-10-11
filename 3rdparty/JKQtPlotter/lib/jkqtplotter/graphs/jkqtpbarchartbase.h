@@ -23,16 +23,15 @@
 #include <QString>
 #include <QPainter>
 #include <QPair>
+#include <functional>
 #include "jkqtplotter/jkqtptools.h"
 #include "jkqtplotter/jkqtplotter_imexport.h"
-#include "jkqtplotter/jkqtpimagetools.h"
 #include "jkqtplotter/jkqtpgraphsbase.h"
-#include "jkqtplotter/jkqtpgraphsbaseerrors.h"
 #include "jkqtplotter/jkqtpgraphsbasestylingmixins.h"
 
 
 /** \brief This is a base-class for all bar graphs with vertical or horizontal orientation (the orientation is implemented in dervied classes!)
- *  \ingroup jkqtplotter_barssticks
+ *  \ingroup jkqtplotter_barcharts
  *
  *  This class plots a bargraph. This image explains the parameters:
  *
@@ -50,25 +49,75 @@
  *
  *  \image html JKQTPBarVerticalGraph.png
  *
- *  You can also set FillMode::TwoColorFilling, which uses different fill styles for bars above and below
+ *  You can also set JKQTPBarGraphBase::FillMode::TwoColorFilling, which uses different fill styles for bars above and below
  *  the baseline of the graph:
  *
  *  \image html JKQTPBarVerticalGraphTwoColorFilling.png
+ *
+ *  If you use JKQTPBarGraphBase::FillMode::FunctorFilling you can specify the fill style by a functor, e.g.
+ *  \code
+ *    graph->setFillMode(JKQTPBarGraphBase::FillMode::FunctorFilling);
+ *    graph->setFillBrushFunctor(
+ *      [](double key, double value) {
+ *        return QBrush(QColor::fromHsvF(key/12.0, 1.0, 1.0));
+ *      }
+ *    );
+ *  \endcode
+ *
+ *  The result may look like this:
+ *
+ *  \image html JKQTPBarVerticalGraphFunctorFilling.png
+ *
+ *  You can also completely customize the drawing by defining a custom draw functor:
+ *  \code
+ *    graph->setCustomDrawingFunctor(
+ *      [](JKQTPEnhancedPainter& painter, const QRectF& bar_px, const QPointF& datapoint, Qt::Orientation orientation, JKQTPBarGraphBase* graph) {
+ *        // draw the bar (if required), pen and brush are already set properly
+ *        painter.drawRect(bar_px);
+ *        // now we can add some decoration or replace the instruction above:
+ *        // ........
+ *      }
+ *    );
+ *    // enable usage of cutom draw functor
+ *    graph->setUseCustomDrawFunctor(true);
+ *  \endcode
+ *
+ *  See \ref JKQTPlotterBarchartsCustomDrawFunctor for a detailed example.
+ *
+ *  The result may look like this:
+ *
+ *  \image html JKQTPBarVerticalGraphCustomDrawFunctor.png
+
  *
  *  \see JKQTPBarHorizontalGraph, JKQTPBarVerticalGraph
  */
 class JKQTPLOTTER_LIB_EXPORT JKQTPBarGraphBase: public JKQTPXYBaselineGraph, public JKQTPGraphLineStyleMixin, public JKQTPGraphFillStyleMixin {
         Q_OBJECT
     public:
+        /** \brief a type of functor for FillMode::FunctorFilling
+         *
+         *  \see setFillBrushFunctor(), getFillBrushFunctor()
+         */
+        typedef std::function<QBrush(double key, double value,JKQTPEnhancedPainter &painter, JKQTPBarGraphBase* graph)> FillBrushFunctor;
+        /** \brief a simplified type of functor for FillMode::FunctorFilling
+         *
+         *  \see setFillBrushFunctor(), getFillBrushFunctor()
+         */
+        typedef std::function<QBrush(double key, double value)> SimpleFillBrushFunctor;
+
+        /** \brief functor for custom drawing of bars */
+        typedef std::function<void(JKQTPEnhancedPainter& painter, const QRectF& bar_px, const QPointF& datapoint, Qt::Orientation orientation, JKQTPBarGraphBase* graph)> CustomDrawingFunctor;
         /** \brief specifies how the area below the graph is filled
          *
          *  \see setFillMode(), getFillMode(), fillStyleBelow(), \ref JKQTPlotterWigglePlots
          */
         enum FillMode {
             SingleFilling=0, /*!< \brief the whole area is filled with the same color/pattern \image html JKQTPBarVerticalGraph.png */
-            TwoColorFilling=1 /*!< \brief the area above and below baseline with the two different colors/pattern \image html JKQTPBarVerticalGraphTwoColorFilling.png */
+            TwoColorFilling=1, /*!< \brief the area above and below baseline with the two different colors/pattern \image html JKQTPBarVerticalGraphTwoColorFilling.png */
+            FunctorFilling=2, /*!< \brief a functor (use setFillBrushFunctor() to define one) is used to determine the fill color\image html JKQTPBarVerticalGraphFunctorFilling.png */
         };
         Q_ENUM(FillMode)
+
         /** \brief class constructor */
         JKQTPBarGraphBase(JKQTBasePlotter* parent=nullptr);
         /** \brief class constructor */
@@ -92,10 +141,10 @@ class JKQTPLOTTER_LIB_EXPORT JKQTPBarGraphBase: public JKQTPXYBaselineGraph, pub
         void setFillColor_and_darkenedColor(QColor fill, int colorDarker=200);
 		
 		/** \brief returns xColumn or yColumn, whichever is used for the position of the bars (depending on whether the barchart is vertical or horizontal \see getBarHeightColumn(), xColumn, yColumn */
-		virtual int getBarPositionColumn() const =0;
+        int getBarPositionColumn() const;
 		
 		/** \brief returns xColumn or yColumn, whichever is used for the height of the bars (depending on whether the barchart is vertical or horizontal \see getBarPositionColumn(), xColumn, yColumn */
-		virtual int getBarHeightColumn() const =0;
+        int getBarHeightColumn() const;
         /** \copydoc m_fillStyleBelow */
         JKQTPGraphFillStyleMixin &fillStyleBelow();
         /** \copydoc m_fillStyleBelow */
@@ -106,10 +155,41 @@ class JKQTPLOTTER_LIB_EXPORT JKQTPBarGraphBase: public JKQTPXYBaselineGraph, pub
         double getRectRadiusAtValue() const;
         /** \copydoc rectRadiusAtBaseline */
         double getRectRadiusAtBaseline() const;
+        /** \copydoc m_fillBrushFunctor */
+        FillBrushFunctor& getFillBrushFunctor();
+        /** \copydoc m_fillBrushFunctor */
+        const FillBrushFunctor& getFillBrushFunctor() const;
+        /** \copydoc m_lineColorDerivationModeForSpecialFill */
+        JKQTPColorDerivationMode getLineColorDerivationModeForSpecialFill() const;
+        /** \copydoc m_useCustomDrawFunctor */
+        bool usesCustomDrawFunctor() const;
+        /** \copydoc m_drawBaseline */
+        bool getDrawBaseline() const;
+        /** \copydoc m_baselineStyle */
+        JKQTPGraphLineStyleMixin &baselineStyle();
+        /** \copydoc m_baselineStyle */
+        const JKQTPGraphLineStyleMixin& baselineStyle() const;
 
-    public slots:
+    public Q_SLOTS:
         /** \copydoc m_fillMode */
         void setFillMode(JKQTPBarGraphBase::FillMode mode);
+
+        /** \copydoc m_fillBrushFunctor */
+        void setFillBrushFunctor(const JKQTPBarGraphBase::FillBrushFunctor& f);
+        /** \copydoc m_fillBrushFunctor */
+        void setFillBrushFunctor(JKQTPBarGraphBase::FillBrushFunctor&& f);
+
+        /** \copydoc m_fillBrushFunctor */
+        void setFillBrushFunctor(const JKQTPBarGraphBase::SimpleFillBrushFunctor& f);
+        /** \copydoc m_fillBrushFunctor */
+        void setFillBrushFunctor(JKQTPBarGraphBase::SimpleFillBrushFunctor&& f);
+
+        /** \copydoc m_customDrawFunctor */
+        void setCustomDrawingFunctor(JKQTPBarGraphBase::CustomDrawingFunctor&& f);
+        /** \copydoc m_customDrawFunctor */
+        void setCustomDrawingFunctor(const JKQTPBarGraphBase::CustomDrawingFunctor& f);
+        /** \copydoc m_useCustomDrawFunctor */
+        void setUseCustomDrawFunctor(bool enabled);
 
         /** \brief finds all bar charts of the same orientation and determines width and shift, so they stand side by side
          *
@@ -127,6 +207,8 @@ class JKQTPLOTTER_LIB_EXPORT JKQTPBarGraphBase: public JKQTPXYBaselineGraph, pub
         void setShift(double __value);
         /** \copydoc width */
         void setWidth(double __value);
+        /** \copydoc m_drawBaseline */
+        void setDrawBaseline(bool __value);
 
         /** \copydoc rectRadiusAtValue */
         void setRectRadiusAtValue(double __value);
@@ -137,6 +219,8 @@ class JKQTPLOTTER_LIB_EXPORT JKQTPBarGraphBase: public JKQTPXYBaselineGraph, pub
         /** \brief sets the corner radius of the bars for both ends */
         void setRectRadius(double atValue, double atBaseline);
 
+        /** \copydoc m_lineColorDerivationModeForSpecialFill */
+        void setLineColorDerivationModeForSpecialFill(const JKQTPColorDerivationMode& m);
 
         /** \brief set outline and fill color at the same time
          *  \see setFillColor_and_darkenedColor()
@@ -145,17 +229,18 @@ class JKQTPLOTTER_LIB_EXPORT JKQTPBarGraphBase: public JKQTPXYBaselineGraph, pub
 
 
 		/** \brief returns xColumn or yColumn, whichever is used for the position of the bars (depending on whether the barchart is vertical or horizontal \see getBarHeightColumn(), xColumn, yColumn */
-        virtual void setBarPositionColumn(int column)  =0;
+        void setBarPositionColumn(int column)  ;
 		
 		/** \brief returns xColumn or yColumn, whichever is used for the position of the bars (depending on whether the barchart is vertical or horizontal \see getBarHeightColumn(), xColumn, yColumn */
-        virtual void setBarPositionColumn(size_t column)  =0;
+        void setBarPositionColumn(size_t column)  ;
 		
 		/** \brief returns xColumn or yColumn, whichever is used for the height of the bars (depending on whether the barchart is vertical or horizontal \see getBarPositionColumn(), xColumn, yColumn */
-        virtual void setBarHeightColumn(int column)  =0;
+        void setBarHeightColumn(int column)  ;
 		
 		/** \brief returns xColumn or yColumn, whichever is used for the height of the bars (depending on whether the barchart is vertical or horizontal \see getBarPositionColumn(), xColumn, yColumn */
-        virtual void setBarHeightColumn(size_t column)  =0;
+        void setBarHeightColumn(size_t column)  ;
     protected:
+
         /** \brief the width of the bargraphs, relative to the distance between the current and the next x-value
          *
          * See the following graphic to understand this concept:
@@ -172,12 +257,100 @@ class JKQTPLOTTER_LIB_EXPORT JKQTPBarGraphBase: public JKQTPXYBaselineGraph, pub
         double rectRadiusAtValue;
         /** \brief corner radius (in pt) for bars at the "baseline" end */
         double rectRadiusAtBaseline;
-        /** \brief specifies how the area of the graph is filles */
+        /** \brief if m_drawBaseline \c ==true then this style is used to draw the baseline
+         *
+         *  \see baselineStyle() , setDrawBaseline() , m_drawBaseline
+         */
+        JKQTPGraphLineStyleMixin m_baselineStyle;
+        /** \brief indicates whether to draw a line with style m_baselineStyle at the baseline-value
+         *
+         *  \image html JKQTPBarVerticalGraphBaseline.png "setDrawBaseline(true);"
+         *
+         *  \image html JKQTPBarVerticalGraphNoBaseline.png "setDrawBaseline(false);"
+         *
+         *  \see baselineStyle() , setDrawBaseline() , m_baselineStyle
+         */
+        bool m_drawBaseline;
+        /** \brief specifies how the area of the graph is filles
+         *
+         *  \note If any fill style other than FillStyle::SingleFill is used, the peroperty m_lineColorDerivationModeForSpecialFill
+         *        is used to derive the color of the bars' outlines from the fill color.
+         *
+         *  \see setFillMode(), getFillMode(), m_fillStyleBelow, m_fillBrushFunctor, m_lineColorDerivationModeForSpecialFill
+         */
         FillMode m_fillMode;
         /** \brief if m_fillMode \c ==FillAboveAndBelowDifferently then this fill style is used below the baseline and
-         *         the default fill style is used above */
+         *         the default fill style is used above
+         *
+         *  \see fillStyleBelow() , setFillMode()
+         */
         JKQTPGraphFillStyleMixin m_fillStyleBelow;
+        /** \brief defines how to derive the line color in m_fillMode!=SingleFilling
+         *
+         *  \see setLineColorDerivationModeForSpecialFill(), setFillMode(), getLineColorDerivationModeForSpecialFill(), FillMode
+         */
+        JKQTPColorDerivationMode m_lineColorDerivationModeForSpecialFill;
 
+        /** \brief adapter that converts a SimpleFillBrushFunctor to a FillBrushFunctor */
+        struct SimpleFillBrushFunctorAdaptor {
+            inline SimpleFillBrushFunctorAdaptor(const SimpleFillBrushFunctor& f): m_f(f) {}
+            inline SimpleFillBrushFunctorAdaptor(SimpleFillBrushFunctor&& f): m_f(std::forward<SimpleFillBrushFunctor>(f)) {}
+            SimpleFillBrushFunctor m_f;
+            inline QBrush operator()(double key, double value,JKQTPEnhancedPainter &, JKQTPBarGraphBase*) { return m_f(key,value);}
+        };
+
+        /** \brief functor, used to determine the color in m_fillMode==FunctorFilling
+         *
+         *  If you use FillMode::FunctorFilling you can specify the fill style by a functor, e.g.
+         *  \code
+         *    graph->setFillMode(JKQTPBarGraphBase::FillMode::FunctorFilling);
+         *    graph->setFillBrushFunctor(
+         *      [](double key, double value) {
+         *        return QBrush(QColor::fromHsvF(key/12.0, 1.0, 1.0));
+         *      }
+         *    );
+         *  \endcode
+         *
+         *  The result may look like this:
+         *
+         *  \image html JKQTPBarVerticalGraphFunctorFilling.png
+         *
+         *  \see setFillBrushFunctor(), getFillBrushFunctor(), m_fillMode
+         */
+        FillBrushFunctor m_fillBrushFunctor;
+        /** \brief this allows to provide custom drawing code for the bars.
+         *         It is called for every visible bar if activated by \c setUseCustomDrawFunctor(true) .
+         *
+         *  Here is an example for a custom draw functor:
+         *  \code
+         *    graph->setCustomDrawingFunctor(
+         *      [](JKQTPEnhancedPainter& painter, const QRectF& bar_px, const QPointF& datapoint, Qt::Orientation orientation, JKQTPBarGraphBase* graph) {
+         *        // draw the bar (if required), pen and brush are already set properly
+         *        painter.drawRect(bar_px);
+         *        // now we can add some decoration or replace the instruction above:
+         *        // ........
+         *      }
+         *    );
+         *    // enable usage of cutom draw functor
+         *    graph->setUseCustomDrawFunctor(true);
+         *  \endcode
+         *
+         *
+         *  The result may look like this:
+         *
+         *  \image html JKQTPBarVerticalGraphCustomDrawFunctor.png
+         *
+         *  \see CustomDrawingFunctor, m_useCustomDrawFunctor, setUseCustomDrawFunctor(), \ref JKQTPlotterBarchartsCustomDrawFunctor for a detailed example
+         */
+        CustomDrawingFunctor m_customDrawFunctor;
+        /** \brief enabled custom drawing by m_customDrawFunctor
+         *
+         *  \see m_customDrawFunctor
+         */
+        bool m_useCustomDrawFunctor;
+
+        /** \brief returns a FillBrushFunctor that is appropriate for the currently selected m_fillMode */
+        virtual FillBrushFunctor constructFillBrushFunctor() const;
 
         /** \brief this function is used by autoscaleBarWidthAndShift() to determine whether a given graph shall be taken into account when autoscaling. 
 		 *         Typically this returns \c true for all JKQTPBarGraphBase-derved objects with the same orientation (horizontal or vertical) */

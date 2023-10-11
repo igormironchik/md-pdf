@@ -25,8 +25,6 @@
 #include <QDebug>
 #include <iostream>
 #include "jkqtplotter/jkqtptools.h"
-#include "jkqtplotter/graphs/jkqtpimage.h"
-#include "jkqtplotter/jkqtpbaseelements.h"
 #include "jkqtplotter/jkqtplotter.h"
 #define SmallestGreaterZeroCompare_xvsgz() if ((xvsgz>10.0*DBL_MIN)&&((smallestGreaterZero<10.0*DBL_MIN) || (xvsgz<smallestGreaterZero))) smallestGreaterZero=xvsgz;
 
@@ -148,10 +146,10 @@ void JKQTPFilledCurveXGraph::draw(JKQTPEnhancedPainter& painter) {
         double xold=-1;
         //double yold=-1;
         double y0=transformY(getBaseline());
-        if (parent->getYAxis()->isLogAxis()) {
-            y0=transformY(parent->getYAxis()->getMin());
-            if (getBaseline()>0 && getBaseline()>parent->getYAxis()->getMin()) y0=transformY(getBaseline());
-            else y0=transformY(parent->getYAxis()->getMin());
+        if (getYAxis()->isLogAxis()) {
+            y0=transformY(getYAxis()->getMin());
+            if (getBaseline()>0 && getBaseline()>getYAxis()->getMin()) y0=transformY(getBaseline());
+            else y0=transformY(getYAxis()->getMin());
         }
         bool subsequentItem=false;
         intSortData();
@@ -225,13 +223,7 @@ void JKQTPFilledCurveXGraph::draw(JKQTPEnhancedPainter& painter) {
 
 bool JKQTPFilledCurveXGraph::getYMinMax(double &miny, double &maxy, double &smallestGreaterZero)
 {
-    bool res=JKQTPXYGraph::getYMinMax(miny, maxy, smallestGreaterZero);
-    if (getBaseline()>0 && getBaseline()<smallestGreaterZero) {
-        smallestGreaterZero=getBaseline();
-    }
-    miny=qMin(miny,getBaseline());
-    maxy=qMax(maxy,getBaseline());
-    return res;
+    return getMinMaxWithBaseline(yColumn, miny,maxy,smallestGreaterZero);
 }
 
 JKQTPFilledCurveYGraph::JKQTPFilledCurveYGraph(JKQTBasePlotter* parent):
@@ -247,13 +239,7 @@ JKQTPFilledCurveYGraph::JKQTPFilledCurveYGraph(JKQTPlotter *parent):
 
 bool JKQTPFilledCurveYGraph::getXMinMax(double &minx, double &maxx, double &smallestGreaterZero)
 {
-    bool res=JKQTPXYGraph::getXMinMax(minx, maxx, smallestGreaterZero);
-    if (getBaseline()>0 && getBaseline()<smallestGreaterZero) {
-        smallestGreaterZero=getBaseline();
-    }
-    minx=qMin(minx,getBaseline());
-    maxx=qMax(maxx,getBaseline());
-    return res;
+    return getMinMaxWithBaseline(xColumn, minx, maxx, smallestGreaterZero);
 }
 
 void JKQTPFilledCurveYGraph::draw(JKQTPEnhancedPainter &painter)
@@ -284,9 +270,9 @@ void JKQTPFilledCurveYGraph::draw(JKQTPEnhancedPainter &painter)
         //double xold=-1;
         double yold=-1;
         double x0=transformX(getBaseline());
-        if (parent->getXAxis()->isLogAxis()) {
-            if (getBaseline()>0 && getBaseline()>parent->getXAxis()->getMin()) x0=transformX(getBaseline());
-            else x0=transformX(parent->getXAxis()->getMin());
+        if (getXAxis()->isLogAxis()) {
+            if (getBaseline()>0 && getBaseline()>getXAxis()->getMin()) x0=transformX(getBaseline());
+            else x0=transformX(getXAxis()->getMin());
         }
         bool first=false;
         intSortData();
@@ -406,78 +392,10 @@ void JKQTPFilledCurveXErrorGraph::drawErrorsAfter(JKQTPEnhancedPainter &painter)
 bool JKQTPFilledCurveXErrorGraph::getYMinMax(double &miny, double &maxy, double &smallestGreaterZero)
 {
     if (yErrorColumn<0 || yErrorStyle==JKQTPNoError) {
-        miny=0;
-        maxy=0;
-        smallestGreaterZero=0;
-        if (getBaseline()>0) {
-            smallestGreaterZero=getBaseline();
-            miny=getBaseline();
-            maxy=getBaseline();
-        }
-
-        if (parent==nullptr) return false;
-
-        JKQTPDatastore* datastore=parent->getDatastore();
-        int imax=0;
-        int imin=0;
-        if (getIndexRange(imin, imax)) {
-
-
-            for (int i=imin; i<imax; i++) {
-                double yv=getBaseline();
-                if (JKQTPIsOKFloat(yv)) {
-                    if (yv>maxy) maxy=yv;
-                    if (yv<miny) miny=yv;
-                    double xvsgz;
-                    xvsgz=yv; SmallestGreaterZeroCompare_xvsgz();
-                }
-                yv=datastore->get(static_cast<size_t>(yColumn),static_cast<size_t>(i));
-                if (JKQTPIsOKFloat(yv)) {
-                    if (yv>maxy) maxy=yv;
-                    if (yv<miny) miny=yv;
-                    double xvsgz;
-                    xvsgz=yv; SmallestGreaterZeroCompare_xvsgz();
-                }
-            }
-            return true;
-        }
+        return getMinMaxWithBaseline(yColumn, miny, maxy, smallestGreaterZero);
     } else {
-        bool start=false;
-        miny=getBaseline();
-        maxy=getBaseline();
-        smallestGreaterZero=0;
-        if (getBaseline()>0) {
-            smallestGreaterZero=getBaseline();
-            miny=getBaseline();
-            maxy=getBaseline();
-        }
-
-        if (parent==nullptr) return false;
-
-        const JKQTPDatastore* datastore=parent->getDatastore();
-        int imax=0;
-        int imin=0;
-        if (getIndexRange(imin, imax)) {
-
-
-            for (int i=imin; i<imax; i++) {
-                const double yv=datastore->get(static_cast<size_t>(yColumn),static_cast<size_t>(i))+getYErrorU(i, datastore);
-                const double yvv=datastore->get(static_cast<size_t>(yColumn),static_cast<size_t>(i))-getYErrorL(i, datastore);
-                if (JKQTPIsOKFloat(yv) && JKQTPIsOKFloat(yvv) ) {
-                    if (start || yv>maxy) maxy=yv;
-                    if (start || yv<miny) miny=yv;
-                    double xvsgz;
-                    xvsgz=yv; SmallestGreaterZeroCompare_xvsgz();
-                    if (start || yvv>maxy) maxy=yvv;
-                    if (start || yvv<miny) miny=yvv;
-                    xvsgz=yvv; SmallestGreaterZeroCompare_xvsgz();
-                    start=false;
-                }
-            }
-            return !start;
-        }
+        return getMinMaxWithErrorsAndBaseline(yColumn, yErrorColumn, yErrorColumnLower, yErrorSymmetric, miny, maxy, smallestGreaterZero);
     }
-    return false;
 }
 
 JKQTPFilledCurveYErrorGraph::JKQTPFilledCurveYErrorGraph(JKQTBasePlotter *parent):
@@ -502,78 +420,10 @@ bool JKQTPFilledCurveYErrorGraph::usesColumn(int c) const
 bool JKQTPFilledCurveYErrorGraph::getXMinMax(double &minx, double &maxx, double &smallestGreaterZero)
 {
     if (xErrorColumn<0 || xErrorStyle==JKQTPNoError) {
-        minx=0;
-        maxx=0;
-        smallestGreaterZero=0;
-        if (getBaseline()>0) {
-            smallestGreaterZero=getBaseline();
-            minx=getBaseline();
-            maxx=getBaseline();
-        }
-
-        if (parent==nullptr) return false;
-
-        JKQTPDatastore* datastore=parent->getDatastore();
-        int imax=0;
-        int imin=0;
-        if (getIndexRange(imin, imax)) {
-
-
-            for (int i=imin; i<imax; i++) {
-                double yv=getBaseline();
-                if (JKQTPIsOKFloat(yv)) {
-                    if (yv>maxx) maxx=yv;
-                    if (yv<minx) minx=yv;
-                    double xvsgz;
-                    xvsgz=yv; SmallestGreaterZeroCompare_xvsgz();
-                }
-                yv=datastore->get(static_cast<size_t>(xColumn),static_cast<size_t>(i));
-                if (JKQTPIsOKFloat(yv)) {
-                    if (yv>maxx) maxx=yv;
-                    if (yv<minx) minx=yv;
-                    double xvsgz;
-                    xvsgz=yv; SmallestGreaterZeroCompare_xvsgz();
-                }
-            }
-            return true;
-        }
+        return getMinMaxWithBaseline(xColumn, minx, maxx, smallestGreaterZero);
     } else {
-        bool start=false;
-        minx=getBaseline();
-        maxx=getBaseline();
-        smallestGreaterZero=0;
-        if (getBaseline()>0) {
-            smallestGreaterZero=getBaseline();
-            minx=getBaseline();
-            maxx=getBaseline();
-        }
-
-        if (parent==nullptr) return false;
-
-        const JKQTPDatastore* datastore=parent->getDatastore();
-        int imax=0;
-        int imin=0;
-        if (getIndexRange(imin, imax)) {
-
-
-            for (int i=imin; i<imax; i++) {
-                const double yv=datastore->get(static_cast<size_t>(xColumn),static_cast<size_t>(i))+getXErrorU(i, datastore);
-                const double yvv=datastore->get(static_cast<size_t>(xColumn),static_cast<size_t>(i))-getXErrorL(i, datastore);
-                if (JKQTPIsOKFloat(yv) && JKQTPIsOKFloat(yvv) ) {
-                    if (start || yv>maxx) maxx=yv;
-                    if (start || yv<minx) minx=yv;
-                    double xvsgz;
-                    xvsgz=yv; SmallestGreaterZeroCompare_xvsgz();
-                    if (start || yvv>maxx) maxx=yvv;
-                    if (start || yvv<minx) minx=yvv;
-                    xvsgz=yvv; SmallestGreaterZeroCompare_xvsgz();
-                    start=false;
-                }
-            }
-            return !start;
-        }
+        return getMinMaxWithErrorsAndBaseline(xColumn, xErrorColumn, xErrorColumnLower, xErrorSymmetric, minx, maxx, smallestGreaterZero);
     }
-    return false;
 }
 
 void JKQTPFilledCurveYErrorGraph::drawErrorsAfter(JKQTPEnhancedPainter &painter)

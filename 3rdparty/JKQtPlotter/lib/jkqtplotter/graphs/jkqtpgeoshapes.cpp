@@ -132,7 +132,7 @@ void JKQTPGeoRectangle::draw(JKQTPEnhancedPainter& painter) {
     QPolygonF poly=getPolygon();
     reserveHitTestData(poly.size());
     QPolygonF rect;
-    if ((getDrawMode()==DrawAsGraphicElement) || (getParent()->getXAxis()->isLinearAxis() && getParent()->getYAxis()->isLinearAxis())) {
+    if ((getDrawMode()==DrawAsGraphicElement) || (getXAxis()->isLinearAxis() && getYAxis()->isLinearAxis())) {
         rect=transform(poly);
     } else {
         auto fTransform=std::bind([](const JKQTPGeometricPlotElement* plot, const QPointF& p) { return plot->transform(p); }, this, std::placeholders::_1);
@@ -313,7 +313,7 @@ void JKQTPGeoPolygon::draw(JKQTPEnhancedPainter& painter) {
         painter.save(); auto __finalpaint=JKQTPFinally([&painter]() {painter.restore();});
         painter.setPen(getLinePen(painter, parent));
         painter.setBrush(getFillBrush(painter, parent));
-        if ((getDrawMode()==DrawAsGraphicElement) || (getParent()->getXAxis()->isLinearAxis() && getParent()->getYAxis()->isLinearAxis())) {
+        if ((getDrawMode()==DrawAsGraphicElement) || (getXAxis()->isLinearAxis() && getYAxis()->isLinearAxis())) {
             painter.drawPolygon(transform(points));
         } else {
             // for non-linear axes, a line might not be drawn as a line, so we need to segment the line (i.e. linear function in coordinate space)
@@ -455,16 +455,16 @@ void JKQTPGeoEllipse::drawInternal(JKQTPEnhancedPainter& painter, double angleSt
     auto fTransform=std::bind([](const JKQTPGeometricPlotElement* plot, const QPointF& p) { return plot->transform(p); }, this, std::placeholders::_1);
     QPolygonF rect;
     if(mode==InternalDrawMode::Ellipse) {
-        rect=JKQTPSplitEllipseIntoPoints(fTransform, x,y,width/2.0, height/2.0,0,360);
+        rect=JKQTPSplitEllipseIntoPoints(fTransform, x,y,width/2.0, height/2.0,0,360,angle);
     } else if (mode==InternalDrawMode::Pie) {
         QPointF first, last;
-        rect=JKQTPSplitEllipseIntoPoints(fTransform, x,y,width/2.0, height/2.0, angleStart, angleStop, 0, nullptr, nullptr, &first, &last);
+        rect=JKQTPSplitEllipseIntoPoints(fTransform, x,y,width/2.0, height/2.0, angleStart, angleStop, angle, nullptr, nullptr, &first, &last);
         QPolygonF pie;
         pie<<last<<QPointF(x,y)<<first;
         rect.append(JKQTPSimplyfyLineSegemnts(JKQTPSplitPolylineIntoPoints(pie, fTransform)));
     } else if (mode==InternalDrawMode::Chord) {
         QPointF first, last;
-        rect=JKQTPSplitEllipseIntoPoints(fTransform, x,y,width/2.0, height/2.0, angleStart, angleStop, 0, nullptr, nullptr, &first, &last);
+        rect=JKQTPSplitEllipseIntoPoints(fTransform, x,y,width/2.0, height/2.0, angleStart, angleStop, angle, nullptr, nullptr, &first, &last);
         rect.append(JKQTPSimplyfyLineSegemnts(JKQTPSplitLineIntoPoints(QLineF(last, first), fTransform)));
     }
     painter.drawPolygon(rect);

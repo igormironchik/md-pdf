@@ -89,7 +89,7 @@ class JKQTPLOTTER_LIB_EXPORT JKQTPCoordinateAxisStyle {
     public:
         JKQTPCoordinateAxisStyle();
 
-        JKQTPCoordinateAxisStyle(const JKQTBasePlotterStyle& baseStyle);
+        explicit JKQTPCoordinateAxisStyle(const JKQTBasePlotterStyle& baseStyle);
 
 
         /** \brief loads the plot properties from a <a href="http://doc.qt.io/qt-5/qsettings.html")">QSettings</a> object
@@ -206,7 +206,19 @@ class JKQTPLOTTER_LIB_EXPORT JKQTPCoordinateAxisStyle {
         double tickLabelDistance;
         /** \brief distance between tick label and axis label in pt */
         double labelDistance;
-        /** \brief rotation angle of tick labels [-180..180], i.e. given in degrees, default is 0 (horizontal) */
+        /** \brief rotation angle of tick labels [-180..180], i.e. given in degrees, default is 0 (horizontal)
+         *
+         *  These images show some example rotations:
+         *
+         *  \image html axisstyle/JKQTPCoordinateAxisTickLabelAngle-75Degree.png
+         *  \image html axisstyle/JKQTPCoordinateAxisTickLabelAngle-45Degree.png
+         *  \image html axisstyle/JKQTPCoordinateAxisTickLabelAngle-15Degree.png
+         *  \image html axisstyle/JKQTPCoordinateAxisTickLabelAngle0Degree.png
+         *  \image html axisstyle/JKQTPCoordinateAxisTickLabelAngle15Degree.png
+         *  \image html axisstyle/JKQTPCoordinateAxisTickLabelAngle45Degree.png
+         *  \image html axisstyle/JKQTPCoordinateAxisTickLabelAngle75Degree.png
+         *
+         */
         double tickLabelAngle;
 
         /** \brief styling of the major/primary grid */
@@ -250,7 +262,7 @@ class JKQTPLOTTER_LIB_EXPORT JKQTPColorbarCoordinateAxisStyle: public JKQTPCoord
         JKQTPColorbarCoordinateAxisStyle();
 
         /** \copydoc JKQTPCoordinateAxisStyle::JKQTPCoordinateAxisStyle(const JKQTBasePlotterStyle&) */
-        JKQTPColorbarCoordinateAxisStyle(const JKQTBasePlotterStyle& baseStyle);
+        explicit JKQTPColorbarCoordinateAxisStyle(const JKQTBasePlotterStyle& baseStyle);
     private:
         /** \brief modifies the members to match the requirements of colorbar axes */
         void initMembersForColorbars();

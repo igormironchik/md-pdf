@@ -26,15 +26,14 @@
 #include <QPair>
 #include "jkqtplotter/jkqtptools.h"
 #include "jkqtplotter/jkqtplotter_imexport.h"
-#include "jkqtplotter/jkqtpimagetools.h"
 #include "jkqtplotter/jkqtpgraphsbase.h"
 #include "jkqtplotter/jkqtpgraphsbaseerrors.h"
 #include "jkqtplotter/jkqtpgraphsbasestylingmixins.h"
 #include "jkqtplotter/graphs/jkqtpbarchartbase.h"
 
 
-/*! \brief This implements a bar graph with bars starting at \f$ yoverride \f$ to \f$ y=f(x) \f$
-    \ingroup jkqtplotter_barssticks
+/*! \brief This implements a vertical bar graph with bars between \f$ y=\mbox{baseline} \f$ and \f$ y=f(x) \f$
+    \ingroup jkqtplotter_barcharts
 
     This class plots a bargraph. This image explains the parameters:
 
@@ -58,10 +57,41 @@
 
     \image html JKQTPBarVerticalGraphTwoColorFilling.png
 
-    You can use JKQTPlotter::addHorizontalBargraph() to add a series of bargraphs, where the width and shift are determined
-    automatically. The y-columns are given as a QVector<int> to this function.
+   If you use JKQTPBarGraphBase::FillMode::FunctorFilling you can specify the fill style by a functor, e.g.
+   \code
+     graph->setFillMode(JKQTPBarGraphBase::FillMode::FunctorFilling);
+     graph->setFillBrushFunctor(
+       [](double key, double value) {
+         return QBrush(QColor::fromHsvF(key/12.0, 1.0, 1.0));
+       }
+     );
+   \endcode
 
-    \see JKQTPBarHorizontalGraph, \ref JKQTPlotterBarcharts, jkqtpstatAddHHistogram1D(), jkqtpstatAddHHistogram1DAutoranged()
+   The result may look like this:
+
+   \image html JKQTPBarVerticalGraphFunctorFilling.png
+
+
+   You can also completely customize the drawing by defining a custom draw functor:
+   \code
+     graph->setCustomDrawingFunctor(
+       [](JKQTPEnhancedPainter& painter, const QRectF& bar_px, const QPointF& datapoint, Qt::Orientation orientation, JKQTPBarGraphBase* graph) {
+         // draw the bar (if required), pen and brush are already set properly
+         painter.drawRect(bar_px);
+         // now we can add some decoration or replace the instruction above:
+         // ........
+       }
+     );
+     // enable usage of cutom draw functor
+     graph->setUseCustomDrawFunctor(true);
+   \endcode
+
+   See \ref JKQTPlotterBarchartsCustomDrawFunctor for a detailed example.
+   The result may look like this:
+
+   \image html JKQTPBarVerticalGraphCustomDrawFunctor.png
+
+   \see JKQTPBarHorizontalGraph, \ref JKQTPlotterBarcharts, jkqtpstatAddHHistogram1D(), jkqtpstatAddHHistogram1DAutoranged()
  */
 class JKQTPLOTTER_LIB_EXPORT JKQTPBarVerticalGraph: public JKQTPBarGraphBase {
         Q_OBJECT
@@ -84,25 +114,8 @@ class JKQTPLOTTER_LIB_EXPORT JKQTPBarVerticalGraph: public JKQTPBarGraphBase {
          * The result is given in the two parameters which are call-by-reference parameters!
          */
         virtual bool getYMinMax(double& miny, double& maxy, double& smallestGreaterZero) override;
-				
-		/** \brief returns xColumn or yColumn, whichever is used for the position of the bars (depending on whether the barchart is vertical or horizontal \see getBarHeightColumn(), xColumn, yColumn */
-		virtual int getBarPositionColumn() const override;
-		
-		/** \brief returns xColumn or yColumn, whichever is used for the height of the bars (depending on whether the barchart is vertical or horizontal \see getBarPositionColumn(), xColumn, yColumn */
-        virtual int getBarHeightColumn() const override;
 
-    public slots:
-		/** \brief returns xColumn or yColumn, whichever is used for the position of the bars (depending on whether the barchart is vertical or horizontal \see getBarHeightColumn(), xColumn, yColumn */
-        virtual void setBarPositionColumn(int column)  override;
-		
-		/** \brief returns xColumn or yColumn, whichever is used for the position of the bars (depending on whether the barchart is vertical or horizontal \see getBarHeightColumn(), xColumn, yColumn */
-        virtual void setBarPositionColumn(size_t column)  override;
-		
-		/** \brief returns xColumn or yColumn, whichever is used for the height of the bars (depending on whether the barchart is vertical or horizontal \see getBarPositionColumn(), xColumn, yColumn */
-        virtual void setBarHeightColumn(int column)  override;
-		
-		/** \brief returns xColumn or yColumn, whichever is used for the height of the bars (depending on whether the barchart is vertical or horizontal \see getBarPositionColumn(), xColumn, yColumn */
-        virtual void setBarHeightColumn(size_t column)  override;
+    public Q_SLOTS:
 
     protected:
 	
@@ -112,9 +125,9 @@ class JKQTPLOTTER_LIB_EXPORT JKQTPBarVerticalGraph: public JKQTPBarGraphBase {
 
 };
 
-/*! \brief This implements a bar graph with bars starting at \f$ yoverride \f$ to \f$ y=f(x) \f$
+/*! \brief This implements a vertical bar graph with bars between \f$ y=\mbox{baseline} \f$ and \f$ y=f(x) \f$
  *         and error indicator
- *  \ingroup jkqtplotter_barssticks
+ *  \ingroup jkqtplotter_barcharts
  *
  *  This works much the same as JKQTPBarHorizontalGraph. Here is an example output:
  *  \image html JKQTPBarVerticalErrorGraph.png
@@ -146,7 +159,7 @@ class JKQTPLOTTER_LIB_EXPORT JKQTPBarVerticalErrorGraph: public JKQTPBarVertical
         /** \brief returns whether the errors of the bars are symmetric */
         bool getBarErrorSymmetric() const;
 
-    public slots:
+    public Q_SLOTS:
         /** \brief sets whether the errors of the bars are symmetric */
         void setBarErrorSymmetric(bool __value);
         /** \brief sets the error style of the bar */
@@ -171,8 +184,8 @@ class JKQTPLOTTER_LIB_EXPORT JKQTPBarVerticalErrorGraph: public JKQTPBarVertical
 
 
 
-/*! \brief This implements a bar graph with bars starting at \f$ xoverride \f$ to \f$ x=f(y) \f$
-    \ingroup jkqtplotter_barssticks
+/*! \brief This implements a horizontal bar graph with bars between \f$ x=\mbox{baseline} \f$ and \f$ x=f(y) \f$
+    \ingroup jkqtplotter_barcharts
 
     This works much the same as JKQTPBarHorizontalGraph. Here is an example output:
 
@@ -182,6 +195,39 @@ class JKQTPLOTTER_LIB_EXPORT JKQTPBarVerticalErrorGraph: public JKQTPBarVertical
     the baseline of the graph:
 
     \image html JKQTPBarHorizontalGraphTwoColorFilling.png
+
+   If you use JKQTPBarGraphBase::FillMode::FunctorFilling you can specify the fill style by a functor, e.g.
+   \code
+     graph->setFillMode(JKQTPBarGraphBase::FillMode::FunctorFilling);
+     graph->setFillBrushFunctor(
+       [](double key, double value) {
+         return QBrush(QColor::fromHsvF(key/12.0, 1.0, 1.0));
+       }
+     );
+   \endcode
+
+   The result may look like this:
+
+   \image html JKQTPBarHorizontalGraphFunctorFilling.png
+
+   You can also completely customize the drawing by defining a custom draw functor:
+   \code
+     graph->setCustomDrawingFunctor(
+       [](JKQTPEnhancedPainter& painter, const QRectF& bar_px, const QPointF& datapoint, Qt::Orientation orientation, JKQTPBarGraphBase* graph) {
+         // draw the bar (if required), pen and brush are already set properly
+         painter.drawRect(bar_px);
+         // now we can add some decoration or replace the instruction above:
+         // ........
+       }
+     );
+     // enable usage of cutom draw functor
+     graph->setUseCustomDrawFunctor(true);
+   \endcode
+
+   See \ref JKQTPlotterBarchartsCustomDrawFunctor for a detailed example.
+   The result may look like this:
+
+   \image html JKQTPBarHorizontalGraphCustomDrawFunctor.png
 
     \see \ref JKQTPlotterBarcharts, jkqtpstatAddVHistogram1D(), jkqtpstatAddVHistogram1DAutoranged()
  */
@@ -206,33 +252,15 @@ class JKQTPLOTTER_LIB_EXPORT JKQTPBarHorizontalGraph: public JKQTPBarGraphBase {
          * The result is given in the two parameters which are call-by-reference parameters!
          */
         virtual bool getYMinMax(double& miny, double& maxy, double& smallestGreaterZero) override;
-
-        /** \brief returns xColumn or yColumn, whichever is used for the position of the bars (depending on whether the barchart is vertical or horizontal \see getBarHeightColumn(), xColumn, yColumn */
-        virtual int getBarPositionColumn() const override;
-
-        /** \brief returns xColumn or yColumn, whichever is used for the height of the bars (depending on whether the barchart is vertical or horizontal \see getBarPositionColumn(), xColumn, yColumn */
-        virtual int getBarHeightColumn() const override;
         /** \brief returns the column used as "key" for the current graph (typically this call getXColumn(), but for horizontal graphs like filled curves or barcharts it may call getYColumn() ) */
         virtual int getKeyColumn() const override;
         /** \brief returns the column used as "value" for the current graph (typically this call getXColumn(), but for horizontal graphs like filled curves or barcharts it may call getYColumn() ) */
         virtual int getValueColumn() const override;
-    public slots:
+    public Q_SLOTS:
         /** \brief sets the column used as "key" for the current graph (typically this call setXColumn(), but for horizontal graphs like filled curves or barcharts it may call setYColumn() ) */
         virtual void setKeyColumn(int __value) override;
         /** \brief sets the column used as "value" for the current graph (typically this call setXColumn(), but for horizontal graphs like filled curves or barcharts it may call setYColumn() ) */
         virtual void setValueColumn(int __value) override;
-
-        /** \brief sets xColumn or yColumn, whichever is used for the position of the bars (depending on whether the barchart is vertical or horizontal \see getBarHeightColumn(), xColumn, yColumn */
-        virtual void setBarPositionColumn(int column)  override;
-
-        /** \brief sets xColumn or yColumn, whichever is used for the position of the bars (depending on whether the barchart is vertical or horizontal \see getBarHeightColumn(), xColumn, yColumn */
-        virtual void setBarPositionColumn(size_t column)  override;
-
-        /** \brief sets xColumn or yColumn, whichever is used for the height of the bars (depending on whether the barchart is vertical or horizontal \see getBarPositionColumn(), xColumn, yColumn */
-        virtual void setBarHeightColumn(int column)  override;
-
-        /** \brief sets xColumn or yColumn, whichever is used for the height of the bars (depending on whether the barchart is vertical or horizontal \see getBarPositionColumn(), xColumn, yColumn */
-        virtual void setBarHeightColumn(size_t column)  override;
     protected:
 
         /** \brief this function is used by autoscaleBarWidthAndShift() to determine whether a given graph shall be taken into account when autoscaling. 
@@ -242,9 +270,9 @@ class JKQTPLOTTER_LIB_EXPORT JKQTPBarHorizontalGraph: public JKQTPBarGraphBase {
 
 
 
-/*! \brief This implements a bar graph with bars starting at \f$ xoverride \f$ to \f$ x=f(y) \f$
+/*! \brief This implements a horizontal bar graph with bars between \f$ x=\mbox{baseline} \f$ and \f$ x=f(y) \f$
  *         and error indicator
- *  \ingroup jkqtplotter_barssticks
+ *  \ingroup jkqtplotter_barcharts
  *
  *  This works much the same as JKQTPBarHorizontalGraph. Here is an example output:
  *  \image html JKQTPBarHorizontalErrorGraph.png
@@ -278,7 +306,7 @@ class JKQTPLOTTER_LIB_EXPORT JKQTPBarHorizontalErrorGraph: public JKQTPBarHorizo
         /** \brief returns whether the errors of the bars are symmetric */
         bool getBarErrorSymmetric() const;
 
-    public slots:
+    public Q_SLOTS:
         /** \brief sets whether the errors of the bars are symmetric */
         void setBarErrorSymmetric(bool __value);
         /** \brief sets the error style of the bar */
@@ -311,11 +339,12 @@ class JKQTPLOTTER_LIB_EXPORT JKQTPBarHorizontalErrorGraph: public JKQTPBarHorizo
 
 
 
-/*! \brief This implements a bar graph with bars starting at \f$ yoverride \f$ to \f$ y=f(x) \f$
+/*! \brief This implements a vertical bar graph with bars between \f$ y=\mbox{baseline} \f$ and \f$ y=f(x) \f$
  *         Optionally several graphs of this type may be stacked on top of each other
- *  \ingroup jkqtplotter_barssticks
+ *  \ingroup jkqtplotter_barcharts
  *
  *  Draw stacked barcharts by connecting several plots by calling \c setStackedParent(belowPlot) for each plot
+ *
  *  \image html JKQTPBarVerticalGraphStacked.png
  *
  * \see JKQTPBarVerticalGraph, \ref JKQTPlotterStackedBarChart
@@ -359,11 +388,12 @@ class JKQTPLOTTER_LIB_EXPORT JKQTPBarVerticalStackableGraph: public JKQTPBarVert
 
 
 
-/*! \brief This implements a bar graph with bars starting at \f$ yoverride \f$ to \f$ y=f(x) \f$
+/*! \brief This implements a horizontal bar graph with bars between \f$ x=\mbox{baseline} \f$ and \f$ x=f(y) \f$
  *         Optionally several graphs of this type may be stacked on top of each other
- *  \ingroup jkqtplotter_barssticks
+ *  \ingroup jkqtplotter_barcharts
  *
  *  Draw stacked barcharts by connecting several plots by calling \c setStackedParent(belowPlot) for each plot
+ *
  *  \image html JKQTPBarHorizontalGraphStacked.png
  *
  *

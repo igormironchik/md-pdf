@@ -46,6 +46,7 @@
 #include <QFontMetricsF>
 #include <QDebug>
 #include <QFontDatabase>
+#include <mutex>
 #include <typeinfo>
 #include <QPainterPath>
 
@@ -63,6 +64,7 @@ QString JKQTMathText::init_caligraphicFont="decorative";
 QString JKQTMathText::init_blackboardFont="blackboard";
 QString JKQTMathText::init_fracturFont="fraktur";
 bool JKQTMathText::s_firstStart=true;
+std::mutex JKQTMathText::s_mutex;
 
 
 
@@ -79,6 +81,7 @@ JKQTMathText::JKQTMathText(QObject* parent, bool useFontsForGUI):
 
     fontSize=10;
     fontSizeUnits=JKQTMathTextEnvironment::POINTS;
+    fontOptions=BaseFontDefault;
     fontColor=QColor("black");
     brace_factor=1.04;
     brace_y_shift_factor=0.7;//-1;
@@ -126,7 +129,7 @@ JKQTMathText::JKQTMathText(QObject* parent, bool useFontsForGUI):
 
 
 
-
+    std::lock_guard<std::mutex> lock(s_mutex);
     if (s_firstStart) {
         //t0=std::chrono::high_resolution_clock::now();
 
@@ -205,6 +208,7 @@ JKQTMathText::~JKQTMathText() {
 void JKQTMathText::loadSettings(const QSettings& settings, const QString& group){
     fontSize=settings.value(group+"font_size", fontSize).toDouble();
     fontSizeUnits=JKQTMathTextEnvironment::String2FontSizeUnit(settings.value(group+"font_size_units", JKQTMathTextEnvironment::FontSizeUnit2String(fontSizeUnits)).toString());
+    fontOptions=String2BaseFontOptions(settings.value(group+"font_options", BaseFontOptions2String(fontOptions)).toString());
     fontColor=jkqtp_String2QColor(settings.value(group+"font_color", jkqtp_QColor2String(fontColor)).toString());
     brace_factor=settings.value(group+"brace_factor", brace_factor).toDouble();
     subsuper_size_factor=settings.value(group+"subsuper_size_factor", subsuper_size_factor).toDouble();
@@ -252,6 +256,7 @@ void JKQTMathText::loadSettings(const QSettings& settings, const QString& group)
 void JKQTMathText::saveSettings(QSettings& settings, const QString& group) const{
     settings.setValue(group+"font_size", fontSize);
     settings.setValue(group+"font_size_units", JKQTMathTextEnvironment::FontSizeUnit2String(fontSizeUnits));
+    settings.setValue(group+"font_options", BaseFontOptions2String(fontOptions));
     settings.setValue(group+"font_color", jkqtp_QColor2String(fontColor));
     settings.setValue(group+ "brace_factor", brace_factor);
     settings.setValue(group+ "subsuper_size_factor", subsuper_size_factor);
@@ -421,18 +426,45 @@ QString JKQTMathText::toHtml(bool *ok, double fontPointSize) {
     bool okk=false;
     if (getNodeTree()!=nullptr) {
         JKQTMathTextEnvironment ev;
-        ev.color=fontColor;
+        modifyEnvironmentFromFontSettings(ev);
         ev.fontSize=fontPointSize;
-        ev.fontSizeUnit=JKQTMathTextEnvironment::POINTS;
+        ev.fontSizeUnit=JKQTMathTextEnvironment::PIXELS;
 
         JKQTMathTextEnvironment defaultev;
-        defaultev.fontSize=fontPointSize;
-        defaultev.fontSizeUnit=JKQTMathTextEnvironment::POINTS;
+        const auto defColor=defaultev.color;
+        modifyEnvironmentFromFontSettings(defaultev);
+        defaultev.color=defColor;
+        ev.fontSize=fontPointSize;
+        ev.fontSizeUnit=JKQTMathTextEnvironment::PIXELS;
 
         okk=getNodeTree()->toHtml(s, ev, defaultev);
     }
     if (ok) *ok=okk;
     return s;
+}
+
+QString JKQTMathText::BaseFontOptions2String(JKQTMathText::BaseFontOptions opt)
+{
+    QStringList res;
+    if (opt.testFlag(BaseFontBold)) res<<"BOLD";
+    if (opt.testFlag(BaseFontItalic)) res<<"ITALIC";
+    if (opt.testFlag(BaseFontUnderlined)) res<<"UNDERLINED";
+    if (opt.testFlag(BaseFontSmallCaps)) res<<"SMALLCAPS";
+
+    return res.join('+');
+}
+
+JKQTMathText::BaseFontOptions JKQTMathText::String2BaseFontOptions(const QString &s)
+{
+    BaseFontOptions res=BaseFontDefault;
+    const auto opts=s.toUpper().trimmed().simplified().split('+');
+    for (const auto& o: opts) {
+        if (o=="BOLD" || o=="BF" || o=="B") res.setFlag(BaseFontBold);
+        else if (o=="ITALIC" || o=="IT" || o=="I") res.setFlag(BaseFontItalic);
+        else if (o=="UNDERLINED" || o=="UL" || o=="U") res.setFlag(BaseFontUnderlined);
+        else if (o=="SMALLCAPS" || o=="SC" || o=="S") res.setFlag(BaseFontSmallCaps);
+    }
+    return res;
 }
 
 
@@ -478,6 +510,21 @@ double JKQTMathText::getFontSizePixels() const
 {
     if (fontSizeUnits==JKQTMathTextEnvironment::PIXELS) return fontSize;
     else return -1;
+}
+
+void JKQTMathText::setFontOptions(JKQTMathText::BaseFontOptions opts)
+{
+    fontOptions=opts;
+}
+
+void JKQTMathText::setFontOption(JKQTMathText::BaseFontOption opt, bool enabled)
+{
+    fontOptions.setFlag(opt, enabled);
+}
+
+JKQTMathText::BaseFontOptions JKQTMathText::getFontOptions() const
+{
+    return fontOptions;
 }
 
 void JKQTMathText::addReplacementFont(const QString &nonUseFont, const QString &useFont, JKQTMathTextFontEncoding useFontEncoding) {
@@ -535,12 +582,16 @@ void JKQTMathText::setFontSpecial(const QString &fontSpec)
 {
     if (fontSpec.trimmed().size()==0) return;
     QString beforePlus=fontSpec;
-    QString afterPlus="";
-    const int Iplus=fontSpec.lastIndexOf('+');
-    if (Iplus>=0 && Iplus<fontSpec.size()) {
-        beforePlus=fontSpec.left(Iplus);
-        afterPlus=fontSpec.mid(Iplus+1);
+    QStringList afterPlus;
+    afterPlus=fontSpec.split('+');
+    if (afterPlus.size()>1) {
+        beforePlus=afterPlus.first();
+        afterPlus.removeFirst();
+    } else {
+        afterPlus.clear();
     }
+
+
     if (beforePlus.toUpper()=="GUI") useGuiFonts();
     else {
         const QStringList splitSlash=beforePlus.split('/');
@@ -563,10 +614,22 @@ void JKQTMathText::setFontSpecial(const QString &fontSpec)
             qDebug()<<"JKQTMathText::setFontSpecial(): undecodable fontSpec '"<<fontSpec<<"'";
         }
     }
-    if (afterPlus.toUpper()=="XITS") useXITS();
-    if (afterPlus.toUpper()=="STIX") useSTIX();
-    if (afterPlus.toUpper()=="ASANA") useASANA();
-    if (afterPlus.toUpper()=="FIRA") useFiraMath();
+    BaseFontOptions opt=BaseFontDefault;
+    for (const auto& afterIn: afterPlus) {
+        const auto after=afterIn.toUpper();
+        if (after=="XITS") useXITS();
+        else if (after=="STIX") useSTIX();
+        else if (after=="ASANA") useASANA();
+        else if (after=="FIRA") useFiraMath();
+        else if (after=="BOLD" || after=="BF" || after=="B") opt.setFlag(BaseFontBold);
+        else if (after=="ITALIC" || after=="IT" || after=="I") opt.setFlag(BaseFontItalic);
+        else if (after=="UNDERLINED" || after=="UL" || after=="U") opt.setFlag(BaseFontUnderlined);
+        else if (after=="SMALLCAPS" || after=="SC" || after=="S") opt.setFlag(BaseFontSmallCaps);
+        else {
+            qDebug()<<"JKQTMathText::setFontSpecial() didn't recognize font name component '"<<after<<"'";
+        }
+    }
+    setFontOptions(opt);
 }
 
 void JKQTMathText::setFontRoman(const QString &__value, JKQTMathTextFontEncoding encoding)
@@ -1128,6 +1191,7 @@ void JKQTMathText::clearErrorList()
     error_list.clear();
 }
 
+
 const JKQTMathTextNode *JKQTMathText::getNodeTree() const {
     return this->parsedNode;
 }
@@ -1172,15 +1236,24 @@ void JKQTMathText::getSizeDetail(QPainter& painter, double& width, double& ascen
     strikeoutPos=s.strikeoutPos;
 }
 
+
+void JKQTMathText::modifyEnvironmentFromFontSettings(JKQTMathTextEnvironment &ev) const
+{
+    ev.color=fontColor;
+    ev.fontSize=fontSize;
+    ev.fontSizeUnit=fontSizeUnits;
+    ev.bold=fontOptions.testFlag(BaseFontBold);
+    ev.italic=fontOptions.testFlag(BaseFontItalic);
+    ev.underlined=fontOptions.testFlag(BaseFontUnderlined);
+    if (fontOptions.testFlag(BaseFontSmallCaps)) ev.capitalization=QFont::SmallCaps;
+}
+
 JKQTMathTextNodeSize JKQTMathText::getSizeDetail(QPainter &painter)
 {
     JKQTMathTextNodeSize s;
     if (getNodeTree()!=nullptr) {
         JKQTMathTextEnvironment ev;
-        ev.color=fontColor;
-        ev.fontSize=fontSize;
-        ev.fontSizeUnit=fontSizeUnits;
-
+        modifyEnvironmentFromFontSettings(ev);
         s=getNodeTree()->getSize(painter, ev);
     }
     return s;
@@ -1197,9 +1270,7 @@ double JKQTMathText::draw(QPainter& painter, double x, double y, bool drawBoxes)
         painter.setPen(fontColor);
         painter.setBrush(Qt::NoBrush);
         JKQTMathTextEnvironment ev;
-        ev.color=fontColor;
-        ev.fontSize=fontSize;
-        ev.fontSizeUnit=fontSizeUnits;
+        modifyEnvironmentFromFontSettings(ev);
         getNodeTree()->setDrawBoxes(drawBoxes);
         const double xend=getNodeTree()->draw(painter, x, y, ev);
         return xend;
@@ -1214,9 +1285,7 @@ void JKQTMathText::draw(QPainter& painter, unsigned int flags, QRectF rect, bool
         painter.setBrush(Qt::NoBrush);
 
         JKQTMathTextEnvironment ev;
-        ev.color=fontColor;
-        ev.fontSize=fontSize;
-        ev.fontSizeUnit=fontSizeUnits;
+        modifyEnvironmentFromFontSettings(ev);
         getNodeTree()->setDrawBoxes(drawBoxes);
 
         const JKQTMathTextNodeSize size= getSizeDetail(painter);
@@ -1254,6 +1323,9 @@ QPixmap JKQTMathText::drawIntoPixmap(bool drawBoxes, QColor backgroundColor, int
         painter.setRenderHint(QPainter::Antialiasing);
         painter.setRenderHint(QPainter::TextAntialiasing);
         painter.setRenderHint(QPainter::SmoothPixmapTransform);
+#if (QT_VERSION>=QT_VERSION_CHECK(6, 1, 0))
+        painter.setRenderHint(QPainter::VerticalSubpixelPositioning);
+#endif
         const JKQTMathTextNodeSize size=getSizeDetail(painter);
         const QSize pixsize=size.getIntSize()+QSize(2*sizeincrease,2*sizeincrease);
         painter.end();
@@ -1268,6 +1340,9 @@ QPixmap JKQTMathText::drawIntoPixmap(bool drawBoxes, QColor backgroundColor, int
         painter.setRenderHint(QPainter::Antialiasing);
         painter.setRenderHint(QPainter::TextAntialiasing);
         painter.setRenderHint(QPainter::SmoothPixmapTransform);
+#if (QT_VERSION>=QT_VERSION_CHECK(6, 1, 0))
+        painter.setRenderHint(QPainter::VerticalSubpixelPositioning);
+#endif
         draw(painter, Qt::AlignVCenter|Qt::AlignHCenter, QRect(QPoint(0,0),pixsize), drawBoxes);
         painter.end();
     }
@@ -1279,7 +1354,7 @@ QImage JKQTMathText::drawIntoImage(bool drawBoxes, QColor backgroundColor, int s
     // 1. generate dummy QPixmap that is needed to use a QPainter
     //    we need the dummy, because we first need to determine the size of the render output
     //    for which we need a QPainter.
-    QImage img(1,1,QImage::Format_ARGB32);
+    QImage img(1,1,QImage::Format_ARGB32_Premultiplied);
     img.setDevicePixelRatio(devicePixelRatio);
     img.setDotsPerMeterX(resolution_dpi*(10000/254));
     img.setDotsPerMeterY(resolution_dpi*(10000/254));
@@ -1292,6 +1367,9 @@ QImage JKQTMathText::drawIntoImage(bool drawBoxes, QColor backgroundColor, int s
         painter.setRenderHint(QPainter::Antialiasing);
         painter.setRenderHint(QPainter::TextAntialiasing);
         painter.setRenderHint(QPainter::SmoothPixmapTransform);
+#if (QT_VERSION>=QT_VERSION_CHECK(6, 1, 0))
+        painter.setRenderHint(QPainter::VerticalSubpixelPositioning);
+#endif
         const JKQTMathTextNodeSize size=getSizeDetail(painter);
         const QSize pixsize=size.getIntSize()+QSize(2*sizeincrease,2*sizeincrease);
         painter.end();
@@ -1299,7 +1377,7 @@ QImage JKQTMathText::drawIntoImage(bool drawBoxes, QColor backgroundColor, int s
         // 3. finally we can generate a QPixmap with the appropriate
         //    size to contain the full rendering. We fill it with the
         //    color white and finally paint the math markup/LaTeX string
-        img=QImage(pixsize*devicePixelRatio,QImage::Format_ARGB32);
+        img=QImage(pixsize*devicePixelRatio,QImage::Format_ARGB32_Premultiplied);
         img.setDevicePixelRatio(devicePixelRatio);
         img.setDotsPerMeterX(resolution_dpi*(10000/254));
         img.setDotsPerMeterY(resolution_dpi*(10000/254));
@@ -1308,6 +1386,9 @@ QImage JKQTMathText::drawIntoImage(bool drawBoxes, QColor backgroundColor, int s
         painter.setRenderHint(QPainter::Antialiasing);
         painter.setRenderHint(QPainter::TextAntialiasing);
         painter.setRenderHint(QPainter::SmoothPixmapTransform);
+#if (QT_VERSION>=QT_VERSION_CHECK(6, 1, 0))
+        painter.setRenderHint(QPainter::VerticalSubpixelPositioning);
+#endif
         draw(painter, Qt::AlignVCenter|Qt::AlignHCenter, QRect(QPoint(0,0),pixsize), drawBoxes);
         painter.end();
     }
@@ -1329,6 +1410,9 @@ QPicture JKQTMathText::drawIntoPicture(bool drawBoxes)
         painter.setRenderHint(QPainter::Antialiasing);
         painter.setRenderHint(QPainter::TextAntialiasing);
         painter.setRenderHint(QPainter::SmoothPixmapTransform);
+#if (QT_VERSION>=QT_VERSION_CHECK(6, 1, 0))
+        painter.setRenderHint(QPainter::VerticalSubpixelPositioning);
+#endif
         const JKQTMathTextNodeSize size=getSizeDetail(painter);
         painter.end();
 
@@ -1339,6 +1423,9 @@ QPicture JKQTMathText::drawIntoPicture(bool drawBoxes)
         painter.setRenderHint(QPainter::Antialiasing);
         painter.setRenderHint(QPainter::TextAntialiasing);
         painter.setRenderHint(QPainter::SmoothPixmapTransform);
+#if (QT_VERSION>=QT_VERSION_CHECK(6, 1, 0))
+        painter.setRenderHint(QPainter::VerticalSubpixelPositioning);
+#endif
         draw(painter, 0, size.baselineHeight, drawBoxes);
         painter.end();
     }

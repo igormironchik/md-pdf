@@ -1,7 +1,7 @@
 #include "jkqtpbaseplotterstyle.h"
 #include <QPalette>
+#include <QtMath>
 #include <QApplication>
-#include "jkqtplotter/jkqtptools.h"
 
 JKQTBasePlotterStyle::JKQTBasePlotterStyle():
     debugShowRegionBoxes(false),
@@ -18,19 +18,22 @@ JKQTBasePlotterStyle::JKQTBasePlotterStyle():
     exportBackgroundBrush(QColor("white")),
     plotBackgroundBrush(QColor("white")),
     plotFrameColor(QColor("black")),
-    plotFrameWidth(2),
+    plotFrameWidth(1),
     plotFrameRounding(0),
     plotFrameVisible(false),
-    plotLabelFontName("GUI"),
-    plotLabelFontSize(12),
+    plotLabelFontName("GUI+BOLD"),
+    plotLabelFontSize(qCeil(QApplication::font().pointSizeF()*1.5)),
+    plotLabelOffset(qCeil(QApplication::font().pointSizeF()*0.4)),
+    plotLabelTopBorder(qCeil(QApplication::font().pointSizeF()*0.25)),
     useAntiAliasingForSystem(true),
     useAntiAliasingForText(true),
     defaultTextColor(QColor("black")),
-    defaultFontSize(8),
+    defaultFontSize(QApplication::font().pointSizeF()),
     defaultFontName("GUI"),
     keyStyle(*this),
     xAxisStyle(*this),
     yAxisStyle(*this),
+    secondaryAxisSeparation(6),
     rightColorbarAxisStyle(*this),
     topColorbarAxisStyle(*this),
     graphsStyle(*this)
@@ -51,6 +54,9 @@ void JKQTBasePlotterStyle::loadSettings(const QSettings &settings, const QString
     debugTextBoxLineWidth=settings.value(group+"debug_textbox_linewidth", defaultStyle.debugTextBoxLineWidth).toDouble();
     plotLabelFontName=settings.value(group+"plot_label_font_name", defaultStyle.plotLabelFontName).toString();
     plotLabelFontSize=settings.value(group+"plot_label_font_size", defaultStyle.plotLabelFontSize).toDouble();
+    plotLabelOffset=settings.value(group+"plot_label_offset", defaultStyle.plotLabelOffset).toDouble();
+    plotLabelTopBorder=settings.value(group+"plot_label_top_border", defaultStyle.plotLabelTopBorder).toDouble();
+    plotLabelColor=jkqtp_String2QColor(settings.value(group+"plot_label_color", jkqtp_QColor2String(defaultStyle.plotLabelColor)).toString());
     widgetBackgroundBrush=QBrush(jkqtp_String2QColor(settings.value(group+"widget_background_color", jkqtp_QColor2String(defaultStyle.widgetBackgroundBrush.color())).toString()));
     exportBackgroundBrush=QBrush(jkqtp_String2QColor(settings.value(group+"widget_background_color_for_export", jkqtp_QColor2String(defaultStyle.exportBackgroundBrush.color())).toString()));
     plotBackgroundBrush=QBrush(jkqtp_String2QColor(settings.value(group+"plot_background_color", jkqtp_QColor2String(defaultStyle.plotBackgroundBrush.color())).toString()));
@@ -63,6 +69,7 @@ void JKQTBasePlotterStyle::loadSettings(const QSettings &settings, const QString
     defaultTextColor=jkqtp_String2QColor(settings.value(group+"text_default_color", jkqtp_QColor2String(defaultStyle.defaultTextColor)).toString());
     defaultFontSize=settings.value(group+"text_default_size", defaultStyle.defaultFontSize).toDouble();
     defaultFontName=settings.value(group+"text_default_font_name", defaultStyle.defaultFontName).toString();
+    secondaryAxisSeparation=settings.value(group+"secondary_axis_separation", defaultStyle.secondaryAxisSeparation).toDouble();
 
     keyStyle.loadSettings(settings, group+"key/", defaultStyle.keyStyle);
     xAxisStyle.loadSettings(settings, group+"axis_x/", defaultStyle.xAxisStyle);
@@ -97,10 +104,14 @@ void JKQTBasePlotterStyle::saveSettings(QSettings &settings, const QString &grou
     settings.setValue(group+"text_default_font_name", defaultFontName);
     settings.setValue(group+"plot_label_font_name", plotLabelFontName);
     settings.setValue(group+"plot_label_font_size", plotLabelFontSize);
+    settings.setValue(group+"plot_label_offset", plotLabelOffset);
+    settings.setValue(group+"plot_label_top_border", plotLabelTopBorder);
+    settings.setValue(group+"plot_label_color", jkqtp_QColor2String(plotLabelColor));
     settings.setValue(group+"plot_frame_visible", plotFrameVisible);
     settings.setValue(group+"plot_frame_color", jkqtp_QColor2String(plotFrameColor));
     settings.setValue(group+"plot_frame_width", plotFrameWidth);
     settings.setValue(group+"plot_frame_rounded", plotFrameRounding);
+    settings.setValue(group+"secondary_axis_separation", secondaryAxisSeparation);
 
     keyStyle.saveSettings(settings, group+"key/");
     xAxisStyle.saveSettings(settings, group+"axis_x/");

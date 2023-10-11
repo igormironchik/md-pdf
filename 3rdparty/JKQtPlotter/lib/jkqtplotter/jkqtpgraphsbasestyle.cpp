@@ -201,19 +201,44 @@ JKQTGraphsBaseStyle::JKQTGraphsBaseStyle(const JKQTBasePlotterStyle& parent):
     barchartStyle(parent),
     boxplotStyle(JKQTPPlotStyleType::Boxplot, parent),
     filledStyle(JKQTPPlotStyleType::Filled, parent),
-    impulseStyle(JKQTPPlotStyleType::Impulses, parent),
+    impulseStyle(parent),
     geometricStyle(parent),
     annotationStyle(parent),
-    defaultPalette(JKQTPMathImageColorPalette::JKQTPMathImageMATLAB)
+    defaultPalette(JKQTPMathImageColorPalette::JKQTPMathImageMATLAB),
+    defaultGraphColors(getDefaultGraphColors()),
+    defaultGraphPenStyles(getDefaultGraphPenStyles()),
+    defaultGraphSymbols(getDefaultGraphSymbols()),
+    defaultGraphFillStyles(getDefaultGraphFillStyles())
 {
-    defaultGraphColors<<QColor("red")<<QColor("green")<<QColor("blue")<<QColor("fuchsia")<<QColor("darkorange")
-                       <<QColor("navy")<<QColor("firebrick")<<QColor("darkgreen")<<QColor("darkmagenta")
-                       <<QColor("darkgreen")<<QColor("darkslateblue")<<QColor("maroon")<<QColor("indianred")
-                       <<QColor("darkolivegreen")<<QColor("mediumpurple")<<QColor("darkcyan");
-    defaultGraphPenStyles<<Qt::SolidLine<<Qt::DashLine<<Qt::DotLine<<Qt::DashDotLine<<Qt::DashDotDotLine;
-    for (int i=2; i<=JKQTPMaxSymbolID; i++) defaultGraphSymbols.push_back(static_cast<JKQTPGraphSymbols>(i));
-    defaultGraphFillStyles<<Qt::SolidPattern;
 
+}
+
+
+QVector<QColor> JKQTGraphsBaseStyle::getDefaultGraphColors()
+{
+    QVector<QColor> cols;
+    const auto& lut=JKQTPImageTools::getLUTforPalette(JKQTPMathImageDefault_STEP);
+    for (const auto& c: lut) {
+        cols.push_back(QColor(c));
+    }
+    return cols;
+}
+
+QVector<Qt::PenStyle> JKQTGraphsBaseStyle::getDefaultGraphPenStyles()
+{
+    return QVector<Qt::PenStyle>()<<Qt::SolidLine<<Qt::DashLine<<Qt::DotLine<<Qt::DashDotLine<<Qt::DashDotDotLine;
+}
+
+QVector<JKQTPGraphSymbols> JKQTGraphsBaseStyle::getDefaultGraphSymbols()
+{
+    QVector<JKQTPGraphSymbols> syms;
+    for (int i=2; i<=JKQTPMaxSymbolID; i++) syms.push_back(static_cast<JKQTPGraphSymbols>(i));
+    return syms;
+}
+
+QVector<Qt::BrushStyle> JKQTGraphsBaseStyle::getDefaultGraphFillStyles()
+{
+    return QVector<Qt::BrushStyle>()<<Qt::SolidPattern;
 }
 
 void JKQTGraphsBaseStyle::loadSettings(const QSettings &settings, const QString &group, const JKQTGraphsBaseStyle &defaultStyle, const JKQTBasePlotterStyle& parent)
@@ -239,18 +264,34 @@ void JKQTGraphsBaseStyle::loadSettings(const QSettings &settings, const QString 
         return -1;
     };
 
+
     defaultGraphColors.clear();
     defaultGraphPenStyles.clear();
     defaultGraphSymbols.clear();
     defaultGraphFillStyles.clear();
-    QStringList allk=settings.allKeys();
+    bool loadColors=true;
+    if (settings.value("auto_styles/use_default_colors", false).toBool()) {
+        loadColors=false;
+        defaultGraphColors=defaultStyle.defaultGraphColors;
+    }
+    const QString ini_colors_fromm_palettes=settings.value(group+"auto_styles/use_color_from_palette", "").toString();
+    if (JKQTPImageTools::getPredefinedPalettesMachineReadable().contains(ini_colors_fromm_palettes)) {
+        loadColors=false;
+        const auto& lut=JKQTPImageTools::getLUTforPalette(JKQTPImageTools::String2JKQTPMathImageColorPalette(ini_colors_fromm_palettes));
+        for (const auto& c: lut) {
+            defaultGraphColors.push_back(QColor(c));
+        }
+    }
+    const QStringList allk=settings.allKeys();
     for (auto& k: allk) {
-        int id=readID(k, group+"auto_styles/color");
-        if (id>=0) {
-            defaultGraphColors.push_back(jkqtp_String2QColor(settings.value(group+"auto_styles/color"+QString::number(id), jkqtp_QColor2String(QColor("red"))).toString()));
+        if (loadColors) {
+            int id=readID(k, group+"auto_styles/color");
+            if (id>=0) {
+                defaultGraphColors.push_back(jkqtp_String2QColor(settings.value(group+"auto_styles/color"+QString::number(id), jkqtp_QColor2String(QColor("red"))).toString()));
+            }
         }
 
-        id=readID(k, group+"auto_styles/line_style");
+        int id=readID(k, group+"auto_styles/line_style");
         if (id>=0) {
             defaultGraphPenStyles.push_back(jkqtp_String2QPenStyle(settings.value(group+"auto_styles/line_style"+QString::number(id), jkqtp_QPenStyle2String(Qt::SolidLine)).toString()));
         }
@@ -265,22 +306,22 @@ void JKQTGraphsBaseStyle::loadSettings(const QSettings &settings, const QString 
         }
     }
     if (defaultGraphColors.size()==0) {
-        for (int i=defaultGraphColors.size(); i<defaultStyle.defaultGraphColors.size(); i++) {
+        for (int i=0; i<defaultStyle.defaultGraphColors.size(); i++) {
             defaultGraphColors.push_back(defaultStyle.defaultGraphColors[i]);
         }
     }
     if (defaultGraphPenStyles.size()==0) {
-        for (int i=defaultGraphPenStyles.size(); i<defaultStyle.defaultGraphPenStyles.size(); i++) {
+        for (int i=0; i<defaultStyle.defaultGraphPenStyles.size(); i++) {
             defaultGraphPenStyles.push_back(defaultStyle.defaultGraphPenStyles[i]);
         }
     }
     if (defaultGraphSymbols.size()==0) {
-        for (int i=defaultGraphSymbols.size(); i<defaultStyle.defaultGraphSymbols.size(); i++) {
+        for (int i=0; i<defaultStyle.defaultGraphSymbols.size(); i++) {
             defaultGraphSymbols.push_back(defaultStyle.defaultGraphSymbols[i]);
         }
     }
     if (defaultGraphFillStyles.size()==0) {
-        for (int i=defaultGraphFillStyles.size(); i<defaultStyle.defaultGraphFillStyles.size(); i++) {
+        for (int i=0; i<defaultStyle.defaultGraphFillStyles.size(); i++) {
             defaultGraphFillStyles.push_back(defaultStyle.defaultGraphFillStyles[i]);
         }
     }
@@ -290,7 +331,7 @@ void JKQTGraphsBaseStyle::loadSettings(const QSettings &settings, const QString 
     barchartStyle.loadSettings(settings, group+"graphs_barchart/", JKQTBarchartSpecificStyleProperties(parent, defaultGraphStyle));
     boxplotStyle.loadSettings(settings, group+"graphs_boxplot/", JKQTGraphsSpecificStyleProperties(JKQTPPlotStyleType::Boxplot, defaultGraphStyle));
     filledStyle.loadSettings(settings, group+"graphs_filled/", JKQTGraphsSpecificStyleProperties(JKQTPPlotStyleType::Filled, defaultGraphStyle));
-    impulseStyle.loadSettings(settings, group+"graphs_impulses/",JKQTGraphsSpecificStyleProperties(JKQTPPlotStyleType::Impulses,  defaultGraphStyle));
+    impulseStyle.loadSettings(settings, group+"graphs_impulses/", JKQTImpulseSpecificStyleProperties(parent,  defaultGraphStyle));
     geometricStyle.loadSettings(settings, group+"graphs_geometric/", JKQTGeometricSpecificStyleProperties(parent, defaultGraphStyle));
     annotationStyle.loadSettings(settings, group+"graphs_annotation/", JKQTAnnotationsSpecificStyleProperties(parent, defaultGraphStyle));
 
@@ -303,25 +344,63 @@ void JKQTGraphsBaseStyle::saveSettings(QSettings &settings, const QString &group
     settings.setValue(group+"palette", JKQTPImageTools::JKQTPMathImageColorPalette2String(defaultPalette));
 
 
-    int cnt=0;
-    for (auto& gs: defaultGraphColors) {
-        settings.setValue(group+"auto_styles/color"+QString::number(cnt), jkqtp_QColor2String(gs));
-        cnt++;
+    bool saveSingleColors=true;
+    for (int pali=0; pali<static_cast<int>(JKQTPMathImagePREDEFINED_PALETTES_COUNT); pali++ ) {
+        const JKQTPMathImageColorPalette pal=static_cast<JKQTPMathImageColorPalette>(pali);
+        if (defaultGraphColors==JKQTPImageTools::getColorsforPalette(pal)) {
+            settings.setValue(group+"auto_styles/use_color_from_palette", JKQTPImageTools::JKQTPMathImageColorPalette2String(pal));
+            saveSingleColors=false;
+            break;
+        }
     }
-    cnt=0;
-    for (auto& gs: defaultGraphPenStyles) {
-        settings.setValue(group+"auto_styles/line_style"+QString::number(cnt), jkqtp_QPenStyle2String(gs));
-        cnt++;
+    if (saveSingleColors && defaultGraphColors==getDefaultGraphColors()) {
+        settings.setValue(group+"auto_styles/use_default_colors", true);
+        saveSingleColors=false;
     }
-    cnt=0;
-    for (auto& gs: defaultGraphSymbols) {
-        settings.setValue(group+"auto_styles/symbol"+QString::number(cnt), JKQTPGraphSymbols2String(gs));
-        cnt++;
+    if (saveSingleColors) {
+        const QString maxnum=QString::number(defaultGraphColors.size());
+        int cnt=0;
+        for (auto& gs: defaultGraphColors) {
+            QString num=QString::number(cnt);
+            while (num.size()<maxnum.size()) num.prepend('0');
+            settings.setValue(group+"auto_styles/color"+num, jkqtp_QColor2String(gs));
+            cnt++;
+        }
     }
-    cnt=0;
-    for (auto& gs: defaultGraphFillStyles) {
-        settings.setValue(group+"auto_styles/fill_style"+QString::number(cnt), jkqtp_QBrushStyle2String(gs));
-        cnt++;
+    {
+        const QString maxnum=QString::number(defaultGraphPenStyles.size());
+        int cnt=0;
+        for (auto& gs: defaultGraphPenStyles) {
+            QString num=QString::number(cnt);
+            while (num.size()<maxnum.size()) num.prepend('0');
+            settings.setValue(group+"auto_styles/line_style"+num, jkqtp_QPenStyle2String(gs));
+            cnt++;
+        }
+    }
+    bool saveSingleSymbols=true;
+    if (defaultGraphSymbols==getDefaultGraphSymbols()) {
+        settings.setValue(group+"auto_styles/use_default_symbols", true);
+        saveSingleSymbols=false;
+    }
+    if (saveSingleSymbols) {
+        int cnt=0;
+        const QString maxnum=QString::number(defaultGraphSymbols.size());
+        for (auto& gs: defaultGraphSymbols) {
+            QString num=QString::number(cnt);
+            while (num.size()<maxnum.size()) num.prepend('0');
+            settings.setValue(group+"auto_styles/symbol"+num, JKQTPGraphSymbols2String(gs));
+            cnt++;
+        }
+    }
+    {
+        const QString maxnum=QString::number(defaultGraphFillStyles.size());
+        int cnt=0;
+        for (auto& gs: defaultGraphFillStyles) {
+            QString num=QString::number(cnt);
+            while (num.size()<maxnum.size()) num.prepend('0');
+            settings.setValue(group+"auto_styles/fill_style"+num, jkqtp_QBrushStyle2String(gs));
+            cnt++;
+        }
     }
 
     defaultGraphStyle.saveSettings(settings, group+"graphs_base/");
@@ -355,10 +434,12 @@ const JKQTGraphsSpecificStyleProperties &JKQTGraphsBaseStyle::getGraphStyleByTyp
 }
 
 
+
 JKQTBarchartSpecificStyleProperties::JKQTBarchartSpecificStyleProperties(const JKQTBasePlotterStyle& parent):
     JKQTGraphsSpecificStyleProperties(JKQTPPlotStyleType::Barchart, parent),
     defaultRectRadiusAtValue(0),
-    defaultRectRadiusAtBaseline(0)
+    defaultRectRadiusAtBaseline(0),
+    drawBaseline(false)
 {
 
 }
@@ -366,7 +447,8 @@ JKQTBarchartSpecificStyleProperties::JKQTBarchartSpecificStyleProperties(const J
 JKQTBarchartSpecificStyleProperties::JKQTBarchartSpecificStyleProperties(const JKQTBasePlotterStyle& parent, const JKQTGraphsSpecificStyleProperties &other):
     JKQTGraphsSpecificStyleProperties(JKQTPPlotStyleType::Barchart, other),
     defaultRectRadiusAtValue(0),
-    defaultRectRadiusAtBaseline(0)
+    defaultRectRadiusAtBaseline(0),
+    drawBaseline(false)
 {
 
 }
@@ -376,6 +458,7 @@ void JKQTBarchartSpecificStyleProperties::loadSettings(const QSettings &settings
     JKQTGraphsSpecificStyleProperties::loadSettings(settings, group, defaultStyle);
     defaultRectRadiusAtValue=settings.value(group+"radius_at_value", defaultStyle.defaultRectRadiusAtValue).toDouble();
     defaultRectRadiusAtBaseline=settings.value(group+"radius_at_baseline", defaultStyle.defaultRectRadiusAtBaseline).toDouble();
+    drawBaseline=settings.value(group+"draw_baseline", defaultStyle.drawBaseline).toBool();
 }
 
 void JKQTBarchartSpecificStyleProperties::saveSettings(QSettings &settings, const QString &group) const
@@ -383,6 +466,35 @@ void JKQTBarchartSpecificStyleProperties::saveSettings(QSettings &settings, cons
     JKQTGraphsSpecificStyleProperties::saveSettings(settings, group);
     settings.setValue(group+"radius_at_value", defaultRectRadiusAtValue);
     settings.setValue(group+"radius_at_baseline", defaultRectRadiusAtBaseline);
+    settings.setValue(group+"draw_baseline", drawBaseline);
+
+}
+
+
+JKQTImpulseSpecificStyleProperties::JKQTImpulseSpecificStyleProperties(const JKQTBasePlotterStyle& parent):
+    JKQTGraphsSpecificStyleProperties(JKQTPPlotStyleType::Impulses, parent),
+    drawBaseline(false)
+{
+
+}
+
+JKQTImpulseSpecificStyleProperties::JKQTImpulseSpecificStyleProperties(const JKQTBasePlotterStyle& parent, const JKQTGraphsSpecificStyleProperties &other):
+    JKQTGraphsSpecificStyleProperties(JKQTPPlotStyleType::Impulses, other),
+    drawBaseline(false)
+{
+
+}
+
+void JKQTImpulseSpecificStyleProperties::loadSettings(const QSettings &settings, const QString &group, const JKQTImpulseSpecificStyleProperties &defaultStyle)
+{
+    JKQTGraphsSpecificStyleProperties::loadSettings(settings, group, defaultStyle);
+    drawBaseline=settings.value(group+"draw_baseline", defaultStyle.drawBaseline).toBool();
+}
+
+void JKQTImpulseSpecificStyleProperties::saveSettings(QSettings &settings, const QString &group) const
+{
+    JKQTGraphsSpecificStyleProperties::saveSettings(settings, group);
+    settings.setValue(group+"draw_baseline", drawBaseline);
 
 }
 

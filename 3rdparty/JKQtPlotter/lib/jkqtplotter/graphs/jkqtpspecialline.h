@@ -44,7 +44,7 @@ class JKQTPDatastore;
 
 
 /** \brief a Base class for special line graphs (steps ...) like e.g. JKQTPSpecialLineHorizontalGraph
- *  \ingroup jkqtplotter_linesymbolgraphs_simple
+ *  \ingroup jkqtplotter_linesymbolgraphs_line
  *
  *  \image html stepplots.png
  *
@@ -69,7 +69,7 @@ public:
 
     Q_PROPERTY(bool drawSymbols READ getDrawSymbols WRITE setDrawSymbols)
     Q_PROPERTY(JKQTPSpecialLineType specialLineType READ getSpecialLineType WRITE setSpecialLineType)
-public slots:
+public Q_SLOTS:
     /** \brief set line-color, fill color and symbol color */
     void setColor(QColor c);
     /** \copydoc m_drawSymbols */
@@ -88,7 +88,7 @@ protected:
 
 
 /** \brief This implements a step plot with values \f$ \left(x, f(x) \right) \f$
- *  \ingroup jkqtplotter_linesymbolgraphs_simple
+ *  \ingroup jkqtplotter_linesymbolgraphs_line
  *
  *  \image html stepplots.png
  *
@@ -112,7 +112,7 @@ protected:
 
 
 /*! \brief This implements a step plot with values \f$ \left(f(y), y \right) \f$
-    \ingroup jkqtplotter_linesymbolgraphs_simple
+    \ingroup jkqtplotter_linesymbolgraphs_line
 
     \image html stepplots_vertical.png
 
@@ -132,7 +132,7 @@ class JKQTPLOTTER_LIB_EXPORT JKQTPSpecialLineVerticalGraph: public JKQTPSpecialL
         virtual int getKeyColumn() const override;
         /** \brief returns the column used as "value" for the current graph (typically this call getXColumn(), but for horizontal graphs like filled curves or barcharts it may call getYColumn() ) */
         virtual int getValueColumn() const override;
-    public slots:
+    public Q_SLOTS:
         /** \brief sets the column used as "key" for the current graph (typically this call setXColumn(), but for horizontal graphs like filled curves or barcharts it may call setYColumn() ) */
         virtual void setKeyColumn(int __value) override;
         /** \brief sets the column used as "value" for the current graph (typically this call setXColumn(), but for horizontal graphs like filled curves or barcharts it may call setYColumn() ) */

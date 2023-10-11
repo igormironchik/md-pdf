@@ -1760,7 +1760,7 @@ class JKQTPColumnIterator {
         }
 
         /** \brief dereferences the iterator, throws an exception if the iterator is invalid (see isValid() ) or the value does not exist in the column */
-        inline reference operator*() {
+        inline reference operator*() const {
             JKQTPASSERT(col_!=nullptr && pos_>=0 && pos_<static_cast<int>(col_->getRows()));
             return col_->at(pos_);
         }
@@ -1771,11 +1771,6 @@ class JKQTPColumnIterator {
             }
             JKQTPASSERT(col_!=nullptr && pos_+off>=0 && pos_+off<static_cast<int>(col_->getRows()));
             return col_->at(pos_+off);
-        }
-        /** \brief dereferences the iterator, throws an exception if the iterator is invalid (see isValid() ) or the value does not exist in the column */
-        inline const_reference operator*() const {
-            JKQTPASSERT(col_!=nullptr && pos_>=0 && pos_<static_cast<int>(col_->getRows()));
-            return col_->at(pos_);
         }
         /** \brief comparison operator (less than)
          *
@@ -2307,7 +2302,7 @@ class JKQTPLOTTER_LIB_EXPORT JKQTPDatastoreItem {
     /** \brief if \c isValid() : resize the row to have \a rows_new rows */
     inline void resize(size_t rows_new) {
         JKQTPASSERT(isVector());
-        datavec.resize(rows_new);
+        datavec.resize(static_cast<int>(rows_new));
         rows=static_cast<size_t>(datavec.size());
         data=datavec.data();
     }
@@ -2489,7 +2484,7 @@ class JKQTPLOTTER_LIB_EXPORT JKQTPDatastoreModel: public QAbstractTableModel {
         virtual int rowCount(const QModelIndex &parent = QModelIndex()) const override;
         virtual int columnCount(const QModelIndex &parent = QModelIndex()) const  override;
 
-    public slots:
+    public Q_SLOTS:
         void reloadModel();
 
     protected:

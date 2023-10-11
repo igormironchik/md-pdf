@@ -126,7 +126,7 @@ JKQTMathTextNodeSize JKQTMathTextWhitespaceNode::getSizeInternal(QPainter &paint
 {
     JKQTMathTextNodeSize s;
     const double singelWidthPIX=Type2PixelWidth(whitespace.type, currentEv, painter.device());
-    const QFontMetricsF fm(currentEv.getFont(parentMathText));
+    const QFontMetricsF fm(currentEv.getFont(parentMathText), painter.device());
     s.width=singelWidthPIX*static_cast<double>(whitespace.count);
     s.baselineHeight=0;
     s.overallHeight=0;
@@ -138,6 +138,8 @@ QHash<QString, JKQTMathTextWhitespaceNode::WhitespaceProps> JKQTMathTextWhitespa
 
 void JKQTMathTextWhitespaceNode::fillSupportedInstructions()
 {
+    static std::mutex sMutex;
+    std::lock_guard<std::mutex> lock(sMutex);
     if (supportedInstructions.size()==0) {
         supportedInstructions[" "]=WhitespaceProps(WSTthicker, 1);
         supportedInstructions["nbsp"]=WhitespaceProps(WSTNonbreaking, 1);
@@ -268,7 +270,7 @@ double JKQTMathTextEmptyBoxNode::Units2PixelWidth(double value, Units unit, JKQT
         //qDebug()<<"em="<<em<<"pix";
         return value*em;
     } else if (unit==EBUex) {
-        const double ex=fm.xHeight();
+        const double ex=JKQTMathTextGetTightBoundingRect(f, "x", pd).height();
         //qDebug()<<"ex="<<ex<<"pix";
         return value*ex;
     } else {
@@ -427,6 +429,9 @@ QHash<QString, JKQTMathTextPhantomNode::Mode> JKQTMathTextPhantomNode::instructi
 
 void JKQTMathTextPhantomNode::fillInstructions()
 {
+    static std::mutex sMutex;
+    std::lock_guard<std::mutex> lock(sMutex);
+    if (instructions.size()>0) return;
     instructions["phantom"] = FMwidthAndHeight;
     instructions["hphantom"] = FMwidth;
     instructions["vphantom"] = FMheight;

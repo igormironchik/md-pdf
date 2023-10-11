@@ -22,7 +22,6 @@
 #include "jkqtmathtext/nodes/jkqtmathtextmodifyenvironmentnode.h"
 #include "jkqtmathtext/jkqtmathtexttools.h"
 #include "jkqtmathtext/jkqtmathtext.h"
-#include "jkqtcommon/jkqtpcodestructuring.h"
 #include "jkqtcommon/jkqtpstringtools.h"
 #include <cmath>
 #include <QFontMetricsF>
@@ -116,6 +115,9 @@ QHash<QString, JKQTMathTextModifiedTextPropsInstructionNode::InstructionProperti
 void JKQTMathTextModifiedTextPropsInstructionNode::fillInstructions()
 {
 
+    static std::mutex sMutex;
+    std::lock_guard<std::mutex> lock(sMutex);
+    if (instructions.size()>0) return;
     {
         InstructionProperties i([](JKQTMathTextEnvironment& ev, const QStringList& /*parameters*/) {
             ev.bold=false;
@@ -534,6 +536,9 @@ QHash<QString, JKQTMathTextModifiedEnvironmentInstructionNode::InstructionProper
 
 void JKQTMathTextModifiedEnvironmentInstructionNode::fillInstructions()
 {
+    static std::mutex sMutex;
+    std::lock_guard<std::mutex> lock(sMutex);
+    if (instructions.size()>0) return;
 
     {
         InstructionProperties i([](JKQTMathTextEnvironment& ev, const QStringList& /*parameters*/, const JKQTMathText* parentMathText) {
