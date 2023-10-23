@@ -47,6 +47,7 @@
 
 // C++ include.
 #include <cmath>
+#include <utility>
 
 
 //
@@ -785,7 +786,7 @@ PdfRenderer::renderImpl()
 
 				drawHorizontalLine( pdfData, m_opts );
 
-				for( const auto & f : qAsConst( m_footnotes ) )
+				for( const auto & f : std::as_const( m_footnotes ) )
 					drawFootnote( pdfData, m_opts, m_doc, f.first, f.second.get(),
 						CalcHeightOpt::Unknown );
 			}
@@ -938,7 +939,7 @@ PdfRenderer::resolveLinks( PdfAuxData & pdfData )
 	{
 		if( m_dests.contains( it.key() ) )
 		{
-			for( const auto & r : qAsConst( it.value() ) )
+			for( const auto & r : std::as_const( it.value() ) )
 			{
 				auto & page = pdfData.doc->GetPages().GetPageAt( r.second );
 				auto & annot = page.GetAnnotations().CreateAnnot< PdfAnnotationLink >(
@@ -1343,7 +1344,7 @@ PdfRenderer::drawLink( PdfAuxData & pdfData, const RenderOpts & renderOpts,
 		if( !pdfData.anchors.contains( url ) &&
 			pdfData.md->labeledHeadings().find( url ) == pdfData.md->labeledHeadings().cend() )
 		{
-			for( const auto & r : qAsConst( rects ) )
+			for( const auto & r : std::as_const( rects ) )
 			{
 				auto & annot = pdfData.doc->GetPages().GetPageAt(
 					static_cast< unsigned int >( r.second ) )
@@ -3332,7 +3333,7 @@ PdfRenderer::drawBlockquote( PdfAuxData & pdfData, const RenderOpts & renderOpts
 
 	QMap< int, AuxData > map;
 
-	for( const auto & where : qAsConst( ret ) )
+	for( const auto & where : std::as_const( ret ) )
 	{
 		if( !map.contains( where.pageIdx ) )
 			map.insert( where.pageIdx, { where.y, where.height } );
@@ -4065,7 +4066,7 @@ PdfRenderer::drawTable( PdfAuxData & pdfData, const RenderOpts & renderOpts,
 		}
 	}
 
-	for( const auto & f : qAsConst( footnotes ) )
+	for( const auto & f : std::as_const( footnotes ) )
 		addFootnote( f.first, f.second, pdfData, renderOpts, doc );
 
 	return { ret, firstLine };
@@ -4659,7 +4660,7 @@ PdfRenderer::processLinksInTable( PdfAuxData & pdfData,
 			if( !pdfData.anchors.contains( url ) &&
 				pdfData.md->labeledHeadings().find( url ) == pdfData.md->labeledHeadings().cend() )
 			{
-				for( const auto & r : qAsConst( rects ) )
+				for( const auto & r : std::as_const( rects ) )
 				{
 					auto & annot = pdfData.doc->GetPages().GetPageAt(
 						static_cast< unsigned int >( r.second ) )

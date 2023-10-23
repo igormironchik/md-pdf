@@ -29,6 +29,9 @@
 // Qt include.
 #include <QPair>
 
+// C++ included.
+#include <utility>
+
 
 //
 // Syntax
@@ -102,7 +105,7 @@ Syntax::prepare( const QStringList & lines )
 	m_currentLineNumber = 0;
 	m_currentColors.clear();
 
-	for( const auto & s : qAsConst( lines ) )
+	for( const auto & s : std::as_const( lines ) )
 	{
 		st = highlightLine( s, st );
 		++m_currentLineNumber;
