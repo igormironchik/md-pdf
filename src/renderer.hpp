@@ -188,8 +188,8 @@ class PdfRenderer;
 struct PdfAuxData {
 	//! Document.
 	PdfMemDocument * doc = nullptr;
-	//! Painter.
-	PdfPainter * painter = nullptr;
+	//! Painters.
+	std::vector< std::shared_ptr< PdfPainter > > painters;
 	//! Page.
 	PdfPage * page = nullptr;
 	//! Index of the current page.
@@ -204,6 +204,8 @@ struct PdfAuxData {
 	bool drawFootnotes = false;
 	//! Current page index for drawing footnotes.
 	int footnotePageIdx = -1;
+	//! Current painter index.
+	int currentPainterIdx = -1;
 	//! Current index of the footnote (for drawing number in the PDF).
 	int currentFootnote = 1;
 	//! Is this first item on the page?

@@ -154,26 +154,26 @@ PdfAuxData::drawText( double x, double y, const char * text,
 	firstOnPage = false;
 
 #ifndef MD_PDF_TESTING
-	painter->TextObject.Begin();
-	painter->TextObject.MoveTo( x, y );
-	painter->TextState.SetFont( *font, size );
-	painter->TextState.SetFontScale( scale );
-	const auto st = painter->TextState;
-	painter->TextObject.AddText( text );
-	painter->TextObject.End();
+	painters[ currentPainterIdx ]->TextObject.Begin();
+	painters[ currentPainterIdx ]->TextObject.MoveTo( x, y );
+	painters[ currentPainterIdx ]->TextState.SetFont( *font, size );
+	painters[ currentPainterIdx ]->TextState.SetFontScale( scale );
+	const auto st = painters[ currentPainterIdx ]->TextState;
+	painters[ currentPainterIdx ]->TextObject.AddText( text );
+	painters[ currentPainterIdx ]->TextObject.End();
 
 	if( strikeout )
 	{
-		painter->Save();
+		painters[ currentPainterIdx ]->Save();
 
-		painter->GraphicsState.SetLineWidth( font->GetStrikeThroughThickness( st ) );
+		painters[ currentPainterIdx ]->GraphicsState.SetLineWidth( font->GetStrikeThroughThickness( st ) );
 
-		painter->DrawLine( x,
+		painters[ currentPainterIdx ]->DrawLine( x,
 			y + font->GetStrikeThroughPosition( st ),
 			x + font->GetStringLength( text, st ),
 			y + font->GetStrikeThroughPosition( st ) );
 
-		painter->Restore();
+		painters[ currentPainterIdx ]->Restore();
 	}
 #else
 	if( printDrawings )
@@ -188,26 +188,26 @@ PdfAuxData::drawText( double x, double y, const char * text,
 	}
 	else
 	{
-		painter->TextObject.Begin();
-		painter->TextObject.MoveTo( x, y );
-		painter->TextState.SetFont( *font, size );
-		painter->TextState.SetFontScale( scale );
-		const auto st = painter->TextState;
-		painter->TextObject.AddText( text );
-		painter->TextObject.End();
+		painters[ currentPainterIdx ]->TextObject.Begin();
+		painters[ currentPainterIdx ]->TextObject.MoveTo( x, y );
+		painters[ currentPainterIdx ]->TextState.SetFont( *font, size );
+		painters[ currentPainterIdx ]->TextState.SetFontScale( scale );
+		const auto st = painters[ currentPainterIdx ]->TextState;
+		painters[ currentPainterIdx ]->TextObject.AddText( text );
+		painters[ currentPainterIdx ]->TextObject.End();
 
 		if( strikeout )
 		{
-			painter->Save();
+			painters[ currentPainterIdx ]->Save();
 
-			painter->GraphicsState.SetLineWidth( font->GetStrikeThroughThickness( st ) );
+			painters[ currentPainterIdx ]->GraphicsState.SetLineWidth( font->GetStrikeThroughThickness( st ) );
 
-			painter->DrawLine( x,
+			painters[ currentPainterIdx ]->DrawLine( x,
 				y + font->GetStrikeThroughPosition( st ),
 				x + font->GetStringLength( text, st ),
 				y + font->GetStrikeThroughPosition( st ) );
 
-			painter->Restore();
+			painters[ currentPainterIdx ]->Restore();
 		}
 
 		if( QTest::currentTestFailed() )
@@ -228,7 +228,7 @@ PdfAuxData::drawImage( double x, double y, PdfImage * img, double xScale, double
 	firstOnPage = false;
 
 #ifndef MD_PDF_TESTING
-	painter->DrawImage( *img, x, y, xScale, yScale );
+	painters[ currentPainterIdx ]->DrawImage( *img, x, y, xScale, yScale );
 #else
 	if( printDrawings )
 		(*drawingsStream) << QStringLiteral(
@@ -237,7 +237,7 @@ PdfAuxData::drawImage( double x, double y, PdfImage * img, double xScale, double
 					QString::number( xScale, 'f', 16 ), QString::number( yScale, 'f', 16 ) );
 	else
 	{
-		painter->DrawImage( *img, x, y, xScale, yScale );
+		painters[ currentPainterIdx ]->DrawImage( *img, x, y, xScale, yScale );
 
 		if( QTest::currentTestFailed() )
 			self->terminate();
@@ -255,7 +255,7 @@ void
 PdfAuxData::drawLine( double x1, double y1, double x2, double y2 )
 {
 #ifndef MD_PDF_TESTING
-	painter->DrawLine( x1, y1, x2, y2 );
+	painters[ currentPainterIdx ]->DrawLine( x1, y1, x2, y2 );
 #else
 	if( printDrawings )
 		(*drawingsStream) << QStringLiteral(
@@ -264,7 +264,7 @@ PdfAuxData::drawLine( double x1, double y1, double x2, double y2 )
 					QString::number( x2, 'f', 16 ), QString::number( y2, 'f', 16 ) );
 	else
 	{
-		painter->DrawLine( x1, y1, x2, y2 );
+		painters[ currentPainterIdx ]->DrawLine( x1, y1, x2, y2 );
 
 		if( QTest::currentTestFailed() )
 			self->terminate();
@@ -293,7 +293,7 @@ void
 PdfAuxData::drawRectangle( double x, double y, double width, double height, PdfPathDrawMode m )
 {
 #ifndef MD_PDF_TESTING
-	painter->DrawRectangle( x, y, width, height, m );
+	painters[ currentPainterIdx ]->DrawRectangle( x, y, width, height, m );
 #else
 	if( printDrawings )
 		(*drawingsStream) << QStringLiteral(
@@ -302,7 +302,7 @@ PdfAuxData::drawRectangle( double x, double y, double width, double height, PdfP
 					QString::number( width, 'f', 16 ), QString::number( height, 'f', 16 ) );
 	else
 	{
-		painter->DrawRectangle( x, y, width, height, m );
+		painters[ currentPainterIdx ]->DrawRectangle( x, y, width, height, m );
 
 		if( QTest::currentTestFailed() )
 			self->terminate();
@@ -321,8 +321,8 @@ PdfAuxData::setColor( const QColor & c )
 {
 	colorsStack.push( c );
 
-	painter->GraphicsState.SetFillColor( PdfColor( c.redF(), c.greenF(), c.blueF() ) );
-	painter->GraphicsState.SetStrokeColor( PdfColor( c.redF(), c.greenF(), c.blueF() ) );
+	painters[ currentPainterIdx ]->GraphicsState.SetFillColor( PdfColor( c.redF(), c.greenF(), c.blueF() ) );
+	painters[ currentPainterIdx ]->GraphicsState.SetStrokeColor( PdfColor( c.redF(), c.greenF(), c.blueF() ) );
 }
 
 void
@@ -339,8 +339,8 @@ PdfAuxData::repeatColor()
 {
 	const auto & c = colorsStack.top();
 
-	painter->GraphicsState.SetFillColor( PdfColor( c.redF(), c.greenF(), c.blueF() ) );
-	painter->GraphicsState.SetStrokeColor( PdfColor( c.redF(), c.greenF(), c.blueF() ) );
+	painters[ currentPainterIdx ]->GraphicsState.SetFillColor( PdfColor( c.redF(), c.greenF(), c.blueF() ) );
+	painters[ currentPainterIdx ]->GraphicsState.SetStrokeColor( PdfColor( c.redF(), c.greenF(), c.blueF() ) );
 }
 
 
@@ -622,10 +622,7 @@ PdfRenderer::renderImpl()
 
 		PdfMemDocument document;
 
-		PdfPainter painter;
-
 		pdfData.doc = &document;
-		pdfData.painter = &painter;
 
 		pdfData.coords.margins.left = m_opts.m_left;
 		pdfData.coords.margins.right = m_opts.m_right;
@@ -783,9 +780,7 @@ PdfRenderer::renderImpl()
 				pdfData.coords.y = pdfData.topFootnoteY( pdfData.reserved.firstKey() ) -
 					pdfData.extraInFootnote;
 
-				pdfData.painter->SetCanvas( pdfData.doc->GetPages().GetPageAt(
-					pdfData.reserved.firstKey() ) );
-
+				pdfData.currentPainterIdx = pdfData.reserved.firstKey();
 				pdfData.footnotePageIdx = pdfData.reserved.firstKey();
 
 				drawHorizontalLine( pdfData, m_opts );
@@ -910,11 +905,8 @@ PdfRenderer::handleException( PdfAuxData & pdfData, const QString & msg )
 void
 PdfRenderer::finishPages( PdfAuxData & pdfData )
 {
-	for( unsigned int i = 0; i <= static_cast< unsigned int > ( pdfData.currentPageIdx ); ++i )
-	{
-		pdfData.painter->SetCanvas( pdfData.doc->GetPages().GetPageAt( i ) );
-		pdfData.painter->FinishDrawing();
-	}
+	for( const auto & p: pdfData.painters )
+		p->FinishDrawing();
 }
 
 void
@@ -1048,7 +1040,11 @@ PdfRenderer::createPage( PdfAuxData & pdfData )
 
 		pdfData.firstOnPage = true;
 
-		pdfData.painter->SetCanvas( *pdfData.page );
+		auto painter = std::make_shared< PdfPainter > ();
+		painter->SetCanvas( *pdfData.page );
+
+		pdfData.painters.push_back( painter );
+		pdfData.currentPainterIdx = pdfData.painters.size() - 1;
 
 		pdfData.coords = { { pdfData.coords.margins.left, pdfData.coords.margins.right,
 				pdfData.coords.margins.top, pdfData.coords.margins.bottom },
@@ -1076,8 +1072,7 @@ PdfRenderer::createPage( PdfAuxData & pdfData )
 
 		if( pdfData.footnotePageIdx <= pdfData.currentPageIdx )
 		{
-			pdfData.painter->SetCanvas( pdfData.doc->GetPages().GetPageAt(
-				static_cast< unsigned int > ( pdfData.footnotePageIdx ) ) );
+			pdfData.currentPainterIdx = pdfData.footnotePageIdx;
 			pdfData.coords.x = pdfData.coords.margins.left;
 			pdfData.coords.y = pdfData.topFootnoteY( pdfData.footnotePageIdx );
 		}
@@ -2613,12 +2608,11 @@ PdfRenderer::drawFootnote( PdfAuxData & pdfData, const RenderOpts & renderOpts,
 				std::make_shared< PdfDestination> ( pdfData.doc->GetPages().GetPageAt( p ),
 					x, y + font->GetLineSpacing( st ), 0.0 ) );
 
-			pdfData.painter->SetCanvas( pdfData.doc->GetPages().GetPageAt( p ) );
+			pdfData.currentPainterIdx = p;
 
 			pdfData.drawText( x, y, str, font, st.FontSize, 1.0, false );
 
-			pdfData.painter->SetCanvas( pdfData.doc->GetPages().GetPageAt(
-				pdfData.footnotePageIdx ) );
+			pdfData.currentPainterIdx = pdfData.footnotePageIdx;
 
 			++pdfData.currentFootnote;
 		}
@@ -3354,14 +3348,14 @@ PdfRenderer::drawBlockquote( PdfAuxData & pdfData, const RenderOpts & renderOpts
 	// Draw blockquote left vertival bar.
 	for( auto it = map.cbegin(), last = map.cend(); it != last; ++it )
 	{
-		pdfData.painter->SetCanvas( pdfData.doc->GetPages().GetPageAt( it.key() ) );
+		pdfData.currentPainterIdx = it.key();
 		pdfData.setColor( renderOpts.m_borderColor );
 		pdfData.drawRectangle( pdfData.coords.margins.left + offset, it.value().y,
 			c_blockquoteMarkWidth, it.value().height, PdfPathDrawMode::Fill );
 		pdfData.restoreColor();
 	}
 
-	pdfData.painter->SetCanvas( pdfData.doc->GetPages().GetPageAt( pdfData.currentPageIndex() ) );
+	pdfData.currentPainterIdx = pdfData.currentPageIndex();
 
 	return { ret, firstLine };
 }
@@ -3609,7 +3603,7 @@ PdfRenderer::drawListItem( PdfAuxData & pdfData, const RenderOpts & renderOpts,
 	{
 		if( firstLine.pageIdx >= 0 )
 		{
-			pdfData.painter->SetCanvas( pdfData.doc->GetPages().GetPageAt( firstLine.pageIdx ) );
+			pdfData.currentPainterIdx = firstLine.pageIdx;
 
 			if( item->isTaskList() )
 			{
@@ -3655,14 +3649,14 @@ PdfRenderer::drawListItem( PdfAuxData & pdfData, const RenderOpts & renderOpts,
 
 				pdfData.setColor( Qt::black );
 				const auto r = unorderedMarkWidth / 2.0;
-				pdfData.painter->DrawCircle(
+				pdfData.painters[ pdfData.currentPainterIdx ]->DrawCircle(
 					pdfData.coords.margins.left + offset + r - ( orderedListNumberWidth + spaceWidth ),
 					firstLine.y + qAbs( firstLine.height - unorderedMarkWidth ) / 2.0, r,
 					PdfPathDrawMode::Fill );
 				pdfData.restoreColor();
 			}
 
-			pdfData.painter->SetCanvas( pdfData.doc->GetPages().GetPageAt( pdfData.currentPageIndex() ) );
+			pdfData.currentPainterIdx = pdfData.currentPageIndex();
 		}
 	}
 
@@ -4154,7 +4148,7 @@ PdfRenderer::drawTableRow( QVector< QVector< CellData > > & table, int row, PdfA
 		text.availableWidth = it->at( 0 ).width;
 		text.lineHeight = lineHeight;
 
-		pdfData.painter->SetCanvas( pdfData.doc->GetPages().GetPageAt( startPage ) );
+		pdfData.currentPainterIdx = startPage;
 
 		currentPage = startPage;
 
@@ -4350,7 +4344,7 @@ PdfRenderer::drawTableRow( QVector< QVector< CellData > > & table, int row, PdfA
 	drawRowBorder( pdfData, startPage, ret, renderOpts, offset, table, startY, endY );
 
 	pdfData.coords.y = endY;
-	pdfData.painter->SetCanvas( pdfData.doc->GetPages().GetPageAt( pdfData.currentPageIndex() ) );
+	pdfData.currentPainterIdx = pdfData.currentPageIndex();
 
 	processLinksInTable( pdfData, links, doc );
 
@@ -4364,7 +4358,7 @@ PdfRenderer::drawRowBorder( PdfAuxData & pdfData, int startPage, QVector< WhereD
 {
 	for( int i = startPage; i <= pdfData.currentPageIndex(); ++i )
 	{
-		pdfData.painter->SetCanvas( pdfData.doc->GetPages().GetPageAt( i ) );
+		pdfData.currentPainterIdx = i;
 
 		pdfData.setColor( renderOpts.m_borderColor );
 
@@ -4620,7 +4614,7 @@ PdfRenderer::newPageInTable( PdfAuxData & pdfData, int & currentPage, int & endP
 	{
 		++currentPage;
 
-		pdfData.painter->SetCanvas( pdfData.doc->GetPages().GetPageAt( currentPage ) );
+		pdfData.currentPainterIdx = currentPage;
 	}
 }
 
