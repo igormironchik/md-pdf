@@ -150,7 +150,7 @@ PdfAuxData::freeSpaceOn( int page )
 
 void
 PdfAuxData::drawText( double x, double y, const char * text,
-	PdfFont * font, double size, double scale, bool strikeout )
+	Font * font, double size, double scale, bool strikeout )
 {
 	firstOnPage = false;
 
@@ -224,7 +224,7 @@ PdfAuxData::drawText( double x, double y, const char * text,
 }
 
 void
-PdfAuxData::drawImage( double x, double y, PdfImage * img, double xScale, double yScale )
+PdfAuxData::drawImage( double x, double y, Image * img, double xScale, double yScale )
 {
 	firstOnPage = false;
 
@@ -291,7 +291,7 @@ PdfAuxData::save( const QString & fileName )
 }
 
 void
-PdfAuxData::drawRectangle( double x, double y, double width, double height, PdfPathDrawMode m )
+PdfAuxData::drawRectangle( double x, double y, double width, double height, PoDoFo::PdfPathDrawMode m )
 {
 #ifndef MD_PDF_TESTING
 	painters[ currentPainterIdx ]->DrawRectangle( x, y, width, height, m );
@@ -322,8 +322,8 @@ PdfAuxData::setColor( const QColor & c )
 {
 	colorsStack.push( c );
 
-	painters[ currentPainterIdx ]->GraphicsState.SetFillColor( PdfColor( c.redF(), c.greenF(), c.blueF() ) );
-	painters[ currentPainterIdx ]->GraphicsState.SetStrokeColor( PdfColor( c.redF(), c.greenF(), c.blueF() ) );
+	painters[ currentPainterIdx ]->GraphicsState.SetFillColor( Color( c.redF(), c.greenF(), c.blueF() ) );
+	painters[ currentPainterIdx ]->GraphicsState.SetStrokeColor( Color( c.redF(), c.greenF(), c.blueF() ) );
 }
 
 void
@@ -340,8 +340,53 @@ PdfAuxData::repeatColor()
 {
 	const auto & c = colorsStack.top();
 
-	painters[ currentPainterIdx ]->GraphicsState.SetFillColor( PdfColor( c.redF(), c.greenF(), c.blueF() ) );
-	painters[ currentPainterIdx ]->GraphicsState.SetStrokeColor( PdfColor( c.redF(), c.greenF(), c.blueF() ) );
+	painters[ currentPainterIdx ]->GraphicsState.SetFillColor( Color( c.redF(), c.greenF(), c.blueF() ) );
+	painters[ currentPainterIdx ]->GraphicsState.SetStrokeColor( Color( c.redF(), c.greenF(), c.blueF() ) );
+}
+
+double
+PdfAuxData::imageWidth( const QByteArray & image )
+{
+	auto pdfImg = doc->CreateImage();
+	pdfImg->LoadFromBuffer( { image.data(), static_cast< size_t > ( image.size() ) } );
+
+	return std::round( (double) pdfImg->GetWidth() / (double) dpi * 72.0 );
+}
+
+double
+PdfAuxData::stringWidth( Font * font, double size, double scale, const String & s ) const
+{
+	PoDoFo::PdfTextState st;
+	st.FontSize = size * scale;
+
+	return font->GetStringLength( s, st );
+}
+
+double
+PdfAuxData::lineSpacing( Font * font, double size, double scale ) const
+{
+	PoDoFo::PdfTextState st;
+	st.FontSize = size * scale;
+
+	return font->GetLineSpacing( st );
+}
+
+double
+PdfAuxData::fontAscent( Font * font, double size, double scale ) const
+{
+	PoDoFo::PdfTextState st;
+	st.FontSize = size * scale;
+
+	return font->GetAscent( st );
+}
+
+double
+PdfAuxData::fontDescent( Font * font, double size, double scale ) const
+{
+	PoDoFo::PdfTextState st;
+	st.FontSize = size * scale;
+
+	return font->GetDescent( st );
 }
 
 
@@ -441,27 +486,14 @@ PdfRenderer::CellItem::width( PdfAuxData & pdfData, PdfRenderer * render, double
 	auto * f = render->createFont( font.family, font.bold, font.italic,
 		font.size, pdfData.doc, scale, pdfData );
 
-	PdfTextState st;
-	st.FontSize = font.size * scale;
-
 	if( !word.isEmpty() )
-		return f->GetStringLength( createPdfString( word ), st );
+		return pdfData.stringWidth( f, font.size, scale, createUtf8String( word ) );
 	else if( !image.isNull() )
-	{
-		auto pdfImg = pdfData.doc->CreateImage();
-		pdfImg->LoadFromBuffer( { image.data(), static_cast< size_t > ( image.size() ) } );
-
-		return std::round( (double) pdfImg->GetWidth() / (double) pdfData.dpi * 72.0 );
-	}
+		return pdfData.imageWidth( image );
 	else if( !url.isEmpty() )
-		return f->GetStringLength( createPdfString( url ), st );
+		return pdfData.stringWidth( f, font.size, scale, createUtf8String( url ) );
 	else if( !footnote.isEmpty() )
-	{
-		st.FontSize = st.FontSize * c_footnoteScale;
-		const auto w = f->GetStringLength( createPdfString( footnote ), st );
-
-		return w;
-	}
+		return pdfData.stringWidth( f, font.size * c_footnoteScale, scale, createUtf8String( footnote ) );
 	else
 		return 0.0;
 }
@@ -507,15 +539,9 @@ PdfRenderer::CellData::heightToWidth( double lineHeight, double spaceWidth, doub
 			double sw = spaceWidth;
 
 			if( it != items.cbegin() && it->font != ( it - 1 )->font )
-			{
-				auto * f = render->createFont( it->font.family, it->font.bold, it->font.italic,
-					it->font.size, pdfData.doc, scale, pdfData );
-
-				PdfTextState st;
-				st.FontSize = it->font.size * scale;
-
-				sw = f->GetStringLength( PdfString( " " ), st );
-			}
+				sw = pdfData.stringWidth( render->createFont( it->font.family,
+						it->font.bold, it->font.italic, it->font.size, pdfData.doc, scale, pdfData ),
+					it->font.size, scale, String( " " ) );
 
 			if( it + 1 != last && !( it + 1 )->footnote.isEmpty() )
 				sw = 0.0;
@@ -621,7 +647,7 @@ PdfRenderer::renderImpl()
 		emit progress( 0 );
 		emit status( tr( "Rendering PDF..." ) );
 
-		PdfMemDocument document;
+		Document document;
 
 		pdfData.doc = &document;
 
@@ -665,15 +691,9 @@ PdfRenderer::renderImpl()
 		try {
 			int itemIdx = 0;
 
-			{
-				auto * font = createFont( m_opts.m_textFont, false, false, m_opts.m_textFontSize,
-					pdfData.doc, 1.0, pdfData );
-
-				PdfTextState st;
-				st.FontSize = m_opts.m_textFontSize;
-
-				pdfData.extraInFootnote = font->GetLineSpacing( st ) / 3.0;
-			}
+			pdfData.extraInFootnote = pdfData.lineSpacing(
+				createFont( m_opts.m_textFont, false, false, m_opts.m_textFontSize,
+					pdfData.doc, 1.0, pdfData ), m_opts.m_textFontSize, 1.0 ) / 3.0;
 
 			createPage( pdfData );
 
@@ -759,7 +779,7 @@ PdfRenderer::renderImpl()
 					{
 						auto * a = static_cast< MD::Anchor< MD::QStringTrait >* > ( it->get() );
 						m_dests.insert( a->label(),
-							std::make_shared< PdfDestination > ( *pdfData.page,
+							std::make_shared< Destination > ( *pdfData.page,
 								pdfData.coords.margins.left,
 								pdfData.coords.pageHeight - pdfData.coords.margins.top, 0.0 ) );
 						pdfData.currentFile = a->label();
@@ -801,7 +821,7 @@ PdfRenderer::renderImpl()
 
 			emit done( m_terminate );
 		}
-		catch( const PdfError & e )
+		catch( const PoDoFo::PdfError & e )
 		{
 			const auto & cs = e.GetCallStack();
 			QString msg;
@@ -942,7 +962,7 @@ PdfRenderer::resolveLinks( PdfAuxData & pdfData )
 			for( const auto & r : std::as_const( it.value() ) )
 			{
 				auto & page = pdfData.doc->GetPages().GetPageAt( r.second );
-				auto & annot = page.GetAnnotations().CreateAnnot< PdfAnnotationLink >(
+				auto & annot = page.GetAnnotations().CreateAnnot< PoDoFo::PdfAnnotationLink >(
 					Rect( r.first.x(), r.first.y(), r.first.width(), r.first.height() ) );
 				annot.SetBorderStyle( 0.0, 0.0, 0.0 );
 				annot.SetDestination( m_dests.value( it.key() ) );
@@ -964,7 +984,7 @@ PdfRenderer::resolveLinks( PdfAuxData & pdfData )
 		if( m_dests.contains( it.key() ) )
 		{
 			auto & page = pdfData.doc->GetPages().GetPageAt( it.value().second );
-			auto & annot = page.GetAnnotations().CreateAnnot< PdfAnnotationLink >(
+			auto & annot = page.GetAnnotations().CreateAnnot< PoDoFo::PdfAnnotationLink >(
 				Rect( it.value().first.x(), it.value().first.y(),
 					it.value().first.width(), it.value().first.height() ) );
 			annot.SetBorderStyle( 0.0, 0.0, 0.0 );
@@ -981,14 +1001,14 @@ PdfRenderer::resolveLinks( PdfAuxData & pdfData )
 	}
 }
 
-PdfFont *
+Font *
 PdfRenderer::createFont( const QString & name, bool bold, bool italic, double size,
-	PdfMemDocument * doc, double scale, const PdfAuxData & pdfData )
+	Document * doc, double scale, const PdfAuxData & pdfData )
 {
-	PdfFontSearchParams params;
-	params.Style = PdfFontStyle::Regular;
-	if( bold ) params.Style.value() |= PdfFontStyle::Bold;
-	if( italic ) params.Style.value() |= PdfFontStyle::Italic;
+	PoDoFo::PdfFontSearchParams params;
+	params.Style = PoDoFo::PdfFontStyle::Regular;
+	if( bold ) params.Style.value() |= PoDoFo::PdfFontStyle::Bold;
+	if( italic ) params.Style.value() |= PoDoFo::PdfFontStyle::Italic;
 
 #ifdef MD_PDF_TESTING
 	const QString internalName = name + ( bold ? QStringLiteral( " Bold" ) : QString() ) +
@@ -1016,10 +1036,10 @@ PdfRenderer::createFont( const QString & name, bool bold, bool italic, double si
 bool
 PdfRenderer::isFontCreatable( const QString & name )
 {
-	PdfMemDocument doc;
+	Document doc;
 
-	PdfFontSearchParams params;
-	params.Style = PdfFontStyle::Regular;
+	PoDoFo::PdfFontSearchParams params;
+	params.Style = PoDoFo::PdfFontStyle::Regular;
 
 	auto font = doc.GetFonts().SearchFont( name.toLocal8Bit().data(), params );
 
@@ -1032,7 +1052,7 @@ PdfRenderer::createPage( PdfAuxData & pdfData )
 	auto create = [] ( PdfAuxData & pdfData )
 	{
 		pdfData.page = &pdfData.doc->GetPages().CreatePage(
-			PdfPage::CreateStandardPageSize( PdfPageSize::A4 ) );
+			Page::CreateStandardPageSize( PoDoFo::PdfPageSize::A4 ) );
 
 		if( !pdfData.page )
 			throw PdfRendererError( QLatin1String( "Oops, can't create empty page in PDF.\n\n"
@@ -1041,7 +1061,7 @@ PdfRenderer::createPage( PdfAuxData & pdfData )
 
 		pdfData.firstOnPage = true;
 
-		auto painter = std::make_shared< PdfPainter > ();
+		auto painter = std::make_shared< Painter > ();
 		painter->SetCanvas( *pdfData.page );
 
 		pdfData.painters.push_back( painter );
@@ -1107,7 +1127,7 @@ PdfRenderer::drawHorizontalLine( PdfAuxData & pdfData, const RenderOpts & render
 }
 
 Utf8String
-PdfRenderer::createPdfString( const QString & text )
+PdfRenderer::createUtf8String( const QString & text )
 {
 	return { text.toUtf8() };
 }
@@ -1140,7 +1160,7 @@ PdfRenderer::drawHeading( PdfAuxData & pdfData, const RenderOpts & renderOpts,
 				!where.first.isEmpty() )
 		{
 			m_dests.insert( item->label(),
-				std::make_shared< PdfDestination> ( pdfData.doc->GetPages().GetPageAt(
+				std::make_shared< Destination> ( pdfData.doc->GetPages().GetPageAt(
 						static_cast< unsigned int >( where.first.front().pageIdx ) ),
 					pdfData.coords.margins.left + offset,
 					where.first.front().y + where.first.front().height, 0.0 ) );
@@ -1155,7 +1175,7 @@ PdfRenderer::drawHeading( PdfAuxData & pdfData, const RenderOpts & renderOpts,
 QVector< QPair< QRectF, unsigned int > >
 PdfRenderer::drawText( PdfAuxData & pdfData, const RenderOpts & renderOpts,
 	MD::Text< MD::QStringTrait > * item, std::shared_ptr< MD::Document< MD::QStringTrait > > doc,
-	bool & newLine, PdfFont * footnoteFont, double footnoteFontSize, double footnoteFontScale,
+	bool & newLine, Font * footnoteFont, double footnoteFontSize, double footnoteFontScale,
 	MD::Item< MD::QStringTrait > * nextItem, int footnoteNum,
 	double offset, bool firstInParagraph, CustomWidth * cw, double scale, bool inFootnote )
 {
@@ -1171,14 +1191,11 @@ PdfRenderer::drawText( PdfAuxData & pdfData, const RenderOpts & renderOpts,
 		item->opts() & MD::TextOption::ItalicText,
 		renderOpts.m_textFontSize, pdfData.doc, scale, pdfData );
 
-	PdfTextState st;
-	st.FontSize = renderOpts.m_textFontSize * scale;
-
 	return drawString( pdfData, renderOpts, item->text(),
 		spaceFont, renderOpts.m_textFontSize, scale,
 		spaceFont, renderOpts.m_textFontSize, scale,
 		font, renderOpts.m_textFontSize, scale,
-		font->GetLineSpacing( st ),
+		pdfData.lineSpacing( font, renderOpts.m_textFontSize, scale ),
 		doc, newLine,
 		footnoteFont, footnoteFontSize, footnoteFontScale, nextItem, footnoteNum, offset,
 		firstInParagraph, cw, QColor(), inFootnote,
@@ -1224,7 +1241,7 @@ normalizeRects( const QVector< QPair< QRectF, unsigned int > > & rects )
 QVector< QPair< QRectF, unsigned int > >
 PdfRenderer::drawLink( PdfAuxData & pdfData, const RenderOpts & renderOpts,
 	MD::Link< MD::QStringTrait > * item, std::shared_ptr< MD::Document< MD::QStringTrait > > doc,
-	bool & newLine, PdfFont * footnoteFont, double footnoteFontSize, double footnoteFontScale,
+	bool & newLine, Font * footnoteFont, double footnoteFontSize, double footnoteFontScale,
 	MD::Item< MD::QStringTrait > * nextItem, int footnoteNum,
 	double offset, bool firstInParagraph, CustomWidth * cw, double scale, bool inFootnote )
 {
@@ -1251,9 +1268,6 @@ PdfRenderer::drawLink( PdfAuxData & pdfData, const RenderOpts & renderOpts,
 		item->opts() & MD::TextOption::ItalicText, renderOpts.m_textFontSize,
 		pdfData.doc, scale, pdfData );
 
-	PdfTextState st;
-	st.FontSize = renderOpts.m_textFontSize * scale;
-
 	if( !item->p()->isEmpty() )
 	{
 		pdfData.setColor( renderOpts.m_linkColor );
@@ -1275,14 +1289,11 @@ PdfRenderer::drawLink( PdfAuxData & pdfData, const RenderOpts & renderOpts,
 						text->opts() & MD::ItalicText || item->opts() & MD::ItalicText,
 						renderOpts.m_textFontSize, pdfData.doc, scale, pdfData );
 
-					PdfTextState st;
-					st.FontSize = renderOpts.m_textFontSize * scale;
-
 					rects.append( drawString( pdfData, renderOpts, text->text(),
 						spaceFont, renderOpts.m_textFontSize, scale,
 						spaceFont, renderOpts.m_textFontSize, scale,
 						font, renderOpts.m_textFontSize, scale,
-						font->GetLineSpacing( st ),
+						pdfData.lineSpacing( font, renderOpts.m_textFontSize, scale ),
 						doc, newLine, footnoteFont, footnoteFontSize, footnoteFontScale,
 						( it == std::prev( last ) ? nextItem : nullptr ), footnoteNum, offset,
 						( it == item->p()->items().begin() && firstInParagraph ),
@@ -1324,7 +1335,7 @@ PdfRenderer::drawLink( PdfAuxData & pdfData, const RenderOpts & renderOpts,
 			spaceFont, renderOpts.m_textFontSize, scale,
 			spaceFont, renderOpts.m_textFontSize, scale,
 			font, renderOpts.m_textFontSize, scale,
-			font->GetLineSpacing( st ),
+			pdfData.lineSpacing( font, renderOpts.m_textFontSize, scale ),
 			doc, newLine,
 			footnoteFont, footnoteFontSize, footnoteFontScale, nextItem, footnoteNum, offset,
 			firstInParagraph, cw, QColor(), inFootnote,
@@ -1348,12 +1359,13 @@ PdfRenderer::drawLink( PdfAuxData & pdfData, const RenderOpts & renderOpts,
 			{
 				auto & annot = pdfData.doc->GetPages().GetPageAt(
 					static_cast< unsigned int >( r.second ) )
-						.GetAnnotations().CreateAnnot< PdfAnnotationLink >(
+						.GetAnnotations().CreateAnnot< PoDoFo::PdfAnnotationLink >(
 					Rect( r.first.x(), r.first.y(), r.first.width(), r.first.height() ) );
 				annot.SetBorderStyle( 0.0, 0.0, 0.0 );
 
-				auto action = std::make_shared< PdfAction >( *pdfData.doc, PdfActionType::URI );
-				action->SetURI( PdfString( url.toLatin1().data() ) );
+				auto action = std::make_shared< PoDoFo::PdfAction >( *pdfData.doc,
+					PoDoFo::PdfActionType::URI );
+				action->SetURI( url.toLatin1().data() );
 
 				annot.SetAction( action );
 			}
@@ -1368,12 +1380,12 @@ PdfRenderer::drawLink( PdfAuxData & pdfData, const RenderOpts & renderOpts,
 
 QVector< QPair< QRectF, unsigned int > >
 PdfRenderer::drawString( PdfAuxData & pdfData, const RenderOpts & renderOpts, const QString & str,
-	PdfFont * firstSpaceFont, double firstSpaceFontSize, double firstSpaceFontScale,
-	PdfFont * spaceFont, double spaceFontSize, double spaceFontScale,
-	PdfFont * font, double fontSize, double fontScale,
+	Font * firstSpaceFont, double firstSpaceFontSize, double firstSpaceFontScale,
+	Font * spaceFont, double spaceFontSize, double spaceFontScale,
+	Font * font, double fontSize, double fontScale,
 	double lineHeight,
 	std::shared_ptr< MD::Document< MD::QStringTrait > > doc, bool & newLine,
-	PdfFont * footnoteFont, double footnoteFontSize, double footnoteFontScale,
+	Font * footnoteFont, double footnoteFontSize, double footnoteFontScale,
 	MD::Item< MD::QStringTrait > * nextItem,
 	int footnoteNum, double offset,
 	bool firstInParagraph, CustomWidth * cw, const QColor & background, bool inFootnote,
@@ -1401,27 +1413,13 @@ PdfRenderer::drawString( PdfAuxData & pdfData, const RenderOpts & renderOpts, co
 			nextItem )->id() ) != doc->footnotesMap().cend() && !inFootnote )
 				footnoteAtEnd = true;
 
-	PdfTextState footnoteSt;
-	footnoteSt.FontSize = footnoteFontSize * footnoteFontScale;
-
-	PdfTextState fontSt;
-	fontSt.FontSize = fontSize * fontScale;
-
-	PdfTextState spaceFontSt;
-	spaceFontSt.FontSize = spaceFontSize * spaceFontScale;
-
-	PdfTextState firstSpaceFontSt;
-	firstSpaceFontSt.FontSize = firstSpaceFontSize * firstSpaceFontScale;
-
 	if( footnoteAtEnd )
-	{
-		footnoteWidth = footnoteFont->GetStringLength(
-			createPdfString( QString::number( footnoteNum ) ), footnoteSt );
-	}
+		footnoteWidth = pdfData.stringWidth( footnoteFont, footnoteFontSize, footnoteFontScale,
+			createUtf8String( QString::number( footnoteNum ) ) );
 
 	double h = lineHeight;
 	double descent = 0.0;
-	double ascent = font->GetAscent( fontSt );
+	double ascent = pdfData.fontAscent( font, fontSize, fontScale );
 	double d = 0.0;
 
 	if( cw && cw->isDrawing() )
@@ -1472,15 +1470,16 @@ PdfRenderer::drawString( PdfAuxData & pdfData, const RenderOpts & renderOpts, co
 	if( !firstInParagraph && !newLine && !words.isEmpty() &&
 		!charsWithoutSpaceBefore.contains( words.first() ) )
 	{
-		const auto w = firstSpaceFont->GetStringLength( PdfString( " " ), firstSpaceFontSt );
+		const auto w = pdfData.stringWidth( firstSpaceFont, firstSpaceFontSize,
+			firstSpaceFontScale, " " );
 
 		auto scale = 100.0;
 
 		if( draw && cw )
 			scale = cw->scale();
 
-		const auto xv = pdfData.coords.x + w * scale / 100.0 + font->GetStringLength(
-				createPdfString( words.first() ), fontSt ) +
+		const auto xv = pdfData.coords.x + w * scale / 100.0 + pdfData.stringWidth( font,
+			fontSize, fontScale, createUtf8String( words.first() ) ) +
 			( words.size() == 1 && footnoteAtEnd ? footnoteWidth : 0.0 );
 
 		if( xv < wv || qAbs( xv - wv ) < 0.01 )
@@ -1488,7 +1487,8 @@ PdfRenderer::drawString( PdfAuxData & pdfData, const RenderOpts & renderOpts, co
 			if( draw )
 			{
 				pdfData.drawText( pdfData.coords.x, pdfData.coords.y + d, " ",
-					firstSpaceFont, firstSpaceFontSt.FontSize, scale / 100.0, false );
+					firstSpaceFont, firstSpaceFontSize * firstSpaceFontScale,
+					scale / 100.0, false );
 			}
 			else if( cw )
 				cw->append( { w, lineHeight, 0.0, true, false, true, false, " " } );
@@ -1506,21 +1506,22 @@ PdfRenderer::drawString( PdfAuxData & pdfData, const RenderOpts & renderOpts, co
 	const auto fullWidth = pdfData.coords.pageWidth - pdfData.coords.margins.left -
 		pdfData.coords.margins.right;
 
-	const auto spaceWidth = font->GetStringLength( PdfString( " " ), fontSt );
+	const auto spaceWidth = pdfData.stringWidth( font, fontSize, fontScale, " " );
 
 	// Draw words.
 	for( auto it = words.begin(), last = words.end(); it != last; ++it )
 	{
 		auto countCharsForAvailableSpace = []( const QString & s, double availableWidth,
-			PdfFont * font, const PdfTextState & fontSt, QString & tmp ) -> qsizetype
+			Font * font, const PdfAuxData & pdfData, double fontSize, double fontScale,
+			QString & tmp ) -> qsizetype
 		{
 			qsizetype i = 0;
 
 			for( ; i < s.length(); ++i )
 			{
 				tmp.push_back( s[ i ] );
-				const auto p = createPdfString( tmp );
-				const auto l = font->GetStringLength( p, fontSt );
+				const auto l = pdfData.stringWidth( font, fontSize, fontScale,
+					createUtf8String( tmp ) );
 
 				if( l > availableWidth && !( qAbs( l - availableWidth ) < 0.01 ) )
 				{
@@ -1539,8 +1540,9 @@ PdfRenderer::drawString( PdfAuxData & pdfData, const RenderOpts & renderOpts, co
 		{
 			if( it + 1 != last )
 			{
-				const auto nextLength = font->GetStringLength( createPdfString(
-					*( it + 1 ) ), fontSt ) + ( it + 2 == last && footnoteAtEnd ? footnoteWidth : 0.0 );
+				const auto nextLength = pdfData.stringWidth( font, fontSize, fontScale,
+						createUtf8String( *( it + 1 ) ) ) +
+					( it + 2 == last && footnoteAtEnd ? footnoteWidth : 0.0 );
 
 				auto scale = 100.0;
 
@@ -1557,7 +1559,7 @@ PdfRenderer::drawString( PdfAuxData & pdfData, const RenderOpts & renderOpts, co
 				if( ( xv < wv || qAbs( xv - wv ) < 0.01 ) ||
 					( nextLength > fullWidth * 2.0 / 3.0 &&
 						countCharsForAvailableSpace( *( it + 1 ), availableWidth,
-							font, fontSt, tmp ) > 4 ) )
+							font, pdfData, fontSize, fontScale, tmp ) > 4 ) )
 				{
 					if( draw )
 					{
@@ -1569,14 +1571,15 @@ PdfRenderer::drawString( PdfAuxData & pdfData, const RenderOpts & renderOpts, co
 						{
 							pdfData.setColor( background );
 							pdfData.drawRectangle( pdfData.coords.x, pdfData.coords.y +
-								font->GetDescent( fontSt ) +
-								d, spaceWidth * scale / 100.0,
-								font->GetLineSpacing( fontSt ), PdfPathDrawMode::Fill );
+								pdfData.fontDescent( font, fontSize, fontScale ) + d,
+								spaceWidth * scale / 100.0,
+								pdfData.lineSpacing( font, fontSize, fontScale ),
+								PoDoFo::PdfPathDrawMode::Fill );
 							pdfData.restoreColor();
 						}
 
 						pdfData.drawText( pdfData.coords.x, pdfData.coords.y + d, " ",
-							spaceFont, spaceFontSt.FontSize, scale / 100.0, strikeout );
+							spaceFont, spaceFontSize * spaceFontScale, scale / 100.0, strikeout );
 					}
 					else if( cw )
 						cw->append( { spaceWidth, lineHeight, 0.0, true, false, true, false, " " } );
@@ -1595,9 +1598,9 @@ PdfRenderer::drawString( PdfAuxData & pdfData, const RenderOpts & renderOpts, co
 				return ret;
 		}
 
-		const auto str = createPdfString( *it );
+		const auto str = createUtf8String( *it );
 
-		const auto length = font->GetStringLength( str, fontSt );
+		const auto length = pdfData.stringWidth( font, fontSize, fontScale, str );
 
 		const auto xv = pdfData.coords.x + length +
 			( it + 1 == last && footnoteAtEnd ? footnoteWidth : 0.0 );
@@ -1612,8 +1615,9 @@ PdfRenderer::drawString( PdfAuxData & pdfData, const RenderOpts & renderOpts, co
 				{
 					pdfData.setColor( background );
 					pdfData.drawRectangle( pdfData.coords.x, pdfData.coords.y +
-						font->GetDescent( fontSt ) + d, length,
-						font->GetLineSpacing( fontSt ), PdfPathDrawMode::Fill );
+						pdfData.fontDescent( font, fontSize, fontScale ) + d,
+						length, pdfData.lineSpacing( font, fontSize, fontScale ),
+						PoDoFo::PdfPathDrawMode::Fill );
 					pdfData.restoreColor();
 				}
 
@@ -1645,12 +1649,12 @@ PdfRenderer::drawString( PdfAuxData & pdfData, const RenderOpts & renderOpts, co
 				{
 					QString tmp;
 					const auto i = countCharsForAvailableSpace( s, availableWidth,
-						font, fontSt, tmp );
+						font, pdfData, fontSize, fontScale, tmp );
 
 					s.remove( 0, i );
 
-					const auto p = createPdfString( tmp );
-					const auto w = font->GetStringLength( p, fontSt );
+					const auto p = createUtf8String( tmp );
+					const auto w = pdfData.stringWidth( font, fontSize, fontScale, p );
 
 					if( draw )
 					{
@@ -1683,8 +1687,9 @@ PdfRenderer::drawString( PdfAuxData & pdfData, const RenderOpts & renderOpts, co
 			{
 				QString tmp;
 
-				if( countCharsForAvailableSpace( *it, availableWidth, font, fontSt, tmp ) > 4 )
-					splitAndDraw( *it );
+				if( countCharsForAvailableSpace( *it, availableWidth, font, pdfData,
+					fontSize, fontScale, tmp ) > 4 )
+						splitAndDraw( *it );
 				else
 				{
 					if( worldLength < fullWidth || qAbs( worldLength - fullWidth ) < 0.01 )
@@ -1731,14 +1736,11 @@ PdfRenderer::drawInlinedCode( PdfAuxData & pdfData, const RenderOpts & renderOpt
 	auto * font = createFont( renderOpts.m_codeFont, false, false, renderOpts.m_codeFontSize,
 		pdfData.doc, scale, pdfData );
 
-	PdfTextState st;
-	st.FontSize = renderOpts.m_textFontSize * scale;
-
 	return drawString( pdfData, renderOpts, item->text(),
 		textFont, renderOpts.m_textFontSize, scale,
 		font, renderOpts.m_codeFontSize, scale,
 		font, renderOpts.m_codeFontSize, scale,
-		textFont->GetLineSpacing( st ),
+		pdfData.lineSpacing( textFont, renderOpts.m_textFontSize, scale ),
 		doc, newLine,
 		nullptr, 0.0, 0.0, nullptr, m_footnoteNum,
 		offset, firstInParagraph, cw,
@@ -1831,12 +1833,9 @@ PdfRenderer::drawParagraph( PdfAuxData & pdfData, const RenderOpts & renderOpts,
 	auto * font = createFont( renderOpts.m_textFont, false, false,
 		renderOpts.m_textFontSize, pdfData.doc, scale, pdfData );
 
-	PdfTextState st;
-	st.FontSize = renderOpts.m_textFontSize * scale;
-
 	auto * footnoteFont = font;
 
-	const auto lineHeight = font->GetLineSpacing( st );
+	const auto lineHeight = pdfData.lineSpacing( font, renderOpts.m_textFontSize, scale );
 
 	pdfData.lineHeight = lineHeight;
 
@@ -1865,7 +1864,7 @@ PdfRenderer::drawParagraph( PdfAuxData & pdfData, const RenderOpts & renderOpts,
 			case MD::ItemType::Text :
 				drawText( pdfData, renderOpts,
 					static_cast< MD::Text< MD::QStringTrait >* > ( it->get() ),
-					doc, newLine, footnoteFont, st.FontSize, c_footnoteScale,
+					doc, newLine, footnoteFont, renderOpts.m_textFontSize * scale, c_footnoteScale,
 					( it + 1 != last ? ( it + 1 )->get() : nullptr ),
 					footnoteNum, offset, ( firstInParagraph || lineBreak ), &cw, scale,
 					inFootnote );
@@ -1885,7 +1884,7 @@ PdfRenderer::drawParagraph( PdfAuxData & pdfData, const RenderOpts & renderOpts,
 			case MD::ItemType::Link :
 				drawLink( pdfData, renderOpts,
 					static_cast< MD::Link< MD::QStringTrait >* > ( it->get() ),
-					doc, newLine, footnoteFont, st.FontSize, c_footnoteScale,
+					doc, newLine, footnoteFont, renderOpts.m_textFontSize * scale, c_footnoteScale,
 					( it + 1 != last ? ( it + 1 )->get() : nullptr ),
 					footnoteNum, offset, ( firstInParagraph || lineBreak ), &cw, scale,
 					inFootnote );
@@ -2102,12 +2101,10 @@ PdfRenderer::drawParagraph( PdfAuxData & pdfData, const RenderOpts & renderOpts,
 						pdfData.footnotesAnchorsMap.insert( fit->second.get(),
 							pdfData.currentFile );
 
-						const auto str = createPdfString( QString::number( m_footnoteNum ) );
+						const auto str = createUtf8String( QString::number( m_footnoteNum ) );
 
-						auto footnoteSt = st;
-						footnoteSt.FontSize *= c_footnoteScale;
-
-						const auto w = footnoteFont->GetStringLength( str, footnoteSt );
+						const auto w = pdfData.stringWidth( footnoteFont,
+							renderOpts.m_textFontSize * c_footnoteScale, scale, str );
 
 						rects.append( qMakePair( QRectF( pdfData.coords.x, pdfData.coords.y,
 								w, lineHeight ),
@@ -2123,8 +2120,10 @@ PdfRenderer::drawParagraph( PdfAuxData & pdfData, const RenderOpts & renderOpts,
 						pdfData.setColor( renderOpts.m_linkColor );
 
 						pdfData.drawText( pdfData.coords.x, pdfData.coords.y + lineHeight -
-								footnoteFont->GetLineSpacing( footnoteSt ), str,
-							footnoteFont, footnoteSt.FontSize, 1.0, false );
+								pdfData.lineSpacing( footnoteFont,
+									renderOpts.m_textFontSize * c_footnoteScale, scale ), str,
+							footnoteFont, renderOpts.m_textFontSize * c_footnoteScale * scale,
+							1.0, false );
 
 						pdfData.restoreColor();
 
@@ -2201,10 +2200,7 @@ PdfRenderer::drawMathExpr( PdfAuxData & pdfData, const RenderOpts & renderOpts,
 	auto * font = createFont( renderOpts.m_textFont, false, false,
 		renderOpts.m_textFontSize, pdfData.doc, scale, pdfData );
 
-	PdfTextState st;
-	st.FontSize = renderOpts.m_textFontSize * scale;
-
-	const auto lineHeight = font->GetLineSpacing( st );
+	const auto lineHeight = pdfData.lineSpacing( font, renderOpts.m_textFontSize, scale );
 
 	newLine = false;
 
@@ -2299,7 +2295,8 @@ PdfRenderer::drawMathExpr( PdfAuxData & pdfData, const RenderOpts & renderOpts,
 			if( cw )
 				sscale = cw->scale();
 
-			const auto spaceWidth = font->GetStringLength( PdfString( " " ), st );
+			const auto spaceWidth = pdfData.stringWidth( font,
+				renderOpts.m_textFontSize, scale, " " );
 
 			pdfData.coords.x += spaceWidth * sscale / 100.0;
 
@@ -2371,7 +2368,7 @@ PdfRenderer::drawMathExpr( PdfAuxData & pdfData, const RenderOpts & renderOpts,
 
 			newLine = true;
 
-			const auto lineHeight = font->GetLineSpacing( st );
+			const auto lineHeight = pdfData.lineSpacing( font, renderOpts.m_textFontSize, scale );
 
 			if( !firstInParagraph )
 				height += lineHeight;
@@ -2389,7 +2386,8 @@ PdfRenderer::drawMathExpr( PdfAuxData & pdfData, const RenderOpts & renderOpts,
 			if( iHeight * imgScale - pageHeight > 0.01 )
 				imgScale = ( pageHeight / ( iHeight * imgScale ) ) * scale;
 
-			height += iHeight * imgScale - font->GetDescent( st );
+			height += iHeight * imgScale - pdfData.fontDescent( font,
+				renderOpts.m_textFontSize, scale );
 
 			pdfData.coords.x = pdfData.coords.margins.left + offset;
 
@@ -2401,7 +2399,8 @@ PdfRenderer::drawMathExpr( PdfAuxData & pdfData, const RenderOpts & renderOpts,
 		}
 		else
 		{
-			const auto spaceWidth = font->GetStringLength( PdfString( " " ), st );
+			const auto spaceWidth = pdfData.stringWidth( font,
+				renderOpts.m_textFontSize, scale, " " );
 
 			const double availableWidth = pdfData.coords.pageWidth - pdfData.coords.x -
 				pdfData.coords.margins.right - spaceWidth;
@@ -2435,7 +2434,7 @@ PdfRenderer::drawMathExpr( PdfAuxData & pdfData, const RenderOpts & renderOpts,
 			pdfData.coords.x += iWidth * imgScale;
 
 			cw->append( { iWidth * imgScale,
-				iHeight * imgScale - font->GetDescent( st ),
+				iHeight * imgScale - pdfData.fontDescent( font, renderOpts.m_textFontSize, scale ),
 				descent, false, false, hasNext, false, "" } );
 		}
 	}
@@ -2515,15 +2514,12 @@ PdfRenderer::drawFootnote( PdfAuxData & pdfData, const RenderOpts & renderOpts,
 	auto * font = createFont( renderOpts.m_textFont, false, false,
 		renderOpts.m_textFontSize, pdfData.doc, c_footnoteScale, pdfData );
 
-	PdfTextState st;
-	st.FontSize = renderOpts.m_textFontSize * c_footnoteScale;
-
 	auto footnoteOffset = c_offset * 2.0 / c_mmInPt +
-		font->GetStringLength(
-			createPdfString( QString::number( doc->footnotesMap().size() ) ), st );
+		pdfData.stringWidth( font, renderOpts.m_textFontSize, c_footnoteScale,
+			createUtf8String( QString::number( doc->footnotesMap().size() ) ) );
 
 	if( lineHeight )
-		*lineHeight = font->GetLineSpacing( st );
+		*lineHeight = pdfData.lineSpacing( font, renderOpts.m_textFontSize, c_footnoteScale );
 
 	for( auto it = note->items().cbegin(), last = note->items().cend(); it != last; ++it )
 	{
@@ -2597,21 +2593,24 @@ PdfRenderer::drawFootnote( PdfAuxData & pdfData, const RenderOpts & renderOpts,
 		// Draw footnote number.
 		if( it == note->items().cbegin() && heightCalcOpt == CalcHeightOpt::Unknown )
 		{
-			const auto str = createPdfString( QString::number( pdfData.currentFootnote ) );
-			const auto w = font->GetStringLength( str, st );
+			const auto str = createUtf8String( QString::number( pdfData.currentFootnote ) );
+			const auto w = pdfData.stringWidth( font, renderOpts.m_textFontSize,
+				c_footnoteScale, str );
 			const auto y = ret.constFirst().y + ret.constFirst().height -
-				font->GetLineSpacing( st );
+				pdfData.lineSpacing( font, renderOpts.m_textFontSize, c_footnoteScale );
 			const auto x = pdfData.coords.margins.left + footnoteOffset -
 				c_offset - w;
 			const auto p = ret.constFirst().pageIdx;
 
 			m_dests.insert( footnoteRefId,
-				std::make_shared< PdfDestination> ( pdfData.doc->GetPages().GetPageAt( p ),
-					x, y + font->GetLineSpacing( st ), 0.0 ) );
+				std::make_shared< Destination> ( pdfData.doc->GetPages().GetPageAt( p ),
+					x, y + pdfData.lineSpacing( font, renderOpts.m_textFontSize, c_footnoteScale ),
+					0.0 ) );
 
 			pdfData.currentPainterIdx = p;
 
-			pdfData.drawText( x, y, str, font, st.FontSize, 1.0, false );
+			pdfData.drawText( x, y, str, font, renderOpts.m_textFontSize * c_footnoteScale,
+				1.0, false );
 
 			pdfData.currentPainterIdx = pdfData.footnotePageIdx;
 
@@ -2669,10 +2668,7 @@ PdfRenderer::drawImage( PdfAuxData & pdfData, const RenderOpts & renderOpts,
 			auto * font = createFont( renderOpts.m_textFont, false, false,
 				renderOpts.m_textFontSize, pdfData.doc, scale, pdfData );
 
-			PdfTextState st;
-			st.FontSize = renderOpts.m_textFontSize * scale;
-
-			const auto lineHeight = font->GetLineSpacing( st );
+			const auto lineHeight = pdfData.lineSpacing( font, renderOpts.m_textFontSize, scale );
 
 			if( !firstInParagraph )
 			{
@@ -2768,10 +2764,7 @@ PdfRenderer::drawImage( PdfAuxData & pdfData, const RenderOpts & renderOpts,
 			auto * font = createFont( renderOpts.m_textFont, false, false,
 				renderOpts.m_textFontSize, pdfData.doc, scale, pdfData );
 
-			PdfTextState st;
-			st.FontSize = renderOpts.m_textFontSize * scale;
-
-			const auto lineHeight = font->GetLineSpacing( st );
+			const auto lineHeight = pdfData.lineSpacing( font, renderOpts.m_textFontSize, scale );
 
 			if( !firstInParagraph )
 				height += lineHeight;
@@ -3011,10 +3004,7 @@ PdfRenderer::drawCode( PdfAuxData & pdfData, const RenderOpts & renderOpts,
 	auto * textFont = createFont( renderOpts.m_textFont, false, false, renderOpts.m_textFontSize,
 		pdfData.doc, scale, pdfData );
 
-	PdfTextState tst;
-	tst.FontSize = renderOpts.m_textFontSize * scale;
-
-	const auto textLHeight = textFont->GetLineSpacing( tst );
+	const auto textLHeight = pdfData.lineSpacing( textFont, renderOpts.m_textFontSize, scale );
 
 	QStringList lines;
 
@@ -3037,10 +3027,7 @@ PdfRenderer::drawCode( PdfAuxData & pdfData, const RenderOpts & renderOpts,
 	auto * font = createFont( renderOpts.m_codeFont, false, false, renderOpts.m_codeFontSize,
 		pdfData.doc, scale, pdfData );
 
-	PdfTextState cst;
-	cst.FontSize = renderOpts.m_codeFontSize * scale;
-
-	const auto lineHeight = font->GetLineSpacing( cst );
+	const auto lineHeight = pdfData.lineSpacing( font, renderOpts.m_codeFontSize, scale );
 
 	switch( heightCalcOpt )
 	{
@@ -3086,7 +3073,7 @@ PdfRenderer::drawCode( PdfAuxData & pdfData, const RenderOpts & renderOpts,
 	pdfData.syntax->setDefinition( pdfData.syntax->definitionForName( item->syntax().toLower() ) );
 	const auto colored = pdfData.syntax->prepare( lines );
 	int currentWord = 0;
-	const auto spaceWidth = font->GetStringLength( PdfString( " " ), cst );
+	const auto spaceWidth = pdfData.stringWidth( font, renderOpts.m_codeFontSize, scale, " " );
 
 	const auto firstLinePageIdx = pdfData.currentPageIndex();
 	const auto firstLineY = pdfData.coords.y;
@@ -3110,9 +3097,10 @@ PdfRenderer::drawCode( PdfAuxData & pdfData, const RenderOpts & renderOpts,
 		{
 			pdfData.setColor( renderOpts.m_syntax->theme().editorColor(
 				KSyntaxHighlighting::Theme::CodeFolding ) );
-			pdfData.drawRectangle( pdfData.coords.x, y + font->GetDescent( cst ),
+			pdfData.drawRectangle( pdfData.coords.x, y +
+					pdfData.fontDescent( font, renderOpts.m_codeFontSize, scale ),
 				pdfData.coords.pageWidth - pdfData.coords.x - pdfData.coords.margins.right,
-				 h + lineHeight, PdfPathDrawMode::Fill );
+				 h + lineHeight, PoDoFo::PdfPathDrawMode::Fill );
 			pdfData.restoreColor();
 
 			ret.append( { pdfData.currentPageIndex(), y, h + lineHeight } );
@@ -3132,7 +3120,7 @@ PdfRenderer::drawCode( PdfAuxData & pdfData, const RenderOpts & renderOpts,
 				const auto length = colored[ currentWord ].endPos -
 					colored[ currentWord ].startPos + 1;
 
-				PdfFont * f = font;
+				Font * f = font;
 
 				const auto italic = colored[ currentWord ].format.isItalic( pdfData.syntax->theme() );
 				const auto bold = colored[ currentWord ].format.isBold( pdfData.syntax->theme() );
@@ -3144,8 +3132,8 @@ PdfRenderer::drawCode( PdfAuxData & pdfData, const RenderOpts & renderOpts,
 				}
 
 				pdfData.drawText( pdfData.coords.x, pdfData.coords.y,
-					createPdfString( lines.at( i ).mid( colored[ currentWord ].startPos, length ) ),
-					f, cst.FontSize, 1.0, false );
+					createUtf8String( lines.at( i ).mid( colored[ currentWord ].startPos, length ) ),
+					f, renderOpts.m_codeFontSize * scale, 1.0, false );
 
 				pdfData.coords.x += spaceWidth * length;
 
@@ -3352,7 +3340,7 @@ PdfRenderer::drawBlockquote( PdfAuxData & pdfData, const RenderOpts & renderOpts
 		pdfData.currentPainterIdx = it.key();
 		pdfData.setColor( renderOpts.m_borderColor );
 		pdfData.drawRectangle( pdfData.coords.margins.left + offset, it.value().y,
-			c_blockquoteMarkWidth, it.value().height, PdfPathDrawMode::Fill );
+			c_blockquoteMarkWidth, it.value().height, PoDoFo::PdfPathDrawMode::Fill );
 		pdfData.restoreColor();
 	}
 
@@ -3411,15 +3399,9 @@ PdfRenderer::drawList( PdfAuxData & pdfData, const RenderOpts & renderOpts,
 	}
 
 	if( !ret.isEmpty() )
-	{
-		auto * font = createFont( m_opts.m_textFont, false, false,
-			m_opts.m_textFontSize, pdfData.doc, scale, pdfData );
-
-		PdfTextState st;
-		st.FontSize = renderOpts.m_textFontSize * scale;
-
-		ret.front().height += font->GetLineSpacing( st );
-	}
+		ret.front().height += pdfData.lineSpacing( createFont( m_opts.m_textFont, false, false,
+				m_opts.m_textFontSize, pdfData.doc, scale, pdfData ),
+			renderOpts.m_textFontSize, scale );
 
 	return { ret, firstLine };
 }
@@ -3438,14 +3420,11 @@ PdfRenderer::drawListItem( PdfAuxData & pdfData, const RenderOpts & renderOpts,
 	auto * font = createFont( renderOpts.m_textFont, false, false, renderOpts.m_textFontSize,
 		pdfData.doc, scale, pdfData );
 
-	PdfTextState st;
-	st.FontSize = renderOpts.m_textFontSize * scale;
-
-	const auto lineHeight = font->GetLineSpacing( st );
+	const auto lineHeight = pdfData.lineSpacing( font, renderOpts.m_textFontSize, scale );
 	const auto orderedListNumberWidth =
-		font->GetStringLength( PdfString( "9" ), st ) * bulletWidth +
-		font->GetStringLength( PdfString( "." ), st );
-	const auto spaceWidth = font->GetStringLength( PdfString( " " ), st );
+		pdfData.stringWidth( font, renderOpts.m_textFontSize, scale, "9" ) * bulletWidth +
+		pdfData.stringWidth( font, renderOpts.m_textFontSize, scale, "." );
+	const auto spaceWidth = pdfData.stringWidth( font, renderOpts.m_textFontSize, scale, " " );
 	const auto unorderedMarkWidth = spaceWidth * 0.75;
 
 	if( heightCalcOpt == CalcHeightOpt::Unknown )
@@ -3612,7 +3591,7 @@ PdfRenderer::drawListItem( PdfAuxData & pdfData, const RenderOpts & renderOpts,
 				pdfData.drawRectangle(
 					pdfData.coords.margins.left + offset - ( orderedListNumberWidth + spaceWidth ),
 					firstLine.y + qAbs( firstLine.height - orderedListNumberWidth ) / 2.0,
-					orderedListNumberWidth, orderedListNumberWidth, PdfPathDrawMode::Stroke );
+					orderedListNumberWidth, orderedListNumberWidth, PoDoFo::PdfPathDrawMode::Stroke );
 
 				if( item->isChecked() )
 				{
@@ -3622,7 +3601,7 @@ PdfRenderer::drawListItem( PdfAuxData & pdfData, const RenderOpts & renderOpts,
 						pdfData.coords.margins.left + offset + d - ( orderedListNumberWidth + spaceWidth ),
 						firstLine.y + qAbs( firstLine.height - orderedListNumberWidth ) / 2.0 + d,
 						orderedListNumberWidth - 2.0 * d, orderedListNumberWidth - 2.0 * d,
-						PdfPathDrawMode::Fill );
+						PoDoFo::PdfPathDrawMode::Fill );
 				}
 
 				pdfData.restoreColor();
@@ -3640,9 +3619,10 @@ PdfRenderer::drawListItem( PdfAuxData & pdfData, const RenderOpts & renderOpts,
 
 				pdfData.drawText(
 					pdfData.coords.margins.left + offset - ( orderedListNumberWidth + spaceWidth ),
-					firstLine.y + qAbs( firstLine.height - font->GetAscent( st ) ) / 2.0,
-					createPdfString( idxText ),
-					font, st.FontSize, 1.0, false );
+					firstLine.y + qAbs( firstLine.height -
+						pdfData.fontAscent( font, renderOpts.m_textFontSize, scale ) ) / 2.0,
+					createUtf8String( idxText ),
+					font, renderOpts.m_textFontSize * scale, 1.0, false );
 			}
 			else
 			{
@@ -3653,7 +3633,7 @@ PdfRenderer::drawListItem( PdfAuxData & pdfData, const RenderOpts & renderOpts,
 				pdfData.painters[ pdfData.currentPainterIdx ]->DrawCircle(
 					pdfData.coords.margins.left + offset + r - ( orderedListNumberWidth + spaceWidth ),
 					firstLine.y + qAbs( firstLine.height - unorderedMarkWidth ) / 2.0, r,
-					PdfPathDrawMode::Fill );
+					PoDoFo::PdfPathDrawMode::Fill );
 				pdfData.restoreColor();
 			}
 
@@ -3703,7 +3683,7 @@ PdfRenderer::maxListNumberWidth( MD::List< MD::QStringTrait > * list ) const
 }
 
 bool
-operator != ( const PdfRenderer::Font & f1, const PdfRenderer::Font & f2 )
+operator != ( const PdfRenderer::FontAttribs & f1, const PdfRenderer::FontAttribs & f2 )
 {
 	return ( f1.family != f2.family || f1.bold != f2.bold ||
 		f1.italic != f2.italic || f1.strikethrough != f2.strikethrough ||
@@ -3711,7 +3691,7 @@ operator != ( const PdfRenderer::Font & f1, const PdfRenderer::Font & f2 )
 }
 
 bool
-operator == ( const PdfRenderer::Font & f1, const PdfRenderer::Font & f2 )
+operator == ( const PdfRenderer::FontAttribs & f1, const PdfRenderer::FontAttribs & f2 )
 {
 	return ( f1.family == f2.family && f1.bold == f2.bold &&
 		f1.italic == f2.italic && f1.strikethrough == f2.strikethrough &&
@@ -3995,11 +3975,8 @@ PdfRenderer::drawTable( PdfAuxData & pdfData, const RenderOpts & renderOpts,
 	auto * font = createFont( renderOpts.m_textFont, false, false, renderOpts.m_textFontSize,
 		pdfData.doc, scale, pdfData );
 
-	PdfTextState st;
-	st.FontSize = renderOpts.m_textFontSize * scale;
-
-	const auto lineHeight = font->GetLineSpacing( st );
-	const auto spaceWidth = font->GetStringLength( PdfString( " " ), st );
+	const auto lineHeight = pdfData.lineSpacing( font, renderOpts.m_textFontSize, scale );
+	const auto spaceWidth = pdfData.stringWidth( font, renderOpts.m_textFontSize, scale, " " );
 
 	auto auxTable = createAuxTable( pdfData, renderOpts, item, doc, scale, inFootnote );
 
@@ -4014,7 +3991,8 @@ PdfRenderer::drawTable( PdfAuxData & pdfData, const RenderOpts & renderOpts,
 		case CalcHeightOpt::Minimum :
 		{
 			ret.append( { -1, 0.0, r0h + r1h + ( c_tableMargin * ( justHeader ? 2.0 : 4.0 ) ) +
-				lineHeight - ( font->GetDescent( st ) * ( justHeader ? 1.0 : 2.0 ) ) } );
+				lineHeight - ( pdfData.fontDescent( font, renderOpts.m_textFontSize, scale ) *
+					( justHeader ? 1.0 : 2.0 ) ) } );
 
 			return { ret, {} };
 		}
@@ -4022,11 +4000,12 @@ PdfRenderer::drawTable( PdfAuxData & pdfData, const RenderOpts & renderOpts,
 		case CalcHeightOpt::Full :
 		{
 			ret.append( { -1, 0.0, r0h + r1h + ( c_tableMargin * ( justHeader ? 2.0 : 4.0 ) ) +
-				lineHeight - ( font->GetDescent( st ) * ( justHeader ? 1.0 : 2.0 ) ) } );
+				lineHeight - ( pdfData.fontDescent( font, renderOpts.m_textFontSize, scale ) *
+					( justHeader ? 1.0 : 2.0 ) ) } );
 
 			for( int i = 2; i < auxTable.at( 0 ).size(); ++i )
 				ret.append( { -1, 0.0, rowHeight( auxTable, i ) + c_tableMargin * 2.0 -
-					font->GetDescent( st ) } );
+					pdfData.fontDescent( font, renderOpts.m_textFontSize, scale ) } );
 
 			return { ret, {} };
 		}
@@ -4036,7 +4015,8 @@ PdfRenderer::drawTable( PdfAuxData & pdfData, const RenderOpts & renderOpts,
 	}
 
 	const auto nonSplittableHeight = ( r0h + r1h + ( c_tableMargin * ( justHeader ? 2.0 : 4.0 ) ) -
-		( font->GetDescent( st ) * ( justHeader ? 1.0 : 2.0 ) ) );
+		( pdfData.fontDescent( font, renderOpts.m_textFontSize, scale ) *
+			( justHeader ? 1.0 : 2.0 ) ) );
 
 	if( pdfData.coords.y - nonSplittableHeight < pdfData.currentPageAllowedY() &&
 		qAbs( pdfData.coords.y - nonSplittableHeight - pdfData.currentPageAllowedY() ) > 0.1 )
@@ -4115,9 +4095,6 @@ PdfRenderer::drawTableRow( QVector< QVector< CellData > > & table, int row, PdfA
 
 	auto * textFont = createFont( renderOpts.m_textFont, false, false, renderOpts.m_textFontSize,
 		pdfData.doc, scale, pdfData );
-
-	PdfTextState tst;
-	tst.FontSize = renderOpts.m_textFontSize * scale;
 
 	const auto startPage = pdfData.currentPageIndex();
 	const auto startY = pdfData.coords.y;
@@ -4256,19 +4233,16 @@ PdfRenderer::drawTableRow( QVector< QVector< CellData > > & table, int row, PdfA
 				auto * font = createFont( c->font.family, c->font.bold, c->font.italic,
 					c->font.size, pdfData.doc, scale, pdfData );
 
-				PdfTextState st;
-				st.FontSize = c->font.size * scale;
-
-				auto w = font->GetStringLength(
-					createPdfString( c->word.isEmpty() ? c->url : c->word ), st );
+				auto w = pdfData.stringWidth( font, c->font.size, scale,
+					createUtf8String( c->word.isEmpty() ? c->url : c->word ) );
 				double s = 0.0;
 
 				if( !text.text.isEmpty() )
 				{
 					if( text.text.last().font == c->font )
-						s = font->GetStringLength( PdfString( " " ), st );
+						s = pdfData.stringWidth( font, c->font.size, scale, " " );
 					else
-						s = textFont->GetStringLength( PdfString( " " ), tst );
+						s = pdfData.stringWidth( textFont, renderOpts.m_textFontSize, scale, " " );
 				}
 
 				double fw = 0.0;
@@ -4278,10 +4252,8 @@ PdfRenderer::drawTableRow( QVector< QVector< CellData > > & table, int row, PdfA
 					auto * f1 = createFont( ( c + 1 )->font.family, ( c + 1 )->font.bold,
 						( c + 1 )->font.italic, ( c + 1 )->font.size, pdfData.doc, scale, pdfData );
 
-					PdfTextState st1;
-					st1.FontSize = ( c + 1 )->font.size * scale;
-
-					fw = f1->GetStringLength( createPdfString( ( c + 1 )->footnote ), st1 );
+					fw = pdfData.stringWidth( f1, ( c + 1 )->font.size, scale,
+						createUtf8String( ( c + 1 )->footnote ) );
 					w += fw;
 				}
 
@@ -4334,7 +4306,8 @@ PdfRenderer::drawTableRow( QVector< QVector< CellData > > & table, int row, PdfA
 			drawTextLineInTable( x, y, text, lineHeight, pdfData, links, textFont, currentPage,
 				endPage, endY, footnotes, inFootnote, scale );
 
-		y -= c_tableMargin - ( wasTextInLastPos ? textFont->GetDescent( tst ) : 0.0 );
+		y -= c_tableMargin - ( wasTextInLastPos ?
+			pdfData.fontDescent( textFont, renderOpts.m_textFontSize, scale ) : 0.0 );
 
 		if( y < endY  && currentPage == pdfData.currentPageIndex() )
 			endY = y;
@@ -4449,7 +4422,7 @@ PdfRenderer::drawRowBorder( PdfAuxData & pdfData, int startPage, QVector< WhereD
 void
 PdfRenderer::drawTextLineInTable( double x, double & y, TextToDraw & text, double lineHeight,
 	PdfAuxData & pdfData, QMap< QString, QVector< QPair< QRectF, unsigned int > > > & links,
-	PdfFont * font, int & currentPage, int & endPage, double & endY,
+	Font * font, int & currentPage, int & endPage, double & endY,
 	QVector< QPair< QString, std::shared_ptr< MD::Footnote< MD::QStringTrait > > > > & footnotes,
 	bool inFootnote, double scale )
 {
@@ -4494,12 +4467,10 @@ PdfRenderer::drawTextLineInTable( double x, double & y, TextToDraw & text, doubl
 		auto * f = createFont( text.text.first().font.family, text.text.first().font.bold,
 			text.text.first().font.italic, text.text.first().font.size, pdfData.doc, scale, pdfData );
 
-		PdfTextState st;
-		st.FontSize = text.text.first().font.size * scale;
-
 		for( const auto & ch : str )
 		{
-			w += f->GetStringLength( createPdfString( QString( ch ) ), st );
+			w += pdfData.stringWidth( f, text.text.first().font.size, scale,
+				createUtf8String( QString( ch ) ) );
 
 			if( w >= text.availableWidth )
 				break;
@@ -4515,16 +4486,13 @@ PdfRenderer::drawTextLineInTable( double x, double & y, TextToDraw & text, doubl
 		auto * f = createFont( it->font.family, it->font.bold,
 			it->font.italic, it->font.size, pdfData.doc, scale, pdfData );
 
-		PdfTextState st;
-		st.FontSize = it->font.size * scale;
-
 		if( it->background.isValid() )
 		{
 			pdfData.setColor( it->background );
 
-			pdfData.drawRectangle( x, y + f->GetDescent( st ),
-				it->width( pdfData, this, scale ), f->GetLineSpacing( st ),
-				PdfPathDrawMode::Fill );
+			pdfData.drawRectangle( x, y + pdfData.fontDescent( f, it->font.size, scale ),
+				it->width( pdfData, this, scale ), pdfData.lineSpacing( f, it->font.size, scale ),
+				PoDoFo::PdfPathDrawMode::Fill );
 
 			pdfData.restoreColor();
 		}
@@ -4532,8 +4500,8 @@ PdfRenderer::drawTextLineInTable( double x, double & y, TextToDraw & text, doubl
 		if( it->color.isValid() )
 			pdfData.setColor( it->color );
 
-		pdfData.drawText( x, y, createPdfString( it->word.isEmpty() ?
-			it->url : it->word ), f, st.FontSize, 1.0, it->font.strikethrough );
+		pdfData.drawText( x, y, createUtf8String( it->word.isEmpty() ?
+			it->url : it->word ), f, it->font.size * scale, 1.0, it->font.strikethrough );
 
 		pdfData.restoreColor();
 
@@ -4549,16 +4517,13 @@ PdfRenderer::drawTextLineInTable( double x, double & y, TextToDraw & text, doubl
 			{
 				++it;
 
-				const auto str = createPdfString( it->footnote );
+				const auto str = createUtf8String( it->footnote );
 
-				const auto old = st.FontSize;
-				st.FontSize = old * c_footnoteScale;
+				const auto w = pdfData.stringWidth( f, it->font.size * c_footnoteScale, scale, str );
 
-				const auto w = f->GetStringLength( str, st );
-
-				pdfData.drawText( x, y + lineHeight - f->GetLineSpacing( st ), str,
-					f, st.FontSize, 1.0, false );
-				st.FontSize = old;
+				pdfData.drawText( x, y + lineHeight -
+						pdfData.lineSpacing( f, it->font.size * c_footnoteScale, scale ),
+					str, f, it->font.size * c_footnoteScale * scale, 1.0, false );
 
 				x += w;
 
@@ -4574,17 +4539,18 @@ PdfRenderer::drawTextLineInTable( double x, double & y, TextToDraw & text, doubl
 			{
 				pdfData.setColor( it->background );
 
-				const auto sw = f->GetStringLength( PdfString( " " ), st );
+				const auto sw = pdfData.stringWidth( f, it->font.size, scale, " " );
 
-				pdfData.drawRectangle( x, y + f->GetDescent( st ),
-					sw, f->GetLineSpacing( st ), PdfPathDrawMode::Fill );
+				pdfData.drawRectangle( x, y + pdfData.fontDescent( f, it->font.size, scale ),
+					sw, pdfData.lineSpacing( f, it->font.size, scale ),
+					PoDoFo::PdfPathDrawMode::Fill );
 
 				x += sw;
 
 				pdfData.restoreColor();
 			}
 			else
-				x += font->GetStringLength( PdfString( " " ), st );
+				x += pdfData.stringWidth( font, it->font.size, scale, " " );
 
 			if( !( it + 1 )->url.isEmpty() && it->url == ( it + 1 )->url )
 				links[ it->url ].append( qMakePair( QRectF( tmpX, y, x - tmpX, lineHeight ),
@@ -4664,12 +4630,13 @@ PdfRenderer::processLinksInTable( PdfAuxData & pdfData,
 				{
 					auto & annot = pdfData.doc->GetPages().GetPageAt(
 						static_cast< unsigned int >( r.second ) )
-							.GetAnnotations().CreateAnnot< PdfAnnotationLink >(
+							.GetAnnotations().CreateAnnot< PoDoFo::PdfAnnotationLink >(
 						Rect( r.first.x(), r.first.y(), r.first.width(), r.first.height() ) );
 					annot.SetBorderStyle( 0.0, 0.0, 0.0 );
 
-					auto action = std::make_shared< PdfAction >( *pdfData.doc, PdfActionType::URI );
-					action->SetURI( PdfString( url.toLatin1().data() )  );
+					auto action = std::make_shared< PoDoFo::PdfAction >( *pdfData.doc,
+						PoDoFo::PdfActionType::URI );
+					action->SetURI( url.toLatin1().data() );
 
 					annot.SetAction( action );
 				}
