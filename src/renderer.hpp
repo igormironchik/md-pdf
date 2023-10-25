@@ -42,8 +42,40 @@
 #include <QTextStream>
 #endif // MD_PDF_TESTING
 
+struct Utf8String {
+	QByteArray data;
+
+	Utf8String( const QByteArray & a )
+		:	data( a )
+	{
+	}
+
+	Utf8String( const char * s )
+		:	data( s )
+	{
+	}
+
+	operator const char * () const { return data.data(); };
+	operator std::string_view () const { return data.data(); };
+}; // struct Utf8String
+
+#define MD_PDF_USE_PODOFO
+#ifdef MD_PDF_USE_PODOFO
+
 // podofo include.
 #include <podofo/podofo.h>
+
+using Font = PoDoFo::PdfFont;
+using Document = PoDoFo::PdfMemDocument;
+using Page = PoDoFo::PdfPage;
+using Painter = PoDoFo::PdfPainter;
+using Image = PoDoFo::PdfImage;
+using Destination = PoDoFo::PdfDestination;
+using Color = PoDoFo::PdfColor;
+using Rect = PoDoFo::Rect;
+using String = Utf8String;
+
+#endif
 
 // C++ include.
 #include <memory>
@@ -52,7 +84,6 @@
 // nd-pdf include.
 #include "syntax.hpp"
 
-using namespace PoDoFo;
 
 //! Footnote scale.
 static const double c_footnoteScale = 0.75;
@@ -187,11 +218,11 @@ class PdfRenderer;
 //! Auxiliary struct for rendering.
 struct PdfAuxData {
 	//! Document.
-	PdfMemDocument * doc = nullptr;
+	Document * doc = nullptr;
 	//! Painters.
-	std::vector< std::shared_ptr< PdfPainter > > painters;
+	std::vector< std::shared_ptr< Painter > > painters;
 	//! Page.
-	PdfPage * page = nullptr;
+	Page * page = nullptr;
 	//! Index of the current page.
 	int currentPageIdx = -1;
 	//! Coordinates and margins.
@@ -261,16 +292,16 @@ struct PdfAuxData {
 	void freeSpaceOn( int page );
 
 	//! Draw text
-	void drawText( double x, double y, const char * text, PdfFont * font, double size,
+	void drawText( double x, double y, const char * text, Font * font, double size,
 		double scale, bool strikeout );
 	//! Draw image.
-	void drawImage( double x, double y, PdfImage * img, double xScale, double yScale );
+	void drawImage( double x, double y, Image * img, double xScale, double yScale );
 	//! Draw line.
 	void drawLine( double x1, double y1, double x2, double y2 );
 	//! Save document.
 	void save( const QString & fileName );
 	//! Draw rectangle.
-	void drawRectangle( double x, double y, double width, double height, PdfPathDrawMode m );
+	void drawRectangle( double x, double y, double width, double height, PoDoFo::PdfPathDrawMode m );
 
 	//! Set color.
 	void setColor( const QColor & c );
@@ -278,6 +309,17 @@ struct PdfAuxData {
 	void restoreColor();
 	//! Repeat color (needed after new page creation).
 	void repeatColor();
+
+	//! \return Image width.
+	double imageWidth( const QByteArray & image );
+	//! \return String width.
+	double stringWidth( Font * font, double size, double scale, const String & s ) const;
+	//! \return Line spacing.
+	double lineSpacing( Font * font, double size, double scale ) const;
+	//! \return Font ascent.
+	double fontAscent( Font * font, double size, double scale ) const;
+	//! \return Font descent.
+	double fontDescent( Font * font, double size, double scale ) const;
 }; // struct PdfAuxData;
 
 //! Where was the item drawn?
@@ -286,13 +328,6 @@ struct WhereDrawn {
 	double y = 0.0;
 	double height = 0.0;
 }; // struct WhereDrawn
-
-struct Utf8String {
-	QByteArray data;
-
-	operator const char * () const { return data.data(); };
-	operator std::string_view () const { return data.data(); };
-}; // struct Utf8String
 
 
 //
@@ -317,7 +352,7 @@ public:
 	static bool isFontCreatable( const QString & font );
 
 	//! Convert QString to UTF-8.
-	static Utf8String createPdfString( const QString & text );
+	static Utf8String createUtf8String( const QString & text );
 	//! Convert UTF-8 to QString.
 	static QString createQString( const char * str );
 
@@ -348,8 +383,8 @@ protected:
 #endif
 
 	//! Create font.
-	PdfFont * createFont( const QString & name, bool bold, bool italic, double size,
-		PdfMemDocument * doc, double scale, const PdfAuxData & pdfData );
+	Font * createFont( const QString & name, bool bold, bool italic, double size,
+		Document * doc, double scale, const PdfAuxData & pdfData );
 
 private:
 	//! Create new page.
@@ -512,7 +547,7 @@ private:
 	QVector< QPair< QRectF, unsigned int > > drawText( PdfAuxData & pdfData,
 		const RenderOpts & renderOpts, MD::Text< MD::QStringTrait > * item,
 		std::shared_ptr< MD::Document< MD::QStringTrait > > doc, bool & newLine,
-		PdfFont * footnoteFont, double footnoteFontSize, double footnoteFontScale,
+		Font * footnoteFont, double footnoteFontSize, double footnoteFontScale,
 		MD::Item< MD::QStringTrait > * nextItem, int footnoteNum, double offset,
 		bool firstInParagraph, CustomWidth * cw, double scale, bool inFootnote );
 	//! Draw inlined code.
@@ -523,12 +558,12 @@ private:
 	//! Draw string.
 	QVector< QPair< QRectF, unsigned int > > drawString( PdfAuxData & pdfData,
 		const RenderOpts & renderOpts, const QString & str,
-		PdfFont * firstSpaceFont, double firstSpaceFontSize, double firstSpaceFontScale,
-		PdfFont * spaceFont, double spaceFontSize, double spaceFontScale,
-		PdfFont * font, double fontSize, double fontScale,
+		Font * firstSpaceFont, double firstSpaceFontSize, double firstSpaceFontScale,
+		Font * spaceFont, double spaceFontSize, double spaceFontScale,
+		Font * font, double fontSize, double fontScale,
 		double lineHeight,
 		std::shared_ptr< MD::Document< MD::QStringTrait > > doc, bool & newLine,
-		PdfFont * footnoteFont, double footnoteFontSize, double footnoteFontScale,
+		Font * footnoteFont, double footnoteFontSize, double footnoteFontScale,
 		MD::Item< MD::QStringTrait > * nextItem,
 		int footnoteNum, double offset,
 		bool firstInParagraph, CustomWidth * cw, const QColor & background,
@@ -538,7 +573,7 @@ private:
 	QVector< QPair< QRectF, unsigned int > > drawLink( PdfAuxData & pdfData,
 		const RenderOpts & renderOpts, MD::Link< MD::QStringTrait > * item,
 		std::shared_ptr< MD::Document< MD::QStringTrait > > doc, bool & newLine,
-		PdfFont * footnoteFont, double footnoteFontSize, double footnoteFontScale,
+		Font * footnoteFont, double footnoteFontSize, double footnoteFontScale,
 		MD::Item< MD::QStringTrait > * nextItem, int footnoteNum, double offset,
 		bool firstInParagraph, CustomWidth * cw, double scale, bool inFootnote );
 	//! Draw image.
@@ -552,16 +587,16 @@ private:
 		bool firstInParagraph, CustomWidth * cw, double scale );
 
 	//! Font in table.
-	struct Font {
+	struct FontAttribs {
 		QString family;
 		bool bold;
 		bool italic;
 		bool strikethrough;
 		int size;
-	}; // struct Font
+	}; // struct FontAttribs
 
-	friend bool operator != ( const PdfRenderer::Font & f1, const PdfRenderer::Font & f2 );
-	friend bool operator == ( const PdfRenderer::Font & f1, const PdfRenderer::Font & f2 );
+	friend bool operator != ( const PdfRenderer::FontAttribs & f1, const PdfRenderer::FontAttribs & f2 );
+	friend bool operator == ( const PdfRenderer::FontAttribs & f1, const PdfRenderer::FontAttribs & f2 );
 
 	//! Item in the table's cell.
 	struct CellItem {
@@ -573,7 +608,7 @@ private:
 		QColor color;
 		QColor background;
 		std::shared_ptr< MD::Footnote< MD::QStringTrait > > footnoteObj;
-		Font font;
+		FontAttribs font;
 
 		//! \return Width of the item.
 		double width( PdfAuxData & pdfData, PdfRenderer * render, double scale ) const;
@@ -635,7 +670,7 @@ private:
 	//! Draw text line in the cell.
 	void drawTextLineInTable( double x, double & y, TextToDraw & text, double lineHeight,
 		PdfAuxData & pdfData, QMap< QString, QVector< QPair< QRectF, unsigned int > > > & links,
-		PdfFont * font, int & currentPage, int & endPage, double & endY,
+		Font * font, int & currentPage, int & endPage, double & endY,
 		QVector< QPair< QString, std::shared_ptr< MD::Footnote< MD::QStringTrait > > > > & footnotes,
 		bool inFootnote, double scale );
 	//! Create new page in table.
@@ -664,7 +699,7 @@ private:
 	//! Termination flag.
 	bool m_terminate;
 	//! All destinations in the document.
-	QMap< QString, std::shared_ptr< PdfDestination > > m_dests;
+	QMap< QString, std::shared_ptr< Destination > > m_dests;
 	//! Links that not yet clickable.
 	QMultiMap< QString, QVector< QPair< QRectF, unsigned int > > > m_unresolvedLinks;
 	//! Footnotes links.
@@ -679,10 +714,6 @@ private:
 	bool m_isError;
 #endif
 }; // class Renderer
-
-
-bool operator != ( const PdfRenderer::Font & f1, const PdfRenderer::Font & f2 );
-bool operator == ( const PdfRenderer::Font & f1, const PdfRenderer::Font & f2 );
 
 
 //
