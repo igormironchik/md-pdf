@@ -23,8 +23,6 @@ macro(generate_syntax_definition_with_html syntax mergedSyntax)
     generate_syntax_definition(generate-html.pl ${mergedSyntax}-${syntax}.xml ${mergedSyntax}.xml ${CMAKE_CURRENT_SOURCE_DIR}/syntax/${syntax}.xml)
 endmacro()
 
-set( CMAKE_AUTORCC ON )
-
 # generate PHP definitions
 generate_syntax_definition_with_html(php html)
 generate_syntax_definition_with_html(php css)
@@ -69,8 +67,6 @@ add_custom_command(OUTPUT "${CMAKE_CURRENT_BINARY_DIR}/index.katesyntax"
     COMMAND katehighlightingindexer "${CMAKE_CURRENT_BINARY_DIR}/index.katesyntax" "${CMAKE_CURRENT_SOURCE_DIR}/schema/language.xsd" "${CMAKE_CURRENT_BINARY_DIR}/syntax-data.qrc"
     DEPENDS katehighlightingindexer ${defs} ${CMAKE_CURRENT_SOURCE_DIR}/schema/language.xsd ${CMAKE_CURRENT_BINARY_DIR}/syntax-data.qrc
 )
-
-set(QRC_SYNTAX ON)
 
 # do we want syntax files bundled in the library?
 if (QRC_SYNTAX)

@@ -20,6 +20,11 @@ ecm_setup_version(PROJECT
     SOVERSION 6
 )
 
+set(CMAKE_AUTORCC ON)
+set(QRC_SYNTAX ON)
+
+add_compile_definitions(QT_USE_QSTRINGBUILDER)
+
 add_subdirectory( indexer )
 add_subdirectory( data )
 add_subdirectory( lib )

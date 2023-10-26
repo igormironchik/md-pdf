@@ -141,7 +141,7 @@ static bool loadRule(const QString &defName, HighlightingContextData::Rule &rule
                 initRuleData(rule.data.detectChar, c, dynamic);
                 rule.type = Rule::Type::DetectChar;
             } else {
-                initRuleData(rule.data.anyChar, QString( c.toLower() ) + c.toUpper());
+                initRuleData(rule.data.anyChar, c.toLower() + c.toUpper());
                 rule.type = Rule::Type::AnyChar;
             }
         }
