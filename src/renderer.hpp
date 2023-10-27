@@ -574,8 +574,6 @@ private:
 		double firstItemHeight() const;
 		//! Calculate scales.
 		void calcScale( double lineWidth );
-		//! \return Total height.
-		double totalHeight() const;
 
 	private:
 		//! Is drawing?

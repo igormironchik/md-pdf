@@ -454,27 +454,6 @@ PdfRenderer::CustomWidth::calcScale( double lineWidth )
 	}
 }
 
-double
-PdfRenderer::CustomWidth::totalHeight() const
-{
-	double h = 0.0;
-	double max = 0.0;
-
-	for( int i = 0, last = m_width.size(); i < last; ++i )
-	{
-		if( m_width.at( i ).height > max )
-			max = m_width.at( i ).height;
-
-		if( m_width.at( i ).isNewLine )
-		{
-			h += max;
-			max = 0.0;
-		}
-	}
-
-	return h;
-}
-
 
 //
 // PdfRenderer::CellItem
