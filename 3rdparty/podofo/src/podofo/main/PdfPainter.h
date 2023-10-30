@@ -612,9 +612,9 @@ private:
     void i_Operator(double flatness) override;
     void gs_Operator(const std::string_view& dictName) override;
     void Do_Operator(const std::string_view& xobjname) override;
-    void cs_Operator(PdfColorSpace colorSpace) override;
+    void cs_Operator(PdfColorSpaceType colorSpace) override;
     void cs_Operator(const std::string_view& name) override;
-    void CS_Operator(PdfColorSpace colorSpace) override;
+    void CS_Operator(PdfColorSpaceType colorSpace) override;
     void CS_Operator(const std::string_view& name) override;
     void sc_Operator(const cspan<double>& components) override;
     void SC_Operator(const cspan<double>& components) override;
@@ -632,7 +632,7 @@ private:
     void k_Operator(double cyan, double magenta, double yellow, double black) override;
     void BX_Operator() override;
     void EX_Operator() override;
-    void Extension_Operator(const std::string_view& opName, const cspan<PdfObject>& operands) override;
+    void Extension_Operator(const std::string_view& opName, const cspan<PdfVariant>& operands) override;
 
 private:
     enum PainterStatus

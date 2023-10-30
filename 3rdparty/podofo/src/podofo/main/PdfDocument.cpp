@@ -66,7 +66,7 @@ PdfDocument::PdfDocument(const PdfDocument& doc) :
 
 PdfDocument::~PdfDocument()
 {
-    // Do nothing, all members will autoclear
+    // NOTE: Members will autoclear
 }
 
 void PdfDocument::Clear() 
@@ -179,17 +179,19 @@ void PdfDocument::append(const PdfDocument& doc, bool appendAll)
             m_Pages->InsertPageAt(m_Pages->GetCount(), *new PdfPage(obj));
         }
 
-        // append all outlines
-        PdfOutlineItem* root = this->GetOutlines();
-        PdfOutlines* appendRoot = const_cast<PdfDocument&>(doc).GetOutlines();
-        if (appendRoot && appendRoot->First())
+        // Append all outlines
+        const PdfOutlineItem* appendRoot = doc.GetOutlines();
+        if (appendRoot != nullptr && (appendRoot = appendRoot->First()) != nullptr)
         {
-            // only append outlines if appended document has outlines
-            while (root && root->Next())
+            // Get or create outlines
+            PdfOutlineItem* root = &this->GetOrCreateOutlines();
+
+            // Find actual item where to append
+            while (root->Next() != nullptr)
                 root = root->Next();
 
-            PdfReference ref(appendRoot->First()->GetObject().GetIndirectReference().ObjectNumber()
-                + difference, appendRoot->First()->GetObject().GetIndirectReference().GenerationNumber());
+            PdfReference ref(appendRoot->GetObject().GetIndirectReference().ObjectNumber()
+                + difference, appendRoot->GetObject().GetIndirectReference().GenerationNumber());
             root->InsertChild(new PdfOutlines(m_Objects.MustGetObject(ref)));
         }
     }
@@ -216,7 +218,7 @@ void PdfDocument::InsertDocumentPageAt(unsigned atIndex, const PdfDocument& doc,
     }
 
     // append all objects first and fix their references
-    for (auto& obj : GetObjects())
+    for (auto& obj : doc.GetObjects())
     {
         PdfReference ref(static_cast<uint32_t>(obj->GetIndirectReference().ObjectNumber() + difference), obj->GetIndirectReference().GenerationNumber());
         auto newObj = new PdfObject(PdfDictionary());
