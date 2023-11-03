@@ -155,26 +155,26 @@ PdfAuxData::drawText( double x, double y, const char * text,
 	firstOnPage = false;
 
 #ifndef MD_PDF_TESTING
-	painters[ currentPainterIdx ]->TextObject.Begin();
-	painters[ currentPainterIdx ]->TextObject.MoveTo( x, y );
-	painters[ currentPainterIdx ]->TextState.SetFont( *font, size );
-	painters[ currentPainterIdx ]->TextState.SetFontScale( scale );
-	const auto st = painters[ currentPainterIdx ]->TextState;
-	painters[ currentPainterIdx ]->TextObject.AddText( text );
-	painters[ currentPainterIdx ]->TextObject.End();
+	(*painters)[ currentPainterIdx ]->TextObject.Begin();
+	(*painters)[ currentPainterIdx ]->TextObject.MoveTo( x, y );
+	(*painters)[ currentPainterIdx ]->TextState.SetFont( *font, size );
+	(*painters)[ currentPainterIdx ]->TextState.SetFontScale( scale );
+	const auto st = (*painters)[ currentPainterIdx ]->TextState;
+	(*painters)[ currentPainterIdx ]->TextObject.AddText( text );
+	(*painters)[ currentPainterIdx ]->TextObject.End();
 
 	if( strikeout )
 	{
-		painters[ currentPainterIdx ]->Save();
+		(*painters)[ currentPainterIdx ]->Save();
 
-		painters[ currentPainterIdx ]->GraphicsState.SetLineWidth( font->GetStrikeThroughThickness( st ) );
+		(*painters)[ currentPainterIdx ]->GraphicsState.SetLineWidth( font->GetStrikeThroughThickness( st ) );
 
-		painters[ currentPainterIdx ]->DrawLine( x,
+		(*painters)[ currentPainterIdx ]->DrawLine( x,
 			y + font->GetStrikeThroughPosition( st ),
 			x + font->GetStringLength( text, st ),
 			y + font->GetStrikeThroughPosition( st ) );
 
-		painters[ currentPainterIdx ]->Restore();
+		(*painters)[ currentPainterIdx ]->Restore();
 	}
 #else
 	if( printDrawings )
@@ -189,26 +189,26 @@ PdfAuxData::drawText( double x, double y, const char * text,
 	}
 	else
 	{
-		painters[ currentPainterIdx ]->TextObject.Begin();
-		painters[ currentPainterIdx ]->TextObject.MoveTo( x, y );
-		painters[ currentPainterIdx ]->TextState.SetFont( *font, size );
-		painters[ currentPainterIdx ]->TextState.SetFontScale( scale );
-		const auto st = painters[ currentPainterIdx ]->TextState;
-		painters[ currentPainterIdx ]->TextObject.AddText( text );
-		painters[ currentPainterIdx ]->TextObject.End();
+		(*painters)[ currentPainterIdx ]->TextObject.Begin();
+		(*painters)[ currentPainterIdx ]->TextObject.MoveTo( x, y );
+		(*painters)[ currentPainterIdx ]->TextState.SetFont( *font, size );
+		(*painters)[ currentPainterIdx ]->TextState.SetFontScale( scale );
+		const auto st = (*painters)[ currentPainterIdx ]->TextState;
+		(*painters)[ currentPainterIdx ]->TextObject.AddText( text );
+		(*painters)[ currentPainterIdx ]->TextObject.End();
 
 		if( strikeout )
 		{
-			painters[ currentPainterIdx ]->Save();
+			(*painters)[ currentPainterIdx ]->Save();
 
-			painters[ currentPainterIdx ]->GraphicsState.SetLineWidth( font->GetStrikeThroughThickness( st ) );
+			(*painters)[ currentPainterIdx ]->GraphicsState.SetLineWidth( font->GetStrikeThroughThickness( st ) );
 
-			painters[ currentPainterIdx ]->DrawLine( x,
+			(*painters)[ currentPainterIdx ]->DrawLine( x,
 				y + font->GetStrikeThroughPosition( st ),
 				x + font->GetStringLength( text, st ),
 				y + font->GetStrikeThroughPosition( st ) );
 
-			painters[ currentPainterIdx ]->Restore();
+			(*painters)[ currentPainterIdx ]->Restore();
 		}
 
 		if( QTest::currentTestFailed() )
@@ -229,7 +229,7 @@ PdfAuxData::drawImage( double x, double y, Image * img, double xScale, double yS
 	firstOnPage = false;
 
 #ifndef MD_PDF_TESTING
-	painters[ currentPainterIdx ]->DrawImage( *img, x, y, xScale, yScale );
+	(*painters)[ currentPainterIdx ]->DrawImage( *img, x, y, xScale, yScale );
 #else
 	if( printDrawings )
 		(*drawingsStream) << QStringLiteral(
@@ -238,7 +238,7 @@ PdfAuxData::drawImage( double x, double y, Image * img, double xScale, double yS
 					QString::number( xScale, 'f', 16 ), QString::number( yScale, 'f', 16 ) );
 	else
 	{
-		painters[ currentPainterIdx ]->DrawImage( *img, x, y, xScale, yScale );
+		(*painters)[ currentPainterIdx ]->DrawImage( *img, x, y, xScale, yScale );
 
 		if( QTest::currentTestFailed() )
 			self->terminate();
@@ -256,7 +256,7 @@ void
 PdfAuxData::drawLine( double x1, double y1, double x2, double y2 )
 {
 #ifndef MD_PDF_TESTING
-	painters[ currentPainterIdx ]->DrawLine( x1, y1, x2, y2 );
+	(*painters)[ currentPainterIdx ]->DrawLine( x1, y1, x2, y2 );
 #else
 	if( printDrawings )
 		(*drawingsStream) << QStringLiteral(
@@ -265,7 +265,7 @@ PdfAuxData::drawLine( double x1, double y1, double x2, double y2 )
 					QString::number( x2, 'f', 16 ), QString::number( y2, 'f', 16 ) );
 	else
 	{
-		painters[ currentPainterIdx ]->DrawLine( x1, y1, x2, y2 );
+		(*painters)[ currentPainterIdx ]->DrawLine( x1, y1, x2, y2 );
 
 		if( QTest::currentTestFailed() )
 			self->terminate();
@@ -294,7 +294,7 @@ void
 PdfAuxData::drawRectangle( double x, double y, double width, double height, PoDoFo::PdfPathDrawMode m )
 {
 #ifndef MD_PDF_TESTING
-	painters[ currentPainterIdx ]->DrawRectangle( x, y, width, height, m );
+	(*painters)[ currentPainterIdx ]->DrawRectangle( x, y, width, height, m );
 #else
 	if( printDrawings )
 		(*drawingsStream) << QStringLiteral(
@@ -303,7 +303,7 @@ PdfAuxData::drawRectangle( double x, double y, double width, double height, PoDo
 					QString::number( width, 'f', 16 ), QString::number( height, 'f', 16 ) );
 	else
 	{
-		painters[ currentPainterIdx ]->DrawRectangle( x, y, width, height, m );
+		(*painters)[ currentPainterIdx ]->DrawRectangle( x, y, width, height, m );
 
 		if( QTest::currentTestFailed() )
 			self->terminate();
@@ -322,8 +322,8 @@ PdfAuxData::setColor( const QColor & c )
 {
 	colorsStack.push( c );
 
-	painters[ currentPainterIdx ]->GraphicsState.SetFillColor( Color( c.redF(), c.greenF(), c.blueF() ) );
-	painters[ currentPainterIdx ]->GraphicsState.SetStrokeColor( Color( c.redF(), c.greenF(), c.blueF() ) );
+	(*painters)[ currentPainterIdx ]->GraphicsState.SetFillColor( Color( c.redF(), c.greenF(), c.blueF() ) );
+	(*painters)[ currentPainterIdx ]->GraphicsState.SetStrokeColor( Color( c.redF(), c.greenF(), c.blueF() ) );
 }
 
 void
@@ -340,8 +340,8 @@ PdfAuxData::repeatColor()
 {
 	const auto & c = colorsStack.top();
 
-	painters[ currentPainterIdx ]->GraphicsState.SetFillColor( Color( c.redF(), c.greenF(), c.blueF() ) );
-	painters[ currentPainterIdx ]->GraphicsState.SetStrokeColor( Color( c.redF(), c.greenF(), c.blueF() ) );
+	(*painters)[ currentPainterIdx ]->GraphicsState.SetFillColor( Color( c.redF(), c.greenF(), c.blueF() ) );
+	(*painters)[ currentPainterIdx ]->GraphicsState.SetStrokeColor( Color( c.redF(), c.greenF(), c.blueF() ) );
 }
 
 double
@@ -627,8 +627,10 @@ PdfRenderer::renderImpl()
 		emit status( tr( "Rendering PDF..." ) );
 
 		Document document;
+		std::vector< std::shared_ptr< Painter > > painters;
 
 		pdfData.doc = &document;
+		pdfData.painters = &painters;
 
 		pdfData.coords.margins.left = m_opts.m_left;
 		pdfData.coords.margins.right = m_opts.m_right;
@@ -667,173 +669,137 @@ PdfRenderer::renderImpl()
 			pdfData.testData = m_opts.testData;
 #endif // MD_PDF_TESTING
 
-		try {
-			int itemIdx = 0;
+		int itemIdx = 0;
 
-			pdfData.extraInFootnote = pdfData.lineSpacing(
-				createFont( m_opts.m_textFont, false, false, m_opts.m_textFontSize,
-					pdfData.doc, 1.0, pdfData ), m_opts.m_textFontSize, 1.0 ) / 3.0;
+		pdfData.extraInFootnote = pdfData.lineSpacing(
+			createFont( m_opts.m_textFont, false, false, m_opts.m_textFontSize,
+				pdfData.doc, 1.0, pdfData ), m_opts.m_textFontSize, 1.0 ) / 3.0;
 
-			createPage( pdfData );
+		createPage( pdfData );
 
-			for( auto it = m_doc->items().cbegin(), last = m_doc->items().cend(); it != last; ++it )
-			{
-				switch( (*it)->type() )
-				{
-					case MD::ItemType::Anchor :
-						pdfData.anchors.push_back(
-							static_cast< MD::Anchor< MD::QStringTrait >* > ( it->get() )->label() );
-
-					default:
-						break;
-				}
-			}
-
-			for( auto it = m_doc->items().cbegin(), last = m_doc->items().cend(); it != last; ++it )
-			{
-				++itemIdx;
-
-				{
-					QMutexLocker lock( &m_mutex );
-
-					if( m_terminate )
-						break;
-				}
-
-				switch( (*it)->type() )
-				{
-					case MD::ItemType::Heading :
-						drawHeading( pdfData, m_opts,
-							static_cast< MD::Heading< MD::QStringTrait >* > ( it->get() ),
-							m_doc, 0.0,
-							// If there is another item after heading we need to know its min
-							// height to glue heading with it.
-							( it + 1 != last ?
-								minNecessaryHeight( pdfData, m_opts, *( it + 1 ), m_doc, 0.0,
-									1.0, false ) :
-								0.0 ), CalcHeightOpt::Unknown, 1.0 );
-						break;
-
-					case MD::ItemType::Paragraph :
-						drawParagraph( pdfData, m_opts,
-							static_cast< MD::Paragraph< MD::QStringTrait >* > ( it->get() ),
-							m_doc, 0.0, true, CalcHeightOpt::Unknown, 1.0, false );
-						break;
-
-					case MD::ItemType::Code :
-						drawCode( pdfData, m_opts,
-							static_cast< MD::Code< MD::QStringTrait >* > ( it->get() ),
-							m_doc, 0.0, CalcHeightOpt::Unknown, 1.0 );
-						break;
-
-					case MD::ItemType::Blockquote :
-						drawBlockquote( pdfData, m_opts,
-							static_cast< MD::Blockquote< MD::QStringTrait >* > ( it->get() ),
-							m_doc, 0.0, CalcHeightOpt::Unknown, 1.0, false );
-						break;
-
-					case MD::ItemType::List :
-					{
-						auto * list = static_cast< MD::List< MD::QStringTrait >* > ( it->get() );
-						const auto bulletWidth = maxListNumberWidth( list );
-
-						drawList( pdfData, m_opts, list, m_doc, bulletWidth );
-					}
-						break;
-
-					case MD::ItemType::Table :
-						drawTable( pdfData, m_opts,
-							static_cast< MD::Table< MD::QStringTrait >* > ( it->get() ),
-							m_doc, 0.0, CalcHeightOpt::Unknown, 1.0, false );
-						break;
-
-					case MD::ItemType::PageBreak :
-					{
-						if( itemIdx < itemsCount )
-							createPage( pdfData );
-					}
-						break;
-
-					case MD::ItemType::Anchor :
-					{
-						auto * a = static_cast< MD::Anchor< MD::QStringTrait >* > ( it->get() );
-						m_dests.insert( a->label(),
-							std::make_shared< Destination > ( *pdfData.page,
-								pdfData.coords.margins.left,
-								pdfData.coords.pageHeight - pdfData.coords.margins.top, 0.0 ) );
-						pdfData.currentFile = a->label();
-					}
-						break;
-
-					default :
-						break;
-				}
-
-				emit progress( static_cast< int > ( static_cast< double > (itemIdx) /
-					static_cast< double > (itemsCount) * 100.0 ) );
-			}
-
-			if( !m_footnotes.isEmpty() )
-			{
-				pdfData.drawFootnotes = true;
-				pdfData.coords.x = pdfData.coords.margins.left;
-				pdfData.coords.y = pdfData.topFootnoteY( pdfData.reserved.firstKey() ) -
-					pdfData.extraInFootnote;
-
-				pdfData.currentPainterIdx = pdfData.reserved.firstKey();
-				pdfData.footnotePageIdx = pdfData.reserved.firstKey();
-
-				drawHorizontalLine( pdfData, m_opts );
-
-				for( const auto & f : std::as_const( m_footnotes ) )
-					drawFootnote( pdfData, m_opts, m_doc, f.first, f.second.get(),
-						CalcHeightOpt::Unknown );
-			}
-
-			resolveLinks( pdfData );
-
-			finishPages( pdfData );
-
-			emit status( tr( "Saving PDF..." ) );
-
-			pdfData.save( m_fileName );
-
-			emit done( m_terminate );
-		}
-		catch( const PoDoFo::PdfError & e )
+		for( auto it = m_doc->items().cbegin(), last = m_doc->items().cend(); it != last; ++it )
 		{
-			const auto & cs = e.GetCallStack();
-			QString msg;
-
-			for( const auto & i : cs )
+			switch( (*it)->type() )
 			{
-				auto filepath = i.GetFilePath();
+				case MD::ItemType::Anchor :
+					pdfData.anchors.push_back(
+						static_cast< MD::Anchor< MD::QStringTrait >* > ( it->get() )->label() );
 
-				if( !filepath.empty() )
-					msg.append( QStringLiteral( " Error Source : " ) );
-					msg.append( QString::fromUtf8( filepath ) );
-					msg.append( QStringLiteral( ": " ) );
-					msg.append( QString::number( i.GetLine() ) );
-					msg.append( QStringLiteral( "\n" ) );
+				default:
+					break;
+			}
+		}
 
-				if( !i.GetInformation().empty() )
-					msg.append( QStringLiteral( "Information: " ) );
-					msg.append( QString::fromUtf8( i.GetInformation() ) );
-					msg.append( QStringLiteral( "\n" ) );
+		for( auto it = m_doc->items().cbegin(), last = m_doc->items().cend(); it != last; ++it )
+		{
+			++itemIdx;
+
+			{
+				QMutexLocker lock( &m_mutex );
+
+				if( m_terminate )
+					break;
 			}
 
-			handleException( pdfData,
-				QString::fromLatin1( "Error during drawing PDF:\n%1" ).arg( msg ) );
+			switch( (*it)->type() )
+			{
+				case MD::ItemType::Heading :
+					drawHeading( pdfData, m_opts,
+						static_cast< MD::Heading< MD::QStringTrait >* > ( it->get() ),
+						m_doc, 0.0,
+						// If there is another item after heading we need to know its min
+						// height to glue heading with it.
+						( it + 1 != last ?
+							minNecessaryHeight( pdfData, m_opts, *( it + 1 ), m_doc, 0.0,
+								1.0, false ) :
+							0.0 ), CalcHeightOpt::Unknown, 1.0 );
+					break;
+
+				case MD::ItemType::Paragraph :
+					drawParagraph( pdfData, m_opts,
+						static_cast< MD::Paragraph< MD::QStringTrait >* > ( it->get() ),
+						m_doc, 0.0, true, CalcHeightOpt::Unknown, 1.0, false );
+					break;
+
+				case MD::ItemType::Code :
+					drawCode( pdfData, m_opts,
+						static_cast< MD::Code< MD::QStringTrait >* > ( it->get() ),
+						m_doc, 0.0, CalcHeightOpt::Unknown, 1.0 );
+					break;
+
+				case MD::ItemType::Blockquote :
+					drawBlockquote( pdfData, m_opts,
+						static_cast< MD::Blockquote< MD::QStringTrait >* > ( it->get() ),
+						m_doc, 0.0, CalcHeightOpt::Unknown, 1.0, false );
+					break;
+
+				case MD::ItemType::List :
+				{
+					auto * list = static_cast< MD::List< MD::QStringTrait >* > ( it->get() );
+					const auto bulletWidth = maxListNumberWidth( list );
+
+					drawList( pdfData, m_opts, list, m_doc, bulletWidth );
+				}
+					break;
+
+				case MD::ItemType::Table :
+					drawTable( pdfData, m_opts,
+						static_cast< MD::Table< MD::QStringTrait >* > ( it->get() ),
+						m_doc, 0.0, CalcHeightOpt::Unknown, 1.0, false );
+					break;
+
+				case MD::ItemType::PageBreak :
+				{
+					if( itemIdx < itemsCount )
+						createPage( pdfData );
+				}
+					break;
+
+				case MD::ItemType::Anchor :
+				{
+					auto * a = static_cast< MD::Anchor< MD::QStringTrait >* > ( it->get() );
+					m_dests.insert( a->label(),
+						std::make_shared< Destination > ( *pdfData.page,
+							pdfData.coords.margins.left,
+							pdfData.coords.pageHeight - pdfData.coords.margins.top, 0.0 ) );
+					pdfData.currentFile = a->label();
+				}
+					break;
+
+				default :
+					break;
+			}
+
+			emit progress( static_cast< int > ( static_cast< double > (itemIdx) /
+				static_cast< double > (itemsCount) * 100.0 ) );
 		}
-		catch( const PdfRendererError & e )
+
+		if( !m_footnotes.isEmpty() )
 		{
-			handleException( pdfData, e.what() );
+			pdfData.drawFootnotes = true;
+			pdfData.coords.x = pdfData.coords.margins.left;
+			pdfData.coords.y = pdfData.topFootnoteY( pdfData.reserved.firstKey() ) -
+				pdfData.extraInFootnote;
+
+			pdfData.currentPainterIdx = pdfData.reserved.firstKey();
+			pdfData.footnotePageIdx = pdfData.reserved.firstKey();
+
+			drawHorizontalLine( pdfData, m_opts );
+
+			for( const auto & f : std::as_const( m_footnotes ) )
+				drawFootnote( pdfData, m_opts, m_doc, f.first, f.second.get(),
+					CalcHeightOpt::Unknown );
 		}
-		catch( const std::exception & e )
-		{
-			handleException( pdfData, QString::fromLatin1( "Error during drawing PDF: %1" )
-				.arg( e.what() ) );
-		}
+
+		resolveLinks( pdfData );
+
+		finishPages( pdfData );
+
+		emit status( tr( "Saving PDF..." ) );
+
+		pdfData.save( m_fileName );
+
+		emit done( m_terminate );
 
 #ifdef MD_PDF_TESTING
 		if( m_opts.printDrawings )
@@ -843,21 +809,43 @@ PdfRenderer::renderImpl()
 			m_isError = true;
 #endif // MD_PDF_TESTING
 	}
+	catch( const PoDoFo::PdfError & e )
+	{
+		const auto & cs = e.GetCallStack();
+		QString msg;
+
+		for( const auto & i : cs )
+		{
+			auto filepath = i.GetFilePath();
+
+			if( !filepath.empty() )
+				msg.append( QStringLiteral( " Error Source : " ) );
+				msg.append( QString::fromUtf8( filepath ) );
+				msg.append( QStringLiteral( ": " ) );
+				msg.append( QString::number( i.GetLine() ) );
+				msg.append( QStringLiteral( "\n" ) );
+
+			if( !i.GetInformation().empty() )
+				msg.append( QStringLiteral( "Information: " ) );
+				msg.append( QString::fromUtf8( i.GetInformation() ) );
+				msg.append( QStringLiteral( "\n" ) );
+		}
+
+		handleException( pdfData,
+			QString::fromLatin1( "Error during drawing PDF:\n%1" ).arg( msg ) );
+	}
+	catch( const PdfRendererError & e )
+	{
+		handleException( pdfData, e.what() );
+	}
+	catch( const std::exception & e )
+	{
+		handleException( pdfData, QString::fromLatin1( "Error during drawing PDF: %1" )
+			.arg( e.what() ) );
+	}
 	catch( ... )
 	{
-#ifdef MD_PDF_TESTING
-		m_isError = true;
-#endif
-		const auto fullMsg = QStringLiteral( "%1\n\nError occured in the \"%2\" file, "
-			"between start position %3 on line %4 and end position %5 on line %6." )
-				.arg( QStringLiteral( "Error during drawing PDF." ) )
-				.arg( pdfData.currentFile )
-				.arg( pdfData.startPos + 1 )
-				.arg( pdfData.startLine + 1 )
-				.arg( pdfData.endPos + 1 )
-				.arg( pdfData.endLine + 1 );
-
-		emit error( fullMsg );
+		handleException( pdfData, QStringLiteral( "Error during drawing PDF." ) );
 	}
 
 	try {
@@ -878,14 +866,6 @@ PdfRenderer::renderImpl()
 void
 PdfRenderer::handleException( PdfAuxData & pdfData, const QString & msg )
 {
-	try {
-		finishPages( pdfData );
-		pdfData.save( m_fileName );
-	}
-	catch( ... )
-	{
-	}
-
 #ifdef MD_PDF_TESTING
 	m_isError = true;
 #endif
@@ -905,7 +885,7 @@ PdfRenderer::handleException( PdfAuxData & pdfData, const QString & msg )
 void
 PdfRenderer::finishPages( PdfAuxData & pdfData )
 {
-	for( const auto & p: pdfData.painters )
+	for( const auto & p: *pdfData.painters )
 		p->FinishDrawing();
 }
 
@@ -1043,8 +1023,8 @@ PdfRenderer::createPage( PdfAuxData & pdfData )
 		auto painter = std::make_shared< Painter > ();
 		painter->SetCanvas( *pdfData.page );
 
-		pdfData.painters.push_back( painter );
-		pdfData.currentPainterIdx = pdfData.painters.size() - 1;
+		(*pdfData.painters).push_back( painter );
+		pdfData.currentPainterIdx = pdfData.painters->size() - 1;
 
 		pdfData.coords = { { pdfData.coords.margins.left, pdfData.coords.margins.right,
 				pdfData.coords.margins.top, pdfData.coords.margins.bottom },
@@ -3609,7 +3589,7 @@ PdfRenderer::drawListItem( PdfAuxData & pdfData, const RenderOpts & renderOpts,
 
 				pdfData.setColor( Qt::black );
 				const auto r = unorderedMarkWidth / 2.0;
-				pdfData.painters[ pdfData.currentPainterIdx ]->DrawCircle(
+				(*pdfData.painters)[ pdfData.currentPainterIdx ]->DrawCircle(
 					pdfData.coords.margins.left + offset + r - ( orderedListNumberWidth + spaceWidth ),
 					firstLine.y + qAbs( firstLine.height - unorderedMarkWidth ) / 2.0, r,
 					PoDoFo::PdfPathDrawMode::Fill );

@@ -220,7 +220,7 @@ struct PdfAuxData {
 	//! Document.
 	Document * doc = nullptr;
 	//! Painters.
-	std::vector< std::shared_ptr< Painter > > painters;
+	std::vector< std::shared_ptr< Painter > > * painters = nullptr;
 	//! Page.
 	Page * page = nullptr;
 	//! Index of the current page.
