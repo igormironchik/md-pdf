@@ -2169,7 +2169,10 @@ PdfRenderer::drawMathExpr( PdfAuxData & pdfData, const RenderOpts & renderOpts,
 		draw = false;
 
 	if( cw && cw->isDrawing() && !item->isInline() )
+	{
 		cw->moveToNextLine();
+		moveToNewLine( pdfData, offset, 0.0, 1.0, 0.0 );
+	}
 
 	double h = ( cw && cw->isDrawing() ? cw->height() : 0.0 );
 
