@@ -2236,7 +2236,7 @@ PdfRenderer::drawMathExpr( PdfAuxData & pdfData, const RenderOpts & renderOpts,
 				cw->moveToNextLine();
 
 			if( hasNext )
-				moveToNewLine( pdfData, offset, lineHeight, 1.0, 0.0 );
+				moveToNewLine( pdfData, offset, lineHeight, 1.0, lineHeight );
 
 			return { r, idx };
 		}
