@@ -2168,25 +2168,15 @@ PdfRenderer::drawMathExpr( PdfAuxData & pdfData, const RenderOpts & renderOpts,
 	if( cw && !cw->isDrawing() )
 		draw = false;
 
+	if( cw && cw->isDrawing() && !item->isInline() )
+		cw->moveToNextLine();
+
 	double h = ( cw && cw->isDrawing() ? cw->height() : 0.0 );
 
 	if( draw )
 	{
 		if( !item->isInline() )
 		{
-			newLine = true;
-
-			if( !firstInParagraph )
-			{
-				moveToNewLine( pdfData, offset, 0.0, 1.0, 0.0 );
-
-				if( cw )
-				{
-					cw->moveToNextLine();
-					h = cw->height();
-				}
-			}
-
 			double x = 0.0;
 			double imgScale = 1.0;
 			const double availableWidth = pdfData.coords.pageWidth - pdfData.coords.margins.left -
@@ -2229,21 +2219,13 @@ PdfRenderer::drawMathExpr( PdfAuxData & pdfData, const RenderOpts & renderOpts,
 					( h - iHeight * imgScale ) / 2.0,
 				pdfImg.get(), imgScale / dpiScale, imgScale / dpiScale );
 
-			pdfData.coords.y -= iHeight * imgScale;
-
 			const QRectF r = { pdfData.coords.x + x,
 				pdfData.coords.y - iHeight * imgScale -
 				( h - iHeight * imgScale ) / 2.0,
 				iWidth * imgScale, iHeight * imgScale };
 			const auto idx = pdfData.currentPageIndex();
 
-			if( hasNext )
-			{
-				moveToNewLine( pdfData, offset, lineHeight, 1.0, lineHeight );
-
-				if( cw )
-					cw->moveToNextLine();
-			}
+			pdfData.coords.y -= h;
 
 			return { r, idx };
 		}
@@ -2325,12 +2307,10 @@ PdfRenderer::drawMathExpr( PdfAuxData & pdfData, const RenderOpts & renderOpts,
 		{
 			double height = 0.0;
 
-			newLine = true;
-
-			const auto lineHeight = pdfData.lineSpacing( font, renderOpts.m_textFontSize, scale );
-
 			if( !firstInParagraph )
 				height += lineHeight;
+
+			newLine = true;
 
 			double imgScale = 1.0;
 			const double availableWidth = pdfData.coords.pageWidth - pdfData.coords.margins.left -
@@ -2350,11 +2330,8 @@ PdfRenderer::drawMathExpr( PdfAuxData & pdfData, const RenderOpts & renderOpts,
 
 			pdfData.coords.x = pdfData.coords.margins.left + offset;
 
-			cw->append( { 0.0, 0.0, descent, false, true, false, false, "" } );
+			cw->append( { 0.0, 0.0, descent, false, true, false, true, "" } );
 			cw->append( { 0.0, height, descent, false, true, false, true, "" } );
-
-			if( hasNext )
-				cw->append( { 0.0, 0.0, descent, false, true, false, false, "" } );
 		}
 		else
 		{
