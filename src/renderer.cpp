@@ -2180,6 +2180,8 @@ PdfRenderer::drawMathExpr( PdfAuxData & pdfData, const RenderOpts & renderOpts,
 	{
 		if( !item->isInline() )
 		{
+			newLine = true;
+
 			double x = 0.0;
 			double imgScale = 1.0;
 			const double availableWidth = pdfData.coords.pageWidth - pdfData.coords.margins.left -
@@ -2229,6 +2231,12 @@ PdfRenderer::drawMathExpr( PdfAuxData & pdfData, const RenderOpts & renderOpts,
 			const auto idx = pdfData.currentPageIndex();
 
 			pdfData.coords.y -= h;
+
+			if( cw )
+				cw->moveToNextLine();
+
+			if( hasNext )
+				moveToNewLine( pdfData, offset, lineHeight, 1.0, 0.0 );
 
 			return { r, idx };
 		}
@@ -2333,7 +2341,7 @@ PdfRenderer::drawMathExpr( PdfAuxData & pdfData, const RenderOpts & renderOpts,
 
 			pdfData.coords.x = pdfData.coords.margins.left + offset;
 
-			cw->append( { 0.0, 0.0, descent, false, true, false, true, "" } );
+			cw->append( { 0.0, 0.0, descent, false, true, false, false, "" } );
 			cw->append( { 0.0, height, descent, false, true, false, true, "" } );
 		}
 		else
