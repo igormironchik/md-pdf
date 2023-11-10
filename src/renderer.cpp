@@ -1443,6 +1443,8 @@ PdfRenderer::drawString( PdfAuxData & pdfData, const RenderOpts & renderOpts, co
 
 		if( xv < wv || qAbs( xv - wv ) < 0.01 )
 		{
+			newLine = false;
+
 			if( draw )
 			{
 				pdfData.drawText( pdfData.coords.x, pdfData.coords.y + d, " ",
@@ -1520,6 +1522,8 @@ PdfRenderer::drawString( PdfAuxData & pdfData, const RenderOpts & renderOpts, co
 						countCharsForAvailableSpace( *( it + 1 ), availableWidth,
 							font, pdfData, fontSize, fontScale, tmp ) > 4 ) )
 				{
+					newLine = false;
+
 					if( draw )
 					{
 						ret.append( qMakePair( QRectF( pdfData.coords.x,
@@ -1626,6 +1630,8 @@ PdfRenderer::drawString( PdfAuxData & pdfData, const RenderOpts & renderOpts, co
 					}
 					else if( cw )
 						cw->append( { w, lineHeight, 0.0, false, false, true, false, tmp } );
+
+					newLine = false;
 
 					availableWidth = fullWidth;
 
