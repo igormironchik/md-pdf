@@ -5,7 +5,7 @@ class DependenciesRecipe(ConanFile):
     generators = "CMakeDeps"
 
     def requirements(self):
-        self.requires("freetype/2.13.0")
+        self.requires("freetype/2.13.2")
         self.requires("libjpeg/9e")
         self.requires("libpng/1.6.40")
         self.requires("zlib/1.2.13")
