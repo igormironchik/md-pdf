@@ -393,9 +393,12 @@ MainWindow::about()
 	QMessageBox::about( this, tr( "About MD-PDF Converter" ),
 		tr( "MD-PDF Converter.\n\n"
 			"Version %1\n\n"
+			"md4qt version %2\n\n"
 			"Author - Igor Mironchik (igor.mironchik at gmail dot com).\n\n"
 			"Copyright (c) 2019-2022 Igor Mironchik.\n\n"
-			"Licensed under GNU GPL 3.0." ).arg( c_version ) );
+			"Licensed under GNU GPL 3.0." )
+				.arg( c_version )
+				.arg( c_md4qtVersion ) );
 }
 
 void
