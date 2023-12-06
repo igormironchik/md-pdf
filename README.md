@@ -90,7 +90,7 @@ On Linux you can use what you want, that is why this is my favorite OS.
  * I don't support Chinese, as they don't use spaces. I don't know theirs rules, to adapt
  algorithms.
    
- * I don't support right-to-left languages. I don't know theirs rules too.
+ * I don't support right-to-left languages. I don't know theirs rules too[^1].
  
- If you are one from these groups of people - you are welcome to make PRs to adapt
+[^1]: If you are one from these groups of people - you are welcome to make PRs to adapt
  this application to your language.
