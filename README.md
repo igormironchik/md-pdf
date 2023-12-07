@@ -87,10 +87,8 @@ On Linux you can use what you want, that is why this is my favorite OS.
  library `JKQtPlotter` to render LaTeX Math, and not everything is
  implemented there. But most common math things are done.
 
- * I don't support Chinese, as they don't use spaces. I don't know theirs rules, to adapt
- algorithms.
-   
- * I don't support right-to-left languages. I don't know theirs rules too[^1].
+ * I don't support right-to-left languages and languages that don't separate words
+with spaces. I don't know theirs rules to adapt algorithms[^1].
  
 [^1]: If you are one from these groups of people - you are welcome to make PRs to adapt
  this application to your language.
