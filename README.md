@@ -12,7 +12,8 @@ such ready tool, but my search was unsuccessful.
 
 # Installers
 
-You can get `x64` installers for `Linux` and `Windows` [here](https://github.com/igormironchik/markdown).
+You can make `x64` installers for `Linux` and `Windows` by cloning [this](https://github.com/igormironchik/markdown) repository and running `deploy` workflow.
+
 
 # Testing
 
