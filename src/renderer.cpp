@@ -1809,8 +1809,6 @@ PdfRenderer::drawParagraph( PdfAuxData & pdfData, const RenderOpts & renderOpts,
 	bool newLine = false;
 	CustomWidth cw;
 
-	auto footnoteNum = m_footnoteNum;
-
 	bool lineBreak = false;
 	bool firstInParagraph = true;
 
@@ -1824,6 +1822,23 @@ PdfRenderer::drawParagraph( PdfAuxData & pdfData, const RenderOpts & renderOpts,
 				return {};
 		}
 
+		int nextFootnoteNum = m_footnoteNum;
+
+		if( it + 1 != last && ( it + 1 )->get()->type() == MD::ItemType::FootnoteRef )
+		{
+			auto * ref = static_cast< MD::FootnoteRef< MD::QStringTrait >* > ( ( it + 1 )->get() );
+
+			const auto fit = doc->footnotesMap().find( ref->id() );
+
+			if( fit != doc->footnotesMap().cend() )
+			{
+				auto anchorIt = pdfData.footnotesAnchorsMap.constFind( fit->second.get() );
+
+				if( anchorIt != pdfData.footnotesAnchorsMap.cend() )
+					nextFootnoteNum = anchorIt->second;
+			}
+		}
+
 		switch( (*it)->type() )
 		{
 			case MD::ItemType::Text :
@@ -1831,7 +1846,7 @@ PdfRenderer::drawParagraph( PdfAuxData & pdfData, const RenderOpts & renderOpts,
 					static_cast< MD::Text< MD::QStringTrait >* > ( it->get() ),
 					doc, newLine, footnoteFont, renderOpts.m_textFontSize * scale, c_footnoteScale,
 					( it + 1 != last ? ( it + 1 )->get() : nullptr ),
-					footnoteNum, offset, ( firstInParagraph || lineBreak ), &cw, scale,
+					nextFootnoteNum, offset, ( firstInParagraph || lineBreak ), &cw, scale,
 					inFootnote );
 				lineBreak = false;
 				firstInParagraph = false;
@@ -1851,7 +1866,7 @@ PdfRenderer::drawParagraph( PdfAuxData & pdfData, const RenderOpts & renderOpts,
 					static_cast< MD::Link< MD::QStringTrait >* > ( it->get() ),
 					doc, newLine, footnoteFont, renderOpts.m_textFontSize * scale, c_footnoteScale,
 					( it + 1 != last ? ( it + 1 )->get() : nullptr ),
-					footnoteNum, offset, ( firstInParagraph || lineBreak ), &cw, scale,
+					nextFootnoteNum, offset, ( firstInParagraph || lineBreak ), &cw, scale,
 					inFootnote );
 				lineBreak = false;
 				firstInParagraph = false;
@@ -1885,7 +1900,21 @@ PdfRenderer::drawParagraph( PdfAuxData & pdfData, const RenderOpts & renderOpts,
 
 			case MD::ItemType::FootnoteRef :
 			{
-				++footnoteNum;
+				auto * ref = static_cast< MD::FootnoteRef< MD::QStringTrait >* > ( it->get() );
+
+				const auto fit = doc->footnotesMap().find( ref->id() );
+
+				if( fit != doc->footnotesMap().cend() )
+				{
+					auto anchorIt = pdfData.footnotesAnchorsMap.constFind( fit->second.get() );
+
+					if( anchorIt == pdfData.footnotesAnchorsMap.cend() )
+					{
+						pdfData.footnotesAnchorsMap.insert( fit->second.get(),
+							{ pdfData.currentFile, m_footnoteNum++ } );
+					}
+				}
+
 				lineBreak = false;
 				firstInParagraph = false;
 			}
@@ -1980,13 +2009,30 @@ PdfRenderer::drawParagraph( PdfAuxData & pdfData, const RenderOpts & renderOpts,
 				return {};
 		}
 
+		int nextFootnoteNum = m_footnoteNum;
+
+		if( it + 1 != last && ( it + 1 )->get()->type() == MD::ItemType::FootnoteRef )
+		{
+			auto * ref = static_cast< MD::FootnoteRef< MD::QStringTrait >* > ( ( it + 1 )->get() );
+
+			const auto fit = doc->footnotesMap().find( ref->id() );
+
+			if( fit != doc->footnotesMap().cend() )
+			{
+				auto anchorIt = pdfData.footnotesAnchorsMap.constFind( fit->second.get() );
+
+				if( anchorIt != pdfData.footnotesAnchorsMap.cend() )
+					nextFootnoteNum = anchorIt->second;
+			}
+		}
+
 		switch( (*it)->type() )
 		{
 			case MD::ItemType::Text :
 			{
 				rects.append( drawText( pdfData, renderOpts,
 					static_cast< MD::Text< MD::QStringTrait >* > ( it->get() ),
-					doc, newLine, nullptr, 0.0, 1.0, nullptr, m_footnoteNum,
+					doc, newLine, nullptr, 0.0, 1.0, nullptr, nextFootnoteNum,
 					offset, ( firstInParagraph || lineBreak ), &cw, scale, inFootnote ) );
 				lineBreak = false;
 				firstInParagraph = false;
@@ -2012,7 +2058,7 @@ PdfRenderer::drawParagraph( PdfAuxData & pdfData, const RenderOpts & renderOpts,
 					pdfData.coords.y += cw.height();
 
 				rects.append( drawLink( pdfData, renderOpts, link,
-					doc, newLine, nullptr, 0.0, 1.0, nullptr, m_footnoteNum,
+					doc, newLine, nullptr, 0.0, 1.0, nullptr, nextFootnoteNum,
 					offset, ( firstInParagraph || lineBreak ), &cw, scale, inFootnote ) );
 				lineBreak = false;
 				firstInParagraph = false;
@@ -2063,10 +2109,13 @@ PdfRenderer::drawParagraph( PdfAuxData & pdfData, const RenderOpts & renderOpts,
 
 					if( fit != doc->footnotesMap().cend() )
 					{
-						pdfData.footnotesAnchorsMap.insert( fit->second.get(),
-							pdfData.currentFile );
+						auto anchorIt = pdfData.footnotesAnchorsMap.constFind( fit->second.get() );
+						int num = m_footnoteNum;
 
-						const auto str = createUtf8String( QString::number( m_footnoteNum ) );
+						if( anchorIt != pdfData.footnotesAnchorsMap.cend() )
+							num = anchorIt->second;
+
+						const auto str = createUtf8String( QString::number( num ) );
 
 						const auto w = pdfData.stringWidth( footnoteFont,
 							renderOpts.m_textFontSize * c_footnoteScale, scale, str );
@@ -2079,8 +2128,6 @@ PdfRenderer::drawParagraph( PdfAuxData & pdfData, const RenderOpts & renderOpts,
 							qMakePair( QRectF( pdfData.coords.x, pdfData.coords.y,
 									w, lineHeight ),
 								pdfData.currentPageIndex() ) );
-
-						++m_footnoteNum;
 
 						pdfData.setColor( renderOpts.m_linkColor );
 
@@ -2460,7 +2507,7 @@ PdfRenderer::drawFootnote( PdfAuxData & pdfData, const RenderOpts & renderOpts,
 	pdfData.endPos = note->endColumn();
 
 	if( heightCalcOpt == CalcHeightOpt::Unknown && pdfData.footnotesAnchorsMap.contains( note ) )
-		pdfData.currentFile = pdfData.footnotesAnchorsMap[ note ];
+		pdfData.currentFile = pdfData.footnotesAnchorsMap[ note ].first;
 
 	static const double c_offset = 2.0;
 
@@ -3653,6 +3700,7 @@ operator == ( const PdfRenderer::FontAttribs & f1, const PdfRenderer::FontAttrib
 
 void
 PdfRenderer::createAuxCell( const RenderOpts & renderOpts,
+	PdfAuxData & pdfData,
 	CellData & data,
 	MD::Item< MD::QStringTrait > * item,
 	std::shared_ptr< MD::Document< MD::QStringTrait > > doc,
@@ -3733,7 +3781,7 @@ PdfRenderer::createAuxCell( const RenderOpts & renderOpts,
 				for( auto pit = l->p()->items().cbegin(), plast = l->p()->items().cend();
 					pit != plast; ++pit )
 				{
-					createAuxCell( renderOpts, data, pit->get(), doc, inFootnote,
+					createAuxCell( renderOpts, pdfData, data, pit->get(), doc, inFootnote,
 						url, renderOpts.m_linkColor );
 				}
 			}
@@ -3819,7 +3867,19 @@ PdfRenderer::createAuxCell( const RenderOpts & renderOpts,
 					item.font = { renderOpts.m_textFont,
 						false, false, false,
 						renderOpts.m_textFontSize };
-					item.footnote = QString::number( m_footnoteNum++ );
+
+					auto anchorIt = pdfData.footnotesAnchorsMap.constFind( fit->second.get() );
+					int num = m_footnoteNum;
+
+					if( anchorIt == pdfData.footnotesAnchorsMap.cend() )
+					{
+						pdfData.footnotesAnchorsMap.insert( fit->second.get(),
+							{ pdfData.currentFile, m_footnoteNum++ } );
+					}
+					else
+						num = anchorIt->second;
+
+					item.footnote = QString::number( num );
 					item.footnoteRef = ref->id();
 					item.footnoteObj = fit->second;
 
@@ -3865,7 +3925,7 @@ PdfRenderer::createAuxTable( PdfAuxData & pdfData, const RenderOpts & renderOpts
 			data.alignment = item->columnAlignment( i );
 
 			for( auto it = (*cit)->items().cbegin(), last = (*cit)->items().cend(); it != last; ++it )
-				createAuxCell( renderOpts, data, it->get(), doc, inFootnote );
+				createAuxCell( renderOpts, pdfData, data, it->get(), doc, inFootnote );
 
 			auxTable[ i ].append( data );
 
@@ -4010,22 +4070,26 @@ PdfRenderer::addFootnote( const QString & refId,
 	std::shared_ptr< MD::Footnote< MD::QStringTrait > > f, PdfAuxData & pdfData,
 	const RenderOpts & renderOpts, std::shared_ptr< MD::Document< MD::QStringTrait > > doc )
 {
-	PdfAuxData tmpData = pdfData;
-	tmpData.coords = { { pdfData.coords.margins.left, pdfData.coords.margins.right,
-			pdfData.coords.margins.top, pdfData.coords.margins.bottom },
-		pdfData.page->GetRect().Width,
-		pdfData.page->GetRect().Height,
-		pdfData.coords.margins.left, pdfData.page->GetRect().Height -
-			pdfData.coords.margins.top };
+	if( std::find_if( m_footnotes.cbegin(), m_footnotes.cend(),
+		[&refId] ( const auto & p ) { return p.first == refId; } ) == m_footnotes.cend() )
+	{
+		PdfAuxData tmpData = pdfData;
+		tmpData.coords = { { pdfData.coords.margins.left, pdfData.coords.margins.right,
+				pdfData.coords.margins.top, pdfData.coords.margins.bottom },
+			pdfData.page->GetRect().Width,
+			pdfData.page->GetRect().Height,
+			pdfData.coords.margins.left, pdfData.page->GetRect().Height -
+				pdfData.coords.margins.top };
 
-	double lineHeight = 0.0;
-	auto h = footnoteHeight( tmpData, renderOpts,
-		doc, f.get(), &lineHeight );
+		double lineHeight = 0.0;
+		auto h = footnoteHeight( tmpData, renderOpts,
+			doc, f.get(), &lineHeight );
 
-	reserveSpaceForFootnote( pdfData, renderOpts, h, pdfData.coords.y,
-		pdfData.currentPageIdx, lineHeight );
+		reserveSpaceForFootnote( pdfData, renderOpts, h, pdfData.coords.y,
+			pdfData.currentPageIdx, lineHeight );
 
-	m_footnotes.append( { refId, f } );
+		m_footnotes.append( { refId, f } );
+	}
 }
 
 QPair< QVector< WhereDrawn >, WhereDrawn >
@@ -4116,7 +4180,8 @@ PdfRenderer::drawTableRow( QVector< QVector< CellData > > & table, int row, PdfA
 		{
 			if( !c->image.isNull() && !text.text.isEmpty() )
 			{
-				drawTextLineInTable( x, y, text, lineHeight, pdfData, links, textFont, currentPage,
+				drawTextLineInTable( renderOpts, x, y, text, lineHeight, pdfData,
+					links, textFont, currentPage,
 					endPage, endY, footnotes, inFootnote, scale );
 				addMargin = false;
 			}
@@ -4224,7 +4289,7 @@ PdfRenderer::drawTableRow( QVector< QVector< CellData > > & table, int row, PdfA
 				{
 					if( !text.text.isEmpty() )
 					{
-						drawTextLineInTable( x, y, text, lineHeight, pdfData, links,
+						drawTextLineInTable( renderOpts, x, y, text, lineHeight, pdfData, links,
 							textFont, currentPage, endPage, endY, footnotes, inFootnote, scale );
 						text.text.append( *c );
 
@@ -4237,7 +4302,7 @@ PdfRenderer::drawTableRow( QVector< QVector< CellData > > & table, int row, PdfA
 					{
 						text.text.append( *c );
 						text.width += w;
-						drawTextLineInTable( x, y, text, lineHeight, pdfData, links,
+						drawTextLineInTable( renderOpts, x, y, text, lineHeight, pdfData, links,
 							textFont, currentPage, endPage, endY, footnotes, inFootnote, scale );
 
 						if( c + 1 != clast && !( c + 1 )->footnote.isEmpty() )
@@ -4256,7 +4321,8 @@ PdfRenderer::drawTableRow( QVector< QVector< CellData > > & table, int row, PdfA
 		}
 
 		if( !text.text.isEmpty() )
-			drawTextLineInTable( x, y, text, lineHeight, pdfData, links, textFont, currentPage,
+			drawTextLineInTable( renderOpts, x, y, text, lineHeight, pdfData,
+				links, textFont, currentPage,
 				endPage, endY, footnotes, inFootnote, scale );
 
 		y -= c_tableMargin - ( wasTextInLastPos ?
@@ -4373,7 +4439,8 @@ PdfRenderer::drawRowBorder( PdfAuxData & pdfData, int startPage, QVector< WhereD
 }
 
 void
-PdfRenderer::drawTextLineInTable( double x, double & y, TextToDraw & text, double lineHeight,
+PdfRenderer::drawTextLineInTable( const RenderOpts & renderOpts,
+	double x, double & y, TextToDraw & text, double lineHeight,
 	PdfAuxData & pdfData, QMap< QString, QVector< QPair< QRectF, unsigned int > > > & links,
 	Font * font, int & currentPage, int & endPage, double & endY,
 	QVector< QPair< QString, std::shared_ptr< MD::Footnote< MD::QStringTrait > > > > & footnotes,
@@ -4474,9 +4541,17 @@ PdfRenderer::drawTextLineInTable( double x, double & y, TextToDraw & text, doubl
 
 				const auto w = pdfData.stringWidth( f, it->font.size * c_footnoteScale, scale, str );
 
+				m_unresolvedFootnotesLinks.insert( it->footnoteRef,
+					qMakePair( QRectF( x, y, w, lineHeight ),
+						pdfData.currentPageIndex() ) );
+
+				pdfData.setColor( renderOpts.m_linkColor );
+
 				pdfData.drawText( x, y + lineHeight -
 						pdfData.lineSpacing( f, it->font.size * c_footnoteScale, scale ),
 					str, f, it->font.size * c_footnoteScale * scale, 1.0, false );
+
+				pdfData.restoreColor();
 
 				x += w;
 

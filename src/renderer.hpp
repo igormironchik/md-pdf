@@ -266,7 +266,7 @@ struct PdfAuxData {
 	//! Current file.
 	QString currentFile;
 	//! Footnotes map to map anchors.
-	QMap< MD::Footnote< MD::QStringTrait > *, QString > footnotesAnchorsMap;
+	QMap< MD::Footnote< MD::QStringTrait > *, QPair< QString, int > > footnotesAnchorsMap;
 
 #ifdef MD_PDF_TESTING
 	QMap< QString, QString > fonts;
@@ -735,6 +735,7 @@ private:
 	//! Create auxiliary cell.
 	void
 	createAuxCell( const RenderOpts & renderOpts,
+		PdfAuxData & pdfData,
 		CellData & data,
 		MD::Item< MD::QStringTrait > * item,
 		std::shared_ptr< MD::Document< MD::QStringTrait > > doc,
@@ -789,7 +790,8 @@ private:
 	}; // struct TextToDraw
 
 	//! Draw text line in the cell.
-	void drawTextLineInTable( double x,
+	void drawTextLineInTable( const RenderOpts & renderOpts,
+		double x,
 		double & y,
 		TextToDraw & text,
 		double lineHeight,
@@ -834,7 +836,7 @@ private:
 	//! Links that not yet clickable.
 	QMultiMap< QString, QVector< QPair< QRectF, unsigned int > > > m_unresolvedLinks;
 	//! Footnotes links.
-	QMap< QString, QPair< QRectF, unsigned int > > m_unresolvedFootnotesLinks;
+	QMultiMap< QString, QPair< QRectF, unsigned int > > m_unresolvedFootnotesLinks;
 	//! Cache of images.
 	QMap< QString, QByteArray > m_imageCache;
 	//! Footnote counter.
