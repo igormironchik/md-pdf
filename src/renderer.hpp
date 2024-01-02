@@ -4,7 +4,7 @@
 
 	\author Igor Mironchik (igor.mironchik at gmail dot com).
 
-	Copyright (c) 2019 Igor Mironchik
+	Copyright (c) 2019-2024 Igor Mironchik
 
 	This program is free software: you can redistribute it and/or modify
 	it under the terms of the GNU General Public License as published by
