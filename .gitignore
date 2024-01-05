@@ -10,5 +10,6 @@
 /**/*.moc
 /**/ui_*.h
 /**/qrc_*.cpp
+/**/3rdparty/skia
 path.ps1
 path.txt

@@ -89,8 +89,27 @@ set( JKQtPlotter_BUILD_TOOLS OFF CACHE INTERNAL "" FORCE )
 add_subdirectory( 3rdparty/JKQtPlotter )
 
 find_package( Perl REQUIRED )
+find_package( Python REQUIRED )
 
 add_subdirectory( 3rdparty/ksyntaxhighlighting )
+
+include( ExternalProject )
+set( SKIA_ARGS "is_official_build=true skia_use_system_expat=false skia_use_system_harfbuzz=false skia_use_system_icu=false skia_use_system_libjpeg_turbo=false skia_use_system_libpng=false skia_use_system_libwebp=false skia_use_system_zlib=false" )
+ExternalProject_Add( skia
+	SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/3rdparty/skia
+	TMP_DIR ${CMAKE_CURRENT_BINARY_DIR}/3rdparty/skia/tmp
+	STAMP_DIR ${CMAKE_CURRENT_BINARY_DIR}/3rdparty/skia/stamp
+	BINARY_DIR ${CMAKE_CURRENT_BINARY_DIR}/3rdparty/skia
+	WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/3rdparty/skia
+	GIT_REPOSITORY https://skia.googlesource.com/skia.git
+	GIT_TAG a9db1213b17966d0344957ba1d3834b420b2a329
+	CONFIGURE_COMMAND ${Python_EXECUTABLE} tools/git-sync-deps
+	COMMAND bin/fetch-ninja
+	COMMAND bin/gn gen ${CMAKE_CURRENT_BINARY_DIR}/3rdparty/skia --args=${SKIA_ARGS}
+	BUILD_COMMAND third_party/ninja/ninja -C ${CMAKE_CURRENT_BINARY_DIR}/3rdparty/skia
+	INSTALL_COMMAND ""
+	TEST_COMMAND ""
+)
 
 add_subdirectory( src )
 
