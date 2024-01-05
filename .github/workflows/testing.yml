@@ -43,18 +43,22 @@ jobs:
     - run: sudo apt install libfreetype6-dev libjpeg-dev libpng-dev zlib1g zlib1g-dev libfontconfig1-dev fontconfig lcov libmagick++-dev libxml2-dev libtiff-dev libssl-dev extra-cmake-modules
 
     - name: Generate Makefiles
-      run: cmake -DENABLE_COVERAGE=ON -DCMAKE_BUILD_TYPE=Debug .
+      run: cmake -B build -DENABLE_COVERAGE=ON -DCMAKE_BUILD_TYPE=Debug .
 
     - name: Build
-      run: make
+      run: |
+        cd build
+        make
 
     - name: Test
       run: |
+        cd build
         export QT_QPA_PLATFORM=offscreen
         ctest --output-on-failure --verbose
 
     - name: Upload coverage info
       run: |
+        cd build
         lcov --directory . --capture --output-file coverage.info
         lcov --remove coverage.info '/usr/*' --output-file coverage.info
         lcov --list coverage.info

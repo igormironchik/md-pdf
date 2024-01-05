@@ -100,7 +100,6 @@ ExternalProject_Add( skia
 	TMP_DIR ${CMAKE_CURRENT_BINARY_DIR}/3rdparty/skia/tmp
 	STAMP_DIR ${CMAKE_CURRENT_BINARY_DIR}/3rdparty/skia/stamp
 	BINARY_DIR ${CMAKE_CURRENT_BINARY_DIR}/3rdparty/skia
-	WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/3rdparty/skia
 	GIT_REPOSITORY https://skia.googlesource.com/skia.git
 	GIT_TAG a9db1213b17966d0344957ba1d3834b420b2a329
 	CONFIGURE_COMMAND ${Python_EXECUTABLE} tools/git-sync-deps
