@@ -102,12 +102,10 @@ ExternalProject_Add( skia
 	BINARY_DIR ${CMAKE_CURRENT_BINARY_DIR}/3rdparty/skia
 	GIT_REPOSITORY https://skia.googlesource.com/skia.git
 	GIT_TAG a9db1213b17966d0344957ba1d3834b420b2a329
-	CONFIGURE_COMMAND cd ${CMAKE_CURRENT_SOURCE_DIR}/3rdparty/skia
-	COMMAND ${Python_EXECUTABLE} tools/git-sync-deps
-	COMMAND bin/fetch-ninja
-	COMMAND bin/gn gen ${CMAKE_CURRENT_BINARY_DIR}/3rdparty/skia --args=${SKIA_ARGS}
-	BUILD_COMMAND cd ${CMAKE_CURRENT_SOURCE_DIR}/3rdparty/skia
-	COMMAND third_party/ninja/ninja -C ${CMAKE_CURRENT_BINARY_DIR}/3rdparty/skia
+	CONFIGURE_COMMAND ${Python_EXECUTABLE} ${CMAKE_CURRENT_SOURCE_DIR}/3rdparty/skia/tools/git-sync-deps
+	COMMAND ${CMAKE_CURRENT_SOURCE_DIR}/3rdparty/skia/bin/fetch-ninja
+	COMMAND ${CMAKE_CURRENT_SOURCE_DIR}/3rdparty/skia/bin/gn gen ${CMAKE_CURRENT_BINARY_DIR}/3rdparty/skia --args=${SKIA_ARGS}
+	BUILD_COMMAND ${CMAKE_CURRENT_SOURCE_DIR}/3rdparty/skia/third_party/ninja/ninja -C ${CMAKE_CURRENT_BINARY_DIR}/3rdparty/skia
 	INSTALL_COMMAND ""
 	TEST_COMMAND ""
 )
