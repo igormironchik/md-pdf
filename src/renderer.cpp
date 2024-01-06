@@ -48,6 +48,7 @@
 // C++ include.
 #include <cmath>
 #include <utility>
+#include <functional>
 
 
 //
@@ -1008,7 +1009,9 @@ PdfRenderer::isFontCreatable( const QString & name )
 void
 PdfRenderer::createPage( PdfAuxData & pdfData )
 {
-	auto create = [] ( PdfAuxData & pdfData )
+	std::function< void ( PdfAuxData & ) > create;
+
+	create = [&create] ( PdfAuxData & pdfData )
 	{
 		pdfData.page = &pdfData.doc->GetPages().CreatePage(
 			Page::CreateStandardPageSize( PoDoFo::PdfPageSize::A4 ) );
@@ -1034,6 +1037,12 @@ PdfRenderer::createPage( PdfAuxData & pdfData )
 				pdfData.coords.margins.top };
 
 		++pdfData.currentPageIdx;
+
+		const auto topY = pdfData.topFootnoteY( pdfData.currentPageIdx );
+
+		if( pdfData.coords.pageHeight - pdfData.coords.margins.top -
+			topY - pdfData.extraInFootnote < pdfData.lineHeight )
+				create( pdfData );
 	};
 
 	if( !pdfData.drawFootnotes )
