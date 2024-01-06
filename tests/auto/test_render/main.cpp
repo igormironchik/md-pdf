@@ -84,6 +84,10 @@ private slots:
 	void testComplexFootnoteBigFont();
 	//! One more complex test.
 	void testComplex3BigFont();
+	//! Very long footnote.
+	void testVeryLongFootnote();
+	//! Very long footnote.
+	void testVeryLongFootnoteBigFont();
 
 	//! Test code.
 	void testCode();
@@ -423,6 +427,17 @@ TestRender::testMathBigFont()
 //	doTest( QStringLiteral( "math.md" ), QStringLiteral( "_big" ), 16.0, 14.0 );
 }
 
+void
+TestRender::testVeryLongFootnote()
+{
+	doTest( QStringLiteral( "footnotes4.md" ), QString(), 8.0, 8.0 );
+}
+
+void
+TestRender::testVeryLongFootnoteBigFont()
+{
+	doTest( QStringLiteral( "footnotes4.md" ), QStringLiteral( "_big" ), 16.0, 14.0 );
+}
 
 QTEST_MAIN( TestRender )
 
