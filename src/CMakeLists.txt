@@ -24,6 +24,8 @@ set( GUI_SRC main.cpp
 	main_window.ui
 	color_widget.hpp
 	color_widget.cpp
+	podofo_paintdevice.hpp
+	podofo_paintdevice.cpp
 	renderer.hpp
 	renderer.cpp
 	progress.hpp
@@ -59,7 +61,7 @@ execute_process( COMMAND git rev-parse --short HEAD
 	WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
 	OUTPUT_STRIP_TRAILING_WHITESPACE )
 
-set( MDPDF_VERSION "0.9.52 build ${MDPDF_VERSION_MINOR}" )
+set( MDPDF_VERSION "0.9.53 build ${MDPDF_VERSION_MINOR}" )
 
 configure_file( version.hpp.in ${CMAKE_CURRENT_BINARY_DIR}/version.hpp )
 
