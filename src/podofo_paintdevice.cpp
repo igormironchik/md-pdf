@@ -23,6 +23,11 @@
 // md-pdf include.
 #include "podofo_paintdevice.hpp"
 
+// Qt include.
+#include <QPainterPath>
+#include <QTextItem>
+
+
 //
 // PoDoFoPaintDevicePrivate
 //
@@ -54,9 +59,9 @@ PoDoFoPaintDevice::~PoDoFoPaintDevice()
 }
 
 void
-PoDoFoPaintDevice::setPage( PoDoFo::PdfPage & p, PoDoFo::PdfDocument & doc )
+PoDoFoPaintDevice::setPdfPainter( PoDoFo::PdfPainter & p, PoDoFo::PdfDocument & doc )
 {
-	d->engine.setPage( p, doc );
+	d->engine.setPdfPainter( p, doc );
 }
 
 QPaintEngine *
@@ -71,16 +76,24 @@ PoDoFoPaintDevice::metric( QPaintDevice::PaintDeviceMetric metric ) const
 	switch( metric )
 	{
 		case PdmWidth :
-			return qRound( d->engine.page().GetRect().Width / 72.0 * 1200.0 );
+			return qRound( d->engine.pdfPainter() ?
+				d->engine.pdfPainter()->GetCanvas()->GetRectRaw().Width / 72.0 * 1200.0 :
+				100 );
 
         case PdmHeight :
-			return qRound( d->engine.page().GetRect().Height / 72.0 * 1200.0 );
+			return qRound( d->engine.pdfPainter() ?
+				d->engine.pdfPainter()->GetCanvas()->GetRectRaw().Height / 72.0 * 1200.0 :
+				100 );
 
         case PdmWidthMM :
-			return qRound( d->engine.page().GetRect().Width / 72.0 * 25.4 );
+			return qRound( d->engine.pdfPainter() ?
+				d->engine.pdfPainter()->GetCanvas()->GetRectRaw().Width / 72.0 * 25.4 :
+				100.0 / 1200.0 * 25.4 );
 
         case PdmHeightMM :
-			return qRound( d->engine.page().GetRect().Height / 72.0 * 25.4 );
+			return qRound( d->engine.pdfPainter() ?
+				d->engine.pdfPainter()->GetCanvas()->GetRectRaw().Height / 72.0 * 25.4 :
+				100.0 / 1200.0 * 25.4 );
 
         case PdmNumColors :
 			return INT_MAX;
@@ -117,12 +130,10 @@ struct PoDoFoPaintEnginePrivate {
 
 	//! Parent.
 	PoDoFoPaintEngine * q = nullptr;
-	//! Pdf page.
-	PoDoFo::PdfPage * page = nullptr;
+	//! Pdf painter.
+	PoDoFo::PdfPainter * painter = nullptr;
 	//! Pdf document.
 	PoDoFo::PdfDocument * doc = nullptr;
-	//! Pdf painter.
-	std::shared_ptr< PoDoFo::PdfPainter > painter;
 }; // struct PoDoFoPaintEnginePrivate
 
 
@@ -140,19 +151,16 @@ PoDoFoPaintEngine::~PoDoFoPaintEngine()
 }
 
 void
-PoDoFoPaintEngine::setPage( PoDoFo::PdfPage & p, PoDoFo::PdfDocument & doc )
+PoDoFoPaintEngine::setPdfPainter( PoDoFo::PdfPainter & p, PoDoFo::PdfDocument & doc )
 {
-	d->page = &p;
+	d->painter = &p;
 	d->doc = &doc;
-
-	d->painter = std::make_shared< PoDoFo::PdfPainter > ();
-	d->painter->SetCanvas( *d->page );
 }
 
-const PoDoFo::PdfPage &
-PoDoFoPaintEngine::page() const
+PoDoFo::PdfPainter *
+PoDoFoPaintEngine::pdfPainter() const
 {
-	return *d->page;
+	return d->painter;
 }
 
 bool
@@ -177,19 +185,92 @@ PoDoFoPaintEngine::drawImage( const QRectF &, const QImage &,
 {
 }
 
+double
+PoDoFoPaintEngine::qXtoPoDoFo( double x )
+{
+	return x / paintDevice()->physicalDpiX() * 72.0;
+}
+
+double
+PoDoFoPaintEngine::qYtoPoDoFo( double y )
+{
+	return ( paintDevice()->height() - y ) / paintDevice()->physicalDpiY() * 72.0;
+}
+
 void
 PoDoFoPaintEngine::drawLines( const QLineF * lines, int lineCount )
 {
+	if( d->painter )
+	{
+		for( int i = 0; i < lineCount; ++i )
+		{
+			auto l = lines[ i ];
+			d->painter->DrawLine( qXtoPoDoFo( l.x1() ), qYtoPoDoFo( l.y1() ),
+				qXtoPoDoFo( l.x2() ), qYtoPoDoFo( l.y2() ) );
+		}
+	}
 }
 
 void
 PoDoFoPaintEngine::drawLines( const QLine * lines, int lineCount )
 {
+	if( d->painter )
+	{
+		for( int i = 0; i < lineCount; ++i )
+		{
+			auto l = lines[ i ];
+			d->painter->DrawLine( qXtoPoDoFo( l.x1() ), qYtoPoDoFo( l.y1() ),
+				qXtoPoDoFo( l.x2() ), qYtoPoDoFo( l.y2() ) );
+		}
+	}
 }
 
 void
 PoDoFoPaintEngine::drawPath( const QPainterPath & path )
 {
+	if( d->painter )
+	{
+		PoDoFo::PdfPainterPath p;
+
+		for( int i = 0; i < path.elementCount(); ++i )
+		{
+			const auto & e = path.elementAt( i );
+
+			switch( e.type )
+			{
+				case QPainterPath::MoveToElement :
+				{
+					p.MoveTo( qXtoPoDoFo( e.x ), qYtoPoDoFo( e.y ) );
+				}
+					break;
+
+				case QPainterPath::LineToElement :
+				{
+					p.AddLineTo( qXtoPoDoFo( e.x ), qYtoPoDoFo( e.y ) );
+				}
+					break;
+
+				case QPainterPath::CurveToElement :
+				{
+					Q_ASSERT( path.elementAt( i + 1 ).type == QPainterPath::CurveToDataElement );
+					Q_ASSERT( path.elementAt( i + 2 ).type == QPainterPath::CurveToDataElement );
+
+					p.AddCubicBezierTo( qXtoPoDoFo( e.x ), qYtoPoDoFo( e.y ),
+						qXtoPoDoFo( path.elementAt( i + 1 ).x ), qYtoPoDoFo( path.elementAt( i + 1 ).y ),
+						qXtoPoDoFo( path.elementAt( i + 2 ).x ), qYtoPoDoFo( path.elementAt( i + 2 ).y ) );
+
+					i += 2;
+				}
+					break;
+
+				default :
+					break;
+			}
+		}
+
+		d->painter->DrawPath( p, path.fillRule() == Qt::OddEvenFill ?
+			PoDoFo::PdfPathDrawMode::FillEvenOdd : PoDoFo::PdfPathDrawMode::Fill );
+	}
 }
 
 void
@@ -219,19 +300,61 @@ PoDoFoPaintEngine::drawPolygon( const QPoint *, int,
 {
 }
 
+double
+PoDoFoPaintEngine::qWtoPoDoFo( double w )
+{
+	return w / paintDevice()->physicalDpiX() * 72.0;
+}
+
+double
+PoDoFoPaintEngine::qHtoPoDoFo( double h )
+{
+	return h / paintDevice()->physicalDpiY() * 72.0;
+}
+
+PoDoFo::Rect
+PoDoFoPaintEngine::qRectFtoPoDoFo( const QRectF & r )
+{
+	return PoDoFo::Rect( qXtoPoDoFo( r.x() ), qYtoPoDoFo( r.y() + r.height() ),
+		qWtoPoDoFo( r.width() ), qHtoPoDoFo( r.height() ) );
+}
+
 void
 PoDoFoPaintEngine::drawRects( const QRectF * rects, int rectCount )
 {
+	if( d->painter )
+	{
+		for( int i = 0; i < rectCount; ++i )
+			d->painter->DrawRectangle( qRectFtoPoDoFo( rects[ i ] ) );
+	}
 }
 
 void
 PoDoFoPaintEngine::drawRects( const QRect * rects, int rectCount )
 {
+	if( d->painter )
+	{
+		for( int i = 0; i < rectCount; ++i )
+			d->painter->DrawRectangle( qRectFtoPoDoFo( rects[ i ].toRectF() ) );
+	}
 }
 
 void
 PoDoFoPaintEngine::drawTextItem( const QPointF & p, const QTextItem & textItem )
 {
+	if( d->painter )
+	{
+		const auto f = qFontToPoDoFo( textItem.font() );
+
+		d->painter->TextObject.Begin();
+		d->painter->TextObject.MoveTo( qXtoPoDoFo( p.x() ),
+			qYtoPoDoFo( p.y() - textItem.ascent() - textItem.descent() ) );
+		d->painter->TextState.SetFont( *f.first, f.second );
+		d->painter->TextState.SetFontScale( 1.0 );
+		const auto data = textItem.text().toUtf8();
+		d->painter->TextObject.AddText( data.data() );
+		d->painter->TextObject.End();
+	}
 }
 
 void
@@ -292,9 +415,28 @@ color( const QColor & c )
 	return PoDoFo::PdfColor( c.redF(), c.greenF(), c.blueF() );
 }
 
+QPair< PoDoFo::PdfFont*, double >
+PoDoFoPaintEngine::qFontToPoDoFo( const QFont & f )
+{
+	PoDoFo::PdfFontSearchParams params;
+	params.Style = PoDoFo::PdfFontStyle::Regular;
+	if( f.bold() ) params.Style.value() |= PoDoFo::PdfFontStyle::Bold;
+	if( f.italic() ) params.Style.value() |= PoDoFo::PdfFontStyle::Italic;
+
+	auto * font = d->doc->GetFonts().SearchFont( f.family().toLocal8Bit().data(), params );
+
+	const double size = f.pointSizeF() > 0.0 ? f.pointSizeF() :
+		f.pixelSize() / paintDevice()->physicalDpiY() * 72.0;
+
+	return { font, size };
+}
+
 void
 PoDoFoPaintEngine::updateState( const QPaintEngineState & state )
 {
+	if( !d->painter )
+		return;
+
 	const auto st = state.state();
 
 	if( st & QPaintEngine::DirtyPen )
@@ -314,36 +456,8 @@ PoDoFoPaintEngine::updateState( const QPaintEngineState & state )
 
 	if( st & QPaintEngine::DirtyFont )
 	{
-		const auto f = state.font();
+		const auto f = qFontToPoDoFo( state.font() );
 
-		PoDoFo::PdfFontSearchParams params;
-		params.Style = PoDoFo::PdfFontStyle::Regular;
-		if( f.bold() ) params.Style.value() |= PoDoFo::PdfFontStyle::Bold;
-		if( f.italic() ) params.Style.value() |= PoDoFo::PdfFontStyle::Italic;
-
-		auto * font = d->doc->GetFonts().SearchFont( f.family().toLocal8Bit().data(), params );
-
-		const double size = f.pointSizeF() > 0.0 ? f.pointSizeF() :
-			f.pixelSize() / paintDevice()->physicalDpiY() * 72.0;
-
-		d->painter->TextState.SetFont( *font, size );
+		d->painter->TextState.SetFont( *f.first, f.second );
 	}
-
-	if( st & QPaintEngine::DirtyTransform )
-	{
-		const auto t = state.transform();
-
-		d->painter->GraphicsState.SetCurrentMatrix( PoDoFo::Matrix::FromCoefficients(
-			t.m11(), t.m12(), t.m21(), t.m22(), t.m31(), t.m32() ) );
-	}
-
-	// if( st & QPaintEngine::DirtyClipRegion )
-	// {
-	// 	const auto r = state.clipRegion().boundingRect();
-
-	// 	d->painter->SetClipRect( r.x() / paintDevice()->physicalDpiX() * 72.0,
-	// 		( paintDevice()->height() - r.y() - r.height() ) / paintDevice()->physicalDpiY() * 72.0,
-	// 		r.width() / paintDevice()->physicalDpiX() * 72.0,
-	// 		r.height() / paintDevice()->physicalDpiY() * 72.0 );
-	// }
 }

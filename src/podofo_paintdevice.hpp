@@ -46,7 +46,7 @@ public:
 	PoDoFoPaintDevice();
 	~PoDoFoPaintDevice() override;
 
-	void setPage( PoDoFo::PdfPage & p, PoDoFo::PdfDocument & doc );
+	void setPdfPainter( PoDoFo::PdfPainter & p, PoDoFo::PdfDocument & doc );
 
 	QPaintEngine * paintEngine() const override;
 
@@ -74,8 +74,8 @@ public:
 	PoDoFoPaintEngine();
 	~PoDoFoPaintEngine() override;
 
-	void setPage( PoDoFo::PdfPage & p, PoDoFo::PdfDocument & doc );
-	const PoDoFo::PdfPage & page() const;
+	void setPdfPainter( PoDoFo::PdfPainter & p, PoDoFo::PdfDocument & doc );
+	PoDoFo::PdfPainter * pdfPainter() const;
 
 	bool begin( QPaintDevice * pdev ) override;
 	void drawEllipse( const QRectF & rect ) override;
@@ -100,6 +100,14 @@ public:
 	bool end() override;
 	QPaintEngine::Type type() const override;
 	void updateState( const QPaintEngineState & state ) override;
+
+private:
+	double qXtoPoDoFo( double x );
+	double qYtoPoDoFo( double y );
+	double qWtoPoDoFo( double w );
+	double qHtoPoDoFo( double h );
+	PoDoFo::Rect qRectFtoPoDoFo( const QRectF & r );
+	QPair< PoDoFo::PdfFont*, double > qFontToPoDoFo( const QFont & f );
 
 private:
 	Q_DISABLE_COPY( PoDoFoPaintEngine )

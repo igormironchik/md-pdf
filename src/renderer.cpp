@@ -23,6 +23,7 @@
 // md-pdf include.
 #include "renderer.hpp"
 #include "const.hpp"
+#include "podofo_paintdevice.hpp"
 
 #ifdef MD_PDF_TESTING
 #include <test_const.hpp>
@@ -2186,37 +2187,20 @@ PdfRenderer::drawMathExpr( PdfAuxData & pdfData, const RenderOpts & renderOpts,
 
 	JKQTMathText mt;
 	mt.useAnyUnicode( renderOpts.m_mathFont, renderOpts.m_mathFont );
-
-	const double fontSizePx = ( renderOpts.m_mathFontSize / 72.0 ) * dpi;
-
-	mt.setFontSizePixels( qRound( fontSizePx * scale ) );
+	mt.setFontPointSize( renderOpts.m_mathFontSize );
 	mt.parse( item->expr() );
 
-	QPainter tmpP;
-	const QSizeF size = mt.getSize( tmpP );
-	auto descent = mt.getDescent( tmpP );
+	QSizeF pxSize = {}, size = {};
+	double descent = 0.0;
 
-	QPixmap px( qRound( size.width() ), qRound( size.height() ) );
-	px.fill();
-	QPainter p( &px );
-
-	mt.draw( p, 0, QRectF( QPointF( 0.0, 0.0 ), size ) );
-
-	const auto img = px.toImage();
-
-	QByteArray data;
-	QBuffer buf( &data );
-
-	img.save( &buf, "png" );
-
-	auto pdfImg = pdfData.doc->CreateImage();
-	pdfImg->LoadFromBuffer( { data.data(), static_cast< size_t > ( data.size() ) } );
-
-	const double iWidth = std::round( (double) pdfImg->GetWidth() / dpi * 72.0 );
-	const double iHeight = std::round( (double) pdfImg->GetHeight() / dpi * 72.0 );
-	const double dpiScale = (double) pdfImg->GetWidth() / iWidth;
-
-	descent = ( iHeight / size.height() ) * descent;
+	{
+		PoDoFoPaintDevice pd;
+		QPainter p( &pd );
+		pxSize = mt.getSize( p );
+		size = { pxSize.width() * ( 1.0 / pd.physicalDpiX() * 72.0 ),
+			pxSize.height() * (1.0 / pd.physicalDpiY() * 72.0 ) };
+		descent = mt.getDescent( p );
+	}
 
 	auto * font = createFont( renderOpts.m_textFont, false, false,
 		renderOpts.m_textFontSize, pdfData.doc, scale, pdfData );
@@ -2250,15 +2234,15 @@ PdfRenderer::drawMathExpr( PdfAuxData & pdfData, const RenderOpts & renderOpts,
 				pdfData.coords.margins.right - offset;
 			double availableHeight = pdfData.coords.y - pdfData.currentPageAllowedY();
 
-			if( iWidth - availableWidth > 0.01 )
-				imgScale = ( availableWidth / iWidth ) * scale;
+			if( size.width() - availableWidth > 0.01 )
+				imgScale = ( availableWidth / size.width() ) * scale;
 
 			const double pageHeight = pdfData.topY( pdfData.currentPageIndex() ) -
 				pdfData.coords.margins.bottom;
 
-			if( iHeight * imgScale - pageHeight > 0.01 )
+			if( size.height() * imgScale - pageHeight > 0.01 )
 			{
-				imgScale = ( pageHeight / ( iHeight * imgScale ) ) * scale;
+				imgScale = ( pageHeight / ( size.height() * imgScale ) ) * scale;
 
 				if( !pdfData.firstOnPage )
 				{
@@ -2269,7 +2253,7 @@ PdfRenderer::drawMathExpr( PdfAuxData & pdfData, const RenderOpts & renderOpts,
 
 				pdfData.freeSpaceOn( pdfData.currentPageIndex() );
 			}
-			else if( iHeight * imgScale - availableHeight > 0.01 )
+			else if( size.height() * imgScale - availableHeight > 0.01 )
 			{
 				createPage( pdfData );
 
@@ -2278,18 +2262,21 @@ PdfRenderer::drawMathExpr( PdfAuxData & pdfData, const RenderOpts & renderOpts,
 				pdfData.coords.x += offset;
 			}
 
-			if( availableWidth - iWidth * imgScale > 0.01 )
-				x = ( availableWidth - iWidth * imgScale ) / 2.0;
+			if( availableWidth - size.width() * imgScale > 0.01 )
+				x = ( availableWidth - size.width() * imgScale ) / 2.0;
 
-			pdfData.drawImage( pdfData.coords.x + x,
-				pdfData.coords.y - iHeight * imgScale -
-					( h - iHeight * imgScale ) / 2.0,
-				pdfImg.get(), imgScale / dpiScale, imgScale / dpiScale );
+			PoDoFoPaintDevice pd;
+			pd.setPdfPainter( *(*pdfData.painters)[ pdfData.currentPainterIdx ].get(), *pdfData.doc );
+			QPainter p( &pd );
+
+			mt.draw( p, 0, QRectF( QPointF( ( pdfData.coords.x + x ) / 72.0 * pd.physicalDpiX(),
+				( pdfData.coords.y - ( h - size.height() * imgScale ) / 2.0 ) / 72.0 * pd.physicalDpiY() ),
+				pxSize ) );
 
 			const QRectF r = { pdfData.coords.x + x,
-				pdfData.coords.y - iHeight * imgScale -
-				( h - iHeight * imgScale ) / 2.0,
-				iWidth * imgScale, iHeight * imgScale };
+				pdfData.coords.y - size.height() * imgScale -
+				( h - size.height() * imgScale ) / 2.0,
+				size.width() * imgScale, size.height() * imgScale };
 			const auto idx = pdfData.currentPageIndex();
 
 			pdfData.coords.y -= h;
@@ -2320,7 +2307,7 @@ PdfRenderer::drawMathExpr( PdfAuxData & pdfData, const RenderOpts & renderOpts,
 			const double availableTotalWidth = pdfData.coords.pageWidth -
 				pdfData.coords.margins.left - pdfData.coords.margins.right - offset;
 
-			if( iWidth - availableWidth > 0.01 )
+			if( size.width() - availableWidth > 0.01 )
 			{
 				if( cw )
 				{
@@ -2333,17 +2320,17 @@ PdfRenderer::drawMathExpr( PdfAuxData & pdfData, const RenderOpts & renderOpts,
 
 			double imgScale = 1.0;
 
-			if( iWidth - availableTotalWidth > 0.01 )
-				imgScale = ( availableWidth / iWidth ) * scale;
+			if( size.width() - availableTotalWidth > 0.01 )
+				imgScale = ( availableWidth / size.width() ) * scale;
 
 			double availableHeight = pdfData.coords.y - pdfData.currentPageAllowedY();
 
 			const double pageHeight = pdfData.topY( pdfData.currentPageIndex() ) -
 				pdfData.coords.margins.bottom;
 
-			if( iHeight * imgScale - pageHeight > 0.01 )
+			if( size.height() * imgScale - pageHeight > 0.01 )
 			{
-				imgScale = ( pageHeight / ( iHeight * imgScale ) ) * scale;
+				imgScale = ( pageHeight / ( size.height() * imgScale ) ) * scale;
 
 				createPage( pdfData );
 
@@ -2351,7 +2338,7 @@ PdfRenderer::drawMathExpr( PdfAuxData & pdfData, const RenderOpts & renderOpts,
 
 				pdfData.coords.x += offset;
 			}
-			else if( iHeight * imgScale - availableHeight > 0.01 )
+			else if( size.height() * imgScale - availableHeight > 0.01 )
 			{
 				createPage( pdfData );
 
@@ -2360,15 +2347,18 @@ PdfRenderer::drawMathExpr( PdfAuxData & pdfData, const RenderOpts & renderOpts,
 				pdfData.coords.x += offset;
 			}
 
-			pdfData.drawImage( pdfData.coords.x,
-				pdfData.coords.y + ( h - iHeight * imgScale ) / 2.0,
-				pdfImg.get(), imgScale / dpiScale, imgScale / dpiScale );
+			PoDoFoPaintDevice pd;
+			pd.setPdfPainter( *(*pdfData.painters)[ pdfData.currentPainterIdx ].get(), *pdfData.doc );
+			QPainter p( &pd );
 
-			pdfData.coords.x += iWidth * imgScale;
+			mt.draw( p, 0, QRectF( QPointF( ( pdfData.coords.x ) / 72.0 * pd.physicalDpiX(),
+				( pdfData.coords.y + ( h - size.height() * imgScale ) / 2.0 ) / 72.0 * pd.physicalDpiY() ), pxSize ) );
+
+			pdfData.coords.x += size.width() * imgScale;
 
 			const QRectF r = { pdfData.coords.x,
-				pdfData.coords.y + ( h - iHeight * imgScale ) / 2.0,
-				iWidth * imgScale, iHeight * imgScale };
+				pdfData.coords.y + ( h - size.height() * imgScale ) / 2.0,
+				size.width() * imgScale, size.height() * imgScale };
 			const auto idx = pdfData.currentPageIndex();
 
 			return { r, idx };
@@ -2389,16 +2379,16 @@ PdfRenderer::drawMathExpr( PdfAuxData & pdfData, const RenderOpts & renderOpts,
 			const double availableWidth = pdfData.coords.pageWidth - pdfData.coords.margins.left -
 				pdfData.coords.margins.right - offset;
 
-			if( iWidth - availableWidth > 0.01 )
-				imgScale = ( availableWidth / iWidth ) * scale;
+			if( size.width() - availableWidth > 0.01 )
+				imgScale = ( availableWidth / size.width() ) * scale;
 
 			const double pageHeight = pdfData.topY( pdfData.currentPageIndex() ) -
 				pdfData.coords.margins.bottom;
 
-			if( iHeight * imgScale - pageHeight > 0.01 )
-				imgScale = ( pageHeight / ( iHeight * imgScale ) ) * scale;
+			if( size.height() * imgScale - pageHeight > 0.01 )
+				imgScale = ( pageHeight / ( size.height() * imgScale ) ) * scale;
 
-			height += iHeight * imgScale - pdfData.fontDescent( font,
+			height += size.height() * imgScale - pdfData.fontDescent( font,
 				renderOpts.m_textFontSize, scale );
 
 			pdfData.coords.x = pdfData.coords.margins.left + offset;
@@ -2419,7 +2409,7 @@ PdfRenderer::drawMathExpr( PdfAuxData & pdfData, const RenderOpts & renderOpts,
 
 			pdfData.coords.x += spaceWidth;
 
-			if( iWidth - availableWidth > 0.01 )
+			if( size.width() - availableWidth > 0.01 )
 			{
 				cw->append( { 0.0, lineHeight, descent, false, true, true, false, "" } );
 				pdfData.coords.x = pdfData.coords.margins.left + offset;
@@ -2429,21 +2419,21 @@ PdfRenderer::drawMathExpr( PdfAuxData & pdfData, const RenderOpts & renderOpts,
 
 			double imgScale = 1.0;
 
-			if( iWidth - availableTotalWidth > 0.01 )
-				imgScale = ( availableWidth / iWidth ) * scale;
+			if( size.width() - availableTotalWidth > 0.01 )
+				imgScale = ( availableWidth / size.width() ) * scale;
 
 			double availableHeight = pdfData.coords.y - pdfData.currentPageAllowedY();
 
 			const double pageHeight = pdfData.topY( pdfData.currentPageIndex() ) -
 				pdfData.coords.margins.bottom;
 
-			if( iHeight * imgScale - pageHeight > 0.01 )
-				imgScale = ( pageHeight / ( iHeight * imgScale ) ) * scale;
+			if( size.height() * imgScale - pageHeight > 0.01 )
+				imgScale = ( pageHeight / ( size.height() * imgScale ) ) * scale;
 
-			pdfData.coords.x += iWidth * imgScale;
+			pdfData.coords.x += size.width() * imgScale;
 
-			cw->append( { iWidth * imgScale,
-				iHeight * imgScale - pdfData.fontDescent( font, renderOpts.m_textFontSize, scale ),
+			cw->append( { size.width() * imgScale,
+				size.height() * imgScale - pdfData.fontDescent( font, renderOpts.m_textFontSize, scale ),
 				descent, false, false, hasNext, false, "" } );
 		}
 	}
