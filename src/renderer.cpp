@@ -2278,6 +2278,7 @@ PdfRenderer::drawMathExpr( PdfAuxData & pdfData, const RenderOpts & renderOpts,
 				pdfData.coords.y - ( h - size.height() * imgScale ) / 2.0,
 				size.width() * imgScale, size.height() * imgScale };
 			const auto idx = pdfData.currentPageIndex();
+			qDebug() << r;
 
 			pdfData.coords.y -= h;
 
@@ -2361,6 +2362,7 @@ PdfRenderer::drawMathExpr( PdfAuxData & pdfData, const RenderOpts & renderOpts,
 				pdfData.coords.y + h - ( h - size.height() * imgScale ) / 2.0,
 				size.width() * imgScale, size.height() * imgScale };
 			const auto idx = pdfData.currentPageIndex();
+			qDebug() << r;
 
 			return { r, idx };
 		}
