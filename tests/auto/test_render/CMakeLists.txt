@@ -20,7 +20,9 @@ endif( ENABLE_COVERAGE )
 
 set( SRC main.cpp
 	../../../src/renderer.cpp
-	../../../src/renderer.hpp )
+	../../../src/renderer.hpp
+	../../../src/podofo_paintdevice.cpp
+	../../../src/podofo_paintdevice.hpp )
 
 add_definitions( -DMD_PDF_TESTING )
 

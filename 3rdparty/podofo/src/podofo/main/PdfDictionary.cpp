@@ -28,7 +28,6 @@ PdfDictionary::PdfDictionary(PdfDictionary&& rhs) noexcept
 
 PdfDictionary& PdfDictionary::operator=(const PdfDictionary& rhs)
 {
-    AssertMutable();
     m_Map = rhs.m_Map;
     setChildrenParent();
     return *this;
@@ -36,7 +35,6 @@ PdfDictionary& PdfDictionary::operator=(const PdfDictionary& rhs)
 
 PdfDictionary& PdfDictionary::operator=(PdfDictionary&& rhs) noexcept
 {
-    AssertMutable();
     m_Map = std::move(rhs.m_Map);
     setChildrenParent();
     return *this;
@@ -62,7 +60,6 @@ bool PdfDictionary::operator!=(const PdfDictionary& rhs) const
 
 void PdfDictionary::Clear()
 {
-    AssertMutable();
     if (!m_Map.empty())
     {
         m_Map.clear();
@@ -72,19 +69,16 @@ void PdfDictionary::Clear()
 
 PdfObject& PdfDictionary::AddKey(const PdfName& key, const PdfObject& obj)
 {
-    AssertMutable();
     return addKey(key, PdfObject(obj));
 }
 
 PdfObject& PdfDictionary::AddKey(const PdfName& key, PdfObject&& obj)
 {
-    AssertMutable();
     return addKey(key, std::move(obj));
 }
 
 void PdfDictionary::AddKeyIndirect(const PdfName& key, const PdfObject& obj)
 {
-    AssertMutable();
     if (IsIndirectReferenceAllowed(obj))
         (void)addKey(key, obj.GetIndirectReference());
     else
@@ -93,7 +87,6 @@ void PdfDictionary::AddKeyIndirect(const PdfName& key, const PdfObject& obj)
 
 PdfObject& PdfDictionary::AddKeyIndirectSafe(const PdfName& key, const PdfObject& obj)
 {
-    AssertMutable();
     if (IsIndirectReferenceAllowed(obj))
         return addKey(key, obj.GetIndirectReference());
     else
@@ -185,7 +178,6 @@ bool PdfDictionary::HasKey(const string_view& key) const
 
 bool PdfDictionary::RemoveKey(const string_view& key)
 {
-    AssertMutable();
     PdfDictionaryMap::iterator found = m_Map.find(key);
     if (found == m_Map.end())
         return false;
@@ -321,7 +313,6 @@ unsigned PdfDictionary::GetSize() const
 
 PdfDictionaryIndirectIterable PdfDictionary::GetIndirectIterator()
 {
-    AssertMutable();
     return PdfDictionaryIndirectIterable(*this);
 }
 
@@ -350,13 +341,11 @@ PdfObject& PdfDictionary::MustGetKey(const string_view& key)
 
 PdfDictionary::iterator PdfDictionary::begin()
 {
-    AssertMutable();
     return m_Map.begin();
 }
 
 PdfDictionary::iterator PdfDictionary::end()
 {
-    AssertMutable();
     return m_Map.end();
 }
 

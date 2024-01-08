@@ -66,9 +66,6 @@ PdfStreamedObjectStream::PdfStreamedObjectStream(OutputStreamDevice& device) :
 
 void PdfStreamedObjectStream::Init(PdfObject& obj)
 {
-    // Prepare a /Length indirect object that will be set
-    // with stream size after the stream has been written
-    // back to the device
     m_LengthObj = &obj.GetDocument()->GetObjects().CreateObject(static_cast<int64_t>(0));
     obj.GetDictionary().AddKey(PdfName::KeyLength, m_LengthObj->GetIndirectReference());
 }
@@ -98,6 +95,7 @@ unique_ptr<InputStream> PdfStreamedObjectStream::GetInputStream(PdfObject& obj)
 
 unique_ptr<OutputStream> PdfStreamedObjectStream::GetOutputStream(PdfObject& obj)
 {
+    obj.GetDocument()->GetObjects().WriteObject(obj);
     if (m_CurrEncrypt == nullptr)
     {
         return std::make_unique<ObjectOutputStream>(*this, *m_Device);
@@ -121,13 +119,16 @@ size_t PdfStreamedObjectStream::GetLength() const
     return m_Length;
 }
 
+bool PdfStreamedObjectStream::IsLengthHandled() const
+{
+    return true;
+}
+
 void PdfStreamedObjectStream::FinishOutput()
 {
     if (m_CurrEncrypt != nullptr)
         m_Length = m_CurrEncrypt->CalculateStreamLength(m_Length);
 
-    // Finally set the actual length of the stream
-    // on the /Length indirect object
     m_LengthObj->SetNumber(static_cast<int64_t>(m_Length));
 }
 

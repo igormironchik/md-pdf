@@ -37,11 +37,27 @@ class PODOFO_API PdfIndirectObjectList final
     friend class PdfImmediateWriter;
 
 private:
-    static bool CompareObject(const PdfObject* p1, const PdfObject* p2);
-    static bool CompareReference(const PdfObject* obj, const PdfReference& ref);
+    // Comparator to enable heterogeneous lookup with
+    // both objects and references
+    // See https://stackoverflow.com/a/31924435/213871
+    struct ObjectListComparator final
+    {
+        using is_transparent = std::true_type;
+        bool operator()(const PdfObject* lhs, const PdfObject* rhs) const
+        {
+            return lhs->GetIndirectReference() < rhs->GetIndirectReference();
+        }
+        bool operator()(const PdfObject* lhs, const PdfReference& rhs) const
+        {
+            return lhs->GetIndirectReference() < rhs;
+        }
+        bool operator()(const PdfReference& lhs, const PdfObject* rhs) const
+        {
+            return lhs < rhs->GetIndirectReference();
+        }
+    };
 
-private:
-    using ObjectList = std::set<PdfObject*, decltype(CompareObject)*>;
+    using ObjectList = std::set<PdfObject*, ObjectListComparator>;
 
 public:
     // An incomplete set of container typedefs, just enough to handle
@@ -58,6 +74,8 @@ public:
     public:
         virtual ~Observer() { }
 
+        virtual void WriteObject(const PdfObject& obj) = 0;
+
         /** Called whenever appending to a stream is started.
          *  \param stream the stream object the user currently writes to.
          */
@@ -67,6 +85,8 @@ public:
          *  \param stream the stream object the user currently writes to.
          */
         virtual void EndAppendStream(PdfObjectStream& stream) = 0;
+
+        virtual void Finish() = 0;
     };
 
     /** This class is used to implement stream factories in PoDoFo.
@@ -209,6 +229,16 @@ public:
      *  \returns a new stream object
      */
     std::unique_ptr<PdfObjectStreamProvider> CreateStream();
+
+    /** Can be called to force objects to be written to disk.
+     *
+     *  \param obj a PdfObject that should be written to disk.
+     */
+    void WriteObject(PdfObject& obj);
+
+    /** Call whenever a document is finished
+     */
+    void Finish();
 
     /** Every stream implementation has to call this in BeginAppend
      *  \param stream the stream object that is calling

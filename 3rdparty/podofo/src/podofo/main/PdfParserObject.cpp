@@ -32,6 +32,10 @@ PdfParserObject::PdfParserObject(PdfDocument& doc, InputStreamDevice& device, ss
 {
 }
 
+PdfParserObject::PdfParserObject(InputStreamDevice& device,
+    const PdfReference& indirectReference, ssize_t offset)
+    : PdfParserObject(nullptr, indirectReference, device, offset) { }
+
 PdfParserObject::PdfParserObject(InputStreamDevice& device, ssize_t offset)
     : PdfParserObject(nullptr, PdfReference(), device, offset) { }
 
@@ -164,7 +168,7 @@ void PdfParserObject::parseStream()
     int64_t size = -1;
     char ch;
 
-    auto& lengthObj = this->m_Variant.GetDictionaryUnsafe().MustFindKey(PdfName::KeyLength);
+    auto& lengthObj = this->m_Variant.GetDictionary().MustFindKey(PdfName::KeyLength);
     if (!lengthObj.TryGetNumber(size))
         PODOFO_RAISE_ERROR(PdfErrorCode::InvalidStreamLength);
 
@@ -218,7 +222,7 @@ ReadStream:
     if (m_Encrypt != nullptr && !m_Encrypt->IsMetadataEncrypted())
     {
         // If metadata is not encrypted the Filter is set to "Crypt"
-        auto filterObj = this->m_Variant.GetDictionaryUnsafe().FindKey(PdfName::KeyFilter);
+        auto filterObj = this->m_Variant.GetDictionary().FindKey(PdfName::KeyFilter);
         if (filterObj != nullptr && filterObj->IsArray())
         {
             auto& filters = filterObj->GetArray();
@@ -253,7 +257,7 @@ void PdfParserObject::checkReference(PdfTokenizer& tokenizer)
     {
         PoDoFo::LogMessage(PdfLogSeverity::Warning,
             "Found object with reference {} different than reported {} in XRef sections",
-            GetIndirectReference().ToString(), reference.ToString());
+            reference.ToString(), GetIndirectReference().ToString());
     }
 }
 

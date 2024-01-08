@@ -38,15 +38,9 @@ class PODOFO_API PdfObject
     friend class PdfDictionary;
     friend class PdfDocument;
     friend class PdfObjectStream;
-    friend class PdfObjectOutputStream;
     friend class PdfDataContainer;
     friend class PdfObjectStreamParser;
     friend class PdfParser;
-    friend class PdfStreamedObjectStream;
-    friend class PdfWriter;
-    friend class PdfImmediateWriter;
-    friend class PdfXRef;
-    friend class PdfXRefStream;
 
 public:
     static PdfObject Null;
@@ -495,20 +489,11 @@ protected:
 
 private:
     // To be called privately by various classes
-    PdfDictionary& GetDictionaryUnsafe();
-    PdfArray& GetArrayUnsafe();
-    void WriteFinal(OutputStream& stream, PdfWriteFlags writeMode,
-        const PdfEncrypt* encrypt, charbuff& buffer);
-
-    // To be called by PdfStreamedObjectStream
-    void SetNumberNoDirtySet(int64_t l);
-
-    // To be called by PdfImmediateWriter
-    void SetImmutable();
-    void WriteHeader(OutputStream& stream, PdfWriteFlags writeMode, charbuff& buffer) const;
-
-    // To be called by PdfDataContainer
-    bool IsImmutable() const { return m_IsImmutable; }
+    PdfReference GetReferenceUnsafe() const { return m_Variant.GetReferenceUnsafe(); }
+    const PdfDictionary& GetDictionaryUnsafe() const { return m_Variant.GetDictionaryUnsafe(); }
+    const PdfArray& GetArrayUnsafe() const { return m_Variant.GetArrayUnsafe(); }
+    PdfDictionary& GetDictionaryUnsafe() { return m_Variant.GetDictionaryUnsafe(); }
+    PdfArray& GetArrayUnsafe() { return m_Variant.GetArrayUnsafe(); }
 
     // Assign function that doesn't set dirty
     void Assign(const PdfObject& rhs);
@@ -516,11 +501,6 @@ private:
     void SetParent(PdfDataContainer& parent);
 
 private:
-    void write(OutputStream& stream, bool skipLengthFix,
-        PdfWriteFlags writeMode, const PdfEncrypt* encrypt, charbuff& buffer) const;
-
-    void assertMutable() const;
-
     void assign(const PdfObject& rhs);
 
     void moveFrom(PdfObject& rhs);
@@ -550,7 +530,7 @@ private:
     PdfDocument* m_Document;
     PdfDataContainer* m_Parent;
     bool m_IsDirty; // Indicates if this object was modified after construction
-    bool m_IsImmutable;
+
     mutable bool m_IsDelayedLoadDone;
     mutable bool m_IsDelayedLoadStreamDone;
     std::unique_ptr<PdfObjectStream> m_Stream;
