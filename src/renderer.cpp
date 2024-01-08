@@ -2189,19 +2189,14 @@ PdfRenderer::drawMathExpr( PdfAuxData & pdfData, const RenderOpts & renderOpts,
 	mt.parse( item->expr() );
 
 	QSizeF pxSize = {}, size = {};
-
-	auto * mfont = createFont( renderOpts.m_mathFont, false, false,
-		renderOpts.m_mathFontSize, pdfData.doc, scale, pdfData );
-
-	double descent = - pdfData.fontDescent( mfont,
-		renderOpts.m_mathFontSize, scale );
+	double descent = 0.0;
 
 	{
 		PoDoFoPaintDevice pd;
 		QPainter p( &pd );
 		pxSize = mt.getSize( p );
 		size = { pxSize.width() * ( 1.0 / pd.physicalDpiX() * 72.0 ),
-			pxSize.height() * (1.0 / pd.physicalDpiY() * 72.0 ) };
+			pxSize.height() * ( 1.0 / pd.physicalDpiY() * 72.0 ) };
 	}
 
 	auto * font = createFont( renderOpts.m_textFont, false, false,
