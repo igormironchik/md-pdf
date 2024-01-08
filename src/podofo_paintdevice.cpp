@@ -26,7 +26,7 @@
 // Qt include.
 #include <QPainterPath>
 #include <QTextItem>
-#include <QDebug>
+#include <QTransform>
 
 
 //
@@ -135,6 +135,8 @@ struct PoDoFoPaintEnginePrivate {
 	PoDoFo::PdfPainter * painter = nullptr;
 	//! Pdf document.
 	PoDoFo::PdfDocument * doc = nullptr;
+	//! Transformation.
+	QTransform transform;
 }; // struct PoDoFoPaintEnginePrivate
 
 
@@ -205,7 +207,8 @@ PoDoFoPaintEngine::drawLines( const QLineF * lines, int lineCount )
 	{
 		for( int i = 0; i < lineCount; ++i )
 		{
-			auto l = lines[ i ];
+			const auto l = d->transform.map( lines[ i ] );
+
 			d->painter->DrawLine( qXtoPoDoFo( l.x1() ), qYtoPoDoFo( l.y1() ),
 				qXtoPoDoFo( l.x2() ), qYtoPoDoFo( l.y2() ) );
 		}
@@ -219,7 +222,8 @@ PoDoFoPaintEngine::drawLines( const QLine * lines, int lineCount )
 	{
 		for( int i = 0; i < lineCount; ++i )
 		{
-			auto l = lines[ i ];
+			const auto l = d->transform.map( lines[ i ] );
+
 			d->painter->DrawLine( qXtoPoDoFo( l.x1() ), qYtoPoDoFo( l.y1() ),
 				qXtoPoDoFo( l.x2() ), qYtoPoDoFo( l.y2() ) );
 		}
@@ -232,6 +236,8 @@ PoDoFoPaintEngine::drawPath( const QPainterPath & path )
 	if( d->painter )
 	{
 		PoDoFo::PdfPainterPath p;
+		QPointF start, end;
+		bool initialized = false;
 
 		for( int i = 0; i < path.elementCount(); ++i )
 		{
@@ -241,13 +247,24 @@ PoDoFoPaintEngine::drawPath( const QPainterPath & path )
 			{
 				case QPainterPath::MoveToElement :
 				{
-					p.MoveTo( qXtoPoDoFo( e.x ), qYtoPoDoFo( e.y ) );
+					const auto pp = d->transform.map( QPointF( e.x, e.y ) );
+
+					if( !initialized )
+					{
+						start = { pp.x(), pp.y() };
+						initialized = true;
+					}
+
+					p.MoveTo( qXtoPoDoFo( pp.x() ), qYtoPoDoFo( pp.y() ) );
 				}
 					break;
 
 				case QPainterPath::LineToElement :
 				{
-					p.AddLineTo( qXtoPoDoFo( e.x ), qYtoPoDoFo( e.y ) );
+					const auto pp = d->transform.map( QPointF( e.x, e.y ) );
+
+					p.AddLineTo( qXtoPoDoFo( pp.x() ), qYtoPoDoFo( pp.y() ) );
+					end = { pp.x(), pp.y() };
 				}
 					break;
 
@@ -256,9 +273,17 @@ PoDoFoPaintEngine::drawPath( const QPainterPath & path )
 					Q_ASSERT( path.elementAt( i + 1 ).type == QPainterPath::CurveToDataElement );
 					Q_ASSERT( path.elementAt( i + 2 ).type == QPainterPath::CurveToDataElement );
 
-					p.AddCubicBezierTo( qXtoPoDoFo( e.x ), qYtoPoDoFo( e.y ),
-						qXtoPoDoFo( path.elementAt( i + 1 ).x ), qYtoPoDoFo( path.elementAt( i + 1 ).y ),
-						qXtoPoDoFo( path.elementAt( i + 2 ).x ), qYtoPoDoFo( path.elementAt( i + 2 ).y ) );
+					const auto pp = d->transform.map( QPointF( e.x, e.y ) );
+					const auto pp1 = d->transform.map( QPointF( path.elementAt( i + 1 ).x,
+						path.elementAt( i + 1 ).y ) );
+					const auto pp2 = d->transform.map( QPointF( path.elementAt( i + 2 ).x,
+						path.elementAt( i + 2 ).y ) );
+
+					end = { pp.x(), pp.y() };
+
+					p.AddCubicBezierTo( qXtoPoDoFo( pp.x() ), qYtoPoDoFo( pp.y() ),
+						qXtoPoDoFo( pp1.x() ), qYtoPoDoFo( pp1.y() ),
+						qXtoPoDoFo( pp2.x() ), qYtoPoDoFo( pp2.y() ) );
 
 					i += 2;
 				}
@@ -269,7 +294,8 @@ PoDoFoPaintEngine::drawPath( const QPainterPath & path )
 			}
 		}
 
-		d->painter->DrawPath( p );
+		d->painter->DrawPath( p, start == end ? PoDoFo::PdfPathDrawMode::StrokeFill :
+			PoDoFo::PdfPathDrawMode::Stroke );
 	}
 }
 
@@ -325,7 +351,8 @@ PoDoFoPaintEngine::drawRects( const QRectF * rects, int rectCount )
 	if( d->painter )
 	{
 		for( int i = 0; i < rectCount; ++i )
-			d->painter->DrawRectangle( qRectFtoPoDoFo( rects[ i ] ) );
+			d->painter->DrawRectangle( qRectFtoPoDoFo(
+				d->transform.mapRect( rects[ i ] ) ) );
 	}
 }
 
@@ -335,7 +362,8 @@ PoDoFoPaintEngine::drawRects( const QRect * rects, int rectCount )
 	if( d->painter )
 	{
 		for( int i = 0; i < rectCount; ++i )
-			d->painter->DrawRectangle( qRectFtoPoDoFo( rects[ i ].toRectF() ) );
+			d->painter->DrawRectangle( qRectFtoPoDoFo(
+				d->transform.mapRect( rects[ i ].toRectF() ) ) );
 	}
 }
 
@@ -345,10 +373,11 @@ PoDoFoPaintEngine::drawTextItem( const QPointF & p, const QTextItem & textItem )
 	if( d->painter )
 	{
 		const auto f = qFontToPoDoFo( textItem.font() );
+		const auto pp = d->transform.map( p );
 
 		d->painter->TextObject.Begin();
-		d->painter->TextObject.MoveTo( qXtoPoDoFo( p.x() ),
-			qYtoPoDoFo( p.y() ) );
+		d->painter->TextObject.MoveTo( qXtoPoDoFo( pp.x() ),
+			qYtoPoDoFo( pp.y() ) );
 		d->painter->TextState.SetFont( *f.first, f.second );
 		d->painter->TextState.SetFontScale( 1.0 );
 		const auto utf8 = textItem.text().toUtf8();
@@ -460,4 +489,7 @@ PoDoFoPaintEngine::updateState( const QPaintEngineState & state )
 
 		d->painter->TextState.SetFont( *f.first, f.second );
 	}
+
+	if( st && QPaintEngine::DirtyTransform )
+		d->transform = state.transform();
 }
