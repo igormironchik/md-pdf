@@ -2270,12 +2270,12 @@ PdfRenderer::drawMathExpr( PdfAuxData & pdfData, const RenderOpts & renderOpts,
 			QPainter p( &pd );
 
 			mt.draw( p, 0, QRectF( QPointF( ( pdfData.coords.x + x ) / 72.0 * pd.physicalDpiX(),
-				( pdfData.coords.y - ( h - size.height() * imgScale ) / 2.0 ) / 72.0 * pd.physicalDpiY() ),
+				( pdfData.coords.pageHeight - pdfData.coords.y + ( h - size.height() * imgScale ) / 2.0 ) /
+					72.0 * pd.physicalDpiY() ),
 				pxSize ) );
 
 			const QRectF r = { pdfData.coords.x + x,
-				pdfData.coords.y - size.height() * imgScale -
-				( h - size.height() * imgScale ) / 2.0,
+				pdfData.coords.y - ( h - size.height() * imgScale ) / 2.0,
 				size.width() * imgScale, size.height() * imgScale };
 			const auto idx = pdfData.currentPageIndex();
 
@@ -2352,12 +2352,13 @@ PdfRenderer::drawMathExpr( PdfAuxData & pdfData, const RenderOpts & renderOpts,
 			QPainter p( &pd );
 
 			mt.draw( p, 0, QRectF( QPointF( ( pdfData.coords.x ) / 72.0 * pd.physicalDpiX(),
-				( pdfData.coords.y + ( h - size.height() * imgScale ) / 2.0 ) / 72.0 * pd.physicalDpiY() ), pxSize ) );
+				( pdfData.coords.pageHeight - pdfData.coords.y - h + ( h - size.height() * imgScale ) / 2.0 ) /
+					72.0 * pd.physicalDpiY() ), pxSize ) );
 
 			pdfData.coords.x += size.width() * imgScale;
 
 			const QRectF r = { pdfData.coords.x,
-				pdfData.coords.y + ( h - size.height() * imgScale ) / 2.0,
+				pdfData.coords.y + h - ( h - size.height() * imgScale ) / 2.0,
 				size.width() * imgScale, size.height() * imgScale };
 			const auto idx = pdfData.currentPageIndex();
 

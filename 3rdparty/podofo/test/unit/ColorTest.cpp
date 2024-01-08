@@ -56,7 +56,7 @@ TEST_CASE("testDefaultConstructor")
     PdfColor color;
 
     REQUIRE(color.IsGrayScale());
-    REQUIRE(color.GetColorSpace() == PdfColorSpaceType::DeviceGray);
+    REQUIRE(color.GetColorSpace() == PdfColorSpace::DeviceGray);
     REQUIRE(color.GetGrayScale() == 0);
     REQUIRE(color.ConvertToGrayScale().GetGrayScale() == 0);
     REQUIRE(color.ConvertToRGB() == PdfColor(0, 0, 0));
@@ -134,7 +134,7 @@ TEST_CASE("testGreyConstructor")
     REQUIRE(!color.IsCMYK());
     REQUIRE(!color.IsSeparation());
     REQUIRE(!color.IsCieLab());
-    REQUIRE(color.GetColorSpace() == PdfColorSpaceType::DeviceGray);
+    REQUIRE(color.GetColorSpace() == PdfColorSpace::DeviceGray);
 
     ASSERT_THROW_WITH_ERROR_CODE(
         color.GetAlternateColorSpace(),
@@ -231,7 +231,7 @@ TEST_CASE("testRGBConstructor")
     REQUIRE(!color.IsCMYK());
     REQUIRE(!color.IsSeparation());
     REQUIRE(!color.IsCieLab());
-    REQUIRE(color.GetColorSpace() == PdfColorSpaceType::DeviceRGB);
+    REQUIRE(color.GetColorSpace() == PdfColorSpace::DeviceRGB);
 
     ASSERT_THROW_WITH_ERROR_CODE(
         color.GetAlternateColorSpace(),
@@ -372,7 +372,7 @@ TEST_CASE("testCMYKConstructor")
     REQUIRE(color.IsCMYK());
     REQUIRE(!color.IsSeparation());
     REQUIRE(!color.IsCieLab());
-    REQUIRE(color.GetColorSpace() == PdfColorSpaceType::DeviceCMYK);
+    REQUIRE(color.GetColorSpace() == PdfColorSpace::DeviceCMYK);
 
     ASSERT_THROW_WITH_ERROR_CODE(
         color.GetAlternateColorSpace(),
@@ -540,7 +540,7 @@ TEST_CASE("testCopyConstructor")
         REQUIRE(!color.IsCMYK());
         REQUIRE(!color.IsSeparation());
         REQUIRE(!color.IsCieLab());
-        REQUIRE(color.GetColorSpace() == PdfColorSpaceType::DeviceGray);
+        REQUIRE(color.GetColorSpace() == PdfColorSpace::DeviceGray);
 
         REQUIRE(color.GetGrayScale() == GRAY_VALUE);
     }
@@ -557,7 +557,7 @@ TEST_CASE("testCopyConstructor")
         REQUIRE(!color.IsCMYK());
         REQUIRE(!color.IsSeparation());
         REQUIRE(!color.IsCieLab());
-        REQUIRE(color.GetColorSpace() == PdfColorSpaceType::DeviceRGB);
+        REQUIRE(color.GetColorSpace() == PdfColorSpace::DeviceRGB);
 
         REQUIRE(color.GetRed() == R_VALUE);
         REQUIRE(color.GetGreen() == G_VALUE);
@@ -577,7 +577,7 @@ TEST_CASE("testCopyConstructor")
         REQUIRE(color.IsCMYK());
         REQUIRE(!color.IsSeparation());
         REQUIRE(!color.IsCieLab());
-        REQUIRE(color.GetColorSpace() == PdfColorSpaceType::DeviceCMYK);
+        REQUIRE(color.GetColorSpace() == PdfColorSpace::DeviceCMYK);
 
         REQUIRE(color.GetCyan() == C_VALUE);
         REQUIRE(color.GetMagenta() == M_VALUE);
@@ -599,7 +599,7 @@ TEST_CASE("testAssignmentOperator")
         REQUIRE(!color.IsCMYK());
         REQUIRE(!color.IsSeparation());
         REQUIRE(!color.IsCieLab());
-        REQUIRE(color.GetColorSpace() == PdfColorSpaceType::DeviceGray);
+        REQUIRE(color.GetColorSpace() == PdfColorSpace::DeviceGray);
 
         REQUIRE(color.GetGrayScale() == GRAY_VALUE);
     }
@@ -617,7 +617,7 @@ TEST_CASE("testAssignmentOperator")
         REQUIRE(!color.IsCMYK());
         REQUIRE(!color.IsSeparation());
         REQUIRE(!color.IsCieLab());
-        REQUIRE(color.GetColorSpace() == PdfColorSpaceType::DeviceRGB);
+        REQUIRE(color.GetColorSpace() == PdfColorSpace::DeviceRGB);
 
         REQUIRE(color.GetRed() == R_VALUE);
         REQUIRE(color.GetGreen() == G_VALUE);
@@ -638,7 +638,7 @@ TEST_CASE("testAssignmentOperator")
         REQUIRE(color.IsCMYK());
         REQUIRE(!color.IsSeparation());
         REQUIRE(!color.IsCieLab());
-        REQUIRE(color.GetColorSpace() == PdfColorSpaceType::DeviceCMYK);
+        REQUIRE(color.GetColorSpace() == PdfColorSpace::DeviceCMYK);
 
         REQUIRE(color.GetCyan() == C_VALUE);
         REQUIRE(color.GetMagenta() == M_VALUE);
@@ -1641,7 +1641,7 @@ TEST_CASE("testColorGreyConstructor")
     REQUIRE(!color.IsCMYK());
     REQUIRE(!color.IsSeparation());
     REQUIRE(!color.IsCieLab());
-    REQUIRE(color.GetColorSpace() == PdfColorSpaceType::DeviceGray);
+    REQUIRE(color.GetColorSpace() == PdfColorSpace::DeviceGray);
 
     REQUIRE(color.GetGrayScale() == GRAY_VALUE);
 }
@@ -1658,7 +1658,7 @@ TEST_CASE("testColorRGBConstructor")
     REQUIRE(!color.IsCMYK());
     REQUIRE(!color.IsSeparation());
     REQUIRE(!color.IsCieLab());
-    REQUIRE(color.GetColorSpace() == PdfColorSpaceType::DeviceRGB);
+    REQUIRE(color.GetColorSpace() == PdfColorSpace::DeviceRGB);
 
     REQUIRE(color.GetRed() == R_VALUE);
     REQUIRE(color.GetGreen() == G_VALUE);
@@ -1678,7 +1678,7 @@ TEST_CASE("testColorCMYKConstructor")
     REQUIRE(color.IsCMYK());
     REQUIRE(!color.IsSeparation());
     REQUIRE(!color.IsCieLab());
-    REQUIRE(color.GetColorSpace() == PdfColorSpaceType::DeviceCMYK);
+    REQUIRE(color.GetColorSpace() == PdfColorSpace::DeviceCMYK);
 
     REQUIRE(color.GetCyan() == C_VALUE);
     REQUIRE(color.GetMagenta() == M_VALUE);
@@ -1695,8 +1695,8 @@ TEST_CASE("testColorSeparationAllConstructor")
     REQUIRE(!color.IsCMYK());
     REQUIRE(color.IsSeparation());
     REQUIRE(!color.IsCieLab());
-    REQUIRE(color.GetColorSpace() == PdfColorSpaceType::Separation);
-    REQUIRE(color.GetAlternateColorSpace() == PdfColorSpaceType::DeviceCMYK);
+    REQUIRE(color.GetColorSpace() == PdfColorSpace::Separation);
+    REQUIRE(color.GetAlternateColorSpace() == PdfColorSpace::DeviceCMYK);
 
     ASSERT_THROW_WITH_ERROR_CODE(
         color.GetGrayScale(),
@@ -1755,8 +1755,8 @@ TEST_CASE("testColorSeparationNoneConstructor")
     REQUIRE(!color.IsCMYK());
     REQUIRE(color.IsSeparation());
     REQUIRE(!color.IsCieLab());
-    REQUIRE(color.GetColorSpace() == PdfColorSpaceType::Separation);
-    REQUIRE(color.GetAlternateColorSpace() == PdfColorSpaceType::DeviceCMYK);
+    REQUIRE(color.GetColorSpace() == PdfColorSpace::Separation);
+    REQUIRE(color.GetAlternateColorSpace() == PdfColorSpace::DeviceCMYK);
 
     ASSERT_THROW_WITH_ERROR_CODE(
         color.GetGrayScale(),
@@ -1819,8 +1819,8 @@ TEST_CASE("testColorSeparationConstructor")
         REQUIRE(!color.IsCMYK());
         REQUIRE(color.IsSeparation());
         REQUIRE(!color.IsCieLab());
-        REQUIRE(color.GetColorSpace() == PdfColorSpaceType::Separation);
-        REQUIRE(color.GetAlternateColorSpace() == PdfColorSpaceType::DeviceGray);
+        REQUIRE(color.GetColorSpace() == PdfColorSpace::Separation);
+        REQUIRE(color.GetAlternateColorSpace() == PdfColorSpace::DeviceGray);
 
         REQUIRE(ALTERNATE_COLOR.GetGrayScale() == color.GetGrayScale());
 
@@ -1898,8 +1898,8 @@ TEST_CASE("testColorSeparationConstructor")
         REQUIRE(!color.IsCMYK());
         REQUIRE(color.IsSeparation());
         REQUIRE(!color.IsCieLab());
-        REQUIRE(color.GetColorSpace() == PdfColorSpaceType::Separation);
-        REQUIRE(color.GetAlternateColorSpace() == PdfColorSpaceType::DeviceRGB);
+        REQUIRE(color.GetColorSpace() == PdfColorSpace::Separation);
+        REQUIRE(color.GetAlternateColorSpace() == PdfColorSpace::DeviceRGB);
 
         ASSERT_THROW_WITH_ERROR_CODE(
             color.GetGrayScale(),
@@ -1972,8 +1972,8 @@ TEST_CASE("testColorSeparationConstructor")
         REQUIRE(!color.IsCMYK());
         REQUIRE(color.IsSeparation());
         REQUIRE(!color.IsCieLab());
-        REQUIRE(color.GetColorSpace() == PdfColorSpaceType::Separation);
-        REQUIRE(color.GetAlternateColorSpace() == PdfColorSpaceType::DeviceCMYK);
+        REQUIRE(color.GetColorSpace() == PdfColorSpace::Separation);
+        REQUIRE(color.GetAlternateColorSpace() == PdfColorSpace::DeviceCMYK);
 
         ASSERT_THROW_WITH_ERROR_CODE(
             color.GetGrayScale(),
@@ -2034,8 +2034,8 @@ TEST_CASE("testColorSeparationConstructor")
         REQUIRE(!color.IsCMYK());
         REQUIRE(color.IsSeparation());
         REQUIRE(!color.IsCieLab());
-        REQUIRE(color.GetColorSpace() == PdfColorSpaceType::Separation);
-        REQUIRE(color.GetAlternateColorSpace() == PdfColorSpaceType::Lab);
+        REQUIRE(color.GetColorSpace() == PdfColorSpace::Separation);
+        REQUIRE(color.GetAlternateColorSpace() == PdfColorSpace::Lab);
 
         ASSERT_THROW_WITH_ERROR_CODE(
             color.GetGrayScale(),
@@ -2106,7 +2106,7 @@ TEST_CASE("testColorCieLabConstructor")
     REQUIRE(!color.IsCMYK());
     REQUIRE(!color.IsSeparation());
     REQUIRE(color.IsCieLab());
-    REQUIRE(color.GetColorSpace() == PdfColorSpaceType::Lab);
+    REQUIRE(color.GetColorSpace() == PdfColorSpace::Lab);
 
     ASSERT_THROW_WITH_ERROR_CODE(
         color.GetAlternateColorSpace(),

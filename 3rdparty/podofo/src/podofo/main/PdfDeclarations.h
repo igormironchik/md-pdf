@@ -314,7 +314,7 @@ enum class PdfFontMatchBehaviorFlags
  * Enum for the colorspaces supported
  * by PDF.
  */
-enum class PdfColorSpaceType : uint8_t
+enum class PdfColorSpace : uint8_t
 {
     Unknown = 0,
     DeviceGray,
@@ -429,9 +429,6 @@ enum class PdfSaveOptions
     None = 0,
     _Reserved1 = 1,
     _Reserved2 = 2,
-    /** Don't flate compress plain/uncompressed streams
-     * \remarks Already compressed objects will not be affected
-     */
     NoFlateCompress = 4,
     NoCollectGarbage = 8,
     /**

@@ -66,7 +66,7 @@ PdfDocument::PdfDocument(const PdfDocument& doc) :
 
 PdfDocument::~PdfDocument()
 {
-    // NOTE: Members will autoclear
+    // Do nothing, all members will autoclear
 }
 
 void PdfDocument::Clear() 

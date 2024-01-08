@@ -3,8 +3,8 @@
  * SPDX-License-Identifier: LGPL-2.0-or-later
  */
 
-#ifndef PDF_STREAMED_OBJECT_STREAM_H
-#define PDF_STREAMED_OBJECT_STREAM_H
+#ifndef PDF_FILE_OBJECT_STREAM_H
+#define PDF_FILE_OBJECT_STREAM_H
 
 #include "PdfDeclarations.h"
 
@@ -60,6 +60,8 @@ public:
 
     size_t GetLength() const override;
 
+    bool IsLengthHandled() const override;
+
 private:
     /** Set an encryption object which is used to encrypt
      *  all data written to this stream.
@@ -79,4 +81,4 @@ private:
 
 };
 
-#endif // PDF_STREAMED_OBJECT_STREAM_H
+#endif // PDF_FILE_OBJECT_STREAM_H

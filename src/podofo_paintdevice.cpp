@@ -26,6 +26,7 @@
 // Qt include.
 #include <QPainterPath>
 #include <QTextItem>
+#include <QDebug>
 
 
 //
@@ -268,8 +269,7 @@ PoDoFoPaintEngine::drawPath( const QPainterPath & path )
 			}
 		}
 
-		d->painter->DrawPath( p, path.fillRule() == Qt::OddEvenFill ?
-			PoDoFo::PdfPathDrawMode::FillEvenOdd : PoDoFo::PdfPathDrawMode::Fill );
+		d->painter->DrawPath( p );
 	}
 }
 
@@ -348,11 +348,11 @@ PoDoFoPaintEngine::drawTextItem( const QPointF & p, const QTextItem & textItem )
 
 		d->painter->TextObject.Begin();
 		d->painter->TextObject.MoveTo( qXtoPoDoFo( p.x() ),
-			qYtoPoDoFo( p.y() - textItem.ascent() - textItem.descent() ) );
+			qYtoPoDoFo( p.y() ) );
 		d->painter->TextState.SetFont( *f.first, f.second );
 		d->painter->TextState.SetFontScale( 1.0 );
-		const auto data = textItem.text().toUtf8();
-		d->painter->TextObject.AddText( data.data() );
+		const auto utf8 = textItem.text().toUtf8();
+		d->painter->TextObject.AddText( utf8.data() );
 		d->painter->TextObject.End();
 	}
 }

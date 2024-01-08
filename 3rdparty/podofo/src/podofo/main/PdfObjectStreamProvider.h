@@ -37,6 +37,8 @@ public:
     virtual void Write(OutputStream& stream, const PdfStatefulEncrypt& encrypt) = 0;
 
     virtual size_t GetLength() const = 0;
+
+    virtual bool IsLengthHandled() const;
 };
 
 };
