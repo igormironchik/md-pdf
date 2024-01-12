@@ -1708,7 +1708,8 @@ PdfRenderer::drawInlinedCode( PdfAuxData & pdfData, const RenderOpts & renderOpt
 	auto * textFont = createFont( renderOpts.m_textFont, false, false, renderOpts.m_textFontSize,
 		pdfData.doc, scale, pdfData );
 
-	auto * font = createFont( renderOpts.m_codeFont, false, false, renderOpts.m_codeFontSize,
+	auto * font = createFont( renderOpts.m_codeFont, item->opts() & MD::TextOption::BoldText,
+		item->opts() & MD::TextOption::ItalicText, renderOpts.m_codeFontSize,
 		pdfData.doc, scale, pdfData );
 
 	return drawString( pdfData, renderOpts, item->text(),
@@ -1720,7 +1721,8 @@ PdfRenderer::drawInlinedCode( PdfAuxData & pdfData, const RenderOpts & renderOpt
 		nullptr, 0.0, 0.0, nullptr, m_footnoteNum,
 		offset, firstInParagraph, cw,
 		renderOpts.m_syntax->theme().editorColor( KSyntaxHighlighting::Theme::CodeFolding ),
-		inFootnote, false, item->startLine(), item->startColumn(),
+		inFootnote, item->opts() & MD::TextOption::StrikethroughText,
+		item->startLine(), item->startColumn(),
 		item->endLine(), item->endColumn() );
 }
 
