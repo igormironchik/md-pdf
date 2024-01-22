@@ -430,8 +430,7 @@ private:
 		double offset,
 		bool withNewLine,
 		CalcHeightOpt heightCalcOpt,
-		double scale,
-		bool inFootnote );
+		double scale );
 	//! Draw block of code.
 	QPair< QVector< WhereDrawn >, WhereDrawn > drawCode( PdfAuxData & pdfData,
 		const RenderOpts & renderOpts,
@@ -447,8 +446,7 @@ private:
 		std::shared_ptr< MD::Document< MD::QStringTrait > > doc,
 		double offset,
 		CalcHeightOpt heightCalcOpt,
-		double scale,
-		bool inFootnote );
+		double scale );
 	//! Draw list.
 	QPair< QVector< WhereDrawn >, WhereDrawn > drawList( PdfAuxData & pdfData,
 		const RenderOpts & renderOpts,
@@ -458,7 +456,6 @@ private:
 		double offset = 0.0,
 		CalcHeightOpt heightCalcOpt = CalcHeightOpt::Unknown,
 		double scale = 1.0,
-		bool inFootnote = false,
 		bool nested = false );
 	//! Draw table.
 	QPair< QVector< WhereDrawn >, WhereDrawn > drawTable( PdfAuxData & pdfData,
@@ -467,8 +464,7 @@ private:
 		std::shared_ptr< MD::Document< MD::QStringTrait > > doc,
 		double offset,
 		CalcHeightOpt heightCalcOpt,
-		double scale,
-		bool inFootnote );
+		double scale );
 
 	//! \return Minimum necessary height to draw item, meant at least one line.
 	double minNecessaryHeight( PdfAuxData & pdfData,
@@ -476,8 +472,7 @@ private:
 		std::shared_ptr< MD::Item< MD::QStringTrait > > item,
 		std::shared_ptr< MD::Document< MD::QStringTrait > > doc,
 		double offset,
-		double scale,
-		bool inFootnote );
+		double scale );
 	//! \return Height of the footnote.
 	QVector< WhereDrawn > drawFootnote( PdfAuxData & pdfData,
 		const RenderOpts & renderOpts,
@@ -528,7 +523,6 @@ private:
 		double offset,
 		CalcHeightOpt heightCalcOpt,
 		double scale,
-		bool inFootnote,
 		bool firstInList );
 
 	//! Auxiliary struct for calculation of spaces scales to shrink text to width.
@@ -606,8 +600,7 @@ private:
 		double offset,
 		bool firstInParagraph,
 		CustomWidth * cw,
-		double scale,
-		bool inFootnote );
+		double scale );
 	//! Draw inlined code.
 	QVector< QPair< QRectF, unsigned int > > drawInlinedCode( PdfAuxData & pdfData,
 		const RenderOpts & renderOpts,
@@ -617,8 +610,7 @@ private:
 		double offset,
 		bool firstInParagraph,
 		CustomWidth * cw,
-		double scale,
-		bool inFootnote );
+		double scale );
 	//! Draw string.
 	QVector< QPair< QRectF, unsigned int > > drawString( PdfAuxData & pdfData,
 		const RenderOpts & renderOpts,
@@ -643,7 +635,6 @@ private:
 		bool firstInParagraph,
 		CustomWidth * cw,
 		const QColor & background,
-		bool inFootnote,
 		bool strikeout,
 		long long int startLine,
 		long long int startPos,
@@ -663,8 +654,7 @@ private:
 		double offset,
 		bool firstInParagraph,
 		CustomWidth * cw,
-		double scale,
-		bool inFootnote );
+		double scale );
 	//! Draw image.
 	QPair< QRectF, unsigned int > drawImage( PdfAuxData & pdfData,
 		const RenderOpts & renderOpts,
@@ -739,7 +729,6 @@ private:
 		CellData & data,
 		MD::Item< MD::QStringTrait > * item,
 		std::shared_ptr< MD::Document< MD::QStringTrait > > doc,
-		bool inFootnote,
 		const QString & url = {},
 		const QColor & color = {} );
 	//! Create auxiliary table for drawing.
@@ -748,8 +737,7 @@ private:
 		const RenderOpts & renderOpts,
 		MD::Table< MD::QStringTrait > * item,
 		std::shared_ptr< MD::Document< MD::QStringTrait > > doc,
-		double scale,
-		bool inFootnote );
+		double scale );
 	//! Calculate size of the cells in the table.
 	void calculateCellsSize( PdfAuxData & pdfData,
 		QVector< QVector< CellData > > & auxTable,
@@ -767,8 +755,7 @@ private:
 		const RenderOpts & renderOpts,
 		std::shared_ptr< MD::Document< MD::QStringTrait > > doc,
 		QVector< QPair< QString, std::shared_ptr< MD::Footnote< MD::QStringTrait > > > > & footnotes,
-		double scale,
-		bool inFootnote );
+		double scale );
 	//! Draw table border.
 	void drawRowBorder( PdfAuxData & pdfData,
 		int startPage, QVector< WhereDrawn > & ret,
@@ -802,7 +789,6 @@ private:
 		int & endPage,
 		double & endY,
 		QVector< QPair< QString, std::shared_ptr< MD::Footnote< MD::QStringTrait > > > > & footnotes,
-		bool inFootnote,
 		double scale );
 	//! Create new page in table.
 	void newPageInTable( PdfAuxData & pdfData,
