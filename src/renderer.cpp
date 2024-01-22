@@ -39,6 +39,7 @@
 #include <QPainter>
 #include <QApplication>
 #include <QScreen>
+#include <QRegularExpression>
 
 // Magick++ include.
 #include <Magick++.h>
@@ -1431,7 +1432,7 @@ PdfRenderer::drawString( PdfAuxData & pdfData, const RenderOpts & renderOpts, co
 
 	static const QString charsWithoutSpaceBefore = QLatin1String( ".,;" );
 
-	const auto words = str.split( QLatin1Char( ' ' ), Qt::SkipEmptyParts );
+	const auto words = str.split( QRegularExpression( "[ \n]" ), Qt::SkipEmptyParts );
 
 	const auto wv = pdfData.coords.pageWidth - pdfData.coords.margins.right;
 
@@ -1926,6 +1927,13 @@ PdfRenderer::drawParagraph( PdfAuxData & pdfData, const RenderOpts & renderOpts,
 							{ pdfData.currentFile, m_footnoteNum++ } );
 					}
 				}
+				else
+					drawText( pdfData, renderOpts,
+						static_cast< MD::Text< MD::QStringTrait >* > ( it->get() ),
+						doc, newLine, footnoteFont, renderOpts.m_textFontSize * scale, c_footnoteScale,
+						( it + 1 != last ? ( it + 1 )->get() : nullptr ),
+						nextFootnoteNum, offset, ( firstInParagraph || lineBreak ), &cw, scale,
+						inFootnote );
 
 				lineBreak = false;
 				firstInParagraph = false;
@@ -2155,6 +2163,11 @@ PdfRenderer::drawParagraph( PdfAuxData & pdfData, const RenderOpts & renderOpts,
 
 						addFootnote( ref->id(), fit->second, pdfData, renderOpts, doc );
 					}
+					else
+						rects.append( drawText( pdfData, renderOpts,
+							static_cast< MD::Text< MD::QStringTrait >* > ( it->get() ),
+							doc, newLine, nullptr, 0.0, 1.0, nullptr, nextFootnoteNum,
+							offset, ( firstInParagraph || lineBreak ), &cw, scale, inFootnote ) );
 				}
 
 				firstInParagraph = false;
@@ -3707,34 +3720,37 @@ PdfRenderer::createAuxCell( const RenderOpts & renderOpts,
 	const QString & url,
 	const QColor & color )
 {
+	auto handleText = [&]()
+	{
+		auto * t = static_cast< MD::Text< MD::QStringTrait >* > ( item );
+
+		const auto words = t->text().split( QRegularExpression( "[ \n]" ),
+			Qt::SkipEmptyParts );
+
+		for( const auto & w : words )
+		{
+			CellItem item;
+			item.word = w;
+			item.font = { renderOpts.m_textFont,
+				(bool) ( t->opts() & MD::TextOption::BoldText ),
+				(bool) ( t->opts() & MD::TextOption::ItalicText ),
+				(bool) ( t->opts() & MD::TextOption::StrikethroughText ),
+				renderOpts.m_textFontSize };
+
+			if( !url.isEmpty() )
+				item.url = url;
+
+			if( color.isValid() )
+				item.color = color;
+
+			data.items.append( item );
+		}
+	};
+
 	switch( item->type() )
 	{
 		case MD::ItemType::Text :
-		{
-			auto * t = static_cast< MD::Text< MD::QStringTrait >* > ( item );
-
-			const auto words = t->text().split( QLatin1Char( ' ' ),
-				Qt::SkipEmptyParts );
-
-			for( const auto & w : words )
-			{
-				CellItem item;
-				item.word = w;
-				item.font = { renderOpts.m_textFont,
-					(bool) ( t->opts() & MD::TextOption::BoldText ),
-					(bool) ( t->opts() & MD::TextOption::ItalicText ),
-					(bool) ( t->opts() & MD::TextOption::StrikethroughText ),
-					renderOpts.m_textFontSize };
-
-				if( !url.isEmpty() )
-					item.url = url;
-
-				if( color.isValid() )
-					item.color = color;
-
-				data.items.append( item );
-			}
-		}
+			handleText();
 			break;
 
 		case MD::ItemType::Code :
@@ -3890,6 +3906,8 @@ PdfRenderer::createAuxCell( const RenderOpts & renderOpts,
 
 					data.items.append( item );
 				}
+				else
+					handleText();
 			}
 		}
 			break;
