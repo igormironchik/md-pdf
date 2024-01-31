@@ -28,8 +28,9 @@
 #include <cfloat>
 #include <stdint.h>
 #include <QColor>
-#include <mutex>
+#include <QReadWriteLock>
 #include <vector>
+#include <limits>
 #include "jkqtcommon/jkqtcommon_imexport.h"
 #include "jkqtcommon/jkqtpmathtools.h"
 
@@ -341,16 +342,16 @@ enum JKQTPMathImageColorPalette {
     JKQTPMathImagePastel2_STEP, /*!< \image{inline} html palettes/palette_pastel2_step.png */
     JKQTPMathImageSet1_STEP, /*!< \image{inline} html palettes/palette_set1_step.png */
     JKQTPMathImageSet2_STEP, /*!< \image{inline} html palettes/palette_set2_step.png */
+    JKQTPMathImageALPHA, /*!< \brief special palette with increasing alpha values */
+    JKQTPMathImageINVERTED_ALPHA, /*!< \brief special palette with decreasing alpha values */
 
     JKQTPMathImagePREDEFINED_PALETTES_COUNT, /*!< \brief the number of predefined palettes */
 
     JKQTPMathImageUSER_PALETTE=65000, /*!< \brief special value for JKQTPImageTools::array2image(), which signals the usage of a provided user-defined palette */
 
-    JKQTPMathImageALPHA=JKQTPMathImageUSER_PALETTE-2, /*!< \brief special palette with increasing alpha values */
-    JKQTPMathImageINVERTED_ALPHA=JKQTPMathImageUSER_PALETTE-1, /*!< \brief special palette with decreasing alpha values */
 
     JKQTPMathImageFIRST_REGISTERED_USER_PALETTE=JKQTPMathImagePREDEFINED_PALETTES_COUNT,  /*!< \brief the ID of the first user-defined paletted, registered with JKQTPImageTools::registerPalette() or JKQTPImageTools::registerPalettesFromFile() */
-    JKQTPMathImageLAST_POSSIBLE_REGISTERED_USER_PALETTE=JKQTPMathImageUSER_PALETTE-10,  /*!< \brief the ID of the first user-defined paletted, registered with JKQTPImageTools::registerPalette() or JKQTPImageTools::registerPalettesFromFile() */
+    JKQTPMathImageLAST_POSSIBLE_REGISTERED_USER_PALETTE=JKQTPMathImageUSER_PALETTE-10,  /*!< \brief the ID of the last user-defined paletted, registered with JKQTPImageTools::registerPalette() or JKQTPImageTools::registerPalettesFromFile() */
 };
 
 
@@ -482,11 +483,12 @@ struct JKQTPImageTools {
             if (!dbl_in || width<=0 || height<=0)
                     return;
 
+            const int NPixels= jkqtp_bounded<int>(width*height);
             double min = *dbl_in;
             double max = *dbl_in;
             if (jkqtp_approximatelyEqual(minColor, maxColor, JKQTP_DOUBLE_EPSILON)) {
                 bool first=true;
-                for (int i=1; i<width*height; ++i)
+                for (int i=1; i<NPixels; ++i)
                 {
                     T v=dbl_in[i];
                     if (!(std::isnan(static_cast<long double>(v)) || std::isinf(static_cast<long double>(v)))) {
@@ -511,8 +513,8 @@ struct JKQTPImageTools {
             QVector<T> dbl1;
             if (logScale) {
                 double logB=log10(logBase);
-                dbl1=QVector<T>(width*height, 0);
-                for (int i=0; i<width*height; i++) {
+                dbl1=QVector<T>(jkqtp_bounded<int>(NPixels), 0);
+                for (int i=0; i<NPixels; i++) {
                     dbl1[i]=log10(dbl_in[i])/logB;
                 }
                 dbl=dbl1.data();
@@ -664,8 +666,12 @@ struct JKQTPImageTools {
             \see registerPalette() registerPalettesFromFile()
             */
         static JKQTCOMMON_LIB_EXPORT int global_next_userpalette;
-        /** \brief Mutex to protect global_jkqtpimagetools_lutstore and global_next_userpalette */
-        static JKQTCOMMON_LIB_EXPORT std::mutex lutMutex;
+        /** \brief storage for the palette names in getPredefinedPalettes() \internal  */
+        static JKQTCOMMON_LIB_EXPORT QStringList getPredefinedPalettesGlobalList;
+        /** \brief storage for the palette names in etPredefinedPalettesMachineReadable() \internal  */
+        static JKQTCOMMON_LIB_EXPORT QStringList getPredefinedPalettesMachineReadableGlobalList;
+        /** \brief Mutex to protect global_jkqtpimagetools_lutstore, getPredefinedPalettesGlobalList, getPredefinedPalettesMachineReadableGlobalList and global_next_userpalette */
+        static JKQTCOMMON_LIB_EXPORT QReadWriteLock lutMutex;
 
 
         /*! \brief returns data of the default LUTs, used to initialize global_jkqtpimagetools_lutstore
@@ -1172,35 +1178,35 @@ public:
     inline JKQTPPaletteList(): ListType() {};
 #if QT_VERSION >= QT_VERSION_CHECK(6,0,0)
     inline JKQTPPaletteList(qsizetype size): ListType(size) {};
-    inline JKQTPPaletteList(qsizetype size, parameter_type value): ListType(size, value) {};
+    inline JKQTPPaletteList(qsizetype size, parameter_type value): ListType(size, value) {}
 #endif
     template <class T>
-    inline JKQTPPaletteList(std::initializer_list<QPair<double, QRgb>> args): ListType(args) {};
+    inline JKQTPPaletteList(std::initializer_list<QPair<double, QRgb>> args): ListType(args) {}
     inline JKQTPPaletteList(std::initializer_list<QRgb> args):
         ListType()
     {
         for(const auto& v: args) {
             push_back(v);
         }
-    };
+    }
     inline JKQTPPaletteList(std::initializer_list<QColor> args):
         ListType()
     {
         for(const auto& v: args) {
             push_back(v);
         }
-    };
+    }
     inline JKQTPPaletteList(std::initializer_list<QPair<double, QColor>> args):
         ListType()
     {
         for(const auto& v: args) {
             push_back(v.first, v.second);
         }
-    };
+    }
     template <typename InputIterator, QtPrivate::IfIsInputIterator<InputIterator> = true>
-    inline JKQTPPaletteList(InputIterator first, InputIterator last): ListType(first, last) {};
-    inline JKQTPPaletteList(ListType &&other):ListType(std::forward<ListType>(other)) {};
-    inline JKQTPPaletteList(const ListType &other):ListType(other) {};
+    inline JKQTPPaletteList(InputIterator first, InputIterator last): ListType(first, last) {}
+    inline JKQTPPaletteList(ListType &&other):ListType(std::forward<ListType>(other)) {}
+    inline JKQTPPaletteList(const ListType &other):ListType(other) {}
 
     using ListType::push_back;
     inline void push_back(QRgb rgb) {

@@ -24,6 +24,7 @@
 #include <stdlib.h>
 #include <QDebug>
 #include <iostream>
+#include <stdexcept>
 #include "jkqtplotter/jkqtptools.h"
 #include "jkqtplotter/graphs/jkqtpimage.h"
 #include "jkqtplotter/jkqtpbaseelements.h"
@@ -71,7 +72,8 @@ JKQTPEvaluatedFunctionWithErrorsGraphDrawingBase::~JKQTPEvaluatedFunctionWithErr
 }
 
 
-void JKQTPEvaluatedFunctionWithErrorsGraphDrawingBase::drawKeyMarker(JKQTPEnhancedPainter& painter, QRectF& rect) {
+void JKQTPEvaluatedFunctionWithErrorsGraphDrawingBase::drawKeyMarker(JKQTPEnhancedPainter& painter, const QRectF& r) {
+    QRectF rect=r;
     painter.save(); auto __finalpaint=JKQTPFinally([&painter]() {painter.restore();});
     QPen p=getLinePen(painter, parent);
     p.setJoinStyle(Qt::RoundJoin);
@@ -81,6 +83,10 @@ void JKQTPEvaluatedFunctionWithErrorsGraphDrawingBase::drawKeyMarker(JKQTPEnhanc
     QBrush b=getFillBrush(painter, parent);
     const double y=rect.top()+rect.height()/2.0;
     painter.setPen(np);
+    rect.setWidth(rect.width()-p.widthF());
+    rect.setHeight(rect.height()-p.widthF());
+    rect.setX(rect.x()+p.widthF()/2.0);
+    rect.setY(rect.y()+p.widthF()/2.0);
     if (getDrawLine()) painter.setPen(p);
     painter.setBrush(b);
     if (getFillCurve()) painter.drawRect(rect);
@@ -726,12 +732,12 @@ std::function<QPointF (double)> JKQTPXFunctionLineGraph::buildErrorFunctorSpec()
     return spec;
 }
 
-bool JKQTPXFunctionLineGraph::getXMinMax(double &minx, double &maxx, double &smallestGreaterZero)
+bool JKQTPXFunctionLineGraph::getXMinMax(double &/*minx*/, double &/*maxx*/, double &/*smallestGreaterZero*/)
 {
     return false;
 }
 
-bool JKQTPXFunctionLineGraph::getYMinMax(double &miny, double &maxy, double &smallestGreaterZero)
+bool JKQTPXFunctionLineGraph::getYMinMax(double &/*miny*/, double &/*maxy*/, double &/*smallestGreaterZero*/)
 {
     return false;
 }
@@ -835,12 +841,12 @@ std::function<QPointF (double)> JKQTPYFunctionLineGraph::buildErrorFunctorSpec()
     return spec;
 }
 
-bool JKQTPYFunctionLineGraph::getXMinMax(double &miny, double &maxy, double &smallestGreaterZero)
+bool JKQTPYFunctionLineGraph::getXMinMax(double &/*miny*/, double &/*maxy*/, double &/*smallestGreaterZero*/)
 {
     return false;
 }
 
-bool JKQTPYFunctionLineGraph::getYMinMax(double &miny, double &maxy, double &smallestGreaterZero)
+bool JKQTPYFunctionLineGraph::getYMinMax(double &/*miny*/, double &/*maxy*/, double &/*smallestGreaterZero*/)
 {
     return false;
 }

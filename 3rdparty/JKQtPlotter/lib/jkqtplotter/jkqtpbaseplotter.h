@@ -25,6 +25,7 @@
 #include "jkqtplotter/jkqtptools.h"
 #include "jkqtplotter/jkqtpdatastorage.h"
 #include "jkqtplotter/jkqtpbaseplotterstyle.h"
+#include "jkqtplotter/jkqtpkey.h"
 #include "jkqtmathtext/jkqtmathtext.h"
 #include "jkqtplotter/jkqtpbaseelements.h"
 #include "jkqtcommon/jkqtpenhancedpainter.h"
@@ -60,6 +61,7 @@
 class JKQTPGraphsModel; // forward
 class JKQTPGraph; // forward
 class JKQTPPlotElement; // forward
+class JKQTPBaseKey; // forward
 
 /** \brief initialized Qt-ressources necessary for JKQTBasePlotter
  * \ingroup jkqtpplottersupprt */
@@ -70,7 +72,14 @@ JKQTPLOTTER_LIB_EXPORT void initJKQTBasePlotterResources();
 class JKQTPLOTTER_LIB_EXPORT JKQTPSaveDataAdapter {
     public:
         virtual ~JKQTPSaveDataAdapter() ;
+        /** \brief Filter-String for a Qt File-Dialog, e.g. <code>"CSV Files (*.csv)"</code> */
         virtual QString getFilter() const=0;
+        /** \brief a plugin-ID, i.e. a unique name for this format plugin, e.g. \c MyPluginExport_MATLABMAT */
+        virtual QString getFormatID() const=0;
+        /** \brief returns a list (in lower-case) of the file extensions supported by this plugin, e.g. \c {"mat"} */
+        virtual QStringList getFileExtension() const=0;
+
+        /** \brief actually save the table \a data into file \a filename . The parameter \a columnNames provides a name for each column */
         virtual void saveJKQTPData(const QString& filename, const QList<QVector<double> >& data, const QStringList& columnNames) const=0;
 };
 
@@ -80,9 +89,13 @@ class JKQTPLOTTER_LIB_EXPORT JKQTPSaveDataAdapter {
 class JKQTPLOTTER_LIB_EXPORT JKQTPPaintDeviceAdapter {
     public:
         virtual ~JKQTPPaintDeviceAdapter()  {}
+        /** \brief Filter-String for a Qt File-Dialog, e.g. <code>"JPEG Files (*.jpg)"</code> */
         virtual QString getFilter() const=0;
+        /** \brief Human readable name for the format */
         virtual QString getFormatName() const=0;
+        /** \brief a plugin-ID, i.e. a unique name for this format plugin, e.g. \c MyPluginExport_JPEG */
         virtual QString getFormatID() const=0;
+        /** \brief returns a list (in lower-case) of the file extensions supported by this plugin, e.g. \c {"jpg","jpeg"} */
         virtual QStringList getFileExtension() const=0;
         virtual bool getSetAbsolutePaperSize() const=0;
         virtual double getPrintSizeXInMM() const =0;
@@ -464,28 +477,6 @@ class JKQTPLOTTER_LIB_EXPORT JKQTBasePlotter: public QObject {
         void forceInternalDatastore();
 
 
-        /** \brief save the current plot data as a Comma Separated Values (CSV) file
-         *
-         * \param filename the file to save to, if \a filename is empty, a file open dialog will be shown
-         * \param decimalSeparator decimal separator for outpu
-         * \param commentInitializer line-start for comment lines
-         */
-        void saveAsCSV(const QString& filename, const QString& decimalSeparator, const QString& commentInitializer);
-
-        /** \brief save the current plot data as a Semicolon Separated Values (SSV) file
-         *
-         * \param filename the file to save to, if \a filename is empty, a file open dialog will be shown
-         * \param decimalSeparator decimal separator for outpu
-         * \param commentInitializer line-start for comment lines
-         */
-        void saveAsSemicolonSV(const QString& filename, const QString& decimalSeparator, const QString& commentInitializer);        /** \brief save the current plot data as a Tabulator Separated Values (CSV) file
-         *
-         * \param filename the file to save to, if \a filename is empty, a file open dialog will be shown
-         * \param decimalSeparator decimal separator for outpu
-         * \param commentInitializer line-start for comment lines
-         */
-        void saveAsTabSV(const QString& filename, const QString& decimalSeparator, const QString& commentInitializer);
-
 /**@}*/
 
 
@@ -782,7 +773,7 @@ class JKQTPLOTTER_LIB_EXPORT JKQTBasePlotter: public QObject {
                 double m_symbolLineWidth;
                 Qt::PenStyle m_style;
                 double m_symbolSize;
-                Qt::BrushStyle m_fillStyle;
+                JKQTFillStyleSummmary m_fillStyle;
                 Qt::BrushStyle m_errorFillStyle;
                 JKQTPGraphSymbols m_symbol;
 
@@ -809,9 +800,9 @@ class JKQTPLOTTER_LIB_EXPORT JKQTBasePlotter: public QObject {
                 void setFillColor(const QColor& col);
                 void setErrorFillColor(const QColor& col);
                 void setErrorLineColor(const QColor& col);
-                void setFillStyle(Qt::BrushStyle s);
+                void setFillStyle(const JKQTFillStyleSummmary& s);
                 void setErrorFillStyle(Qt::BrushStyle s);
-                Qt::BrushStyle fillStyle() const;
+                JKQTFillStyleSummmary fillStyle() const;
                 Qt::BrushStyle errorFillStyle() const;
                 JKQTPGraphSymbols symbol() const;
                 void setSymbolType(JKQTPGraphSymbols symbol);
@@ -830,7 +821,7 @@ class JKQTPLOTTER_LIB_EXPORT JKQTBasePlotter: public QObject {
 
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////
-/** @name Utilities: Unit Trannsforms */
+/** @name Utilities: Unit Transforms */
 /**@{*/
 
 
@@ -1049,49 +1040,12 @@ class JKQTPLOTTER_LIB_EXPORT JKQTBasePlotter: public QObject {
         QBrush getExportBackgroundBrush() const;
         /** \copydoc JKQTBasePlotterStyle::plotBackgroundBrush  */
         QBrush getPlotBackgroundBrush() const;
-        /** \copydoc JKQTPKeyStyle::fontSize */
-        double getKeyFontSize() const;
-        /** \copydoc JKQTPKeyStyle::itemWidth */
-        double getKeyItemWidth() const;
-        /** \copydoc JKQTPKeyStyle::itemHeight */
-        double getKeyItemHeight() const;
-        /** \copydoc JKQTPKeyStyle::ySeparation */
-        double getKeyYSeparation() const;
-        /** \copydoc JKQTPKeyStyle::sampleLineLength */
-        double getKeyLineLength() const;
-        /** \copydoc JKQTPKeyStyle::xMargin */
-        double getKeyXMargin() const;
-        /** \copydoc JKQTPKeyStyle::yMargin */
-        double getKeyYMargin() const;
-        /** \copydoc JKQTPKeyStyle::xSeparation */
-        double getKeyXSeparation() const;
-        /** \copydoc JKQTPKeyStyle::xOffset */
-        double getKeyXOffset() const;
-        /** \copydoc JKQTPKeyStyle::yOffset */
-        double getKeyYOffset() const;
+
+
         /** \copydoc JKQTPKeyStyle::visible */
         bool getShowKey() const;
-        /** \copydoc JKQTPKeyStyle::frameVisible */
-        bool getShowKeyFrame() const;
-        /** \copydoc JKQTPKeyStyle::frameColor */
-        QColor getKeyFrameColor() const;
-        /** \copydoc JKQTPKeyStyle::backgroundBrush */
-        QColor getKeyBackgroundColor() const;
-        /** \copydoc JKQTPKeyStyle::backgroundBrush */
-        QBrush getKeyBackgroundBrush() const;
-
-        /** \copydoc JKQTPKeyStyle::textColor */
-        QColor getKeyTextColor() const;
-        /** \copydoc JKQTPKeyStyle::frameWidth */
-        double getKeyFrameWidth() const;
-        /** \copydoc JKQTPKeyStyle::frameRounding */
-        double getKeyFrameRounding() const;
-        /** \copydoc JKQTPKeyStyle::autosize */
-        bool getKeyAutosize() const;
         /** \copydoc JKQTPKeyStyle::position */
         JKQTPKeyPosition getKeyPosition() const;
-        /** \copydoc JKQTPKeyStyle::layout */
-        JKQTPKeyLayout getKeyLayout() const;
         /** \copydoc JKQTBasePlotterStyle::defaultTextColor */
         QColor getDefaultTextColor() const;
         /** \copydoc JKQTBasePlotterStyle::defaultFontSize */
@@ -1110,6 +1064,15 @@ class JKQTPLOTTER_LIB_EXPORT JKQTBasePlotter: public QObject {
         double getFontSizeMultiplier() const;
         /** \copydoc lineWidthMultiplier */
         double getLineWidthMultiplier() const;
+        /** \brief retuns the JKQTPKeyStyle to be used for the main key (extracted from JKQTBasePlotterStyle::keyStyle) */
+        const JKQTPKeyStyle& getMainKeyStyle() const;
+
+    protected:
+        /** \brief retuns the JKQTPKeyStyle to be used for the main key (extracted from JKQTBasePlotterStyle::keyStyle) */
+        JKQTPKeyStyle& getMainKeyStyle();
+        friend class JKQTPBaseKey;
+        friend class JKQTPMainKey;
+    public:
 
         /** \brief if set \c true (default: \c false ) the JKQTBasePlotter draws colored rectangles to indicate the different regions in the plot (border, axes, ...)
          *
@@ -1190,10 +1153,14 @@ class JKQTPLOTTER_LIB_EXPORT JKQTBasePlotter: public QObject {
         inline int getPlotWidth() const { return this->internalPlotWidth; }
         /** \copydoc internalPlotHeight */
         inline int getPlotHeight() const { return this->internalPlotHeight; }
-        /** \brief returns the internal JKQTMathText, used to render text with LaTeX markup */
-        JKQTMathText* getMathText();
-        /** \brief returns the internal JKQTMathText, used to render text with LaTeX markup */
-        const JKQTMathText *getMathText() const;
+
+    /**@}*/
+
+
+    //////////////////////////////////////////////////////////////////////////////////////////////////////////////
+    /** @name Coordinate Axis Management */
+    /**@{*/
+
         /** \brief returns the x-axis objet of the plot
          *
          *  \see \ref jkqtplotter_base_grids_baseplotter
@@ -1234,6 +1201,8 @@ class JKQTPLOTTER_LIB_EXPORT JKQTBasePlotter: public QObject {
         QMap<JKQTPCoordinateAxisRef, JKQTPVerticalAxisBase*> getYAxes(bool includePrimary=true);
         /** \brief returns all available x- or y-axes */
         QList<JKQTPCoordinateAxis*> getAxes(bool includePrimaries=true);
+        /** \brief returns all available x- or y-axes */
+        QList<const JKQTPCoordinateAxis*> getAxes(bool includePrimaries=true) const;
 
         /** \brief adds a secondary x-axis
          *
@@ -1303,6 +1272,15 @@ class JKQTPLOTTER_LIB_EXPORT JKQTBasePlotter: public QObject {
 
 /**@}*/
 
+
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////
+/** @name Key Management Management */
+/**@{*/
+    /** \brief retuns the main key object */
+    JKQTPBaseKey* getMainKey();
+    /** \brief retuns the main key object */
+    const JKQTPBaseKey* getMainKey() const;
+/**@}*/
 
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -1465,24 +1443,282 @@ class JKQTPLOTTER_LIB_EXPORT JKQTBasePlotter: public QObject {
          * \internal
          */
         QSizeF getTextSizeSize(const QString& fontName, double fontSize, const QString& text,  QPainter &painter);
+        /** \brief returns the internal JKQTMathText, used to render text with LaTeX markup */
+        JKQTMathText* getMathText();
+        /** \brief returns the internal JKQTMathText, used to render text with LaTeX markup */
+        const JKQTMathText *getMathText() const;
 /**@}*/
 
 
 
 
+
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////
+/** @name Plot Data Export */
+/**@{*/
+public Q_SLOTS:
+
+        /** \brief save the data used for the current plot. The file format is extracted from the file extension (csv, ...)
+         *
+         *   \param filename the filename to save to, if empty a file save dialog is displayed
+         *   \param format The parameter \a format specifies the export format. if it is empty the format will be choosen according to the file extension, or
+         *                 if \a filename is also empty the format will be choosen according to what is selected in the file selection dialog.
+         *                 See below for a listing of supported values.
+         *   \returns returns \c true if the data was exported successfully.
+         *
+         * These values are supported for \a format (if \a format is not provided, the function tries to guess it from the file extensions liste below):
+         *   - \c "csv", Comma Separated Values, dot as decimal separator (see also <a href="https://en.wikipedia.org/wiki/Comma-separated_values">https://en.wikipedia.org/wiki/Comma-separated_values</a>, extensions: \c *.csv , \c *.dat , see JKQTBasePlotter::saveAsCSV()
+         *   - \c "tab" Tab Separated Values, dot as decimal separator, extensions: \c *.txt , see JKQTBasePlotter::saveAsTabSV()
+         *   - \c "sem" or \c "ssv", Semicolon Separated Values, dot as decimal separator, extensions: \c *.sem , \c *.ssv , see JKQTBasePlotter::saveAsSemicolonSV()
+         *   - \c "gex", Semicolon Separated Values for German Excel, i.e. comma as decimal separator, extensions: \c *.gex , see JKQTBasePlotter::saveAsGerExcelCSV()
+         *   - \c "slk" or \c "sylk" , SYmbolik LinK (SYLK) spreadsheet (see <a href="https://en.wikipedia.org/wiki/Symbolic_Link_(SYLK)">https://en.wikipedia.org/wiki/Symbolic_Link_(SYLK)</a> ), extensions: \c *.slk , \c *.sylk , see JKQTBasePlotter::saveAsSYLK()
+         *   - \c "dif", Data Interchange Format (see <a href="https://en.wikipedia.org/wiki/Data_Interchange_Format">https://en.wikipedia.org/wiki/Data_Interchange_Format</a>), extensions: \c *.dif , see JKQTBasePlotter::saveAsDIF()
+         *   - \c "m", Matlab Script, extensions: \c *.m , see JKQTBasePlotter::saveAsMatlab()
+         * .
+         *
+         * In addition you can use the custom exporters implemented as JKQTPSaveDataAdapter and registered using JKQTBasePlotter::registerSaveDataAdapter().
+         * For these you need to use \a format <code>= "customN"</code>, where N is the index of the exporter in the list of registered exporters.
+         */
+        bool saveData(const QString& filename=QString(""), const QString& format=QString(""));
+        /** \brief copy the data used for the current plot to the clipboard
+         *
+         *  copies data as tab separated data with the system-decimal point.
+         */
+        void copyData();
+        /** \brief copy the data used for the current plot to the clipboard as a Matlab script
+         *
+         * example output:
+         * \code
+         * % data from columne 1 ('x')
+         * x = [ 0 0.251327 0.502655 ... ];
+         *
+         * % data from columne 2 ('y')
+         * y = [ 0 0.24869 0.481754 ... ];
+         * \endcode
+         *
+         * \see saveAsMatlab()
+         */
+        void copyDataMatlab();
+        /** \brief save the current plot data as a Comma Separated Values (CSV) file
+         *
+         * \param filename the file to save to, if \a filename is empty, a file open dialog will be shown
+         *
+         *
+         * This method uses JKQTBasePlotterStyle::CSVdecimalSeparator as decimal separator and
+         * JKQTBasePlotterStyle::CSVcommentInitializer as comment initializer!
+         */
+        void saveAsCSV(const QString& filename=QString(""));
+
+        /** \brief save the current plot data as a Semicolon Separated Values (SSV) file
+         *
+         * \param filename the file to save to, if \a filename is empty, a file open dialog will be shown
+         *
+         * example output:
+         * \code
+         * #  x, y
+         * 0; 0
+         * 0.251327; 0.24869
+         * 0.502655; 0.481754
+         * ...
+         * \endcode
+         *
+         * This method uses JKQTBasePlotterStyle::CSVdecimalSeparator as decimal separator and
+         * JKQTBasePlotterStyle::CSVcommentInitializer as comment initializer!
+         */
+        void saveAsSemicolonSV(const QString& filename=QString(""));
+
+        /** \brief save the current plot data as a Tabulator Separated Values (CSV) file
+         *
+         * \param filename the file to save to, if \a filename is empty, a file open dialog will be shown
+         *
+         *
+         * example output:
+         * \code
+         * #  x	y
+         * 0	0
+         * 0.251327	0.24869
+         * 0.502655	0.481754
+         * ...
+         * \endcode
+         *
+         * This method uses JKQTBasePlotterStyle::CSVdecimalSeparator as decimal separator and
+         * JKQTBasePlotterStyle::CSVcommentInitializer as comment initializer!
+         *
+         * \see saveData()
+         */
+        void saveAsTabSV(const QString& filename=QString(""));
+
+        /** \brief save the current plot data as a Data Interchange Format file (see <a href="https://en.wikipedia.org/wiki/Data_Interchange_Format">https://en.wikipedia.org/wiki/Data_Interchange_Format</a>).
+         *
+         * \param filename the file to save to, if \a filename is empty, a file open dialog will be shown
+         *
+         * \see saveData()
+         */
+        void saveAsDIF(const QString& filename=QString(""));
+
+        /** \brief save the current plot data as a SYmbolik LinK (SYLK) spreadsheet file (see <a href="https://en.wikipedia.org/wiki/Symbolic_Link_(SYLK)">https://en.wikipedia.org/wiki/Symbolic_Link_(SYLK)</a> )
+         *
+         * \param filename the file to save to, if \a filename is empty, a file open dialog will be shown
+         *
+         * \see saveData()
+         */
+        void saveAsSYLK(const QString& filename=QString(""));
+
+        /** \brief save the current plot data as a Matlab Script
+         *
+         * \param filename the file to save to, if \a filename is empty, a file open dialog will be shown
+         *
+         * example output:
+         * \code
+         * % data from columne 1 ('x')
+         * x = [ 0 0.251327 0.502655 ... ];
+         *
+         * % data from columne 2 ('y')
+         * y = [ 0 0.24869 0.481754 ... ];
+         * \endcode
+         *
+         * \see copyDataMatlab(), saveData()
+         */
+        void saveAsMatlab(const QString& filename=QString(""));
+
+        /** \brief save the current plot data as a Semicolon Separated Values (CSV) file for german Excel, i.e. with comma as decimal separator
+         *
+         * \param filename the file to save to, if \a filename is empty, a file open dialog will be shown
+         *
+         * example output:
+         * \code
+         * #  x, y
+         * 0, 0
+         * 0,251327; 0,24869
+         * 0,502655; 0,481754
+         * ...
+         * \endcode
+         *
+         * \see saveData(), saveAsSemicolonSV()
+         */
+        void saveAsGerExcelCSV(const QString& filename=QString(""));
+
+    public:
+        /** \brief save the current plot data as a Comma Separated Values (CSV) file
+         *
+         * \param filename the file to save to, if \a filename is empty, a file open dialog will be shown
+         * \param decimalSeparator decimal separator for outpu
+         * \param commentInitializer line-start for comment lines
+         *
+         * example output:
+         * \code
+         * #  x, y
+         * 0, 0
+         * 0.251327, 0.24869
+         * 0.502655, 0.481754
+         * ...
+         * \endcode
+         *
+         * This method uses JKQTBasePlotterStyle::CSVdecimalSeparator as decimal separator and
+         * JKQTBasePlotterStyle::CSVcommentInitializer as comment initializer!
+         */
+        void saveAsCSV(const QString& filename, const QString& decimalSeparator, const QString& commentInitializer);
+
+        /** \brief save the current plot data as a Semicolon Separated Values (SSV) file
+         *
+         * \param filename the file to save to, if \a filename is empty, a file open dialog will be shown
+         * \param decimalSeparator decimal separator for outpu
+         * \param commentInitializer line-start for comment lines
+         *
+         * example output for <code>saveAsSemicolonSV(filename, ",","#")</code>:
+         * \code
+         * #  x, y
+         * 0, 0
+         * 0,251327; 0,24869
+         * 0,502655; 0,481754
+         * ...
+         * \endcode
+         */
+        void saveAsSemicolonSV(const QString& filename, const QString& decimalSeparator, const QString& commentInitializer);
+        /** \brief save the current plot data as a Tabulator Separated Values (CSV) file
+         *
+         * \param filename the file to save to, if \a filename is empty, a file open dialog will be shown
+         * \param decimalSeparator decimal separator for outpu
+         * \param commentInitializer line-start for comment lines
+         *
+         * example output for <code>saveAsTabSV(filename, ",","#")</code>:
+         * \code
+         * #  x	y
+         * 0	0
+         * 0,251327	0,24869
+         * 0,502655	0,481754
+         * ...
+         * \endcode
+         */
+        void saveAsTabSV(const QString& filename, const QString& decimalSeparator, const QString& commentInitializer);
+
+/**@}*/
+
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////
+/** @name Saving/Exporting Plots as Image/Vector Files */
+/**@{*/
+public Q_SLOTS:
+
+        /** \brief save the current plot as a pixel image image (PNG ...), if filename is empty a file selection dialog is displayed
+         *
+         *  \param filename name of the stored file, if no \a outputFormat is given, the file format is deduced by the file extension in \a filename
+         *  \param displayPreview if \c true a dialog is shown that allows to modify the generated output (zoo, scaling, ...)
+         *  \param outputFormmat specify the file format for the generated file
+         *  \param  outputSizeIncrease if given, the size of the generated pixel image is increased by this number of pixels in addition to the required space
+         *  \return returns \c true on success
+         *
+         *  This function may generate any pixel-graphics format, supported by Qt and listed in <a href="https://doc.qt.io/qt-6/qimagewriter.html"><code>QImageWriter::supportedImageFormats()</code></a>.
+         *  The parameters are comparable to the standard Qt functions like <a href="https://doc.qt.io/qt-6/qimage.html#save"><code>QImage::save()</code></a>, which is also used internally.
+         *
+         *  \see grabPixelImage(), copyPixelImage()
+         */
+        bool saveAsPixelImage(const QString& filename=QString(""), bool displayPreview=true, const QByteArray &outputFormat=QByteArray(), const QSize& outputSizeIncrease=QSize(0,0));
+
+        /** \brief returns a rendering of the current plot as a QImage (pixel image) with the given size
+         *
+         *  \see saveAsPixelImage(), copyPixelImage()
+         */
+        QImage grabPixelImage(QSize size=QSize(), bool showPreview=false);
+        /** \brief copy the current plot as a pixel+svg image to the clipboard */
+        void copyPixelImage(bool showPreview=true);
+
+#ifndef JKQTPLOTTER_COMPILE_WITHOUT_PRINTSUPPORT
+        /** \brief save the current plot as a SVG file, with the current widget aspect ratio, if filename is empty a file selection dialog is displayed
+         *
+         *   \param filename the filename to save to, if empty a file save dialog is displayed
+         *   \param displayPreview if \C true, a save/print-preview dialog is displayed that allows to make some modifications to the generated image, otherwise the image is saved with default settings.
+         *   \return Returns \c true if the file was save successfully
+         *
+         *  \note Exporting to SVG requires QPrinter-support, if it is not available on your platform, this function will not be available either!
+         */
+        bool saveAsSVG(const QString& filename=QString(""), bool displayPreview=true);
+
+        /** \brief save the current plot as a PDF file, with the current widget aspect ratio, if filename is empty a file selection dialog is displayed
+         *
+         *   \param filename the filename to save to, if empty a file save dialog is displayed
+         *   \param displayPreview if \C true, a save/print-preview dialog is displayed that allows to make some modifications to the generated image, otherwise the image is saved with default settings.
+         *   \return Returns \c true if the file was save successfully
+         *
+         *  \note Exporting to PDF requires QPrinter-support, if it is not available on your platform, this function will not be available either!
+         */
+        bool saveAsPDF(const QString& filename=QString(""), bool displayPreview=true);
+#endif
+
+        /** \brief save the current plot as an image file, with the current widget aspect ratio, if filename is empty a file selection dialog is displayed.
+        *          The image format is extracted from the file extension (jpeg, tiff, png, pdf, ...)
+        *
+        *   \param filename the filename to save to, if empty a file save dialog is displayed
+        *   \param displayPreview if \C true, a save/print-preview dialog is displayed that allows to make some modifications to the generated image, otherwise the image is saved with default settings.
+        *   \return Returns \c true if the file was save successfully
+        *
+        *   This function is comparable to saveAsPixelImage(), but it allows to save into any graphics format, including SVG and PF (if printer-support is compiled into the library).
+        *   Also it may use the custom exporters implemented as JKQTPPaintDeviceAdapter and registered via JKQTBasePlotter::registerPaintDeviceAdapter().
+        *
+        *  \see grabPixelImage(), copyPixelImage(), saveAsPixelImage(), JKQTBasePlotter::registerPaintDeviceAdapter(), JKQTPPaintDeviceAdapter
+        */
+        bool saveImage(const QString& filename=QString(""), bool displayPreview=true);
+
     Q_SIGNALS:
-        /** \brief signal: emitted whenever the user selects a new x-y zoom range (by mouse) */
-        void zoomChangedLocally(double newxmin, double newxmax, double newymin, double newymax, JKQTBasePlotter* sender);
-
-        /** \brief emitted when the plot has to be updated */
-        void plotUpdated();
-
-        /** \brief emitted when the plot scaling had to be recalculated */
-        void plotScalingRecalculated();
-
-        /** \brief emitted before the plot scaling has been recalculated */
-        void beforePlotScalingRecalculate();
-
         /** \brief emitted just before exporting the current plot as image, or just before the export preview dialog is shown
          *
          *  This signal can be used to e.g. modify the plotter settings before an export.
@@ -1499,6 +1735,23 @@ class JKQTPLOTTER_LIB_EXPORT JKQTBasePlotter: public QObject {
          */
         void afterExporting();
 
+
+/**@}*/
+
+
+        //////////////////////////////////////////////////////////////////////////////////////////////////////////////
+/** @name Print Support */
+/**@{*/
+public Q_SLOTS:
+
+#ifndef JKQTPLOTTER_COMPILE_WITHOUT_PRINTSUPPORT
+        /** \brief print the current plot, if printer is \c nullptr a printer selection dialog is displayed
+         *
+         *  \note This function is only available on platforms with QPrinter support!
+         */
+        void print(QPrinter* printer=nullptr, bool displayPreview=true);
+#endif
+    Q_SIGNALS:
         /** \brief emitted just before Printing the current plot as image, or just before the print preview dialog is shown
          *
          *  This signal can be used to e.g. modify the plotter settings before a print.
@@ -1514,6 +1767,22 @@ class JKQTPLOTTER_LIB_EXPORT JKQTBasePlotter: public QObject {
          *  \see beforePrinting(), beforeExporting(), afterExporting()
          */
         void afterPrinting();
+
+/**@}*/
+
+    Q_SIGNALS:
+        /** \brief signal: emitted whenever the user selects a new x-y zoom range (by mouse) */
+        void zoomChangedLocally(double newxmin, double newxmax, double newymin, double newymax, JKQTBasePlotter* sender);
+
+        /** \brief emitted when the plot has to be updated */
+        void plotUpdated();
+
+        /** \brief emitted when the plot scaling had to be recalculated */
+        void plotScalingRecalculated();
+
+        /** \brief emitted before the plot scaling has been recalculated */
+        void beforePlotScalingRecalculate();
+
 
 
     public Q_SLOTS:
@@ -1645,35 +1914,50 @@ class JKQTPLOTTER_LIB_EXPORT JKQTBasePlotter: public QObject {
          * Uppon setting, this function emits the signal zoomChangedLocally(), if emitting signals
          * is activated at the moment (e.g. using setEmittingSignalsEnabled() ).
          *
-         * \see setX(), setX(), zoomToFit(), setAbsoluteXY(), JKQTPlotter::setXY()
+         * \see setX(), setX(), zoomToFit(), setAbsoluteXY()
          */
         void setXY(double xminn, double xmaxx, double yminn, double ymaxx, bool affectsSecondaryAxes=false);
 
+
+        /** \copydoc setXY()
+         *  \deprecated The function JKQTBasePlotter::zoom() is deprecated and will be removed in future version, use JKQTBasePlotter::setXY() instead!
+         */
+        inline void zoom(double xminn, double xmaxx, double yminn, double ymaxx, bool affectsSecondaryAxes=false) {
+            setXY(xminn, xmaxx, yminn, ymaxx, affectsSecondaryAxes);
+        }
+
         /** \brief sets absolutely limiting x-range of the plot
+         *
+         * The user (or programmer) cannot zoom to a viewport that is larger than the range given to this function.
+         * This is implemented by calling JKQTPCoordinateAxis::setAbsoluteRange() for the major x-axes!
          *
          *  \param xminn absolute minimum of x-axis
          *  \param xmaxx absolute maximum of x-axis
          *
          * \note if the aspect ratio of this does not fit into the widget, it is possible that you don't see the complete contents!
          *
-         * \see setAbsoluteXY(), setAbsoluteY(), JKQTPlotter::setAbsoluteX()
+         * \see setAbsoluteXY(), setAbsoluteY(), JKQTPCoordinateAxis::setAbsoluteRange()
          */
         void setAbsoluteX(double xminn, double xmaxx);
 
         /** \brief sets absolute minimum and maximum y-value to plot
+         *
+         * The user (or programmer) cannot zoom to a viewport that is larger than the range given to this function.
+         * This is implemented by calling JKQTPCoordinateAxis::setAbsoluteRange() for the major y-axes!
          *
          *  \param yminn absolute minimum of y-axis
          *  \param ymaxx absolute maximum of y-axis
          *
          * \note if the aspect ratio of this does not fit into the widget, it is possible that you don't see the complete contents!
          *
-         * \see setAbsoluteXY(), setAbsoluteX(), JKQTPlotter::setAbsoluteY()
+         * \see setAbsoluteXY(), setAbsoluteX(), JKQTPCoordinateAxis::setAbsoluteRange()
          */
         void setAbsoluteY(double yminn, double ymaxx);
 
         /** \brief sets absolutely limiting x- and y-range of the plot
          *
          * The user (or programmer) cannot zoom to a viewport that is larger than the range given to this function.
+         * This is implemented by calling JKQTPCoordinateAxis::setAbsoluteRange() for the major axes!
          *
          *  \param xminn absolute minimum of x-axis
          *  \param xmaxx absolute maximum of x-axis
@@ -1682,162 +1966,74 @@ class JKQTPLOTTER_LIB_EXPORT JKQTBasePlotter: public QObject {
          *
          * \note if the aspect ratio of this does not fit into the widget, it is possible that you don't see the complete contents!
          *
-         * \see setAbsoluteX(), setAbsoluteY(), zoomToFit(), JKQTPlotter::setAbsoluteXY()
+         * \see setAbsoluteX(), setAbsoluteY(), JKQTPCoordinateAxis::setAbsoluteRange()
          */
         void setAbsoluteXY(double xminn, double xmaxx, double yminn, double ymaxx);
 
 
-        /** \brief sets x/ymin and x/ymax to the supplied values and replots the graph (zoom operation!) */
-        void zoom(double nxmin, double nxmax, double nymin, double nymax);
 
-        /** \brief sets whether to plot grid lines or not
+        /** \brief sets whether the major grid lines of the major axes are shown
         *
         * \image html jkqtplotter_gridvisible.png "Grid visible"
         * \image html jkqtplotter_gridinvisible.png "Grid invisible"
+        *
+        * \see JKQTPCoordinateAxis::setDrawGrid() and JKQTPGridStyle::enabled in JKQTPCoordinateAxisStyle::majorGridStyle
         */
         void setGrid(bool val);
 
-        /** \brief sets the color of all Major grid lines
+        /** \brief sets the color of all major grid lines (of the major x- and y-axis)
+         *
+         *  \see JKQTPCoordinateAxis::setGridColor() and JKQTPGridStyle::lineColor in JKQTPCoordinateAxisStyle::majorGridStyle
          * */
         void setGridColor(QColor color);
 
-        /** \brief sets the color of all minor grid lines
+        /** \brief sets the color of all minor grid lines (of the major x- and y-axis)
+         *
+         *  \see JKQTPCoordinateAxis::setMinorGridColor() and JKQTPGridStyle::lineColor in JKQTPCoordinateAxisStyle::minorGridStyle
          * */
         void setMinorGridColor(QColor color);
 
         /** \brief sets the width of all Major grid lines
+         *
+         *  \see JKQTPCoordinateAxis::setGridWidth() and JKQTPGridStyle::lineWidth in JKQTPCoordinateAxisStyle::majorGridStyle
          * */
         void setGridWidth(double __value);
 
         /** \brief sets the width of all minor grid lines
-         * */
+         *
+         *  \see JKQTPCoordinateAxis::setMinorGridWidth() and JKQTPGridStyle::lineWidth in JKQTPCoordinateAxisStyle::minorGridStyle
+         */
         void setMinorGridWidth(double __value);
 
         /** \brief sets the style of all Major grid lines
+         *
+         *  \see JKQTPCoordinateAxis::setGridStyle() and JKQTPGridStyle::lineStyle in JKQTPCoordinateAxisStyle::majorGridStyle
          * */
         void setGridStyle(Qt::PenStyle __value);
 
         /** \brief sets the style of all minor grid lines
+         *
+         *  \see JKQTPCoordinateAxis::setMinorGridStyle() and JKQTPGridStyle::lineStyle in JKQTPCoordinateAxisStyle::minorGridStyle
          * */
         void setMinorGridStyle(Qt::PenStyle __value);
 
 
-        /** \brief switches the visibility of the zero-axes associated with the x- and y-axis
+        /** \brief switches the visibility of the zero-axes associated with the major x- and y-axis
          *
          * \param showX indicates whether to show the zero-axis associated with the x-axis (i.e. x==0 or the vertical zero-axis)
          * \param showY indicates whether to show the zero-axis associated with the y-axis (i.e. y==0 or the horizontal zero-axis)
+         *
+         *  \see JKQTPCoordinateAxis::showZeroAxis() and JKQTPCoordinateAxisStyle::showZeroAxis
          * */
         void setShowZeroAxes(bool showX, bool showY);
-        /** \brief switches the visibility of the zero-axes associated with the x- and y-axis
+        /** \brief switches the visibility of the zero-axes associated with the major x- and y-axis
          *
-         * \param showXY indicates whether to show the zero-axis associated with the x- and y-axis
+         * \param showXY indicates whether to show the zero-axis associated with the x- <ul>and</ul> y-axis
+         *
+         *  \see JKQTPCoordinateAxis::showZeroAxis() and JKQTPCoordinateAxisStyle::showZeroAxis
          * */
         void setShowZeroAxes(bool showXY);
 
-        /** \brief save the current plot as a pixel image image (PNG ...), if filename is empty a file selection dialog is displayed
-         *
-         *  \param filename name of the stored file, if no \a outputFormat is given, the file format is deduced by the file extension in \a filename
-         *  \param displayPreview if \c true a dialog is shown that allows to modify the generated output (zoo, scaling, ...)
-         *  \param outputFormmat specify the file format for the generated file
-         *  \param  outputSizeIncrease if given, the size of the generated pixel image is increased by this number of pixels in addition to the required space
-         */
-        void saveAsPixelImage(const QString& filename=QString(""), bool displayPreview=true, const QByteArray &outputFormat=QByteArray(), const QSize& outputSizeIncrease=QSize(0,0));
-
-        /** \brief save the current plot as a pixel image into a QImage with the given size */
-        QImage grabPixelImage(QSize size=QSize(), bool showPreview=false);
-        /** \brief copy the current plot as a pixel+svg image to the clipboard */
-        void copyPixelImage(bool showPreview=true);
-
-#ifndef JKQTPLOTTER_COMPILE_WITHOUT_PRINTSUPPORT
-        /** \brief save the current plot as a SVG file, with the current widget aspect ratio, if filename is empty a file selection dialog is displayed
-         *
-         *  \note Exporting to SVG requires QPrinter-support, if it is not available on your platform, this function will not be available either!
-         */
-        void saveAsSVG(const QString& filename=QString(""), bool displayPreview=true);
-
-        /** \brief save the current plot as a PDF file, with the current widget aspect ratio, if filename is empty a file selection dialog is displayed
-         *
-         *  \note Exporting to PDF requires QPrinter-support, if it is not available on your platform, this function will not be available either!
-         */
-        void saveAsPDF(const QString& filename=QString(""), bool displayPreview=true);
-#endif
-
-        /** \brief save the current plot as an image file, with the current widget aspect ratio, if filename is empty a file selection dialog is displayed.
-        *          The image format is extracted from the file extension (jpeg, tiff, png, pdf, ...) */
-        void saveImage(const QString& filename=QString(""), bool displayPreview=true);
-
-        /** \brief save the data used for the current plot. The file format is extracted from the file extension (csv, ...)
-         *
-         * The parameter \a format specifies the export format. if it is empty the format will be choosen according to the file extension, or
-         * if \a filename is also empty the format will be choosen according to what is selected in the file selection dialog.
-         *
-         * If \a format is \c "slk" the output will be in SYLK format, if \a format is \c "csv" or \a "dat" the output will be comma separated values
-         * and if \a format is \c "txt" the output will be tab separated values.
-         */
-        void saveData(const QString& filename=QString(""), const QString& jkqtp_format=QString(""));
-        /** \brief copy the data used for the current plot to the clipboard
-         *
-         *  copies data as tab separated data with the system-decimal point.
-         */
-        void copyData();
-        /** \brief copy the data used for the current plot to the clipboard in Matlab format
-         */
-        void copyDataMatlab();
-        /** \brief save the current plot data as a Comma Separated Values (CSV) file
-         *
-         * \param filename the file to save to, if \a filename is empty, a file open dialog will be shown
-         *
-         * \note this function uses  CSVdecimalSeparator as decimal separator and CSVcommentInitializer to initialize content lines
-         */
-        void saveAsCSV(const QString& filename=QString(""));
-
-        /** \brief save the current plot data as a Semicolon Separated Values (SSV) file
-         *
-         * \param filename the file to save to, if \a filename is empty, a file open dialog will be shown
-         *
-         * \note this function uses  CSVdecimalSeparator as decimal separator and CSVcommentInitializer to initialize content lines
-         */
-        void saveAsSemicolonSV(const QString& filename=QString(""));
-
-        /** \brief save the current plot data as a Tabulator Separated Values (CSV) file
-         *
-         * \param filename the file to save to, if \a filename is empty, a file open dialog will be shown
-         *
-         * \note this function uses  CSVdecimalSeparator as decimal separator and CSVcommentInitializer to initialize content lines
-         */
-        void saveAsTabSV(const QString& filename=QString(""));
-
-        /** \brief save the current plot data as a DIF file
-         *
-         * \param filename the file to save to, if \a filename is empty, a file open dialog will be shown
-         */
-        void saveAsDIF(const QString& filename=QString(""));
-
-        /** \brief save the current plot data as a SYLK spreadsheet file
-         *
-         * \param filename the file to save to, if \a filename is empty, a file open dialog will be shown
-         */
-        void saveAsSYLK(const QString& filename=QString(""));
-
-        /** \brief save the current plot data as a Matlab Script
-         *
-         * \param filename the file to save to, if \a filename is empty, a file open dialog will be shown
-         */
-        void saveAsMatlab(const QString& filename=QString(""));
-
-        /** \brief save the current plot data as a Semicolon Separated Values (CSV) file for german Excel, i.e. with comma as decimal separator
-         *
-         * \param filename the file to save to, if \a filename is empty, a file open dialog will be shown
-         */
-        void saveAsGerExcelCSV(const QString& filename=QString(""));
-
-#ifndef JKQTPLOTTER_COMPILE_WITHOUT_PRINTSUPPORT
-        /** \brief print the current plot, if printer is \c nullptr a printer selection dialog is displayed
-         *
-         *  \note This function is only available on platforms with QPrinter support!
-         */
-        void print(QPrinter* printer=nullptr, bool displayPreview=true);
-#endif
 
         /** \brief this method zooms the graph so that all plotted datapoints are visible.
          *
@@ -1948,8 +2144,6 @@ class JKQTPLOTTER_LIB_EXPORT JKQTBasePlotter: public QObject {
         void setExportBackgroundTexture(const QImage & __value);
         /** \copydoc JKQTBasePlotterStyle::plotBackgroundBrush */
         void setPlotBackgroundTexture(const QImage & __value);
-        /** \copydoc JKQTPKeyStyle::textColor */
-        void setKeyTextColor(const QColor & __value);
 
 
         /** \copydoc JKQTBasePlotterStyle::plotFrameWidth */
@@ -1962,52 +2156,10 @@ class JKQTPLOTTER_LIB_EXPORT JKQTBasePlotter: public QObject {
         void setPlotFrameVisible(bool enabled);
 
 
-        /** \copydoc JKQTPKeyStyle::fontSize */
-        void setKeyFontSize(double __value);
-        /** \copydoc JKQTPKeyStyle::itemWidth */
-        void setKeyItemWidth(double __value);
-        /** \copydoc JKQTPKeyStyle::itemHeight */
-        void setKeyItemHeight(double __value);
-        /** \copydoc JKQTPKeyStyle::ySeparation */
-        void setKeyYSeparation(double __value);
-        /** \copydoc JKQTPKeyStyle::sampleLineLength */
-        void setKeyLineLength(double __value);
-        /** \copydoc JKQTPKeyStyle::xMargin */
-        void setKeyXMargin(double __value);
-        /** \copydoc JKQTPKeyStyle::yMargin */
-        void setKeyYMargin(double __value);
-        /** \copydoc JKQTPKeyStyle::xSeparation */
-        void setKeyXSeparation(double __value);
-        /** \copydoc JKQTPKeyStyle::yOffset */
-        void setKeyXOffset(double __value);
-        /** \copydoc JKQTPKeyStyle::xOffset */
-        void setKeyYOffset(double __value);
         /** \copydoc JKQTPKeyStyle::visible */
         void setShowKey(bool __value);
-        /** \copydoc JKQTPKeyStyle::frameVisible */
-        void setShowKeyFrame(bool __value);
-        /** \copydoc JKQTPKeyStyle::frameColor */
-        void setKeyFrameColor(const QColor & __value);
-        /** \copydoc JKQTPKeyStyle::backgroundBrush */
-        void setKeyBackgroundColor(const QColor & __value, Qt::BrushStyle __style);
-        /** \copydoc JKQTPKeyStyle::backgroundBrush */
-        void setKeyBackgroundBrush(const QBrush & __value);
-        /** \copydoc JKQTPKeyStyle::backgroundBrush */
-        void setKeyBackgroundGradient(const QGradient & __value);
-        /** \copydoc JKQTPKeyStyle::backgroundBrush */
-        void setKeyBackgroundTexture(const QImage & __value);
-        /** \copydoc JKQTPKeyStyle::backgroundBrush */
-        void setKeyBackgroundTexture(const QPixmap & __value);
-        /** \copydoc JKQTPKeyStyle::frameWidth */
-        void setKeyFrameWidth(double __value);
-        /** \copydoc JKQTPKeyStyle::frameRounding */
-        void setKeyFrameRounding(double __value);
-        /** \copydoc JKQTPKeyStyle::autosize */
-        void setKeyAutosize(bool __value);
         /** \copydoc JKQTPKeyStyle::position */
         void setKeyPosition(const JKQTPKeyPosition & __value);
-        /** \copydoc JKQTPKeyStyle::layout */
-        void setKeyLayout(const JKQTPKeyLayout & __value);
         /** \copydoc JKQTBasePlotterStyle::plotLabelFontSize */
         void setPlotLabelFontSize(double __value);
         /** \copydoc JKQTBasePlotterStyle::plotLabelOffset */
@@ -2091,31 +2243,8 @@ class JKQTPLOTTER_LIB_EXPORT JKQTBasePlotter: public QObject {
         void drawGraphs(JKQTPEnhancedPainter& painter);
         /** \brief plot a key */
         void drawKey(JKQTPEnhancedPainter& painter);
-
-        /** \brief plot the key contents
-         *
-         * This function does not do anything and has to be overwritten in child classes if they want to plot a key.
-         * The implementation should draw the contents of the key, not its frame as this is done in plotKey().
-         *
-         * \param painter draw the key on this painter
-         * \param x left-most coordinate of the key [pixels]
-         * \param y top-most coordinate of the key [pixels]
-         * \param width width of the key [pixels]
-         * \param height height of the key [pixels]
-         *
-         * So any implementation should only draw inside the rectangle <code>[x..x+width, y..y+hieght]</code>
-         */
-        void drawKeyContents(JKQTPEnhancedPainter& painter, double x, double y, double width, double height);
-
-        /** \brief returns the size of the key (as call-by-reference parameters
-         *
-         * Any implementation of key plotting has to overwrite this function and use it to return the size of the key that would be
-         * plotted by plotKeyContents(). This class will use the return values to plot the frame of the key and also supply them to
-         * plotKeyContents(). If height or width are returned 0, no key is plotted
-         *
-         * The implementation in here returns zero size!
-         */
-        void getKeyExtent(JKQTPEnhancedPainter& painter, double *width, double *height, double *text_width=nullptr, double *text_height=nullptr, int *columns_count=nullptr, int* lines_count=nullptr);
+        /** \brief plot the plot label */
+        void drawPlotLabel(JKQTPEnhancedPainter& painter);
 
         /** \brief show the print preview window for a given print \a p */
         bool printpreviewNew(QPaintDevice* paintDevice, bool setAbsolutePaperSize=false, double printsizeX_inMM=-1.0, double printsizeY_inMM=-1.0, bool displayPreview=true);
@@ -2271,6 +2400,9 @@ class JKQTPLOTTER_LIB_EXPORT JKQTBasePlotter: public QObject {
         /** \brief objects used a secondary y-axes */
         QMap<JKQTPCoordinateAxisRef, JKQTPVerticalAxisBase*> secondaryYAxis;
 
+        /** \brief key objects used for the main plot key */
+        JKQTPBaseKey* mainKey;
+
         /** \brief filename for the ini file in which to save the user settings
          *  \see jkqtplotter_base_userprops
          */
@@ -2332,21 +2464,116 @@ class JKQTPLOTTER_LIB_EXPORT JKQTBasePlotter: public QObject {
         int widgetHeight;
 
 
+        /** \brief used for calculated value:describing what freespace outside the graph area is used for
+         * \internal
+         */
+        enum PlotMarginUse {
+            muOutermost=0,
+            muUserBorder=0,
+            muPlotTitle,
+            muKey,
+            muGraphsOutside,
+            muAxesOutsideExtend,
+            muAxesOutside,
+
+            // this is always the last one
+            muUsesCount,
+            muInnermost=muUsesCount-1
+        };
+        /** \brief enum to indicate relative position from a central position */
+        enum PlotMarginSide {
+            sideLeft,
+            sideRight,
+            sideTop,
+            sideBottom
+        };
+
+        /** \brief used for calculated value: describing a section in the freespace outside the graph area
+         * \internal
+         */
+        struct PlotMargin {
+            double left;
+            double right;
+            double top;
+            double bottom;
+
+            inline PlotMargin(double l=0, double r=0, double t=0, double b=0) : left(l), right(r), top(t), bottom(b) {};
+
+            /** \brief select left,right, top, bottom, depending on \a side */
+            inline double getMargin(PlotMarginSide side) const
+            {
+                switch (side) {
+                case sideLeft:
+                    return left;
+                case sideRight:
+                    return right;
+                case sideTop:
+                    return top;
+                case sideBottom:
+                    return bottom;
+                }
+                return 0;
+            }
+        };
+
+        /** \brief used for calculated value: describing all sections of freespace outside the graph area
+         * \internal
+         */
+        class PlotMargins: public QMap<PlotMarginUse, PlotMargin> {
+        public:
+            inline PlotMargins(): QMap<PlotMarginUse, PlotMargin>() {};
+            /** \brief claculate size of plot margins on the left (sums all) */
+            double calcLeft() const;
+            double calcLeft(PlotMarginUse start, PlotMarginUse stop) const;
+            /** \brief claculate size of plot margins on the right (sums all) */
+            double calcRight() const;
+            double calcRight(PlotMarginUse start, PlotMarginUse stop) const;
+            /** \brief claculate size of plot margins at the top (sums all) */
+            double calcTop() const;
+            double calcTop(PlotMarginUse start, PlotMarginUse stop) const;
+            /** \brief claculate size of plot margins at the bottom (sums all) */
+            double calcBottom() const;
+            double calcBottom(PlotMarginUse start, PlotMarginUse stop) const;
+        };
+
+        /** \brief <b>calculated value:</b> description of free space between actual plot and widget borders
+         * \internal
+         *
+         * \image html plot_widget_orientation.png
+         *
+         * \note This property is an intermediate storage for calculated values. Do not change directly!
+         *
+         * \see calcPlotMarginRect()
+         */
+        PlotMargins internalPlotMargins;
+
+        /** \brief calculate the rectangle to be used for a given PlotMarginUse on the indicated side of the plot
+         *
+         *  This function evaluates the data in internalPlotMargins also using the other properties known in this class.
+         *  Basically it therefore defines the ordering and interpretation of PlotMarginUse.
+         *
+         * \image html plot_widget_orientation.png
+         *
+         * \see internalPlotMargins
+         */
+        QRectF calcPlotMarginRect(PlotMarginUse use, PlotMarginSide side) const;
+        /** \brief calculate the rectangle of the plot (excluding all margins) */
+        QRectF calcPlotRect() const;
+
+
 
         /** \brief <b>calculated value:</b> free space between widget top border and plot top border, as used to plot the graph
          * \internal
          *
-         * \note This property is an intermediate storage for calculated values. Do not change directly!
-         */
-        double internalPlotBorderTop;
-        /** \brief <b>calculated value:</b> free space between widget top border and top border of the key/legend
-         * \internal
+         * \image html plot_widget_orientation.png
          *
          * \note This property is an intermediate storage for calculated values. Do not change directly!
          */
-        double internalPlotKeyBorderTop;
+        double internalPlotBorderTop;
         /** \brief <b>calculated value:</b> height of the plot title (or 0 if no title)
          * \internal
+         *
+         * \image html plot_widget_orientation.png
          *
          * \note This property is an intermediate storage for calculated values. Do not change directly!
          */
@@ -2355,110 +2582,42 @@ class JKQTPLOTTER_LIB_EXPORT JKQTBasePlotter: public QObject {
         /** \brief <b>calculated value:</b> free space between widget top border and plot top border, as used to plot the graph
          * \internal
          *
+         * \image html plot_widget_orientation.png
+         *
          * \note This property is an intermediate storage for calculated values. Do not change directly!
           */
         double internalPlotBorderLeft;
-        /** \brief <b>calculated value:</b> free space between widget left border and left border of the key/legend
-         * \internal
-         *
-         * \note This property is an intermediate storage for calculated values. Do not change directly!
-         */
-        double internalPlotKeyBorderLeft;
 
         /** \brief <b>calculated value:</b> free space between widget top border and plot top border, as used to plot the graph
          * \internal
+         *
+         * \image html plot_widget_orientation.png
          *
          * \note This property is an intermediate storage for calculated values. Do not change directly!
           */
         double internalPlotBorderBottom;
-        /** \brief <b>calculated value:</b> free space between widget bottom border and bottom border of the key/legend
-         * \internal
-         *
-         * \note This property is an intermediate storage for calculated values. Do not change directly!
-         */
-        double internalPlotKeyBorderBottom;
 
         /** \brief <b>calculated value:</b> free space between widget top border and plot top border, as used to plot the graph
          * \internal
          *
+         * \image html plot_widget_orientation.png
+         *
          * \note This property is an intermediate storage for calculated values. Do not change directly!
           */
         double internalPlotBorderRight;
-        /** \brief <b>calculated value:</b> free space between widget right border and right border of the key/legend
-         * \internal
-         *
-         * \note This property is an intermediate storage for calculated values. Do not change directly!
-         */
-        double internalPlotKeyBorderRight;
 
-
-
-        /** \brief <b>calculated value:</b> free space between widget top border and (plot+drawOutside) top border (including coordinate axes)
+        /** \brief <b>calculated value:</b> size and location of the plot key
          * \internal
          *
          * \image html plot_widget_orientation.png
          *
          * \note This property is an intermediate storage for calculated values. Do not change directly!
          */
-        double internalPlotBorderTop_notIncludingOutsidePlotSections;
-        /** \brief <b>calculated value:</b> free space between widget left border and (plot+drawOutside) left border (including coordinate axes)
-         * \internal
-         *
-         * \image html plot_widget_orientation.png
-         *
-         * \note This property is an intermediate storage for calculated values. Do not change directly!
-          */
-        double internalPlotBorderLeft_notIncludingOutsidePlotSections;
-        /** \brief <b>calculated value:</b> free space between widget right border and (plot+drawOutside) right border (including coordinate axes)
-         * \internal
-         *
-         * \image html plot_widget_orientation.png
-         *
-         * \note This property is an intermediate storage for calculated values. Do not change directly!
-          */
-        double internalPlotBorderBottom_notIncludingOutsidePlotSections;
-        /** \brief <b>calculated value:</b> free space between widget bottom border and (plot+drawOutside) bottom border (including coordinate axes)
-         * \internal
-         *
-         * \image html plot_widget_orientation.png
-         *
-         * \note This property is an intermediate storage for calculated values. Do not change directly!
-          */
-        double internalPlotBorderRight_notIncludingOutsidePlotSections;
+        JKQTPBaseKey::KeySizeDescription internalPlotKeyDescription;
 
 
-        /** \brief <b>calculated value:</b> free space between widget top border and (plot+drawOutside) top border (including coordinate axes)
-         * \internal
-         *
-         * \image html plot_widget_orientation.png
-         *
-         * \note This property is an intermediate storage for calculated values. Do not change directly!
-         */
-        double internalPlotBorderTop_notIncludingAxisAndOutsidePlotSections;
-        /** \brief <b>calculated value:</b> free space between widget left border and (plot+drawOutside) left border (including coordinate axes)
-         * \internal
-         *
-         * \image html plot_widget_orientation.png
-         *
-         * \note This property is an intermediate storage for calculated values. Do not change directly!
-          */
-        double internalPlotBorderLeft_notIncludingAxisAndOutsidePlotSections;
-        /** \brief <b>calculated value:</b> free space between widget right border and (plot+drawOutside) right border (including coordinate axes)
-         * \internal
-         *
-         * \image html plot_widget_orientation.png
-         *
-         * \note This property is an intermediate storage for calculated values. Do not change directly!
-          */
-        double internalPlotBorderBottom_notIncludingAxisAndOutsidePlotSections;
-        /** \brief <b>calculated value:</b> free space between widget bottom border and (plot+drawOutside) bottom border (including coordinate axes)
-         * \internal
-         *
-         * \image html plot_widget_orientation.png
-         *
-         * \note This property is an intermediate storage for calculated values. Do not change directly!
-          */
-        double internalPlotBorderRight_notIncludingAxisAndOutsidePlotSections;
+
+
 
         /** \brief <b>calculated value:</b> plot width in pixel inside the widget (calculated by calcPlotScaling() from plotBorderLeft, plotBorderRight and widgetWidth)
          *

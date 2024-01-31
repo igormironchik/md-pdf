@@ -25,6 +25,9 @@
 #include "jkqtmathtext/jkqtmathtext.h"
 #include "jkqtcommon/jkqtpcodestructuring.h"
 #include "jkqtcommon/jkqtpstringtools.h"
+#include "jkqtcommon/jkqtpdebuggingtools.h"
+#include "jkqtcommon/jkqtpdebuggingtools.h"
+#include "jkqtcommon/jkqtpdebuggingtools.h"
 #include <cmath>
 #include <QFontMetricsF>
 #include <QDebug>
@@ -51,15 +54,13 @@ JKQTMathTextWhitespaceNode::JKQTMathTextWhitespaceNode(JKQTMathText *_parent):
 JKQTMathTextWhitespaceNode::JKQTMathTextWhitespaceNode(const QString &_type, JKQTMathText *parent):
     JKQTMathTextWhitespaceNode(parent)
 {
-    fillSupportedInstructions();
-    whitespace=supportedInstructions[_type];
+    whitespace=supportedInstructions()[_type];
 }
 
 JKQTMathTextWhitespaceNode::JKQTMathTextWhitespaceNode(const QString &_type, size_t count, JKQTMathText *parent):
     JKQTMathTextWhitespaceNode(parent)
 {
-    fillSupportedInstructions();
-    whitespace=supportedInstructions[_type];
+    whitespace=supportedInstructions()[_type];
     whitespace.count=whitespace.count*count;
 }
 
@@ -67,7 +68,6 @@ JKQTMathTextWhitespaceNode::JKQTMathTextWhitespaceNode(Types type, size_t count,
     JKQTMathTextNode(parent),
     whitespace(type, count)
 {
-    fillSupportedInstructions();
 }
 
 JKQTMathTextWhitespaceNode::~JKQTMathTextWhitespaceNode() {
@@ -117,6 +117,9 @@ size_t JKQTMathTextWhitespaceNode::getWhitespaceCount() const
 
 double JKQTMathTextWhitespaceNode::draw(QPainter &painter, double x, double y, JKQTMathTextEnvironment currentEv) const
 {
+#ifdef JKQTBP_AUTOTIMER
+    JKQTPAutoOutputTimer jkaat(QString("JKQTMathTextWhitespaceNode[]::draw()"));
+#endif
     const JKQTMathTextNodeSize s=getSize(painter, currentEv);
     doDrawBoxes(painter, x,y,s);
     return x+s.width;
@@ -126,39 +129,37 @@ JKQTMathTextNodeSize JKQTMathTextWhitespaceNode::getSizeInternal(QPainter &paint
 {
     JKQTMathTextNodeSize s;
     const double singelWidthPIX=Type2PixelWidth(whitespace.type, currentEv, painter.device());
-    const QFontMetricsF fm(currentEv.getFont(parentMathText), painter.device());
     s.width=singelWidthPIX*static_cast<double>(whitespace.count);
     s.baselineHeight=0;
     s.overallHeight=0;
-    s.strikeoutPos=fm.strikeOutPos();
+    s.strikeoutPos=JKQTMathTextGetFontStrikoutPos(currentEv.getFont(parentMathText), painter.device());
     return s;
 }
 
-QHash<QString, JKQTMathTextWhitespaceNode::WhitespaceProps> JKQTMathTextWhitespaceNode::supportedInstructions;
-
-void JKQTMathTextWhitespaceNode::fillSupportedInstructions()
-{
-    static std::mutex sMutex;
-    std::lock_guard<std::mutex> lock(sMutex);
-    if (supportedInstructions.size()==0) {
-        supportedInstructions[" "]=WhitespaceProps(WSTthicker, 1);
-        supportedInstructions["nbsp"]=WhitespaceProps(WSTNonbreaking, 1);
-        supportedInstructions["enspace"]=WhitespaceProps(WST1en, 1);
-        supportedInstructions["enskip"]=WhitespaceProps(WST1en, 1);
-        supportedInstructions["quad"]=WhitespaceProps(WSTQuad, 1);
-        supportedInstructions["emspace"]=WhitespaceProps(WSTQuad, 1);
-        supportedInstructions["qquad"]=WhitespaceProps(WSTQuad, 2);
-        supportedInstructions[","]=WhitespaceProps(WSTthin, 1);
-        supportedInstructions["thinspace"]=WhitespaceProps(WSTthin, 1);
-        supportedInstructions[":"]=WhitespaceProps(WSTmedium, 1);
-        supportedInstructions["medspace"]=WhitespaceProps(WSTmedium, 1);
-        supportedInstructions[";"]=WhitespaceProps(WSTthick, 1);
-        supportedInstructions["thickspace"]=WhitespaceProps(WSTthick, 1);
-        supportedInstructions["!"]=WhitespaceProps(WSTnegthin, 1);
-        supportedInstructions["negthinspace"]=WhitespaceProps(WSTnegthin, 1);
-        supportedInstructions["negmedspace"]=WhitespaceProps(WSTnegmedium, 1);
-        supportedInstructions["negthickspace"]=WhitespaceProps(WSTnegthick, 1);
-    }
+const QHash<QString, JKQTMathTextWhitespaceNode::WhitespaceProps>& JKQTMathTextWhitespaceNode::supportedInstructions() {
+    static QHash<QString, JKQTMathTextWhitespaceNode::WhitespaceProps> table=[]()
+        {
+            QHash<QString, JKQTMathTextWhitespaceNode::WhitespaceProps> supportedInstructions;
+            supportedInstructions[" "]=WhitespaceProps(WSTthicker, 1);
+            supportedInstructions["nbsp"]=WhitespaceProps(WSTNonbreaking, 1);
+            supportedInstructions["enspace"]=WhitespaceProps(WST1en, 1);
+            supportedInstructions["enskip"]=WhitespaceProps(WST1en, 1);
+            supportedInstructions["quad"]=WhitespaceProps(WSTQuad, 1);
+            supportedInstructions["emspace"]=WhitespaceProps(WSTQuad, 1);
+            supportedInstructions["qquad"]=WhitespaceProps(WSTQuad, 2);
+            supportedInstructions[","]=WhitespaceProps(WSTthin, 1);
+            supportedInstructions["thinspace"]=WhitespaceProps(WSTthin, 1);
+            supportedInstructions[":"]=WhitespaceProps(WSTmedium, 1);
+            supportedInstructions["medspace"]=WhitespaceProps(WSTmedium, 1);
+            supportedInstructions[";"]=WhitespaceProps(WSTthick, 1);
+            supportedInstructions["thickspace"]=WhitespaceProps(WSTthick, 1);
+            supportedInstructions["!"]=WhitespaceProps(WSTnegthin, 1);
+            supportedInstructions["negthinspace"]=WhitespaceProps(WSTnegthin, 1);
+            supportedInstructions["negmedspace"]=WhitespaceProps(WSTnegmedium, 1);
+            supportedInstructions["negthickspace"]=WhitespaceProps(WSTnegthick, 1);
+            return supportedInstructions;
+        }();
+    return table;
 
 }
 
@@ -183,14 +184,9 @@ QString JKQTMathTextWhitespaceNode::Type2String(Types type)
 
 double JKQTMathTextWhitespaceNode::Type2PixelWidth(Types type, JKQTMathTextEnvironment currentEv, QPaintDevice* pd) const
 {
-    const QFontMetricsF fm(currentEv.getFont(parentMathText), pd);
-#if (QT_VERSION>=QT_VERSION_CHECK(5, 15, 0))
-    const double em=fm.horizontalAdvance(QChar(0x2003));//currentEv.fontSize;
-    const double sp=fm.horizontalAdvance(' ');//currentEv.fontSize;
-#else
-    const double em=fm.width(QChar(0x2003));//currentEv.fontSize;
-    const double sp=fm.width(' ');//currentEv.fontSize;
-#endif
+    const QFont f=currentEv.getFont(parentMathText);
+    const double sp=JKQTMathTextGetHorAdvance(f, " ", pd);
+    const double em=JKQTMathTextGetHorAdvance(f, QChar(0x2003), pd);
     const double en=em/2.0;
     switch (type) {
         case WSTNormal: return sp;
@@ -212,8 +208,7 @@ double JKQTMathTextWhitespaceNode::Type2PixelWidth(Types type, JKQTMathTextEnvir
 
 bool JKQTMathTextWhitespaceNode::supportsInstructionName(const QString &instruction)
 {
-    fillSupportedInstructions();
-    return supportedInstructions.contains(instruction);
+    return supportedInstructions().contains(instruction);
 }
 
 
@@ -260,13 +255,8 @@ double JKQTMathTextEmptyBoxNode::Units2PixelWidth(double value, Units unit, JKQT
 {
     QFont f=currentEv.getFont(parentMathText);
     f.setStyleStrategy(QFont::PreferDefault);
-    const QFontMetricsF fm(f, pd);
     if (unit==EBUem) {
-#if (QT_VERSION>=QT_VERSION_CHECK(5, 15, 0))
-        const double em=fm.horizontalAdvance(QChar(0x2003));//currentEv.fontSize;
-#else
-        const double em=fm.width(QChar(0x2003));//currentEv.fontSize;
-#endif
+        const double em=JKQTMathTextGetHorAdvance(f, QChar(0x2003), pd);
         //qDebug()<<"em="<<em<<"pix";
         return value*em;
     } else if (unit==EBUex) {
@@ -297,7 +287,7 @@ QString JKQTMathTextEmptyBoxNode::getTypeName() const
     return QString("JKQTMathTextEmptyBoxNode(%1%2 x %3%4)").arg(getWidth()).arg(JKQTMathTextEmptyBoxNode::Units2String(getWidthUnit())).arg(getHeight()).arg(JKQTMathTextEmptyBoxNode::Units2String(getHeightUnit()));
 }
 
-bool JKQTMathTextEmptyBoxNode::toHtml(QString &html, JKQTMathTextEnvironment currentEv, JKQTMathTextEnvironment defaultEv) const
+bool JKQTMathTextEmptyBoxNode::toHtml(QString &/*html*/, JKQTMathTextEnvironment /*currentEv*/, JKQTMathTextEnvironment /*defaultEv*/) const
 {
     return false;
 }
@@ -324,6 +314,9 @@ double JKQTMathTextEmptyBoxNode::getHeight() const
 
 double JKQTMathTextEmptyBoxNode::draw(QPainter &painter, double x, double y, JKQTMathTextEnvironment currentEv) const
 {
+#ifdef JKQTBP_AUTOTIMER
+    JKQTPAutoOutputTimer jkaat(QString("JKQTMathTextEmptyBoxNode[]::draw()"));
+#endif
     const auto s=getSize(painter, currentEv);
     doDrawBoxes(painter, x,y,s);
     return x+s.width;
@@ -332,7 +325,6 @@ double JKQTMathTextEmptyBoxNode::draw(QPainter &painter, double x, double y, JKQ
 JKQTMathTextNodeSize JKQTMathTextEmptyBoxNode::getSizeInternal(QPainter &painter, JKQTMathTextEnvironment currentEv) const
 {
     JKQTMathTextNodeSize s;
-    const QFontMetricsF fm(currentEv.getFont(parentMathText), painter.device());
     s.width=Units2PixelWidth(width, widthUnit, currentEv, painter.device());
     s.overallHeight=Units2PixelWidth(height, heightUnit, currentEv, painter.device());
     if (height>0) {
@@ -340,7 +332,7 @@ JKQTMathTextNodeSize JKQTMathTextEmptyBoxNode::getSizeInternal(QPainter &painter
     } else {
         s.baselineHeight=0;
     }
-    s.strikeoutPos=fm.strikeOutPos();
+    s.strikeoutPos=JKQTMathTextGetFontStrikoutPos(currentEv.getFont(parentMathText), painter.device());
     return s;
 }
 
@@ -370,13 +362,11 @@ QString JKQTMathTextPhantomNode::Mode2Instruction(Mode mode)
 JKQTMathTextPhantomNode::JKQTMathTextPhantomNode(JKQTMathText *parent, const QString &mode, JKQTMathTextNode *child):
     JKQTMathTextInstruction1Node(parent, mode, child)
 {
-    fillInstructions();
 }
 
 JKQTMathTextPhantomNode::JKQTMathTextPhantomNode(JKQTMathText* _parent, Mode mode, JKQTMathTextNode* child):
     JKQTMathTextInstruction1Node(_parent, Mode2Instruction(mode), child)
 {
-    fillInstructions();
 }
 
 JKQTMathTextPhantomNode::~JKQTMathTextPhantomNode() {
@@ -389,10 +379,9 @@ QString JKQTMathTextPhantomNode::getTypeName() const
 }
 
 JKQTMathTextNodeSize JKQTMathTextPhantomNode::getSizeInternal(QPainter& painter, JKQTMathTextEnvironment currentEv) const {
-    fillInstructions();
     JKQTMathTextNodeSize s=getChild()->getSize(painter, currentEv);
 
-    switch(instructions[getInstructionName()]) {
+    switch(instructions()[getInstructionName()]) {
         case FMwidth:
             s.overallHeight=0;
             s.baselineHeight=0;
@@ -408,32 +397,32 @@ JKQTMathTextNodeSize JKQTMathTextPhantomNode::getSizeInternal(QPainter& painter,
 }
 
 double JKQTMathTextPhantomNode::draw(QPainter& painter, double x, double y, JKQTMathTextEnvironment currentEv) const {
+#ifdef JKQTBP_AUTOTIMER
+    JKQTPAutoOutputTimer jkaat(QString("JKQTMathTextPhantomNode[]::draw()"));
+#endif
     const JKQTMathTextNodeSize s=getSize(painter, currentEv);
     doDrawBoxes(painter, x, y, s);
     return x+s.width;
 }
 
-bool JKQTMathTextPhantomNode::toHtml(QString &html, JKQTMathTextEnvironment currentEv, JKQTMathTextEnvironment defaultEv) const {
-    JKQTMathTextEnvironment ev=currentEv;
-    fillInstructions();
+bool JKQTMathTextPhantomNode::toHtml(QString &/*html*/, JKQTMathTextEnvironment /*currentEv*/, JKQTMathTextEnvironment /*defaultEv*/) const {
     return "&nbsp;";
 }
 
 bool JKQTMathTextPhantomNode::supportsInstructionName(const QString &instructionName)
 {
-    fillInstructions();
-    return instructions.contains(instructionName);
+    return instructions().contains(instructionName);
 }
 
-QHash<QString, JKQTMathTextPhantomNode::Mode> JKQTMathTextPhantomNode::instructions;
-
-void JKQTMathTextPhantomNode::fillInstructions()
-{
-    static std::mutex sMutex;
-    std::lock_guard<std::mutex> lock(sMutex);
-    if (instructions.size()>0) return;
-    instructions["phantom"] = FMwidthAndHeight;
-    instructions["hphantom"] = FMwidth;
-    instructions["vphantom"] = FMheight;
+const QHash<QString, JKQTMathTextPhantomNode::Mode>& JKQTMathTextPhantomNode::instructions() {
+    static QHash<QString, JKQTMathTextPhantomNode::Mode> table=[]()
+        {
+            QHash<QString, JKQTMathTextPhantomNode::Mode> instructions;
+            instructions["phantom"] = FMwidthAndHeight;
+            instructions["hphantom"] = FMwidth;
+            instructions["vphantom"] = FMheight;
+            return instructions;
+        }();
+    return table;
 }
 

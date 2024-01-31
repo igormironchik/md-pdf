@@ -25,6 +25,7 @@ This software is licensed under the term of the [GNU Lesser General Public Licen
 [![Closed PRs](https://img.shields.io/github/issues-pr-closed/jkriege2/JKQtPlotter)](https://github.com/jkriege2/JKQtPlotter/pulls?q=is%3Apr+is%3Aclosed)
 
 [![CodeQL](https://github.com/jkriege2/JKQtPlotter/actions/workflows/codeql-analysis.yml/badge.svg)](https://github.com/jkriege2/JKQtPlotter/actions/workflows/codeql-analysis.yml)
+[![MSVC-CodeAnalysis](https://github.com/jkriege2/JKQtPlotter/actions/workflows/msvc-codeanalysis.yml/badge.svg)](https://github.com/jkriege2/JKQtPlotter/actions/workflows/msvc-codeanalysis.yml)
 
 ![EXAMPLES-Page](./screenshots/examplesbanner.png)
 
@@ -82,7 +83,7 @@ The [Screenshots-page](./screenshots/) contains several screenshots, partly take
 
 [![EXAMPLES-Page](./screenshots/screenshotsbanner.png)](./screenshots/README.md)
 
-## Building
+## Building Using CMake
 
 [![Lates Release](https://img.shields.io/github/v/release/jkriege2/JKQtPlotter)](https://github.com/jkriege2/JKQtPlotter/releases)
 
@@ -92,7 +93,44 @@ JKQTPlotter contains two different build systems: A modern [CMake](https://cmake
 With [CMake](https://cmake.org/) you can easily build JKQTPlotter and all its examples, by calling something like:
 ```
     $ mkdir build; cd build
-    $ cmake .. -G "<cmake_generator>" "-DCMAKE_PREFIX_PATH=<path_to_your_qt_sources>"
+    $ cmake .. -G "<cmake_generator>" "-DCMAKE_PREFIX_PATH=<path_to_your_qt_sources>" "-DCMAKE_INSTALL_PREFIX=<where_to_install>"
     $ cmake --build . --config "Debug"
+    $ cmake --install . --config "Debug"
 ```
 
+This will create CMake targets, which you can easily link against. For the main plotter library, the target's name is \c JKQTPlotter5::JKQTPlotter5 or  \c JKQTPlotter6::JKQTPlotter6 depending on the Qt-Version you use. You can then simmply link against this via:
+```
+  find_package(JKQTPlotter6 REQUIRED)
+  target_link_libraries(${PROJECT_NAME} JKQTPlotter6::JKQTPlotter6)
+```
+or on a Qt-version agnostic way via:
+```
+  find_package(JKQTPlotter${QT_VERSION_MAJOR} REQUIRED)
+  target_link_libraries(${PROJECT_NAME} JKQTPlotter${QT_VERSION_MAJOR}::JKQTPlotter${QT_VERSION_MAJOR})
+```
+See https://jkriege2.github.io/JKQtPlotter/page_buildinstructions__c_m_a_k_e.html for details.
+
+## Usage via CMake's FetchConten-API
+
+In addition to the method described above (i.e. build and install the library and then use it), you can also use JKQTPlotter via CMake's [FetchContent-API](https://cmake.org/cmake/help/latest/module/FetchContent.html). 
+
+For this method, you need to add these lines to your CMake project:
+```
+include(FetchContent) # once in the project to include the module
+# ... now declare JKQTPlotter5/6
+FetchContent_Declare(JKQTPlotter${QT_VERSION_MAJOR}
+                     GIT_REPOSITORY https://github.com/jkriege2/JKQtPlotter.git
+                     # GIT_TAG        v5.0.0)
+# ... finally make JKQTPlotter5/6 available
+FetchContent_MakeAvailable(JKQTPlotter${QT_VERSION_MAJOR})
+```
+
+These declare JKQTPlotter and make it available in your project. Afterwards you should be able to link against it, using
+```
+target_link_libraries(${PROJECT_NAME} JKQTPlotter${QT_VERSION_MAJOR}::JKQTPlotter${QT_VERSION_MAJOR})
+```
+
+
+## Stargazers over time
+
+[![Stargazers over time](https://starchart.cc/jkriege2/JKQtPlotter.svg)](https://starchart.cc/jkriege2/JKQtPlotter)

@@ -27,7 +27,11 @@ isEmpty(JKQTP_COMMON_PRI_INCLUDED) {
                $$PWD/jkqtcommon/jkqtpenhancedpainter.h \
                $$PWD/jkqtcommon/jkqtphighrestimer.h \
                $$PWD/jkqtcommon/jkqttools.h \
-               $$PWD/jkqtcommon/jkqtpicons.h
+               $$PWD/jkqtcommon/jkqtpicons.h \
+               $$PWD/jkqtcommon/jkqtpcsstools.h \
+               $$PWD/jkqtcommon/jkqtpcachingtools.h \
+               $$PWD/jkqtcommon/jkqtpconcurrencytools.h \
+               $$PWD/jkqtcommon/jkqtpexpected.h
 
 
 
@@ -41,7 +45,11 @@ isEmpty(JKQTP_COMMON_PRI_INCLUDED) {
                $$PWD/jkqtcommon/jkqtpenhancedpainter.cpp \
                $$PWD/jkqtcommon/jkqtphighrestimer.cpp \
                $$PWD/jkqtcommon/jkqttools.cpp \
-               $$PWD/jkqtcommon/jkqtpicons.cpp
+               $$PWD/jkqtcommon/jkqtpicons.cpp \
+               $$PWD/jkqtcommon/jkqtpcsstools.cpp \
+               $$PWD/jkqtcommon/jkqtpcachingtools.cpp \
+               $$PWD/jkqtcommon/jkqtpconcurrencytools.cpp \
+               $$PWD/jkqtcommon/jkqtpexpected.cpp
 
 
     INCLUDEPATH += $$PWD

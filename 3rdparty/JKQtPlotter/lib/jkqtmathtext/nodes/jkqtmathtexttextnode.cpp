@@ -25,6 +25,7 @@
 #include "jkqtmathtext/jkqtmathtext.h"
 #include "jkqtcommon/jkqtpcodestructuring.h"
 #include "jkqtcommon/jkqtpstringtools.h"
+#include "jkqtcommon/jkqtpdebuggingtools.h"
 #include <cmath>
 #include <QFontMetricsF>
 #include <QDebug>
@@ -73,37 +74,39 @@ bool JKQTMathTextTextBaseNode::toHtml(QString &html, JKQTMathTextEnvironment cur
 
 
 
-QHash<QChar, uint32_t> JKQTMathTextTextNode::blackboardUnicodeTable=QHash<QChar, uint32_t>();
+const QHash<QChar, uint32_t>& JKQTMathTextTextNode::blackboardUnicodeTable(){
+    static QHash<QChar, uint32_t> table=[]() {
+        QHash<QChar, uint32_t> blackboardUnicodeTable;
 
-void JKQTMathTextTextNode::fillStaticTables() {
-    static std::mutex sMutex;
-    std::lock_guard<std::mutex> lock(sMutex);
-    if (blackboardUnicodeTable.size()>0) return;
+        const QString ALPHA="ABDEFGIJKLMOSTUVWXYZ";
+        for (const QChar ch: ALPHA) {
+            blackboardUnicodeTable[ch]=0x1D538+(ch.unicode()-QChar('A').unicode());
+        }
+        const QString alpha="abcdefghijklmnopqrstuvwxyz";
+        for (const QChar ch: alpha) {
+            blackboardUnicodeTable[ch]=0x1D552+(ch.unicode()-QChar('a').unicode());
+        }
+        const QString nums="0123456789";
+        for (const QChar ch: nums) {
+            blackboardUnicodeTable[ch]=0x1D7D8+(ch.unicode()-QChar('0').unicode());
+        }
 
+        blackboardUnicodeTable['C']=0x2102;
+        blackboardUnicodeTable['H']=0x210D;
+        blackboardUnicodeTable['N']=0x2115;
+        blackboardUnicodeTable['P']=0x2119;
+        blackboardUnicodeTable['Q']=0x211A;
+        blackboardUnicodeTable['R']=0x211D;
+        blackboardUnicodeTable['Z']=0x2124;
 
-    for (const QChar ch: QString("ABDEFGIJKLMOSTUVWXYZ")) {
-        blackboardUnicodeTable[ch]=0x1D538+(ch.unicode()-QChar('A').unicode());
-    }
-    for (const QChar ch: QString("abcdefghijklmnopqrstuvwxyz")) {
-        blackboardUnicodeTable[ch]=0x1D552+(ch.unicode()-QChar('a').unicode());
-    }
-    for (const QChar ch: QString("0123456789")) {
-        blackboardUnicodeTable[ch]=0x1D7D8+(ch.unicode()-QChar('0').unicode());
-    }
-
-    blackboardUnicodeTable['C']=0x2102;
-    blackboardUnicodeTable['H']=0x210D;
-    blackboardUnicodeTable['N']=0x2115;
-    blackboardUnicodeTable['P']=0x2119;
-    blackboardUnicodeTable['Q']=0x211A;
-    blackboardUnicodeTable['R']=0x211D;
-    blackboardUnicodeTable['Z']=0x2124;
+        return blackboardUnicodeTable;
+    }();
+    return table;
 }
 
 JKQTMathTextTextNode::JKQTMathTextTextNode(JKQTMathText* _parent, const QString& textIn, bool addWhitespace, bool stripInnerWhitepace):
     JKQTMathTextTextBaseNode(_parent, "")
 {
-    fillStaticTables();
     QString textTransformed=textIn;
 
     if (stripInnerWhitepace) {
@@ -125,7 +128,7 @@ JKQTMathTextTextNode::JKQTMathTextTextNode(JKQTMathText* _parent, const QString&
 JKQTMathTextTextNode::~JKQTMathTextTextNode() = default;
 
 JKQTMathTextNodeSize JKQTMathTextTextNode::getSizeInternal(QPainter& painter, JKQTMathTextEnvironment currentEv) const {
-    return calcLayout(painter, currentEv);
+    return calcLayout(painter, currentEv).sliceToNodeSize();
 }
 
 JKQTMathTextTextNode::LayoutInfo JKQTMathTextTextNode::calcLayout(QPainter &painter, JKQTMathTextEnvironment currentEv) const
@@ -139,15 +142,7 @@ JKQTMathTextTextNode::LayoutInfo JKQTMathTextTextNode::calcLayout(QPainter &pain
     const QFont fUpright=JKQTMathTextGetNonItalic(f);
     const QFont fFallbackSym=currentEv.exchangedFontFor(MTEFallbackSymbols).getFont(parentMathText);
     const QFont fRoman=currentEv.exchangedFontForRoman().getFont(parentMathText);
-    const QFontMetricsF fmUpright(fUpright, painter.device());
-    const QFontMetricsF fm(f, painter.device());
-    const QFontMetricsF fmFallbackSym(fFallbackSym, painter.device());
-    const QFontMetricsF fmRoman(fRoman, painter.device());
-#if (QT_VERSION>=QT_VERSION_CHECK(5, 15, 0))
-    const double sp=fm.horizontalAdvance(' ');
-#else
-    const double sp=fm.width(' ');
-#endif
+    //const double sp=JKQTMathTextGetHorAdvance(f, " ", painter.device());
     l.width=0;
     double ascent=0;
     double descent=0;
@@ -155,35 +150,41 @@ JKQTMathTextTextNode::LayoutInfo JKQTMathTextTextNode::calcLayout(QPainter &pain
         l.baselineXCorrection=0;
         l.topXCorrection=0;
         QRectF br, tbr;
+        double hadv=0;
         switch(l.fontMode[i]) {
             case FMasDefined:
             case FMasDefinedOutline:
-                br=fm.boundingRect(l.textpart[i]);
+                br=JKQTMathTextGetBoundingRect(f, l.textpart[i], painter.device());
                 tbr=JKQTMathTextGetTightBoundingRect(f, l.textpart[i], painter.device());
-                if (f.italic() && l.textpart[i].size()>0) l.baselineXCorrection=fm.rightBearing(l.textpart[i].operator[](l.textpart[i].size()-1));
+                hadv=JKQTMathTextGetHorAdvance(f, l.textpart[i], painter.device());
+                if (f.italic() && l.textpart[i].size()>0) l.baselineXCorrection=JKQTMathTextGetRightBearing(f,l.textpart[i].operator[](l.textpart[i].size()-1),painter.device());
                 break;
             case FMasDefinedForceUpright:
-                br=fmUpright.boundingRect(l.textpart[i]);
+                br=JKQTMathTextGetBoundingRect(fUpright, l.textpart[i], painter.device());
                 tbr=JKQTMathTextGetTightBoundingRect(fUpright, l.textpart[i], painter.device());
+                hadv=JKQTMathTextGetHorAdvance(fUpright, l.textpart[i], painter.device());
                 break;
             case FMroman:
-                br=fmRoman.boundingRect(l.textpart[i]);
+                br=JKQTMathTextGetBoundingRect(fRoman, l.textpart[i], painter.device());
                 tbr=JKQTMathTextGetTightBoundingRect(fRoman, l.textpart[i], painter.device());
-                if (fRoman.italic() && l.textpart[i].size()>0) l.baselineXCorrection=fmRoman.rightBearing(l.textpart[i].operator[](l.textpart[i].size()-1));
+                if (fRoman.italic() && l.textpart[i].size()>0) l.baselineXCorrection=JKQTMathTextGetRightBearing(fRoman,l.textpart[i].operator[](l.textpart[i].size()-1),painter.device());
+                hadv=JKQTMathTextGetHorAdvance(fRoman, l.textpart[i], painter.device());
                 break;
             case FMfallbackSymbol:
-                br=fmFallbackSym.boundingRect(l.textpart[i]);
+                br=JKQTMathTextGetBoundingRect(fFallbackSym, l.textpart[i], painter.device());
                 tbr=JKQTMathTextGetTightBoundingRect(fFallbackSym, l.textpart[i], painter.device());
-                if (fFallbackSym.italic() && l.textpart[i].size()>0) l.baselineXCorrection=fmFallbackSym.rightBearing(l.textpart[i].operator[](l.textpart[i].size()-1));
+                if (fFallbackSym.italic() && l.textpart[i].size()>0) l.baselineXCorrection=JKQTMathTextGetRightBearing(fFallbackSym,l.textpart[i].operator[](l.textpart[i].size()-1),painter.device());
+                hadv=JKQTMathTextGetHorAdvance(fFallbackSym, l.textpart[i], painter.device());
                 break;
         }
         l.textpartXPos.append(l.width);
-        if (i==l.textpart.size()-1) l.width+=tbr.width();
-        else l.width+=br.width();
+        if (i==l.textpart.size()-1) l.width+=tbr.width()+qMax(0.0,tbr.x());
+        else l.width+=hadv;
+        /*
         if (l.textpart[i].size()>0 && l.textpart[i].at(l.textpart[i].size()-1).isSpace()) {
             // this correction is necessary, because it seems that QFontMetricsF::boundingRect() ignores trailing spaces
             l.width+=sp;
-        }
+        }*/
         const double thisAscent=-tbr.top();
         const double thisDescent=tbr.bottom();
         ascent=qMax(ascent, thisAscent);
@@ -191,7 +192,7 @@ JKQTMathTextTextNode::LayoutInfo JKQTMathTextTextNode::calcLayout(QPainter &pain
     }
     l.overallHeight=(ascent+descent); //fm.height();
     l.baselineHeight=ascent;
-    l.strikeoutPos=fm.strikeOutPos();
+    l.strikeoutPos=JKQTMathTextGetFontStrikoutPos(f, painter.device());
     return l;
 }
 
@@ -240,11 +241,11 @@ void JKQTMathTextTextNode::splitTextForLayout(QPainter &painter, JKQTMathTextEnv
             } else if (bbMode==MTBBDMsimulate) {
                 CFontMode=FMasDefinedOutline;
             } else if (bbMode==MTBBDMunicodeCharactersOrSimulate || bbMode==MTBBDMunicodeCharactersOrFontDirectly) {
-                if (blackboardUnicodeTable.contains(c) && fmRoman.inFontUcs4(blackboardUnicodeTable[c])) {
-                    cs=jkqtp_UnicodeToUTF8Q(blackboardUnicodeTable[c]);
+                if (blackboardUnicodeTable().contains(c) && fmRoman.inFontUcs4(blackboardUnicodeTable().operator[](c))) {
+                    cs=jkqtp_UnicodeToUTF8Q(blackboardUnicodeTable().operator[](c));
                     CFontMode=FMroman;
-                } else if (blackboardUnicodeTable.contains(c) && fmFallbackSym.inFontUcs4(blackboardUnicodeTable[c])) {
-                    cs=jkqtp_UnicodeToUTF8Q(blackboardUnicodeTable[c]);
+                } else if (blackboardUnicodeTable().contains(c) && fmFallbackSym.inFontUcs4(blackboardUnicodeTable().operator[](c))) {
+                    cs=jkqtp_UnicodeToUTF8Q(blackboardUnicodeTable().operator[](c));
                     CFontMode=FMfallbackSymbol;
                 } else {
                     if (bbMode==MTBBDMunicodeCharactersOrSimulate) {
@@ -283,6 +284,9 @@ void JKQTMathTextTextNode::splitTextForLayout(QPainter &painter, JKQTMathTextEnv
 }
 
 double JKQTMathTextTextNode::draw(QPainter& painter, double x, double y, JKQTMathTextEnvironment currentEv) const {
+#ifdef JKQTBP_AUTOTIMER
+    JKQTPAutoOutputTimer jkaat(QString("JKQTMathTextTextNode[]::draw()"));
+#endif
     const LayoutInfo l=calcLayout(painter, currentEv);
     doDrawBoxes(painter, x, y, l);
 
@@ -291,10 +295,10 @@ double JKQTMathTextTextNode::draw(QPainter& painter, double x, double y, JKQTMat
     const QFont fUpright=JKQTMathTextGetNonItalic(f);
     const QFont fFallbackSym=currentEv.exchangedFontFor(MTEFallbackSymbols).getFont(parentMathText);
     const QFont fRoman=currentEv.exchangedFontForRoman().getFont(parentMathText);
-    const QFontMetricsF fm(f, painter.device());
-    const QFontMetricsF fmUpright(fUpright, painter.device());
-    const QFontMetricsF fmFallbackSym(fFallbackSym, painter.device());
-    const QFontMetricsF fmRoman(fRoman, painter.device());
+    //const QFontMetricsF fm(f, painter.device());
+    //const QFontMetricsF fmUpright(fUpright, painter.device());
+    //const QFontMetricsF fmFallbackSym(fFallbackSym, painter.device());
+    //const QFontMetricsF fmRoman(fRoman, painter.device());
 
     painter.save(); auto __finalpaint=JKQTPFinally([&painter]() {painter.restore();});
     painter.setFont(f);
@@ -326,6 +330,15 @@ double JKQTMathTextTextNode::draw(QPainter& painter, double x, double y, JKQTMat
                 painter.drawText(QPointF(x+l.textpartXPos[i], y), l.textpart[i]);
                 break;
         }
+        if (drawBoxes) {
+            painter.save(); auto __finalpaint=JKQTPFinally([&painter]() {painter.restore();});
+            QPen p=QPen(Qt::SolidLine);
+            p.setColor("red");
+            p.setWidthF(0.5);
+            painter.setPen(p);
+            const QLineF vline(x+l.textpartXPos[i], y-l.baselineHeight, x+l.textpartXPos[i], y-l.baselineHeight+l.overallHeight );
+            painter.drawLine(vline);
+        }
     }
 
     return x+l.width;
@@ -353,6 +366,7 @@ QString JKQTMathTextTextNode::textTransform(const QString &text, const JKQTMathT
     QString txt=text;
     auto fnt=parentMathText->getFontData(currentEv.font, currentEv.insideMath);
     const QFontMetricsF fm(currentEv.getFont(parentMathText));
+    const bool ch2212InFont=fm.inFont(QChar(0x2212));
     if (fnt.second==MTFELatin1 || fnt.second==MTFEUnicode) {
         if (currentEv.insideMath) {
             txt="";
@@ -360,7 +374,7 @@ QString JKQTMathTextTextNode::textTransform(const QString &text, const JKQTMathT
                 QChar c=text[i];
                 switch(c.unicode()) {
                     case '-':
-                    if (fm.inFont(QChar(0x2212))) {
+                    if (ch2212InFont) {
                         txt+=QString(QString(" ")+QChar(0x2212));
                     } else {
                         txt+=QString(QString(" -"));

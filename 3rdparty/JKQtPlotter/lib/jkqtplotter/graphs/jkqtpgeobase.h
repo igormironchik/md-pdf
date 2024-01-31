@@ -62,7 +62,7 @@ public:
     virtual void setColor(QColor c);
 
     /** \brief plots a key marker inside the specified rectangle \a rect */
-    virtual void drawKeyMarker(JKQTPEnhancedPainter& painter, QRectF& rect) override;
+    virtual void drawKeyMarker(JKQTPEnhancedPainter& painter, const QRectF& rect) override;
     /** \brief returns the color to be used for the key label */
     virtual QColor getKeyLabelColor() const override;
 
@@ -111,7 +111,7 @@ public:
     virtual void setColor(QColor c);
 
     /** \brief plots a key marker inside the specified rectangle \a rect */
-    virtual void drawKeyMarker(JKQTPEnhancedPainter& painter, QRectF& rect) override;
+    virtual void drawKeyMarker(JKQTPEnhancedPainter& painter, const QRectF& rect) override;
     /** \brief returns the color to be used for the key label */
     virtual QColor getKeyLabelColor() const override;
 
@@ -160,7 +160,7 @@ public:
     virtual void setColor(QColor c);
 
     /** \brief plots a key marker inside the specified rectangle \a rect */
-    virtual void drawKeyMarker(JKQTPEnhancedPainter& painter, QRectF& rect) override;
+    virtual void drawKeyMarker(JKQTPEnhancedPainter& painter, const QRectF& rect) override;
     /** \brief returns the color to be used for the key label */
     virtual QColor getKeyLabelColor() const override;
 
@@ -193,6 +193,8 @@ class JKQTPLOTTER_LIB_EXPORT JKQTPGeoBaseFilled: public JKQTPGeoBaseLine, public
         /** \brief set several of the style properties with one call */
         virtual void setStyle(QColor color, double lineWidth, Qt::PenStyle style, QColor fillColor, Qt::BrushStyle fillStyle) ;
         /** \brief set several of the style properties with one call */
+        virtual void setStyle(QColor color, double lineWidth, Qt::PenStyle style, QColor fillColor, const JKQTFillStyleSummmary& fillStyle) ;
+        /** \brief set several of the style properties with one call */
         virtual void setStyle(QColor color, double lineWidth, Qt::PenStyle style) override;
         /** \brief set several of the style properties with one call */
         virtual void setStyle(QColor color, Qt::PenStyle style) override;
@@ -210,7 +212,7 @@ class JKQTPLOTTER_LIB_EXPORT JKQTPGeoBaseFilled: public JKQTPGeoBaseLine, public
         void setStyleTransparentFill(QColor color);
 
         /** \brief plots a key marker inside the specified rectangle \a rect */
-        virtual void drawKeyMarker(JKQTPEnhancedPainter& painter, QRectF& rect) override;
+        virtual void drawKeyMarker(JKQTPEnhancedPainter& painter, const QRectF& rect) override;
     protected:
 
 

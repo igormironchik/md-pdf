@@ -315,7 +315,7 @@ QString JKQTPGraphSymbolStyleMixin::getSymbolFontName() const
 
 double JKQTPGraphSymbolStyleMixin::getKeySymbolLineWidthPx(JKQTPEnhancedPainter& painter, const QRectF& keyRect, const JKQTBasePlotter *parent, double maxSymbolSizeFracton) const
 {
-    const double minSize=qMin(keyRect.width(), keyRect.height());
+    //const double minSize=qMin(keyRect.width(), keyRect.height());
     double symbolWidth=parent->pt2px(painter, this->getSymbolLineWidth()*parent->getLineWidthMultiplier());
     double symbolSize=getKeySymbolSizePx(painter, keyRect, parent, maxSymbolSizeFracton);
     if (symbolWidth>0.3*symbolSize) symbolWidth=0.3*symbolSize;
@@ -398,8 +398,7 @@ void JKQTPGraphFillStyleMixin::initFillStyle(JKQTBasePlotter *parent, int &paren
         if (parentPlotStyle<0) parentPlotStyle=parent->getNextStyle();
         const JKQTBasePlotter::JKQTPPen pen=parent->getPlotStyle(parentPlotStyle, styletype);
         m_fillColor=pen.fillColor();
-        m_fillBrush.setColor(m_fillColor);
-        m_fillBrush.setStyle(pen.fillStyle());
+        m_fillBrush=pen.fillStyle().brush(m_fillColor);
     }
 }
 

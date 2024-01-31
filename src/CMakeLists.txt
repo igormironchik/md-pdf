@@ -61,7 +61,7 @@ execute_process( COMMAND git rev-parse --short HEAD
 	WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
 	OUTPUT_STRIP_TRAILING_WHITESPACE )
 
-set( MDPDF_VERSION "0.9.60 build ${MDPDF_VERSION_MINOR}" )
+set( MDPDF_VERSION "0.9.61 build ${MDPDF_VERSION_MINOR}" )
 
 configure_file( version.hpp.in ${CMAKE_CURRENT_BINARY_DIR}/version.hpp )
 
@@ -72,6 +72,6 @@ target_link_libraries( syntax KF6SyntaxHighlighting Qt6::Gui Qt6::Network Qt6::C
 add_executable( md-pdf-gui WIN32 ${GUI_SRC} )
 
 target_link_libraries( md-pdf-gui syntax widgets ${ImageMagick_LIBRARIES}
-	JKQTMathTextSharedLib JKQTCommonSharedLib KF6SyntaxHighlighting
+	JKQTMathText6 JKQTCommon6 KF6SyntaxHighlighting
 	Qt6::Widgets Qt6::Network Qt6::Core
 	podofo_shared )

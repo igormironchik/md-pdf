@@ -36,12 +36,14 @@
 
 JKQTPBarGraphBase::JKQTPBarGraphBase(JKQTBasePlotter* parent):
     JKQTPXYBaselineGraph(parent),
-    width(0.9), shift(0),
+    width(0.9),
+    shift(0),
+    rectRadiusAtValue(0),
+    rectRadiusAtBaseline(0),
+    m_drawBaseline(parent->getCurrentPlotterStyle().graphsStyle.barchartStyle.drawBaseline),
     m_fillMode(FillMode::SingleFilling),
-    m_useCustomDrawFunctor(false),
     m_lineColorDerivationModeForSpecialFill(parent->getCurrentPlotterStyle().graphsStyle.barchartStyle.graphColorDerivationMode),
-    rectRadiusAtBaseline(0),rectRadiusAtValue(0),
-    m_drawBaseline(parent->getCurrentPlotterStyle().graphsStyle.barchartStyle.drawBaseline)
+    m_useCustomDrawFunctor(false)
 {
     initFillStyle(parent, parentPlotStyle, JKQTPPlotStyleType::Barchart);
     initLineStyle(parent, parentPlotStyle, JKQTPPlotStyleType::Barchart);
@@ -59,10 +61,16 @@ JKQTPBarGraphBase::JKQTPBarGraphBase(JKQTPlotter* parent):
 {
 }
 
-void JKQTPBarGraphBase::drawKeyMarker(JKQTPEnhancedPainter& painter, QRectF& rect) {
+void JKQTPBarGraphBase::drawKeyMarker(JKQTPEnhancedPainter& painter, const QRectF& r) {
     painter.save(); auto __finalpaint=JKQTPFinally([&painter]() {painter.restore();});
     QPen p=getLinePenForRects(painter, parent);
     QBrush b=getFillBrush(painter, parent);
+    QRectF rect=r;
+    rect.setWidth(rect.width()-p.widthF());
+    rect.setHeight(rect.height()-p.widthF());
+    rect.setX(rect.x()+p.widthF()/2.0);
+    rect.setY(rect.y()+p.widthF()/2.0);
+
     //int y=rect.top()+rect.height()/2.0;
     painter.setPen(p);
     painter.setBrush(b);

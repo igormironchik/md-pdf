@@ -42,7 +42,8 @@
 #include <QHash>
 #include <QPainterPath>
 #include <QtMath>
-
+#include <QFontMetrics>
+#include <QFontMetricsF>
 class JKQTMathText; // forward
 
 
@@ -146,7 +147,7 @@ struct JKQTMATHTEXT_LIB_EXPORT JKQTMathTextFontSpecifier {
      *  font with symbols is "Segoe UI Symbol" ...
      */
     static JKQTMathTextFontSpecifier getAppFontFamilies();
-    /** \brief initialize with the default app font-families for "serif" text and math and tries to find a matching fallback-font. This may be used to initialize sans-serif-fonts
+    /** \brief initialize with the default app font-families for "sans-serif" text and math and tries to find a matching fallback-font. This may be used to initialize sans-serif-fonts
      *
      *  This method encodes some pre-coded knowledge of suitable combinations of fonts for different systems.
      *
@@ -390,7 +391,7 @@ struct JKQTMATHTEXT_LIB_EXPORT JKQTMathTextEnvironment {
  *  \ingroup jkqtmathtext_tools
  */
 struct JKQTMATHTEXT_LIB_EXPORT JKQTMathTextNodeSize {
-    JKQTMathTextNodeSize();
+    JKQTMathTextNodeSize(double width=0, double baselineHeight=0, double overallHeight=0, double strikeoutPos=0, double baselineXCorrection=0,double topXCorrection=0);
     /** \brief width of whole block */
     double width;
     /** \brief baselineHeight of whole block, i.e. the ascent */
@@ -410,10 +411,16 @@ struct JKQTMATHTEXT_LIB_EXPORT JKQTMathTextNodeSize {
     double topXCorrection;
     /** \brief calculate the descent (overallHeight-baselineHeight) */
     inline double getDescent() const { return overallHeight-baselineHeight; }
+    /** \brief calculate the ascent (=baselineHeight), for convenience and naming */
+    inline double getAscent() const { return baselineHeight; }
+    /** \brief calculate the height (=baselineHeight), for convenience and naming */
+    inline double getHeight() const { return overallHeight; }
     /** \brief calculate the overall size in floating-point precision */
     inline QSizeF getSize() const { return QSizeF(width, overallHeight); }
     /** \brief calculate the overall size in floating-point precision */
     inline QSize getIntSize() const { return QSize(qCeil(width+1.0), qCeil(overallHeight+1.0)); }
+    /** \brief helper function, which generates a copy of this object, used to suppress slicing warning due to GSL E.63: https://isocpp.github.io/CppCoreGuidelines/CppCoreGuidelines#Res-slice */
+    inline JKQTMathTextNodeSize sliceToNodeSize() const { return *this; }
 };
 
 /** \brief summarizes all information available on a font for a specific MTenvironmentFont
@@ -471,41 +478,173 @@ JKQTMATHTEXT_LIB_EXPORT QPainterPath JKQTMathTextMakeDArrow(double x, double y, 
  */
 JKQTMATHTEXT_LIB_EXPORT void JKQTMathTextDrawStringSimBlackboard(QPainter& painter, const QFont& f, const QColor &color, double x, double y, const QString& txt);
 
-struct JKQTMATHTEXT_LIB_EXPORT JKQTMathTextTBRData {
-    explicit JKQTMathTextTBRData(const QFont& f, const QString& text, QPaintDevice *pd);
-    QFontMetricsF fm;
-    QString text;
-    QRectF tbr;
-    QFont f;
-    int ldpiX, ldpiY, pdpiX, pdpiY;
-    //QPaintDevice *pd;
-
-    bool operator==(const JKQTMathTextTBRData& other) const;
-};
-
-struct JKQTMATHTEXT_LIB_EXPORT JKQTMathTextTBRDataH {
-    explicit JKQTMathTextTBRDataH(const QFont& f, const QString& text, QPaintDevice *pd);
-    QString text;
-    QFont f;
-    int ldpiX, ldpiY, pdpiX, pdpiY;
-
-    bool operator==(const JKQTMathTextTBRDataH& other) const;
-};
 
 
-#if QT_VERSION >= QT_VERSION_CHECK(6,0,0)
-inline size_t qHash(const JKQTMathTextTBRDataH& data, size_t /*seed=0*/) {
-#else
-inline uint qHash(const JKQTMathTextTBRDataH& data) {
-#endif
-  return qHash(data.f.family())+qHash(data.text);
-}
-
-
-/** \brief calculates the tight bounding rectangle around \a text, uses internal hashing to not redo a calculation that has already been performed
+/** \brief calculates the tight bounding rectangle around \a text
+ *         (from <a href="https://doc.qt.io/qt/qfontmetricsf.html#tightBoundingRect">QFontMetricsF::tightBoundingRect()</a>),
+ *         uses internal (thread-local) hashing to not redo a calculation that has already been performed
  *  \ingroup jkqtmathtext_tools
+ *
+ *  \param fm font the text should be set in
+ *  \param text the text of which the properties are calculated
+ *  \param pd (or \c nullptr) the currently used <a href="https://doc.qt.io/qt-6/qpaintdevice.html">QPaintDevice</a>
+ *            (e.g. from <a href="https://doc.qt.io/qt/qpainter.html#device">QPainter::device()</a> )
+ *
+ *  \note This function is thread-safe and uses the same cache for all threads (so they profit from eachother)
  */
 JKQTMATHTEXT_LIB_EXPORT QRectF JKQTMathTextGetTightBoundingRect(const QFont &fm, const QString& text,  QPaintDevice *pd);
+
+/** \brief calculates the bounding rectangle around \a text
+ *         (from (using <a href="https://doc.qt.io/qt/qfontmetricsf.html#boundingRect">QFontMetricsF::boundingRect()</a>),
+ *         uses internal hashing to not redo a calculation that has already been performed
+ *  \ingroup jkqtmathtext_tools
+ *
+ *  \param fm font the text should be set in
+ *  \param text the text of which the properties are calculated
+ *  \param pd (or \c nullptr) the currently used <a href="https://doc.qt.io/qt-6/qpaintdevice.html">QPaintDevice</a>
+ *            (e.g. from <a href="https://doc.qt.io/qt/qpainter.html#device">QPainter::device()</a> )
+ *
+ *  \note This function is thread-safe and uses the same cache for all threads (so they profit from eachother)
+ */
+JKQTMATHTEXT_LIB_EXPORT QRectF JKQTMathTextGetBoundingRect(const QFont &fm, const QString& text,  QPaintDevice *pd);
+
+/** \brief calculates the horizontal advance of \a text
+ *         (from <a href="https://doc.qt.io/qt/qfontmetricsf.html#horizontalAdvance">QFontMetricsF::horizontalAdvance()</a>
+ *         or \c QFontMetricsF::width() if it is not yet available in your Qt version),
+ *         uses internal hashing to not redo a calculation that has already been performed
+ *  \ingroup jkqtmathtext_tools
+ *
+ *  \param fm font the text should be set in
+ *  \param text the text of which the properties are calculated
+ *  \param pd (or \c nullptr) the currently used <a href="https://doc.qt.io/qt-6/qpaintdevice.html">QPaintDevice</a>
+ *            (e.g. from <a href="https://doc.qt.io/qt/qpainter.html#device">QPainter::device()</a> )
+ *
+ *  \note This function is thread-safe and uses the same cache for all threads (so they profit from eachother)
+ */
+JKQTMATHTEXT_LIB_EXPORT qreal JKQTMathTextGetHorAdvance(const QFont &fm, const QString& text,  QPaintDevice *pd);
+
+/** \brief calculates the left bearing of \a text
+ *         (from <a href="https://doc.qt.io/qt-6/qfontmetricsf.html#leftBearing">QFontMetricsF::leftBearing()</a>),
+ *         uses internal hashing to not redo a calculation that has already been performed
+ *  \ingroup jkqtmathtext_tools
+ *
+ *  \param fm font the text should be set in
+ *  \param text the character of which the properties are calculated
+ *  \param pd (or \c nullptr) the currently used <a href="https://doc.qt.io/qt-6/qpaintdevice.html">QPaintDevice</a>
+ *            (e.g. from <a href="https://doc.qt.io/qt/qpainter.html#device">QPainter::device()</a> )
+ *
+ *  \note This function is thread-safe and uses the same cache for all threads (so they profit from eachother)
+ */
+JKQTMATHTEXT_LIB_EXPORT qreal JKQTMathTextGetLeftBearing(const QFont &fm, const QChar& text,  QPaintDevice *pd);
+
+/** \brief calculates the right bearing of \a text
+ *         (from <a href="https://doc.qt.io/qt-6/qfontmetricsf.html#rightBearing">QFontMetricsF::rightBearing()</a>),
+ *         uses internal hashing to not redo a calculation that has already been performed
+ *  \ingroup jkqtmathtext_tools
+ *
+ *  \param fm font the text should be set in
+ *  \param text the character of which the properties are calculated
+ *  \param pd (or \c nullptr) the currently used <a href="https://doc.qt.io/qt-6/qpaintdevice.html">QPaintDevice</a>
+ *            (e.g. from <a href="https://doc.qt.io/qt/qpainter.html#device">QPainter::device()</a> )
+ *
+ *  \note This function is thread-safe and uses the same cache for all threads (so they profit from eachother)
+ */
+JKQTMATHTEXT_LIB_EXPORT qreal JKQTMathTextGetRightBearing(const QFont &fm, const QChar& text,  QPaintDevice *pd);
+
+
+/** \brief calculates the strikeout-pos of \a font
+ *         (from <a href="https://doc.qt.io/qt-6/qfontmetricsf.html#strikeoutPos">QFontMetricsF::strikeoutPos()</a>),
+ *         uses internal hashing to not redo a calculation that has already been performed
+ *  \ingroup jkqtmathtext_tools
+ *
+ *  \param fm font for which to calculate
+ *  \param pd (or \c nullptr) the currently used <a href="https://doc.qt.io/qt-6/qpaintdevice.html">QPaintDevice</a>
+ *            (e.g. from <a href="https://doc.qt.io/qt/qpainter.html#device">QPainter::device()</a> )
+ *
+ *  \note This function is thread-safe and uses the same cache for all threads (so they profit from eachother)
+ */
+JKQTMATHTEXT_LIB_EXPORT qreal JKQTMathTextGetFontStrikoutPos(const QFont &fm,  QPaintDevice *pd);
+
+/** \brief calculates the line width of \a font
+ *         (from <a href="https://doc.qt.io/qt-6/qfontmetricsf.html#lineWidth">QFontMetricsF::lineWidth()</a>),
+ *         uses internal hashing to not redo a calculation that has already been performed
+ *  \ingroup jkqtmathtext_tools
+ *
+ *  \param fm font for which to calculate
+ *  \param pd (or \c nullptr) the currently used <a href="https://doc.qt.io/qt-6/qpaintdevice.html">QPaintDevice</a>
+ *            (e.g. from <a href="https://doc.qt.io/qt/qpainter.html#device">QPainter::device()</a> )
+ *
+ *  \note This function is thread-safe and uses the same cache for all threads (so they profit from eachother)
+ */
+JKQTMATHTEXT_LIB_EXPORT qreal JKQTMathTextGetFontLineWidth(const QFont &fm,  QPaintDevice *pd);
+
+/** \brief calculates the ascent of \a font
+ *         (from <a href="https://doc.qt.io/qt-6/qfontmetricsf.html#ascent">QFontMetricsF::ascent()</a>),
+ *         uses internal hashing to not redo a calculation that has already been performed
+ *  \ingroup jkqtmathtext_tools
+ *
+ *  \param fm font for which to calculate
+ *  \param pd (or \c nullptr) the currently used <a href="https://doc.qt.io/qt-6/qpaintdevice.html">QPaintDevice</a>
+ *            (e.g. from <a href="https://doc.qt.io/qt/qpainter.html#device">QPainter::device()</a> )
+ *
+ *  \note This function is thread-safe and uses the same cache for all threads (so they profit from eachother)
+ */
+JKQTMATHTEXT_LIB_EXPORT qreal JKQTMathTextGetFontAscent(const QFont &fm,  QPaintDevice *pd);
+
+/** \brief calculates the descent of \a font
+ *         (from <a href="https://doc.qt.io/qt-6/qfontmetricsf.html#descent">QFontMetricsF::descent()</a>),
+ *         uses internal hashing to not redo a calculation that has already been performed
+ *  \ingroup jkqtmathtext_tools
+ *
+ *  \param fm font for which to calculate
+ *  \param pd (or \c nullptr) the currently used <a href="https://doc.qt.io/qt-6/qpaintdevice.html">QPaintDevice</a>
+ *            (e.g. from <a href="https://doc.qt.io/qt/qpainter.html#device">QPainter::device()</a> )
+ *
+ *  \note This function is thread-safe and uses the same cache for all threads (so they profit from eachother)
+ */
+JKQTMATHTEXT_LIB_EXPORT qreal JKQTMathTextGetFontDescent(const QFont &fm,  QPaintDevice *pd);
+
+
+/** \brief calculates the height of \a font
+ *         (from <a href="https://doc.qt.io/qt-6/qfontmetricsf.html#height">QFontMetricsF::height()</a>),
+ *         uses internal hashing to not redo a calculation that has already been performed
+ *  \ingroup jkqtmathtext_tools
+ *
+ *  \param fm font for which to calculate
+ *  \param pd (or \c nullptr) the currently used <a href="https://doc.qt.io/qt-6/qpaintdevice.html">QPaintDevice</a>
+ *            (e.g. from <a href="https://doc.qt.io/qt/qpainter.html#device">QPainter::device()</a> )
+ *
+ *  \note This function is thread-safe and uses the same cache for all threads (so they profit from eachother)
+ */
+JKQTMATHTEXT_LIB_EXPORT qreal JKQTMathTextGetFontHeight(const QFont &fm,  QPaintDevice *pd);
+
+/** \brief calculates the leading of \a font
+ *         (from <a href="https://doc.qt.io/qt-6/qfontmetricsf.html#leading">QFontMetricsF::leading()</a>),
+ *         uses internal hashing to not redo a calculation that has already been performed
+ *  \ingroup jkqtmathtext_tools
+ *
+ *  \param fm font for which to calculate
+ *  \param pd (or \c nullptr) the currently used <a href="https://doc.qt.io/qt-6/qpaintdevice.html">QPaintDevice</a>
+ *            (e.g. from <a href="https://doc.qt.io/qt/qpainter.html#device">QPainter::device()</a> )
+ *
+ *  \note This function is thread-safe and uses the same cache for all threads (so they profit from eachother)
+ */
+JKQTMATHTEXT_LIB_EXPORT qreal JKQTMathTextGetFontLeading(const QFont &fm,  QPaintDevice *pd);
+
+/** \brief calculates the line spacing of \a font
+ *         (from <a href="https://doc.qt.io/qt-6/qfontmetricsf.html#lineSpacing">QFontMetricsF::lineSpacing()</a>),
+ *         uses internal hashing to not redo a calculation that has already been performed
+ *  \ingroup jkqtmathtext_tools
+ *
+ *  \param fm font for which to calculate
+ *  \param pd (or \c nullptr) the currently used <a href="https://doc.qt.io/qt-6/qpaintdevice.html">QPaintDevice</a>
+ *            (e.g. from <a href="https://doc.qt.io/qt/qpainter.html#device">QPainter::device()</a> )
+ *
+ *  \note This function is thread-safe and uses the same cache for all threads (so they profit from eachother)
+ */
+JKQTMATHTEXT_LIB_EXPORT qreal JKQTMathTextGetFontLineSpacing(const QFont &fm,  QPaintDevice *pd);
+
+
 /** \brief returns a copy of \a f, but with the italic-property set to \c false
  *  \ingroup jkqtmathtext_tools
  */

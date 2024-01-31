@@ -96,10 +96,8 @@ QImage JKQTPOverlayImage::drawImage() {
     if (!data) return QImage();
     QImage img(Nx, Ny, QImage::Format_ARGB32);
 
-    //QRgb tc=trueColor.rgba();
-    //QRgb fc=falseColor.rgba();
-    QRgb tc=qRgba(jkqtp_roundTo<int>(trueColor.red()*trueColor.alphaF()), jkqtp_roundTo<int>(trueColor.green()*trueColor.alphaF()), jkqtp_roundTo<int>(trueColor.blue()*trueColor.alphaF()), trueColor.alpha());
-    QRgb fc=qRgba(jkqtp_roundTo<int>(falseColor.red()*falseColor.alphaF()), jkqtp_roundTo<int>(falseColor.green()*falseColor.alphaF()), jkqtp_roundTo<int>(falseColor.blue()*falseColor.alphaF()), falseColor.alpha());
+    const QRgb tc=qRgba(jkqtp_roundTo<int>(trueColor.redF()*trueColor.alphaF()*255.0), jkqtp_roundTo<int>(trueColor.greenF()*trueColor.alphaF()*255.0), jkqtp_roundTo<int>(trueColor.blueF()*trueColor.alphaF()*255.0), trueColor.alpha());
+    const QRgb fc=qRgba(jkqtp_roundTo<int>(falseColor.redF()*falseColor.alphaF()*255.0), jkqtp_roundTo<int>(falseColor.greenF()*falseColor.alphaF()*255.0), jkqtp_roundTo<int>(falseColor.blueF()*falseColor.alphaF()*255.0), falseColor.alpha());
 
     for (int32_t y=0; y<Ny; y++) {
         QRgb* line=(QRgb*)img.scanLine(Ny-1-y);
@@ -116,7 +114,7 @@ QImage JKQTPOverlayImage::drawImage() {
     return img;
 }
 
-void JKQTPOverlayImage::drawKeyMarker(JKQTPEnhancedPainter& painter, QRectF& rect) {
+void JKQTPOverlayImage::drawKeyMarker(JKQTPEnhancedPainter& painter, const QRectF& rect) {
     double w=rect.width()/2;
     QRectF r1=QRectF(rect.topLeft(), QSizeF(w, rect.height()));
     QRectF r2=QRectF(QPointF(rect.left()+w, rect.top()), QSizeF(w, rect.height()));
@@ -244,7 +242,7 @@ JKQTPOverlayImageEnhanced::JKQTPOverlayImageEnhanced(JKQTPlotter *parent):
 
 }
 
-void JKQTPOverlayImageEnhanced::drawKeyMarker(JKQTPEnhancedPainter& painter, QRectF& rect) {
+void JKQTPOverlayImageEnhanced::drawKeyMarker(JKQTPEnhancedPainter& painter, const QRectF& rect) {
     if (drawMode!=OverlayImageEnhancedDrawMode::DrawAsSymbols) JKQTPOverlayImage::drawKeyMarker(painter, rect);
     else JKQTPPlotSymbol(painter, rect.center().x(), rect.center().y(), symbol, qMin(rect.width(), rect.height()), parent->pt2px(painter, symbolLineWidth*parent->getLineWidthMultiplier()), trueColor, trueColor.lighter(), m_symbolFontName);
 }

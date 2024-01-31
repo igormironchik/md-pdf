@@ -59,7 +59,7 @@ void JKQTPRGBMathImage::initObject()
 
     this->colorBarTopVisible=true;
     this->colorBarRightVisible=true;
-    this->imageNameFontSize=parent->getKeyFontSize();
+    this->imageNameFontSize=parent->getMainKey()->getFontSize();
     this->imageNameR="";
     this->showColorBar=true;
     this->colorBarWidth=14;
@@ -218,6 +218,16 @@ void JKQTPRGBMathImage::getOutsideSize(JKQTPEnhancedPainter& painter, int& leftS
 }
 
 struct RGBOutsizeData {
+    RGBOutsizeData():
+        internalDataMin(0),
+        internalDataMax(0),
+        data(nullptr),
+        colorBarRightAxis(nullptr),
+        colorBarTopAxis(nullptr),
+        name(),
+        palette(JKQTPMathImageMATLAB),
+        paletteImage()
+    {}
     double internalDataMin;
     double internalDataMax;
     const void* data;
@@ -992,7 +1002,7 @@ double JKQTPRGBMathImage::getValueAt(double x, double y, int channel)
     return 0.0;
 }
 
-void JKQTPRGBMathImage::drawKeyMarker(JKQTPEnhancedPainter &painter, QRectF &rect)
+void JKQTPRGBMathImage::drawKeyMarker(JKQTPEnhancedPainter &painter, const QRectF &rect)
 {
     painter.drawImage(rect, QPixmap(":/JKQTPlotter/jkqtp_plot_rgbimage.png").toImage());
 }

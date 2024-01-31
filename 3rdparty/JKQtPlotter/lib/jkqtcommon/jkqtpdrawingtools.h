@@ -79,6 +79,36 @@ typedef std::function<void(QPainter& p)> JKQTPCustomGraphSymbolFunctor;
    \ingroup jkqtptools_drawing
    */
 struct JKQTPlotterDrawingTools {
+    /** \brief a special placeholder that can be used to indicate that a color should be replaced by the "current color" in a certain context
+     *
+     *  \see JKQTPReplaceCurrentColor() , JKQTFillStyleSummmary
+     */
+    static JKQTCOMMON_LIB_EXPORT const QColor CurrentColorPlaceholder;
+    /** \brief a special placeholder that can be used to indicate that a color should be replaced by the "current color", but with 10% transparency in a certain context
+     *
+     *  \see JKQTPReplaceCurrentColor(), JKQTPlotterDrawingTools::CurrentColorPlaceholder_Trans10, ... , JKQTFillStyleSummmary
+      */
+    static JKQTCOMMON_LIB_EXPORT const QColor CurrentColorPlaceholder_Trans10;
+    /** \brief a special placeholder that can be used to indicate that a color should be replaced by the "current color", but with 25% transparency in a certain context
+     *
+     *  \see JKQTPReplaceCurrentColor(), JKQTPlotterDrawingTools::CurrentColorPlaceholder, ... , JKQTFillStyleSummmary
+      */
+    static JKQTCOMMON_LIB_EXPORT const QColor CurrentColorPlaceholder_Trans25;
+    /** \brief a special placeholder that can be used to indicate that a color should be replaced by the "current color", but with 50% transparency in a certain context
+     *
+     *  \see JKQTPReplaceCurrentColor(), JKQTPlotterDrawingTools::CurrentColorPlaceholder, JKQTPlotterDrawingTools::CurrentColorPlaceholder_Trans10, ... , JKQTFillStyleSummmary
+      */
+    static JKQTCOMMON_LIB_EXPORT const QColor CurrentColorPlaceholder_Trans50;
+    /** \brief a special placeholder that can be used to indicate that a color should be replaced by the "current color", but with 75% transparency in a certain context
+     *
+     *  \see JKQTPReplaceCurrentColor(), JKQTPlotterDrawingTools::CurrentColorPlaceholder, JKQTPlotterDrawingTools::CurrentColorPlaceholder_Trans10, ... , JKQTFillStyleSummmary
+      */
+    static JKQTCOMMON_LIB_EXPORT const QColor CurrentColorPlaceholder_Trans75;
+    /** \brief a special placeholder that can be used to indicate that a color should be replaced by the "current color", but with 90% transparency in a certain context
+     *
+     *  \see JKQTPReplaceCurrentColor(), JKQTPlotterDrawingTools::CurrentColorPlaceholder, JKQTPlotterDrawingTools::CurrentColorPlaceholder_Trans10, ... , JKQTFillStyleSummmary
+      */
+    static JKQTCOMMON_LIB_EXPORT const QColor CurrentColorPlaceholder_Trans90;
     /** \brief smallest linewidth any line in JKQTPlotter/JKQTBasePlotter may have
      */
     static JKQTCOMMON_LIB_EXPORT const double ABS_MIN_LINEWIDTH;
@@ -87,10 +117,24 @@ struct JKQTPlotterDrawingTools {
      * \internal
      */
     static JKQTCOMMON_LIB_EXPORT JKQTPSynchronized<QVector<JKQTPCustomGraphSymbolFunctor> > JKQTPCustomGraphSymbolStore;
-    typedef JKQTPSynchronized<QVector<JKQTPCustomGraphSymbolFunctor> >::Locker SymbolsLocker;
+    typedef JKQTPSynchronized<QVector<JKQTPCustomGraphSymbolFunctor> >::ReadLocker SymbolsReadLocker;
+    typedef JKQTPSynchronized<QVector<JKQTPCustomGraphSymbolFunctor> >::WriteLocker SymbolsWriteLocker;
 };
 
 
+
+/*! \brief check whether \a col equals JKQTPlotterDrawingTools::CurrentColorPlaceholder (or one of its variants) and then replace it by \a currentColor
+   \ingroup jkqtptools_drawing
+
+    \see JKQTPlotterDrawingTools::CurrentColorPlaceholder, JKQTPlotterDrawingTools::CurrentColorPlaceholder_Trans10, ... , JKQTFillStyleSummmary
+   */
+JKQTCOMMON_LIB_EXPORT void JKQTPReplaceCurrentColor(QColor& col, const QColor& currentColor);
+/*! \brief check whether any color in \a grad equals JKQTPlotterDrawingTools::CurrentColorPlaceholder (or one of its variants) and then replace it by \a currentColor
+   \ingroup jkqtptools_drawing
+
+    \see JKQTPlotterDrawingTools::CurrentColorPlaceholder, JKQTPlotterDrawingTools::CurrentColorPlaceholder_Trans10, ... , JKQTFillStyleSummmary
+   */
+JKQTCOMMON_LIB_EXPORT void JKQTPReplaceCurrentColor(QGradient& grad, const QColor& currentColor);
 
 
 /** \brief symbols that can be used to plot a datapoint for a graph
@@ -982,7 +1026,7 @@ inline void JKQTPPlotSymbol(TPainter& painter, double x, double y, JKQTPGraphSym
         painter.drawPath(path);
     }
     if (symbol>=JKQTPFirstCustomSymbol) {
-        JKQTPlotterDrawingTools::SymbolsLocker lock(JKQTPlotterDrawingTools::JKQTPCustomGraphSymbolStore);
+        JKQTPlotterDrawingTools::SymbolsReadLocker lock(JKQTPlotterDrawingTools::JKQTPCustomGraphSymbolStore);
         const int idx(static_cast<int>(symbol-JKQTPFirstCustomSymbol));
         if (idx>=0 && idx<JKQTPlotterDrawingTools::JKQTPCustomGraphSymbolStore->size()) {
             painter.setPen(p);

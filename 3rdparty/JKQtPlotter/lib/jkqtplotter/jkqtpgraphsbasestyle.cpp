@@ -146,7 +146,7 @@ void JKQTGeometricSpecificStyleProperties::loadSettings(const QSettings &setting
     defaultColor=jkqtp_String2QColor(settings.value(group+"color", jkqtp_QColor2String(defaultColor)).toString());
     defaultLineStyle=jkqtp_String2QPenStyle(settings.value(group+"line_style", jkqtp_QPenStyle2String(defaultLineStyle)).toString());
     defaultSymbol=String2JKQTPGraphSymbols(settings.value(group+"symbol", JKQTPGraphSymbols2String(defaultSymbol)).toString());
-    defaultFillStyle=jkqtp_String2QBrushStyle(settings.value(group+"fill_style", jkqtp_QBrushStyle2String(defaultFillStyle)).toString());
+    defaultFillStyle=JKQTFillStyleSummmary::fromString(settings.value(group+"fill_style", defaultFillStyle.toCSSString()).toString());
 }
 
 void JKQTGeometricSpecificStyleProperties::saveSettings(QSettings &settings, const QString &group) const
@@ -155,7 +155,7 @@ void JKQTGeometricSpecificStyleProperties::saveSettings(QSettings &settings, con
     settings.setValue(group+"color", jkqtp_QColor2String(defaultColor));
     settings.setValue(group+"line_style", jkqtp_QPenStyle2String(defaultLineStyle));
     settings.setValue(group+"symbol", JKQTPGraphSymbols2String(defaultSymbol));
-    settings.setValue(group+"fill_style", jkqtp_QBrushStyle2String(defaultFillStyle));
+    settings.setValue(group+"fill_style", defaultFillStyle.toCSSString());
 }
 
 JKQTAnnotationsSpecificStyleProperties::JKQTAnnotationsSpecificStyleProperties(const JKQTBasePlotterStyle& parent):
@@ -232,13 +232,13 @@ QVector<Qt::PenStyle> JKQTGraphsBaseStyle::getDefaultGraphPenStyles()
 QVector<JKQTPGraphSymbols> JKQTGraphsBaseStyle::getDefaultGraphSymbols()
 {
     QVector<JKQTPGraphSymbols> syms;
-    for (int i=2; i<=JKQTPMaxSymbolID; i++) syms.push_back(static_cast<JKQTPGraphSymbols>(i));
+    for (int i=2; i<=static_cast<int>(JKQTPMaxSymbolID); i++) syms.push_back(static_cast<JKQTPGraphSymbols>(i));
     return syms;
 }
 
-QVector<Qt::BrushStyle> JKQTGraphsBaseStyle::getDefaultGraphFillStyles()
+QVector<JKQTFillStyleSummmary> JKQTGraphsBaseStyle::getDefaultGraphFillStyles()
 {
-    return QVector<Qt::BrushStyle>()<<Qt::SolidPattern;
+    return QVector<JKQTFillStyleSummmary>()<<JKQTFillStyleSummmary(Qt::SolidPattern);
 }
 
 void JKQTGraphsBaseStyle::loadSettings(const QSettings &settings, const QString &group, const JKQTGraphsBaseStyle &defaultStyle, const JKQTBasePlotterStyle& parent)
@@ -302,7 +302,7 @@ void JKQTGraphsBaseStyle::loadSettings(const QSettings &settings, const QString 
         }
         id=readID(k, group+"auto_styles/fill_style");
         if (id>=0) {
-            defaultGraphFillStyles.push_back(jkqtp_String2QBrushStyle(settings.value(group+"auto_styles/fill_style"+QString::number(id), jkqtp_QBrushStyle2String(Qt::SolidPattern)).toString()));
+            defaultGraphFillStyles.push_back(JKQTFillStyleSummmary::fromString(settings.value(group+"auto_styles/fill_style"+QString::number(id), jkqtp_QBrushStyle2String(Qt::SolidPattern)).toString()));
         }
     }
     if (defaultGraphColors.size()==0) {
@@ -398,7 +398,7 @@ void JKQTGraphsBaseStyle::saveSettings(QSettings &settings, const QString &group
         for (auto& gs: defaultGraphFillStyles) {
             QString num=QString::number(cnt);
             while (num.size()<maxnum.size()) num.prepend('0');
-            settings.setValue(group+"auto_styles/fill_style"+num, jkqtp_QBrushStyle2String(gs));
+            settings.setValue(group+"auto_styles/fill_style"+num, jkqtp_QBrushStyle2String(gs.brushStyle));
             cnt++;
         }
     }
@@ -444,7 +444,7 @@ JKQTBarchartSpecificStyleProperties::JKQTBarchartSpecificStyleProperties(const J
 
 }
 
-JKQTBarchartSpecificStyleProperties::JKQTBarchartSpecificStyleProperties(const JKQTBasePlotterStyle& parent, const JKQTGraphsSpecificStyleProperties &other):
+JKQTBarchartSpecificStyleProperties::JKQTBarchartSpecificStyleProperties(const JKQTBasePlotterStyle& /*parent*/, const JKQTGraphsSpecificStyleProperties &other):
     JKQTGraphsSpecificStyleProperties(JKQTPPlotStyleType::Barchart, other),
     defaultRectRadiusAtValue(0),
     defaultRectRadiusAtBaseline(0),
@@ -478,7 +478,7 @@ JKQTImpulseSpecificStyleProperties::JKQTImpulseSpecificStyleProperties(const JKQ
 
 }
 
-JKQTImpulseSpecificStyleProperties::JKQTImpulseSpecificStyleProperties(const JKQTBasePlotterStyle& parent, const JKQTGraphsSpecificStyleProperties &other):
+JKQTImpulseSpecificStyleProperties::JKQTImpulseSpecificStyleProperties(const JKQTBasePlotterStyle& /*parent*/, const JKQTGraphsSpecificStyleProperties &other):
     JKQTGraphsSpecificStyleProperties(JKQTPPlotStyleType::Impulses, other),
     drawBaseline(false)
 {
@@ -499,3 +499,36 @@ void JKQTImpulseSpecificStyleProperties::saveSettings(QSettings &settings, const
 }
 
 
+
+JKQTFillStyleSummmary::JKQTFillStyleSummmary(Qt::BrushStyle style, const QGradient& grad):
+    brushStyle(style), gradient(grad)
+{
+
+}
+
+QBrush JKQTFillStyleSummmary::brush(const QColor &color) const
+{
+    QBrush b;
+    b.setColor(color);
+    if (brushStyle==Qt::LinearGradientPattern || brushStyle==Qt::RadialGradientPattern || brushStyle==Qt::ConicalGradientPattern) {
+        QGradient g=gradient;
+        JKQTPReplaceCurrentColor(g, color);
+        g.setCoordinateMode(QGradient::ObjectMode);
+        b=QBrush(g);
+    } else {
+        b.setStyle(brushStyle);
+    }
+    return b;
+}
+
+JKQTFillStyleSummmary JKQTFillStyleSummmary::fromString(const QString &style)
+{
+    JKQTFillStyleSummmary res;
+    res.brushStyle=jkqtp_String2QBrushStyleExt(style, &(res.gradient), &(res.texture));
+    return res;
+}
+
+QString JKQTFillStyleSummmary::toCSSString() const
+{
+    return jkqtp_QBrushStyle2String(brushStyle);
+}

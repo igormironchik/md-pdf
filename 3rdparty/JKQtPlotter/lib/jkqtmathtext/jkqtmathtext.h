@@ -70,9 +70,20 @@ class JKQTMathTextVerticalListNode; // forward
         (which is modelled after LaTeX, but with tweaks especially for use in the  context of GUI code)
       - \ref jkqtmathtext_supportedlatex for a description of the supported LaTeX subset
     .
-    
+
+    \section JKQTMathTextUsageThreadSafety Thread-Safety/Re-Entrancy Guarantees
+    All functions in this class are reentrant. Therefore different instances off JKQTMathtext can be used in parallel in different threads.
+    DO NOT however use the same instance from multiple threads, as the functions are not thread-safe!
+
+    Also note that there are certain caches that reuse information (e.g. about fonts) from previous runs, which allow different instances
+    (also over different threads) to profit from each other. On the other hand, this strategy requires a bit of overhead due to synchronization,
+    but usually the speedup outweighs the overhead significantly!
+
 
     \section JKQTMathTextUsage Usage
+
+    \see See \ref page_buildinstructions for detailed build-instructions and on how to link against JKQTMathText!
+
 
     \subsection JKQTMathTextUsageParsing Parsing Functions
     The class provieds two flavours of a parsing function:

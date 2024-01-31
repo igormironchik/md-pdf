@@ -61,7 +61,7 @@ add_executable( test.render ${SRC} )
 
 target_link_libraries( test.render syntax podofo_shared
 	${ImageMagick_LIBRARIES}
-	JKQTMathTextSharedLib JKQTCommonSharedLib
+	JKQTMathText6 JKQTCommon6
 	Qt6::Widgets Qt6::Gui Qt6::Network Qt6::Test Qt6::Core )
 
 if( WIN32 )

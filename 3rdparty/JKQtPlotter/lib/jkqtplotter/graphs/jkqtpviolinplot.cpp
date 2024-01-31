@@ -36,17 +36,19 @@
 
 
 JKQTPViolinplotElementBase::JKQTPViolinplotElementBase(JKQTBasePlotter* parent):
-    JKQTPPlotElement(parent)
+    JKQTPPlotElement(parent),
+    pos(JKQTP_NAN),
+    median(JKQTP_NAN),
+    mean(JKQTP_NAN),
+    drawMean(false),
+    drawMedian(false),
+    drawMinMax(false),
+    min(JKQTP_NAN),
+    max(JKQTP_NAN),
+    violinPositionColumn(-1),
+    violinFrequencyColumn(-1)
 {
-    pos=JKQTP_NAN;
-    median=JKQTP_NAN;
-    mean=JKQTP_NAN;
-    min=JKQTP_NAN;
-    max=JKQTP_NAN;
-    drawMean=false;
-    drawMinMax=false;
-    violinPositionColumn=-1;
-    violinFrequencyColumn=-1;
+
 
     initViolinplotStyle(parent, parentPlotStyle);
     setMeanSymbolType(JKQTPPlus);
@@ -338,7 +340,7 @@ bool JKQTPViolinplotVerticalElement::getYMinMax(double& miny, double& maxy, doub
         return true;
 }
 
-void JKQTPViolinplotVerticalElement::drawKeyMarker(JKQTPEnhancedPainter& painter, QRectF& rect) {
+void JKQTPViolinplotVerticalElement::drawKeyMarker(JKQTPEnhancedPainter& painter, const QRectF& rect) {
     plotVerticalKeyMarker(parent, painter, rect);
 }
 
@@ -356,7 +358,7 @@ JKQTPViolinplotHorizontalElement::JKQTPViolinplotHorizontalElement(JKQTPlotter *
 {
 }
 
-void JKQTPViolinplotHorizontalElement::drawKeyMarker(JKQTPEnhancedPainter& painter, QRectF& rect) {
+void JKQTPViolinplotHorizontalElement::drawKeyMarker(JKQTPEnhancedPainter& painter, const QRectF& rect) {
     plotHorizontalKeyMarker(parent, painter, rect);
 }
 

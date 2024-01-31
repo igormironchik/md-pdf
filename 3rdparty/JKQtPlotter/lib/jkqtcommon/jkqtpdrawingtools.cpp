@@ -21,6 +21,12 @@
 #include <QDebug>
 
 const double JKQTPlotterDrawingTools::ABS_MIN_LINEWIDTH= 0.02;
+const QColor JKQTPlotterDrawingTools::CurrentColorPlaceholder = QColor::fromRgbF(0.1234,0.5678,0.9123,1.0);
+const QColor JKQTPlotterDrawingTools::CurrentColorPlaceholder_Trans10 = QColor::fromRgbF(0.1234,0.5678,0.9123,0.1);
+const QColor JKQTPlotterDrawingTools::CurrentColorPlaceholder_Trans25 = QColor::fromRgbF(0.1234,0.5678,0.9123,0.25);
+const QColor JKQTPlotterDrawingTools::CurrentColorPlaceholder_Trans50 = QColor::fromRgbF(0.1234,0.5678,0.9123,0.5);
+const QColor JKQTPlotterDrawingTools::CurrentColorPlaceholder_Trans75 = QColor::fromRgbF(0.1234,0.5678,0.9123,0.75);
+const QColor JKQTPlotterDrawingTools::CurrentColorPlaceholder_Trans90 = QColor::fromRgbF(0.1234,0.5678,0.9123,0.9);
 
 
 
@@ -90,7 +96,7 @@ QString JKQTPGraphSymbols2String(JKQTPGraphSymbols pos) {
         case JKQTPFemale: return "symbol_female";
         case JKQTPMale: return "symbol_male";
         case JKQTPCirclePeace: return "symbol_circle_peace";
-        case JKQTPSymbolCount: JKQTPGraphSymbols2String(JKQTPMaxSymbolID);
+        case JKQTPSymbolCount: return JKQTPGraphSymbols2String(JKQTPMaxSymbolID);
         case JKQTPCharacterSymbol:
         case JKQTPFilledCharacterSymbol:
         case JKQTPFirstCustomSymbol:
@@ -179,7 +185,7 @@ QString JKQTPGraphSymbols2NameString(JKQTPGraphSymbols pos) {
         case JKQTPFemale: return QObject::tr("female");
         case JKQTPMale: return QObject::tr("male");
         case JKQTPCirclePeace: return QObject::tr("circled peace");
-        case JKQTPSymbolCount: JKQTPGraphSymbols2NameString(JKQTPMaxSymbolID);
+        case JKQTPSymbolCount: return JKQTPGraphSymbols2NameString(JKQTPMaxSymbolID);
         case JKQTPCharacterSymbol:
         case JKQTPFilledCharacterSymbol:
         case JKQTPFirstCustomSymbol:
@@ -556,14 +562,33 @@ JKQTPSynchronized<QVector<JKQTPCustomGraphSymbolFunctor> > JKQTPlotterDrawingToo
 
 JKQTPGraphSymbols JKQTPRegisterCustomGraphSymbol(JKQTPCustomGraphSymbolFunctor&& f)
 {
-    JKQTPlotterDrawingTools::SymbolsLocker lock(JKQTPlotterDrawingTools::JKQTPCustomGraphSymbolStore);
+    JKQTPlotterDrawingTools::SymbolsWriteLocker lock(JKQTPlotterDrawingTools::JKQTPCustomGraphSymbolStore);
     JKQTPlotterDrawingTools::JKQTPCustomGraphSymbolStore->push_back(std::move(f));
     return static_cast<JKQTPGraphSymbols>(static_cast<uint64_t>(JKQTPFirstCustomSymbol)+static_cast<uint64_t>(JKQTPlotterDrawingTools::JKQTPCustomGraphSymbolStore->size()-1));
 }
 
 JKQTPGraphSymbols JKQTPRegisterCustomGraphSymbol(const JKQTPCustomGraphSymbolFunctor& f)
 {
-    JKQTPlotterDrawingTools::SymbolsLocker lock(JKQTPlotterDrawingTools::JKQTPCustomGraphSymbolStore);
+    JKQTPlotterDrawingTools::SymbolsWriteLocker lock(JKQTPlotterDrawingTools::JKQTPCustomGraphSymbolStore);
     JKQTPlotterDrawingTools::JKQTPCustomGraphSymbolStore->push_back(f);
     return static_cast<JKQTPGraphSymbols>(static_cast<uint64_t>(JKQTPFirstCustomSymbol)+static_cast<uint64_t>(JKQTPlotterDrawingTools::JKQTPCustomGraphSymbolStore->size()-1));
+}
+
+void JKQTPReplaceCurrentColor(QColor &col, const QColor &currentColor)
+{
+    if (col==JKQTPlotterDrawingTools::CurrentColorPlaceholder) col=currentColor;
+    else if (col==JKQTPlotterDrawingTools::CurrentColorPlaceholder_Trans10) { col=currentColor; col.setAlphaF(0.9); }
+    else if (col==JKQTPlotterDrawingTools::CurrentColorPlaceholder_Trans25) { col=currentColor; col.setAlphaF(0.75); }
+    else if (col==JKQTPlotterDrawingTools::CurrentColorPlaceholder_Trans50) { col=currentColor; col.setAlphaF(0.5); }
+    else if (col==JKQTPlotterDrawingTools::CurrentColorPlaceholder_Trans75) { col=currentColor; col.setAlphaF(0.25); }
+    else if (col==JKQTPlotterDrawingTools::CurrentColorPlaceholder_Trans90) { col=currentColor; col.setAlphaF(0.1); }
+}
+
+void JKQTPReplaceCurrentColor(QGradient &grad, const QColor &currentColor)
+{
+    auto stops=grad.stops();
+    for (auto& s: stops) {
+        JKQTPReplaceCurrentColor(s.second, currentColor);
+    }
+    grad.setStops(stops);
 }

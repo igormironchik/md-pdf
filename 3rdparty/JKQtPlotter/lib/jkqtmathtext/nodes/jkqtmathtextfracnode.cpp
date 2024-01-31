@@ -25,6 +25,7 @@
 #include "jkqtmathtext/jkqtmathtext.h"
 #include "jkqtcommon/jkqtpcodestructuring.h"
 #include "jkqtcommon/jkqtpstringtools.h"
+#include "jkqtcommon/jkqtpdebuggingtools.h"
 #include <cmath>
 #include <QFontMetricsF>
 #include <QDebug>
@@ -34,34 +35,32 @@
 #include <QFont>
 
 
-QHash<QString, JKQTMathTextFracNode::FracType> JKQTMathTextFracNode::instructions;
-
-
-void JKQTMathTextFracNode::fillInstructions()
-{
-    static std::mutex sMutex;
-    std::lock_guard<std::mutex> lock(sMutex);
-    if (instructions.size()>0) return;
-    instructions["frac"]=MTFMfrac;
-    instructions["dfrac"] = MTFMdfrac;
-    instructions["cfrac"]=MTFMdfrac;
-    instructions["sfrac"] = MTFMsfrac;
-    instructions["slantfrac"] = MTFMsfrac;
-    instructions["xfrac"]=MTFMsfrac;
-    instructions["stfrac"] = MTFMstfrac;
-    instructions["nicefrac"] = MTFMstfrac;
-    instructions["slanttextfrac"] = MTFMstfrac;
-    instructions["xtfrac"]=MTFMstfrac;
-    instructions["tfrac"]=MTFMtfrac;
-    instructions["stackrel"]=MTFMstackrel;
-    instructions["underbrace"]=MTFMunderbrace;
-    instructions["underbracket"]=MTFMunderbracket;
-    instructions["underset"]=MTFMunderset;
-    instructions["overbrace"]=MTFMoverbrace;
-    instructions["overbracket"]=MTFMoverbracket;
-    instructions["overset"]=MTFMoverset;
+const QHash<QString, JKQTMathTextFracNode::FracType>& JKQTMathTextFracNode::instructions() {
+    static QHash<QString, JKQTMathTextFracNode::FracType> table=[]()
+        {
+            QHash<QString, JKQTMathTextFracNode::FracType> instructions;
+            instructions["frac"]=MTFMfrac;
+            instructions["dfrac"] = MTFMdfrac;
+            instructions["cfrac"]=MTFMdfrac;
+            instructions["sfrac"] = MTFMsfrac;
+            instructions["slantfrac"] = MTFMsfrac;
+            instructions["xfrac"]=MTFMsfrac;
+            instructions["stfrac"] = MTFMstfrac;
+            instructions["nicefrac"] = MTFMstfrac;
+            instructions["slanttextfrac"] = MTFMstfrac;
+            instructions["xtfrac"]=MTFMstfrac;
+            instructions["tfrac"]=MTFMtfrac;
+            instructions["stackrel"]=MTFMstackrel;
+            instructions["underbrace"]=MTFMunderbrace;
+            instructions["underbracket"]=MTFMunderbracket;
+            instructions["underset"]=MTFMunderset;
+            instructions["overbrace"]=MTFMoverbrace;
+            instructions["overbracket"]=MTFMoverbracket;
+            instructions["overset"]=MTFMoverset;
+            return instructions;
+        }();
+    return table;
 }
-
 
 
 
@@ -99,14 +98,12 @@ QString JKQTMathTextFracNode::FracType2String(JKQTMathTextFracNode::FracType mod
 
 JKQTMathTextFracNode::FracType JKQTMathTextFracNode::InstructionName2FracType(const QString &mode)
 {
-    fillInstructions();
-    return instructions.value(mode, MTFMfrac);
+    return instructions().value(mode, MTFMfrac);
 }
 
 bool JKQTMathTextFracNode::supportsInstructionName(const QString &instructionName)
 {
-    fillInstructions();
-    return instructions.contains(instructionName);
+    return instructions().contains(instructionName);
 }
 
 
@@ -132,15 +129,14 @@ JKQTMathTextNodeSize JKQTMathTextFracNode::getSizeInternal(QPainter& painter, JK
         if (fracmode==MTFMsfrac) fracmode=MTFMstfrac;
     }
     const QFont f=currentEv.getFont(parentMathText);
-    const QFontMetricsF fm(f, painter.device());
     JKQTMathTextEnvironment ev1=currentEv;
     JKQTMathTextEnvironment ev2=currentEv;
 
     const double xheight=JKQTMathTextGetTightBoundingRect(f, "x", painter.device()).height();
     const double line_ascent=xheight/2.0;
-    //const double Mheight=JKQTMathTextGetTightBoundingRect(f, "M", painter.device()).height();//fm.ascent();
+    //const double Mheight=JKQTMathTextGetTightBoundingRect(f, "M", painter.device()).height();
     const double xwidth=JKQTMathTextGetTightBoundingRect(f, "x", painter.device()).width();
-    const double qheight=JKQTMathTextGetTightBoundingRect(f, "q", painter.device()).height();//fm.ascent();
+    const double qheight=JKQTMathTextGetTightBoundingRect(f, "q", painter.device()).height();
     const double braceheight=xheight*parentMathText->getUnderbraceBraceSizeXFactor();
     const double braceseparation=xheight*parentMathText->getUnderbraceSeparationXFactor();
 
@@ -156,11 +152,11 @@ JKQTMathTextNodeSize JKQTMathTextFracNode::getSizeInternal(QPainter& painter, JK
         ev2.fontSize=ev2.fontSize*getFracScalingFactor()*0.7;
     }
 
-    const QFontMetricsF fmev1(ev1.getFont(parentMathText), painter.device());
-    const QRectF AeTBR1=fmev1.tightBoundingRect("A");
+    const QFont fev1=ev1.getFont(parentMathText);
+    const QRectF AeTBR1=JKQTMathTextGetTightBoundingRect(fev1, "A", painter.device());
     const double asc1=AeTBR1.height();
-    const QFontMetricsF fmev2(ev2.getFont(parentMathText), painter.device());
-    const QRectF AeTBR2=fmev2.tightBoundingRect("A");
+    const QFont fev2=ev2.getFont(parentMathText);
+    const QRectF AeTBR2=JKQTMathTextGetTightBoundingRect(fev2, "A", painter.device());
     const double asc2=AeTBR2.height();
 
     JKQTMathTextNodeSize size1=child1->getSize(painter, ev1);
@@ -197,6 +193,8 @@ JKQTMathTextNodeSize JKQTMathTextFracNode::getSizeInternal(QPainter& painter, JK
         const double top_ascent=line_ascent;
         const double newascent=size1.overallHeight+top_ascent;
         const double newdescent=qMax(size2.overallHeight-size2.baselineHeight, qheight-xheight);
+        //const double deltaWidth=xwidth*((fracmode==JKQTMathTextFracNode::MTFMstfrac)?0.8:0.7);
+
         size.width=size1.width+size2.width+xwidth*0.666;
         size.strikeoutPos=line_ascent;
 
@@ -247,6 +245,9 @@ double JKQTMathTextFracNode::getFracScalingFactor() const
 }
 
 double JKQTMathTextFracNode::draw(QPainter& painter, double x, double y, JKQTMathTextEnvironment currentEv) const {
+#ifdef JKQTBP_AUTOTIMER
+    JKQTPAutoOutputTimer jkaat(QString("JKQTMathTextFracNode[]::draw()"));
+#endif
     FracType fracmode=this->mode;
     if (currentEv.isMathTextStyle()) {
         if (fracmode==MTFMfrac) fracmode=MTFMtfrac;
@@ -255,14 +256,13 @@ double JKQTMathTextFracNode::draw(QPainter& painter, double x, double y, JKQTMat
 
     doDrawBoxes(painter, x, y, currentEv);
     const QFont f=currentEv.getFont(parentMathText);
-    const QFontMetricsF fm(f, painter.device());
     JKQTMathTextEnvironment ev1=currentEv;
     JKQTMathTextEnvironment ev2=currentEv;
 
-
-    const double xheight=JKQTMathTextGetTightBoundingRect(f, "x", painter.device()).height();
-    const double xwidth=JKQTMathTextGetTightBoundingRect(f, "x", painter.device()).width();
-    const double linewideth=fm.lineWidth();
+    const QRectF tbr_x=JKQTMathTextGetTightBoundingRect(f, "x", painter.device());
+    const double xheight=tbr_x.height();
+    const double xwidth=tbr_x.width();
+    const double linewideth=JKQTMathTextGetFontLineWidth(f, painter.device());
     const double Mheight=JKQTMathTextGetTightBoundingRect(f, "M", painter.device()).height();//fm.ascent();
     const double qheight=JKQTMathTextGetTightBoundingRect(f, "q", painter.device()).height();//fm.ascent();
     const double braceheight=xheight*parentMathText->getUnderbraceBraceSizeXFactor();
@@ -281,12 +281,13 @@ double JKQTMathTextFracNode::draw(QPainter& painter, double x, double y, JKQTMat
     }
 
 
-    const QFontMetricsF fmev1(ev1.getFont(parentMathText), painter.device());
-    const QRectF AeTBR1=fmev1.tightBoundingRect("A");
+    const QFont fev1=ev1.getFont(parentMathText);
+    const QRectF AeTBR1=JKQTMathTextGetTightBoundingRect(fev1, "A", painter.device());
     const double asc1=AeTBR1.height();
-    const QFontMetricsF fmev2(ev2.getFont(parentMathText), painter.device());
-    const QRectF AeTBR2=fmev2.tightBoundingRect("A");
+    const QFont fev2=ev2.getFont(parentMathText);
+    const QRectF AeTBR2=JKQTMathTextGetTightBoundingRect(fev2, "A", painter.device());
     const double asc2=AeTBR2.height();
+
 
     JKQTMathTextNodeSize size1=child1->getSize(painter, ev1);
     JKQTMathTextNodeSize size2=child2->getSize(painter, ev2);
@@ -323,16 +324,17 @@ double JKQTMathTextFracNode::draw(QPainter& painter, double x, double y, JKQTMat
         deltaWidth=xwidth/2.0;
         const QLineF l(x+p.widthF()*2.0, yline, x+maxWidth+deltaWidth-p.widthF()*2.0, yline);
         if (l.length()>0) painter.drawLine(l);
-        child1->draw(painter, x+deltaWidth/2.0+(maxWidth-size1.width)/2.0, yline-xheight*(parentMathText->getFracShiftFactor())-descent1, ev1);
-        child2->draw(painter, x+deltaWidth/2.0+(maxWidth-size2.width)/2.0, yline+xheight*(parentMathText->getFracShiftFactor())+ascent2, ev2);
+        child1->draw(painter, x+deltaWidth/2.0+(maxWidth-size1.width)/2.0, yline-xheight*parentMathText->getFracShiftFactor()-descent1, ev1);
+        child2->draw(painter, x+deltaWidth/2.0+(maxWidth-size2.width)/2.0, yline+xheight*parentMathText->getFracShiftFactor()+ascent2, ev2);
     } else if (fracmode==JKQTMathTextFracNode::MTFMstackrel) {
         child1->draw(painter, x+(maxWidth-size1.width)/2.0, yline-xheight*(parentMathText->getFracShiftFactor())-descent1, ev1);
         child2->draw(painter, x+(maxWidth-size2.width)/2.0, yline+xheight*(parentMathText->getFracShiftFactor())+ascent2, ev2);
     } else if (fracmode==JKQTMathTextFracNode::MTFMstfrac || fracmode==JKQTMathTextFracNode::MTFMsfrac) {
-        deltaWidth=xwidth*0.666;
+        deltaWidth=xwidth*((fracmode==JKQTMathTextFracNode::MTFMstfrac)?0.8:0.7);
+        const double translate_factor=(fracmode==JKQTMathTextFracNode::MTFMsfrac)?(-0.2):0.0;
         child1->draw(painter, x, yline, ev1);
         child2->draw(painter, x+size1.width+deltaWidth, y, ev2);
-        const QLineF l(x+size1.width+deltaWidth, y-Mheight, x+size1.width, y+(qheight-xheight));
+        const QLineF l = QLineF(x+size1.width+deltaWidth, y-Mheight, x+size1.width, y+(qheight-xheight)).translated(translate_factor*deltaWidth,0);
         if (l.length()>0) painter.drawLine(l);
     } else if (fracmode==JKQTMathTextFracNode::MTFMunderset) {
         child1->draw(painter, x+xwidth/2.0+(maxWidth-size1.width)/2.0, y, ev1);
@@ -411,7 +413,6 @@ double JKQTMathTextFracNode::draw(QPainter& painter, double x, double y, JKQTMat
 
     if (fracmode==JKQTMathTextFracNode::MTFMstfrac || fracmode==JKQTMathTextFracNode::MTFMsfrac) return x+size1.width+size2.width+deltaWidth;
     else return x+maxWidth+deltaWidth;
-
 }
 
 bool JKQTMathTextFracNode::toHtml(QString &/*html*/, JKQTMathTextEnvironment /*currentEv*/, JKQTMathTextEnvironment /*defaultEv*/) const {
