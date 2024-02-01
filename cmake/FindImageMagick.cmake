@@ -104,6 +104,7 @@ function(FIND_IMAGEMAGICK_API component header)
       ${PC_${component}_INCLUDE_DIRS}
     PATHS
       ${ImageMagick_INCLUDE_DIRS}
+      "/usr/local/opt/imagemagick@6/include"
       "[HKEY_LOCAL_MACHINE\\SOFTWARE\\ImageMagick\\Current;BinPath]/include"
     PATH_SUFFIXES
       ImageMagick ImageMagick-6 ImageMagick-7
@@ -117,6 +118,7 @@ function(FIND_IMAGEMAGICK_API component header)
       ${PC_${component}_INCLUDE_DIRS}
     PATHS
       ${ImageMagick_INCLUDE_DIRS}
+      "/usr/local/opt/imagemagick@6/include"
       "[HKEY_LOCAL_MACHINE\\SOFTWARE\\ImageMagick\\Current;BinPath]/include"
     PATH_SUFFIXES
       ImageMagick ImageMagick-6 ImageMagick-7
@@ -130,6 +132,7 @@ function(FIND_IMAGEMAGICK_API component header)
       ${PC_${component}_LIB_DIRS}
     PATHS
       "[HKEY_LOCAL_MACHINE\\SOFTWARE\\ImageMagick\\Current;BinPath]/lib"
+      "/usr/local/opt/imagemagick@6/lib"
     DOC "Path to the ImageMagick Magick++ library."
 #    NO_DEFAULT_PATH
     )
@@ -184,6 +187,7 @@ find_path(ImageMagick_EXECUTABLE_DIR
   NAMES mogrify${CMAKE_EXECUTABLE_SUFFIX}
   PATHS
     "[HKEY_LOCAL_MACHINE\\SOFTWARE\\ImageMagick\\Current;BinPath]"
+    "/usr/local/opt/imagemagick@6/bin"
   DOC "Path to the ImageMagick binary directory."
 #  NO_DEFAULT_PATH
   )
