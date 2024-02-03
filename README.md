@@ -12,7 +12,9 @@ such ready tool, but my search was unsuccessful.
 
 # Installers
 
-You can make `x64` installers for `Linux` and `Windows` by cloning [this](https://github.com/igormironchik/markdown) repository and running `deploy` workflow.
+You can make `x64` installers for `Linux` and `Windows` by cloning [this](https://github.com/igormironchik/markdown) repository and running `deploy` workflow. Or use latest `deploy`
+workflow to download ready artifacts. Note, that `deploy_mac` is not tested ever, it's just an
+experiment.
 
 
 # Testing
@@ -90,6 +92,10 @@ On Linux you can use what you want, that is why this is my favorite OS.
 
  * I don't support right-to-left languages and languages that don't separate words
 with spaces. I don't know theirs rules to adapt algorithms[^1].
+
+ * `LaTeX` math expressions can be rendered a little differently on different platforms
+due to [QTBUG-104790](https://bugreports.qt.io/browse/QTBUG-104790), that is why I don't
+have auto tests for them.
  
 [^1]: If you are one from these groups of people - you are welcome to make PRs to adapt
  this application to your language.
