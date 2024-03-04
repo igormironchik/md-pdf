@@ -91,6 +91,7 @@ add_subdirectory( 3rdparty/JKQtPlotter )
 find_package( Perl REQUIRED )
 
 add_subdirectory( 3rdparty/ksyntaxhighlighting )
+add_subdirectory( 3rdparty/cfgfile/generator )
 
 add_subdirectory( src )
 

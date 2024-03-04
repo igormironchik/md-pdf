@@ -30,6 +30,7 @@
 #include "progress.hpp"
 #include "const.hpp"
 #include "version.hpp"
+#include "cfg.hpp"
 
 // Qt include.
 #include <QToolButton>
@@ -43,12 +44,17 @@
 #include <QMenuBar>
 #include <QApplication>
 #include <QComboBox>
+#include <QStandardPaths>
+#include <QTextStream>
 
 // podofo include.
 #include <podofo/podofo.h>
 
 // Widgets include.
 #include <Widgets/LicenseDialog>
+
+// cfgfile include.
+#include <cfgfile/all.hpp>
 
 
 //
@@ -134,12 +140,208 @@ MainWidget::MainWidget( QWidget * parent )
 
 	m_ui->m_codeTheme->addItems( themeNames );
 	m_ui->m_codeTheme->setCurrentText( QStringLiteral( "GitHub Light" ) );
+	
+	readCfg();
 }
 
 MainWidget::~MainWidget()
 {
 	m_thread->quit();
 	m_thread->wait();
+}
+
+static const QString c_appCfgFileName = QStringLiteral( "md-pdf-gui.cfg" );
+static const QString c_appCfgFolderName = QStringLiteral( "Markdown" );
+
+QString
+MainWidget::configFileName( bool inPlace ) const
+{
+	const auto folders = QStandardPaths::standardLocations( QStandardPaths::ConfigLocation );
+	
+	if( !folders.isEmpty() && !inPlace )
+		return folders.front() + QDir::separator() + c_appCfgFolderName + QDir::separator() +
+			c_appCfgFileName;
+	else
+		return QApplication::applicationDirPath() + QDir::separator() + c_appCfgFileName;
+}
+
+void
+MainWidget::readCfg()
+{
+	auto fileName = configFileName( false );
+	
+	if( !QFileInfo::exists( fileName ) )
+		fileName = configFileName( true );
+	
+	QFile file( fileName );
+
+	if( file.open( QIODevice::ReadOnly ) )
+	{
+		try {
+			MdPdf::tag_Cfg< cfgfile::qstring_trait_t > tag;
+
+			QTextStream stream( &file );
+
+			cfgfile::read_cfgfile( tag, stream, c_appCfgFileName );
+
+			file.close();
+
+			const auto cfg = tag.get_cfg();
+			
+			const auto & tFont = cfg.textFont();
+
+			if( !tFont.name().isEmpty() )
+			{
+				auto fs = tFont.size();
+				
+				if( fs < 6 )
+					fs = 6;
+				
+				if( fs > 16 )
+					fs = 16;
+				
+				const QFont f( tFont.name(), fs );
+
+				m_ui->m_textFont->setCurrentFont( f );
+				m_ui->m_textFontSize->setValue( fs );
+			}
+			
+			const auto & cFont = cfg.codeFont();
+			
+			if( !cFont.name().isEmpty() )
+			{
+				auto fs = cFont.size();
+				
+				if( fs < 5 )
+					fs = 5;
+				
+				if( fs > 14 )
+					fs = 14;
+				
+				const QFont f( cFont.name(), fs );
+
+				m_ui->m_codeFont->setCurrentFont( f );
+				m_ui->m_codeFontSize->setValue( fs );
+			}
+			
+			const auto & mFont = cfg.mathFont();
+			
+			if( !mFont.name().isEmpty() )
+			{
+				auto fs = mFont.size();
+				
+				if( fs < 5 )
+					fs = 5;
+				
+				if( fs > 14 )
+					fs = 14;
+				
+				const QFont f( mFont.name(), fs );
+
+				m_ui->m_mathFont->setCurrentFont( f );
+				m_ui->m_mathFontSize->setValue( fs );
+			}
+
+			if( !cfg.linkColor().isEmpty() )
+				m_ui->m_linkColor->setColor( QColor( cfg.linkColor() ) );
+
+			if( !cfg.borderColor().isEmpty() )
+				m_ui->m_borderColor->setColor( QColor( cfg.borderColor() ) );
+
+			if( !cfg.codeTheme().isEmpty() )
+				m_ui->m_codeTheme->setCurrentText( cfg.codeTheme() );
+		
+			m_ui->m_dpi->setValue( cfg.dpiForImages() );
+			
+			const auto & m = cfg.margins();
+			
+			if( m.units() == QStringLiteral( "mm" ) )
+				m_ui->m_mm->setChecked( true );
+			else
+				m_ui->m_pt->setChecked( true );
+			
+			m_ui->m_left->setValue( m.left() );
+			m_ui->m_right->setValue( m.right() );
+			m_ui->m_top->setValue( m.top() );
+			m_ui->m_bottom->setValue( m.bottom() );
+		}
+		catch( const cfgfile::exception_t< cfgfile::qstring_trait_t > & )
+		{
+			file.close();
+		}
+	}
+}
+
+void
+MainWidget::saveCfg()
+{
+	auto fileName = configFileName( false );
+	
+	const QDir dir( "./" );
+	
+	if( !dir.mkpath( QFileInfo( fileName ).absolutePath() ) )
+		fileName = configFileName( true );
+	
+	QFile file( fileName );
+
+	if( file.open( QIODevice::WriteOnly ) )
+	{
+		try {
+			MdPdf::Cfg cfg;
+			
+			{
+				MdPdf::Font f;
+				f.set_name( m_ui->m_textFont->currentFont().family() );
+				f.set_size( m_ui->m_textFontSize->value() );
+				cfg.set_textFont( f );
+			}
+			
+			{
+				MdPdf::Font f;
+				f.set_name( m_ui->m_codeFont->currentFont().family() );
+				f.set_size( m_ui->m_codeFontSize->value() );
+				cfg.set_codeFont( f );
+			}
+			
+			{
+				MdPdf::Font f;
+				f.set_name( m_ui->m_mathFont->currentFont().family() );
+				f.set_size( m_ui->m_mathFontSize->value() );
+				cfg.set_mathFont( f );
+			}
+			
+			cfg.set_linkColor( m_ui->m_linkColor->color().name( QColor::HexRgb ) );
+			cfg.set_borderColor( m_ui->m_borderColor->color().name( QColor::HexRgb ) );
+			cfg.set_codeTheme( m_ui->m_codeTheme->currentText() );
+			cfg.set_dpiForImages( m_ui->m_dpi->value() );
+			
+			MdPdf::Margins m;
+			
+			if( m_ui->m_mm->isChecked() )
+				m.set_units( QStringLiteral( "mm" ) );
+			else
+				m.set_units( QStringLiteral( "pt" ) );
+				
+			m.set_left( m_ui->m_left->value() );
+			m.set_right( m_ui->m_right->value() );
+			m.set_top( m_ui->m_top->value() );
+			m.set_bottom( m_ui->m_bottom->value() );
+			
+			cfg.set_margins( m );
+
+			MdPdf::tag_Cfg< cfgfile::qstring_trait_t > tag( cfg );
+
+			QTextStream stream( &file );
+
+			cfgfile::write_cfgfile( tag, stream );
+
+			file.close();
+		}
+		catch( const cfgfile::exception_t< cfgfile::qstring_trait_t > & )
+		{
+			file.close();
+		}
+	}
 }
 
 void
@@ -197,6 +399,8 @@ MainWidget::selectMarkdown()
 void
 MainWidget::process()
 {
+	saveCfg();
+	
 	auto fileName = QFileDialog::getSaveFileName( this, tr( "Save as" ),
 		QDir::homePath(),
 		tr( "PDF (*.pdf)" ) );

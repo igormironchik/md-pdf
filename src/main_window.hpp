@@ -69,6 +69,9 @@ private slots:
 
 private:
 	void changeStateOfStartButton();
+	QString configFileName( bool inPlace ) const;
+	void readCfg();
+	void saveCfg();
 
 private:
 	QScopedPointer< Ui::MainWindow > m_ui;
